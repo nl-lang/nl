@@ -50,7 +50,7 @@ pub use mlua;
 /// Call them inside `Lua::exec_raw`.
 pub use nl_sys as ffi;
 pub use raw::Wake;
-pub use state::{Diagnostic, Loader, Localize, NlOption, Severity, new, open};
+pub use state::{Diagnostic, Loader, Localize, NlOption, NlOptionKind, Severity, new, open};
 pub use task::{Remote, Resolver, Task, TaskState};
 pub use types::{NlFunctionExt, NlObjectExt, Range, Transfer, Type};
 pub use worker::WorkerInit;
@@ -59,8 +59,8 @@ pub use worker::WorkerInit;
 /// everything this crate adds.
 pub mod prelude {
     pub use crate::{
-        Diagnostic, Exception, Loader, Localize, NlErrorExt, NlExt, NlFunctionExt, NlObjectExt, NlOption, Range,
-        Remote, Resolver, Severity, Task, TaskState, Transfer, Type, Wake, WorkerInit,
+        Diagnostic, Exception, Loader, Localize, NlErrorExt, NlExt, NlFunctionExt, NlObjectExt, NlOption, NlOptionKind,
+        Range, Remote, Resolver, Severity, Task, TaskState, Transfer, Type, Wake, WorkerInit,
     };
     pub use mlua::prelude::*;
     pub use mlua::{AnyUserData, Function, MultiValue, Table, UserData, UserDataFields, UserDataMethods, Value};
@@ -93,6 +93,10 @@ pub trait NlExt {
     /// `nl_setoption`; an error where it returns 0, as for `Sandbox(false)`
     /// once the sandbox is on.
     fn set_option(&self, option: NlOption) -> Result<()>;
+    /// An option's value in this state (`nl_getoption`): what
+    /// [`set_option`](NlExt::set_option) set, or the default. A worker has
+    /// the copy it took when it started.
+    fn option(&self, kind: NlOptionKind) -> Result<NlOption>;
     /// The sandbox environment (`nl_sandboxenv`), whatever the option.
     fn sandbox_env(&self) -> Result<Table>;
     /// Replaces how `.nl` files are found and read (`nl_setloader`). Fails
@@ -252,6 +256,10 @@ impl NlExt for Lua {
 
     fn set_option(&self, option: NlOption) -> Result<()> {
         state::set_option(self, option)
+    }
+
+    fn option(&self, kind: NlOptionKind) -> Result<NlOption> {
+        state::option(self, kind)
     }
 
     fn sandbox_env(&self) -> Result<Table> {

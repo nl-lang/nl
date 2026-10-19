@@ -118,6 +118,49 @@ fn options_and_the_sandbox() -> LuaResult<()> {
 }
 
 #[test]
+fn reading_the_options() -> LuaResult<()> {
+    let lua = nl::new()?;
+    let kinds = [
+        NlOptionKind::Checks,
+        NlOptionKind::Strip,
+        NlOptionKind::MaxWorkers,
+        NlOptionKind::WorkerMemory,
+        NlOptionKind::Glua,
+        NlOptionKind::Sandbox,
+        NlOptionKind::Localize,
+    ];
+    let defaults = [
+        NlOption::Checks(true),
+        NlOption::Strip(false),
+        NlOption::MaxWorkers(64),
+        NlOption::WorkerMemory(0),
+        NlOption::Glua(false),
+        NlOption::Sandbox(false),
+        NlOption::Localize(Localize::Std),
+    ];
+    for (kind, default) in kinds.into_iter().zip(defaults) {
+        assert_eq!(default.kind(), kind);
+        assert_eq!(lua.option(kind)?, default);
+    }
+    for set in [
+        NlOption::Checks(false),
+        NlOption::Strip(true),
+        NlOption::MaxWorkers(4),
+        NlOption::WorkerMemory(1 << 20),
+        NlOption::Glua(true),
+        NlOption::Sandbox(true),
+        NlOption::Localize(Localize::All),
+    ] {
+        lua.set_option(set)?;
+        assert_eq!(lua.option(set.kind())?, set);
+    }
+    // A refused setting leaves the value as it was.
+    assert!(lua.set_option(NlOption::Sandbox(false)).is_err());
+    assert_eq!(lua.option(NlOptionKind::Sandbox)?, NlOption::Sandbox(true));
+    Ok(())
+}
+
+#[test]
 fn the_debug_library_stays_hidden_from_scripts() -> LuaResult<()> {
     let lua = nl::new()?;
     assert!(lua.globals().get::<Value>("debug")?.is_nil());

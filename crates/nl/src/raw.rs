@@ -587,6 +587,17 @@ pub(crate) fn setoption(lua: &Lua, opt: c_int, value: i64) -> Result<bool> {
     Ok(ok != 0)
 }
 
+pub(crate) fn getoption(lua: &Lua, opt: c_int) -> Result<i64> {
+    let mut v = 0;
+    // SAFETY: nl_getoption raises nothing.
+    unsafe {
+        lua.exec_raw::<()>((), |l| {
+            v = nl::nl_getoption(l, opt) as i64;
+        })?;
+    }
+    Ok(v)
+}
+
 /// Whether the main state's workers' settings are fixed because a worker
 /// exists. False in a worker itself, whose own search may still widen
 /// (`nl.h`: `nl_addpath` and `nl_adddecl` have no effect exactly when

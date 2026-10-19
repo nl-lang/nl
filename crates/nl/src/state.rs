@@ -187,7 +187,7 @@ pub(crate) fn hide_debug(lua: &Lua) -> Result<()> {
 
 // -- Options ------------------------------------------------------------------
 
-/// The options of `nl_setoption`.
+/// The options of `nl_setoption` and `nl_getoption`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NlOption {
     /// `NL_OPT_CHECKS`: runtime type checks in code compiled from now on.
@@ -207,29 +207,80 @@ pub enum NlOption {
     Localize(Localize),
 }
 
+/// An option of [`NlOption`] without its value, for
+/// [`option`](crate::NlExt::option).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum NlOptionKind {
+    Checks,
+    Strip,
+    MaxWorkers,
+    WorkerMemory,
+    Glua,
+    Sandbox,
+    Localize,
+}
+
+impl NlOptionKind {
+    fn raw(self) -> std::ffi::c_int {
+        match self {
+            NlOptionKind::Checks => nl_sys::NL_OPT_CHECKS,
+            NlOptionKind::Strip => nl_sys::NL_OPT_STRIP,
+            NlOptionKind::MaxWorkers => nl_sys::NL_OPT_MAXWORKERS,
+            NlOptionKind::WorkerMemory => nl_sys::NL_OPT_WORKERMEM,
+            NlOptionKind::Glua => nl_sys::NL_OPT_GLUA,
+            NlOptionKind::Sandbox => nl_sys::NL_OPT_SANDBOX,
+            NlOptionKind::Localize => nl_sys::NL_OPT_LOCALIZE,
+        }
+    }
+}
+
 impl NlOption {
-    fn raw(self) -> (std::ffi::c_int, i64) {
+    /// Which option this is.
+    pub fn kind(self) -> NlOptionKind {
+        match self {
+            NlOption::Checks(_) => NlOptionKind::Checks,
+            NlOption::Strip(_) => NlOptionKind::Strip,
+            NlOption::MaxWorkers(_) => NlOptionKind::MaxWorkers,
+            NlOption::WorkerMemory(_) => NlOptionKind::WorkerMemory,
+            NlOption::Glua(_) => NlOptionKind::Glua,
+            NlOption::Sandbox(_) => NlOptionKind::Sandbox,
+            NlOption::Localize(_) => NlOptionKind::Localize,
+        }
+    }
+
+    fn value(self) -> i64 {
         let b = |v: bool| i64::from(v);
         let n = |v: usize| i64::try_from(v).unwrap_or(i64::MAX);
         match self {
-            NlOption::Checks(v) => (nl_sys::NL_OPT_CHECKS, b(v)),
-            NlOption::Strip(v) => (nl_sys::NL_OPT_STRIP, b(v)),
-            NlOption::MaxWorkers(v) => (nl_sys::NL_OPT_MAXWORKERS, n(v)),
-            NlOption::WorkerMemory(v) => (nl_sys::NL_OPT_WORKERMEM, n(v)),
-            NlOption::Glua(v) => (nl_sys::NL_OPT_GLUA, b(v)),
-            NlOption::Sandbox(v) => (nl_sys::NL_OPT_SANDBOX, b(v)),
-            NlOption::Localize(v) => (nl_sys::NL_OPT_LOCALIZE, v.level()),
+            NlOption::Checks(v) | NlOption::Strip(v) | NlOption::Glua(v) | NlOption::Sandbox(v) => b(v),
+            NlOption::MaxWorkers(v) | NlOption::WorkerMemory(v) => n(v),
+            NlOption::Localize(v) => v.level(),
         }
     }
 }
 
 pub(crate) fn set_option(lua: &Lua, option: NlOption) -> Result<()> {
-    let (opt, value) = option.raw();
-    if raw::setoption(lua, opt, value)? {
+    if raw::setoption(lua, option.kind().raw(), option.value())? {
         Ok(())
     } else {
         Err(Error::runtime(format!("nl_setoption refused {option:?}")))
     }
+}
+
+pub(crate) fn option(lua: &Lua, kind: NlOptionKind) -> Result<NlOption> {
+    let v = raw::getoption(lua, kind.raw())?;
+    let n = || usize::try_from(v).unwrap_or(0);
+    Ok(match kind {
+        NlOptionKind::Checks => NlOption::Checks(v != 0),
+        NlOptionKind::Strip => NlOption::Strip(v != 0),
+        NlOptionKind::MaxWorkers => NlOption::MaxWorkers(n()),
+        NlOptionKind::WorkerMemory => NlOption::WorkerMemory(n()),
+        NlOptionKind::Glua => NlOption::Glua(v != 0),
+        NlOptionKind::Sandbox => NlOption::Sandbox(v != 0),
+        NlOptionKind::Localize => NlOption::Localize(
+            Localize::from_level(v).ok_or_else(|| Error::runtime(format!("nl_getoption gave NL_OPT_LOCALIZE {v}")))?,
+        ),
+    })
 }
 
 // -- Loading ------------------------------------------------------------------
@@ -308,10 +359,7 @@ pub struct Diagnostic {
 /// `Diagnostic::code` can be `&'static str`.
 pub(crate) fn intern(code: &str) -> &'static str {
     static CODES: OnceLock<Mutex<BTreeSet<&'static str>>> = OnceLock::new();
-    let mut set = CODES
-        .get_or_init(Default::default)
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut set = CODES.get_or_init(Default::default).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(c) = set.get(code) {
         return c;
     }
