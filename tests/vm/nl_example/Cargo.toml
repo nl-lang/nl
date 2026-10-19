@@ -11,7 +11,7 @@ edition = "2024"
 nl = { path = "../../../crates/nl", features = ["async"] }
 
 [patch.crates-io]
-# The fork, as a local luajit-src prepared by run.sh
-# (tests/vm/support/prepare_luajit_src.sh); published, a git or registry
-# source of luajit-src that carries the fork and the runtime.
+# The fork, as a local copy of luajit-src-rs prepared by run.sh
+# (tests/vm/support/prepare_luajit_src.sh); a host outside this repository
+# names the published one: { git = "https://github.com/nl-lang/luajit-src-rs" }.
 luajit-src = { path = "../../../target/nl_example/luajit-src" }

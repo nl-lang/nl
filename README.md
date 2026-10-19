@@ -251,20 +251,21 @@ tasks, timers, workers, options and the sandbox.
 
 ### From Rust
 
-The `nl` crate builds on mlua. NL comes in through a patch of mlua's
-`luajit-src` that builds the fork:
-
-```sh
-tests/vm/support/prepare_luajit_src.sh ../vendor/luajit-src
-```
+The `nl` crate builds on mlua. The VM comes in through
+[luajit-src-rs](https://github.com/nl-lang/luajit-src-rs), a patch of the
+`luajit-src` crate that mlua builds LuaJIT with: it builds the fork, with
+NL's runtime.
 
 ```toml
 [dependencies]
-nl = { path = "../nl/crates/nl", features = ["async"] }
+nl = { git = "https://github.com/nl-lang/nl", features = ["async"] }
 
 [patch.crates-io]
-luajit-src = { path = "../vendor/luajit-src" }
+luajit-src = { git = "https://github.com/nl-lang/luajit-src-rs" }
 ```
+
+The two must match: to pin `nl` to a revision, pin `luajit-src` to the commit
+that revision's `luajit-src-rs` submodule names.
 
 ```rust
 use nl::prelude::*;
@@ -301,6 +302,7 @@ functions and error reporting.
 | `runtime/` | The runtime and standard library (Lua, embedded in the VM) |
 | `decl/` | Declaration files (`.d.nl`) for the Lua and LuaJIT standard libraries |
 | `LuaJIT/` | The VM fork (submodule) |
+| `luajit-src-rs/` | The `luajit-src` crate that builds the fork for Rust hosts (submodule) |
 | `tests/` | Parser snapshots, conformance programs, Lua compatibility suites, VM tests |
 | `bench/` | Benchmarks of NL against equivalent Lua |
 

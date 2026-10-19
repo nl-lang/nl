@@ -11,16 +11,14 @@
 # itself and runs make -e, so the copied Makefile adds the flag with
 # `override`.
 #
-# DEST is a copy of the luajit-src crate that mlua-sys takes, as Cargo.lock
-# pins it, from cargo's registry (its manifest without its workspace, its
-# build logic), whose luajit2/ is the fork's working tree (tracked and
-# untracked files, minus ignored ones, as tests/vm/build-vm.sh copies it),
-# and whose luajit2/nl-runtime/ holds the runtime library (runtime/*.lua).
-# The copied src/Makefile names that directory as the default of
-# NL_RUNTIME_DIR, so a crate needs no environment to build the real runtime;
-# NL_RUNTIME_DIR in the environment still wins (luajit-src runs make -e), as
-# tests/vm/nl_sys_link uses it for the fake runtime. Nothing in the
-# repository's git state changes.
+# DEST is a copy of the luajit-src-rs submodule (its build logic, its
+# manifest without its workspace), whose luajit2/ is the fork's working tree
+# (tracked and untracked files, minus ignored ones, as tests/vm/build-vm.sh
+# copies it) and whose nl-runtime/ holds runtime/*.lua: the working trees,
+# not the commits luajit-src-rs names, so local changes are what gets built.
+# The crate builds the VM with nl-runtime/ as NL_RUNTIME_DIR, unless the
+# environment sets one, as tests/vm/nl_sys_link does for the fake runtime.
+# Nothing in the repository's git state changes.
 #
 # Cargo does not see these files: luajit-src has no build script, so its
 # fingerprint is its src/lib.rs alone, and mlua-sys's build script, which
@@ -31,7 +29,7 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 DEST=$1
 NOJIT=${2:-}
-mkdir -p "$DEST/luajit2/nl-runtime" "$DEST/src"
+mkdir -p "$DEST/luajit2" "$DEST/nl-runtime" "$DEST/src"
 
 CHANGED=$DEST/.changed.$$
 : >"$CHANGED"
@@ -48,36 +46,31 @@ sync() {
   rsync -aiO --checksum "$@" >>"$CHANGED"
 }
 
-# The crate's directory in cargo's registry; cargo metadata downloads it if
-# needed. Its Cargo.toml.orig is the manifest as published, with the
-# workspace table of its own repository.
-SRC=$(cargo metadata --format-version 1 --locked --manifest-path "$ROOT/Cargo.toml" |
-  tr ',' '\n' | sed -n 's#^"manifest_path":"\(.*/luajit-src-[^/"]*\)/Cargo.toml"$#\1#p' | head -1)
-[ -n "$SRC" ] && [ -f "$SRC/src/lib.rs" ] && [ -f "$SRC/Cargo.toml.orig" ] ||
-  { echo "prepare_luajit_src: cargo metadata names no luajit-src crate in the registry" >&2; exit 1; }
+L=$ROOT/luajit-src-rs
+[ -f "$L/src/lib.rs" ] ||
+  { echo "prepare_luajit_src: luajit-src-rs is not checked out (git submodule update --init luajit-src-rs)" >&2; exit 1; }
 
-put "$DEST/src/lib.rs" <"$SRC/src/lib.rs"
-for f in luajit_relver.txt README.md LICENSE; do
-  sync "$SRC/$f" "$DEST/$f"
+put "$DEST/src/lib.rs" <"$L/src/lib.rs"
+for f in README.md LICENSE; do
+  sync "$L/$f" "$DEST/$f"
 done
-sed -e '/^\[workspace\]/,/^$/d' "$SRC/Cargo.toml.orig" | put "$DEST/Cargo.toml"
+sed -e '/^\[workspace\]/,/^$/d' "$L/Cargo.toml" | put "$DEST/Cargo.toml"
+# The crate copies luajit_relver.txt to luajit2/.relver: the time of the
+# fork's checked-out commit, as tests/vm/support/sync_luajit_src_rs.sh
+# records it.
+git -C "$ROOT/LuaJIT" show -s --format=%ct HEAD | put "$DEST/luajit_relver.txt"
 
 (cd "$ROOT/LuaJIT" && git ls-files -co --exclude-standard) |
   while IFS= read -r f; do
-    case $f in .relver|src/Makefile) continue ;; esac  # written below
+    case $f in .relver|src/Makefile) continue ;; esac  # from luajit_relver.txt; below
     [ -f "$ROOT/LuaJIT/$f" ] && printf '%s\n' "$f"
   done |
   sync --files-from=- "$ROOT/LuaJIT/" "$DEST/luajit2/"
-git -C "$ROOT/LuaJIT" show -s --format=%ct HEAD | put "$DEST/luajit2/.relver"
-# make runs in a copy of luajit2/src, so ../nl-runtime is luajit2/nl-runtime.
 # The flag goes right after XCFLAGS is set: the Makefile reads XCFLAGS with
 # := further down (the target's architecture test).
 if [ "$NOJIT" = --nojit ]; then NJ='/^XCFLAGS=$/a\
 override XCFLAGS+= -DLUAJIT_DISABLE_JIT
 '; else NJ=''; fi
-sed -e 's#^NL_RUNTIME_DIR= \.\./\.\./runtime$#NL_RUNTIME_DIR= ../nl-runtime#' -e "$NJ" \
-  "$ROOT/LuaJIT/src/Makefile" | put "$DEST/luajit2/src/Makefile"
-grep -q '^NL_RUNTIME_DIR= \.\./nl-runtime$' "$DEST/luajit2/src/Makefile" ||
-  { echo "prepare_luajit_src: the fork's Makefile no longer sets NL_RUNTIME_DIR= ../../runtime" >&2; exit 1; }
-sync --delete --include='*.lua' --exclude='*' "$ROOT/runtime/" "$DEST/luajit2/nl-runtime/"
+sed -e "$NJ" "$ROOT/LuaJIT/src/Makefile" | put "$DEST/luajit2/src/Makefile"
+sync --delete --include='*.lua' --exclude='*' "$ROOT/runtime/" "$DEST/nl-runtime/"
 if [ -s "$CHANGED" ]; then touch "$DEST/src/lib.rs"; fi

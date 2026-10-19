@@ -556,6 +556,30 @@ mod tests {
         }
     }
 
+    // luajit-src-rs, which hosts outside the repository patch luajit-src
+    // with, must build the fork and the runtime of this commit. Not compared
+    // where the submodule is not checked out.
+    #[test]
+    fn luajit_src_rs_is_in_step() {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+        if !std::path::Path::new(&format!("{root}/luajit-src-rs/Cargo.toml")).exists() {
+            eprintln!("luajit-src-rs is not checked out; not compared");
+            return;
+        }
+        let out = std::process::Command::new("sh")
+            .arg(format!("{root}/tests/vm/support/sync_luajit_src_rs.sh"))
+            .arg("--check")
+            .output()
+            .expect("cannot run tests/vm/support/sync_luajit_src_rs.sh");
+        assert!(
+            out.status.success(),
+            "luajit-src-rs is not in step with LuaJIT/ and runtime/; run \
+             tests/vm/support/sync_luajit_src_rs.sh and commit it:\n{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
     #[test]
     fn arity_counts_parameters() {
         assert_eq!(arity("void"), 0);

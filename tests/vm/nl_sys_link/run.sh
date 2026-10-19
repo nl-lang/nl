@@ -6,7 +6,7 @@
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../../.." && pwd)
-# A copy of the luajit-src crate that builds the fork (tests/vm/support).
+# A copy of luajit-src-rs that builds the fork (tests/vm/support).
 "$ROOT/tests/vm/support/prepare_luajit_src.sh" "$ROOT/target/nl_sys_link/luajit-src"
 
 cd "$HERE"
