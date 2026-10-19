@@ -135,6 +135,53 @@ static void test_open(void)
   lua_close(L);
 }
 
+/* An embedder that opens NL late, in an environment without loadstring
+** (Garry's Mod's), with fields of its own in the host table: the runtime
+** loads compiled chunks with the VM's host.loadstring, and leaves the
+** prelude globals named in skip_globals alone.
+*/
+static int started;
+static int late_start(lua_State *L)
+{
+  started = lua_istable(L, 1);
+  return 0;
+}
+
+static int late_host(lua_State *L)
+{
+  lua_newtable(L);
+  lua_pushboolean(L, 1);
+  lua_setfield(L, -2, "typeof");
+  lua_pushboolean(L, 1);
+  lua_setfield(L, -2, "include");
+  lua_setfield(L, 1, "skip_globals");
+  lua_pushcfunction(L, late_start);
+  return 1;
+}
+
+static void test_open_late(void)
+{
+  lua_State *L = luaL_newstate();
+  nl_setreporter(L, reporter, NULL);
+  CHECK(nl_setoption(L, NL_OPT_OPENLIBS, 0) == 1);
+  lua_pushcfunction(L, openlibs);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  CHECK_LUA(L, "typeof == nil and String == nil");
+  dolua(L, "loadstring, load = nil, nil");
+  started = 0;
+  nl_sethostinit(L, late_host);
+  lua_pushcfunction(L, luaopen_nl);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  CHECK(started == 1);
+  CHECK_LUA(L, "typeof == nil and type(String) == 'table'");
+  CHECK(donl(L, "pub fn twice(x: Number): Number\n  x * 2\nend\n", "=late") == 0);
+  lua_getfield(L, -1, "twice");
+  lua_pushnumber(L, 21);
+  CHECK(lua_pcall(L, 1, 1, 0) == 0);
+  CHECK(lua_tonumber(L, -1) == 42);
+  lua_close(L);
+}
+
 /* -- Types and values ----------------------------------------------------- */
 
 static void test_builtin_types(void)
@@ -1070,6 +1117,7 @@ int main(int argc, char **argv)
   if (argc > 1 && chdir(argv[1]) != 0) { perror(argv[1]); return 2; }
   NL_VERSION_SYM();
   RUN_TEST(test_open);
+  RUN_TEST(test_open_late);
   RUN_TEST(test_builtin_types);
   RUN_TEST(test_host_types);
   RUN_TEST(test_structs_and_new);

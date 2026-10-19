@@ -1,6 +1,7 @@
 //! Rust declarations of `nl.h`, on the `lua_State` of `mlua-sys`:
 //! everything `LuaJIT/src/nl.h` declares today. States and options
-//! (`nl_sandboxenv`, `NL_OPT_LOCALIZE`), loading, the loader and reporter,
+//! (`nl_sandboxenv`, `nl_sethostinit`, `NL_OPT_LOCALIZE`, `NL_OPT_OPENLIBS`),
+//! loading, the loader and reporter,
 //! types and values, methods and operators, exceptions, events, tasks, the
 //! thread functions `nl_post`, `nl_pump`, `nl_setwakeup`, and the workers
 //! (`nl_drain`, `nl_setworkers`, `nl_setworkerinit`, `nl_settransfer`,
@@ -45,6 +46,7 @@ pub const NL_OPT_WORKERMEM: c_int = 4;
 pub const NL_OPT_GLUA: c_int = 5;
 pub const NL_OPT_SANDBOX: c_int = 6;
 pub const NL_OPT_LOCALIZE: c_int = 7;
+pub const NL_OPT_OPENLIBS: c_int = 8;
 
 pub const NL_DIAG_ERROR: c_int = 0;
 pub const NL_DIAG_WARNING: c_int = 1;
@@ -151,6 +153,7 @@ unsafe extern "C-unwind" {
     pub fn nl_isworker(L: *mut lua_State) -> c_int;
     pub fn nl_workersstarted(L: *mut lua_State) -> c_int;
     pub fn nl_sandboxenv(L: *mut lua_State);
+    pub fn nl_sethostinit(L: *mut lua_State, f: Option<lua_CFunction>);
 
     // Loading.
     pub fn nl_loadbuffer(L: *mut lua_State, buf: *const c_char, size: usize, name: *const c_char) -> c_int;

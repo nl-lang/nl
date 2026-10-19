@@ -160,6 +160,89 @@ static void test_options(void)
   lua_close(L);
 }
 
+/* NL_OPT_OPENLIBS 0: luaL_openlibs leaves NL out, and luaopen_nl opens it
+** later. nl_sethostinit's function sees the host table before the runtime,
+** and what it returns gets rt.
+*/
+static int hostinit_calls, hoststart_calls;
+static int hoststart(lua_State *L)
+{
+  hoststart_calls++;
+  CHECK(lua_istable(L, 1));
+  lua_getfield(L, 1, "fake");
+  CHECK(lua_toboolean(L, -1));
+  return 0;
+}
+
+static int hostinit(lua_State *L)
+{
+  hostinit_calls++;
+  CHECK(lua_istable(L, 1));
+  lua_getfield(L, 1, "compile");
+  CHECK(lua_isfunction(L, -1));
+  lua_getfield(L, 1, "loadstring");
+  CHECK(lua_isfunction(L, -1));
+  lua_pop(L, 2);
+  CHECK(hoststart_calls == 0);
+  lua_pushcfunction(L, hoststart);
+  return 1;
+}
+
+static void test_openlibs_option(void)
+{
+  lua_State *L = luaL_newstate();
+  CHECK(nl_getoption(L, NL_OPT_OPENLIBS) == 1);
+  CHECK(nl_setoption(L, NL_OPT_OPENLIBS, 2) == 0);
+  CHECK(nl_setoption(L, NL_OPT_OPENLIBS, 0) == 1);
+  luaL_openlibs(L);
+  CHECK_LUA(L, "event == nil and include == nil and typeof == nil");
+  CHECK_LUA(L, "type(string) == 'table' and type(jit) == 'table'");
+  /* A dump of GLua code is Lua bytecode: it loads where NL is not open. */
+  CHECK(nl_setoption(L, NL_OPT_GLUA, 1) == 1);
+  CHECK_LUA(L, "loadstring(string.dump(function() return 7 end))() == 7");
+  hostinit_calls = hoststart_calls = 0;
+  nl_sethostinit(L, hostinit);
+  lua_pushcfunction(L, luaopen_nl);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  CHECK(hostinit_calls == 1 && hoststart_calls == 1);
+  CHECK_LUA(L, "__fake_rt.fake == true and type(event) == 'table'");
+  /* Open already: nothing more. */
+  lua_pushcfunction(L, luaopen_nl);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  CHECK(hostinit_calls == 1 && hoststart_calls == 1);
+  CHECK(lua_gettop(L) == 0);
+  lua_close(L);
+}
+
+/* GLua code (parsed with NL_OPT_GLUA) keeps Lua 5.1's rules for __len and
+** ordered comparisons, in the interpreter and in traces, as Garry's Mod has
+** them. Other Lua code has NL's (DESIGN 14.2).
+*/
+static void test_glua_metamethod_rules(void)
+{
+  lua_State *L = newstate();
+  CHECK(nl_setoption(L, NL_OPT_GLUA, 1) == 1);
+  dolua(L, "lenmt = { __len = function() return 42 end } "
+	   "ltmt = { __lt = function() return true end, __le = function() return true end } "
+	   "othermt = { __lt = function() return true end }");
+  CHECK_LUA(L, "#setmetatable({ 1, 2 }, lenmt) == 2");
+  CHECK_LUA(L, "(function() local t, n = setmetatable({ 1, 2 }, lenmt), 0 "
+	       "for i = 1, 300 do n = n + #t end return n end)() == 600");
+  CHECK_LUA(L, "not pcall(function() return setmetatable({}, ltmt) < 1 end)");
+  CHECK_LUA(L, "not pcall(function() return 1 <= setmetatable({}, ltmt) end)");
+  CHECK_LUA(L, "not pcall(function() return setmetatable({}, ltmt) < setmetatable({}, othermt) end)");
+  CHECK_LUA(L, "setmetatable({}, ltmt) < setmetatable({}, ltmt)");
+  CHECK_LUA(L, "(function() local a, b, n = setmetatable({}, ltmt), setmetatable({}, ltmt), 0 "
+	       "for i = 1, 300 do if a < b then n = n + 1 end end return n end)() == 300");
+  CHECK_LUA(L, "(function() local a, n = setmetatable({}, ltmt), 0 "
+	       "for i = 1, 300 do if pcall(function() return a < i end) then n = n + 1 end end return n end)() == 0");
+  /* Lua code that is not GLua: NL's rules. */
+  CHECK(nl_setoption(L, NL_OPT_GLUA, 0) == 1);
+  CHECK_LUA(L, "#setmetatable({ 1, 2 }, lenmt) == 42");
+  CHECK_LUA(L, "setmetatable({}, ltmt) < 1");
+  lua_close(L);
+}
+
 /* Loads Lua source; returns 0, or 1 with the message in glua_err. */
 static char glua_err[256];
 static int glua_load(lua_State *L, const char *src)
@@ -214,8 +297,13 @@ static void test_glua(void)
   /* Lines are counted through a C comment. */
   CHECK(glua_load(L, "/* a\nb\nc */ x = = 1"));
   CHECK_CONTAINS(glua_err, ":3:");
-  CHECK(glua_load(L, "local x = 1 /* open"));
-  CHECK_CONTAINS(glua_err, "unfinished long comment");
+  /* An unfinished C comment runs to the end of the chunk, as in gmod. */
+  CHECK(!glua_load(L, "local x = 1 /* open"));
+  CHECK(!glua_load(L, "local x = 1 /* open *"));
+  /* `continue` is a reserved word, not a name. */
+  CHECK(glua_load(L, "local continue = 1 return continue"));
+  CHECK(glua_load(L, "local t = {} t.continue = 1"));
+  CHECK(glua_load(L, "for i = 1, 2 do ::continue:: end"));
   CHECK(glua_load(L, "continue"));
   CHECK_CONTAINS(glua_err, "no loop to continue");
   /* The until expression may not see a local declared after the jump. */
@@ -1467,6 +1555,8 @@ int main(int argc, char **argv)
   RUN_TEST(test_luaopen_nl_by_hand);
   RUN_TEST(test_options);
   RUN_TEST(test_glua);
+  RUN_TEST(test_openlibs_option);
+  RUN_TEST(test_glua_metamethod_rules);
   RUN_TEST(test_loadbuffer);
   RUN_TEST(test_compile_errors);
   RUN_TEST(test_choice_by_extension);
