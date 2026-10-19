@@ -65,6 +65,11 @@ pub struct LowerOptions {
     /// The names of the `global` declarations of the files this file
     /// imports, which `Localize::All` leaves alone.
     pub imported_globals: Vec<String>,
+    /// The profile the file is compiled for. In a realm of Garry's Mod, a
+    /// branch whose condition realm constants decide (`if SERVER`) is
+    /// lowered only if it runs, and the code that never runs is left out
+    /// (nl_sema::profile, "Realm constants"; control.rs).
+    pub profile: nl_sema::Profile,
 }
 
 /// A diagnostic of the lowering: a construct that is not implemented, or
@@ -884,6 +889,20 @@ impl<'a> Lowerer<'a> {
             return;
         };
         let is_loop = matches!(word, Some(WHILE_KW | UNTIL_KW));
+        // `x if SERVER`: left out where realm constants say it never
+        // runs, and run without a test where they say it always does.
+        if !is_loop {
+            if let Some(v) = self.decided(m) {
+                if v != matches!(word, Some(UNLESS_KW)) {
+                    let body = self.sub_block(|l| {
+                        let (stmts, ()) = l.capture(|l| l.simple_stmt(node, Tail::Discard));
+                        l.stmts.extend(stmts);
+                    });
+                    self.emit(StmtKind::Do(body));
+                }
+                return;
+            }
+        }
         if is_loop {
             if let Some(f) = self.fns.last_mut() {
                 f.loops.push(LoopState::default());

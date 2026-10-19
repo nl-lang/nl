@@ -219,7 +219,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let root = parse.syntax();
 
     // Declaration files: the built-in ones and the loader's.
-    let (decls, decl_diags) = load_declarations(loader);
+    let (decls, decl_diags) = load_declarations(loader, options.profile);
     diags.extend(decl_diags);
 
     // Resolve.
@@ -228,9 +228,15 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let res = nl_sema::resolve_with(&root, &imports, &decls);
     let sema_severity = |d: &nl_sema::SemaDiagnostic| if d.error { Severity::Error } else if d.lint { Severity::Lint } else { Severity::Warning };
     diags.extend(res.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
-    // The names the profile leaves out, at their uses.
-    diags.extend(nl_sema::profile::check(&root, &res, options.profile).iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
-    if res.has_errors() || diags.iter().any(|d| d.severity == Severity::Error) {
+    // What the profile leaves out, at its uses. These errors stop the
+    // compile after the analyzer, which still runs on the resolved tree,
+    // so that one compile reports them all (the realm of members is
+    // checked on what the analyzer records).
+    let earlier_errors = res.has_errors() || diags.iter().any(|d| d.severity == Severity::Error);
+    let found = nl_sema::profile::check(&root, &res, &decls, options.profile);
+    let profile_errors = found.iter().any(|d| d.error);
+    diags.extend(found.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+    if earlier_errors {
         let mut out = failed(diags);
         out.diagnostics.extend(imports.into_diagnostics());
         return out.into();
@@ -243,18 +249,25 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     globals.extend(imported_globals.iter().filter(|g| !globals.contains(g)).cloned().collect::<Vec<_>>());
 
     // Analyze. Without `options.analyze` the pass still runs for the
-    // member keys of declared names, and reports nothing.
-    let aopts = nl_sema::AnalyzeOptions { static_resolution: options.static_resolution, decls: Some(&decls), lints: options.analyze, imports: Some(&imports), record: false };
+    // member keys of declared names, and reports nothing. A gmod profile
+    // has it record the members the file reads, for the realm check.
+    let record = options.profile.is_gmod();
+    let aopts = nl_sema::AnalyzeOptions { static_resolution: options.static_resolution, decls: Some(&decls), lints: options.analyze, imports: Some(&imports), record };
     let analysis = nl_sema::analyze(&root, &res, &aopts);
+    // The members of declared types and modules that the realm lacks
+    // (`ply.kick` on the client): profile errors, reported whether or not
+    // the analyzer's own diagnostics are wanted.
+    let realm = analysis.info.as_ref().map(|info| nl_sema::profile::check_members(&root, &res, info, &decls, options.profile)).unwrap_or_default();
+    diags.extend(realm.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
     // The errors of imported files follow this file's diagnostics.
     let imported = imports.into_diagnostics();
     if options.analyze {
         diags.extend(analysis.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
-        if analysis.has_errors() {
-            let mut out = failed(diags);
-            out.diagnostics.extend(imported);
-            return Staged { output: out, exports, globals };
-        }
+    }
+    if profile_errors || realm.iter().any(|d| d.error) || (options.analyze && analysis.has_errors()) {
+        let mut out = failed(diags);
+        out.diagnostics.extend(imported);
+        return Staged { output: out, exports, globals };
     }
     let hints = if options.static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
 
@@ -279,6 +292,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         level,
         localize: options.localize,
         imported_globals,
+        profile: options.profile,
     };
     let out = nl_ir::lower(&root, text, &res, &lopts);
     if !out.diagnostics.is_empty() {
@@ -320,14 +334,20 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
 }
 
 /// The declaration files in scope: the built-in prelude declarations of
-/// `decl/`, then the loader's. Syntax errors in
-/// a loader's file, and a name declared twice, are diagnostics of that
-/// file.
-fn load_declarations(loader: &dyn Loader) -> (Declarations, Vec<Diagnostic>) {
+/// `decl/`, gmod's for a gmod profile (`nl_sema::decl::GMOD_SOURCE`), then
+/// the loader's. A loader's file with the bytes of gmod's is that file,
+/// and is left out. Syntax errors in a loader's file, and a name declared
+/// twice, are diagnostics of that file.
+pub(crate) fn load_declarations(loader: &dyn Loader, profile: nl_sema::Profile) -> (Declarations, Vec<Diagnostic>) {
     let mut diags = Vec::new();
     let mut files = nl_sema::decl::prelude_files();
-    for (name, bytes) in loader.declarations() {
-        let text = match nl_syntax::source_from_bytes(&bytes) {
+    let gmod = profile.is_gmod();
+    if gmod {
+        files.push(nl_sema::decl::gmod_file());
+    }
+    let loaded: Vec<(String, Vec<u8>)> = loader.declarations().into_iter().filter(|(_, bytes)| !(gmod && bytes.as_slice() == nl_sema::decl::GMOD_SOURCE.1.as_bytes())).collect();
+    for (name, bytes) in &loaded {
+        let text = match nl_syntax::source_from_bytes(bytes) {
             Ok(t) => t.to_owned(),
             Err(d) => {
                 diags.push(Diagnostic { severity: Severity::Error, code: "invalid-utf8", message: d.message, file: name.clone(), line: 1, column: 1, end_line: 1, end_column: 1 });
@@ -343,11 +363,15 @@ fn load_declarations(loader: &dyn Loader) -> (Declarations, Vec<Diagnostic>) {
         if parse.has_errors() {
             continue;
         }
-        files.push((name, parse.syntax()));
+        files.push((name.clone(), parse.syntax()));
     }
     let (decls, sema) = Declarations::load(&files);
     for (file, d) in sema {
-        let text = loader.declarations().into_iter().find(|(n, _)| *n == file).and_then(|(_, b)| String::from_utf8(b).ok()).unwrap_or_default();
+        let text = if file == nl_sema::decl::GMOD_SOURCE.0 && gmod {
+            nl_sema::decl::GMOD_SOURCE.1.to_owned()
+        } else {
+            loaded.iter().find(|(n, _)| *n == file).and_then(|(_, b)| String::from_utf8(b.clone()).ok()).unwrap_or_default()
+        };
         let pos = Positions::new(&text, file.clone());
         diags.push(pos.diagnostic(Severity::Error, d.code, d.message, d.range));
     }

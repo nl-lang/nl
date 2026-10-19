@@ -24,6 +24,10 @@ nl_regex = { path = "../nl_regex" }
 nl_text = { path = "../nl_text" }
 # Validation of literal patterns passed to Regex.new.
 regex-syntax = "0.8"
+# The packager (src/bundle.rs): the size of a bundle file as Garry's Mod
+# measures it (LZMA; pure Rust, the encoder only), and sourcemaps.
+lzma-rust2 = { version = "0.23", default-features = false, features = ["std", "encoder", "optimization"] }
+serde_json = "1.0.154"
 
 # The workspace lints, except that unsafe code is denied instead of forbidden,
 # so that the C ABI (src/capi.rs) alone can allow it. Keep the rest in step

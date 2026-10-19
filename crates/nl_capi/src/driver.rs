@@ -157,6 +157,13 @@ pub fn compile(
     pipeline::compile(source, chunk_name, options, loader)
 }
 
+/// The declarations a compile with `profile` has in scope through
+/// `loader`: the built-in ones of `decl/`, gmod's for a gmod profile, and
+/// the loader's (their diagnostics are a compile's to report).
+pub fn declarations_in_scope(loader: &dyn Loader, profile: Profile) -> nl_sema::Declarations {
+    pipeline::load_declarations(loader, profile).0
+}
+
 mod imports;
 mod pipeline;
 mod regex_literal;

@@ -4,15 +4,22 @@
 //! nlc parse <file>...                   print the syntax tree of each file
 //! nlc check [--decl <path>]... <file>...
 //!                                       report every diagnostic of each file
-//! nlc build --emit=lua|bc [--unchecked] [--strip] [-o path] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable] <file>
+//! nlc build --emit=lua|bc [--minify] [--unchecked] [--strip] [-o path] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable|gmod-client] <file>
 //!                                       the Lua source or the bytecode dump
 //!                                       the file compiles to
 //! nlc run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable] <file>
 //!                                       run the file on stock LuaJIT
-//! nlc bundle [--profile=portable] [-o path] [--case-tables=unicode|ascii] [--unchecked] [--decl <path>]... <entry.nl>...
-//!                                       one Lua file with the runtime and
-//!                                       every file the entries import, for
-//!                                       stock LuaJIT (Garry's Mod)
+//! nlc bundle [--profile=portable|gmod-client] [-o path] [--map path] [--minify] [--part-limit=bytes] [--case-tables=unicode|ascii] [--unchecked] [--decl <path>]... <entry.nl>...
+//!                                       the runtime and every file the
+//!                                       entries import, as Lua for stock
+//!                                       LuaJIT; for Garry's Mod's client
+//!                                       realm with gmod-client
+//! nlc minify [--glua] [--escape-macro] [-o path] <file.lua>
+//!                                       a Lua or GLua file minified
+//!                                       (`nl_capi::minify`)
+//! nlc remap <map.json>...               stdin to stdout, with the positions
+//!                                       of a bundle's chunks mapped to
+//!                                       their source files and lines
 //! nlc fmt [--check] [--stdout] [--fix] <file>...
 //!                                       format each file in place
 //! ```
@@ -41,7 +48,21 @@
 //! `--profile=portable` holds a file and its imports to the portable
 //! profile (`nl_sema::profile`): what runs on an unmodified stock LuaJIT
 //! 2.0 or 2.1, through the Lua backend, so `build` and `run` refuse the
-//! bytecode backend with it. `nlc bundle` always uses it (bundle.rs).
+//! bytecode backend with it. `--profile=gmod-client` holds them to what
+//! runs in Garry's Mod's client realm on the stock game: the portable
+//! profile, nothing gmod's Lua state leaves out (`io`, `loadstring`, most
+//! of `os`, …), and nothing of gmod's API that the client realm lacks.
+//! Code under `if SERVER` (and the other conditions gmod's realm
+//! constants decide) is not checked and not compiled. gmod's declarations
+//! (decl/glua.d.nl) are in scope for it, and `check` and `build` also
+//! check that the Lua output loads on LuaJIT (`nl_capi::bundle::check_output`).
+//! `run` refuses it: such a program runs in the game. `nlc bundle` is the
+//! command line of the packager, `nl_capi::bundle`, which hosts call too
+//! (nl_capi's include/nlbundle.h): the portable profile unless told
+//! otherwise; with gmod-client it minifies, checks and measures the output,
+//! splitting it into parts when one file would be over gmod's limit.
+//! `nlc remap` reads the sourcemap of `nlc bundle --map`
+//! (`nl_capi::sourcemap`).
 //!
 //! `nlc fmt` formats each file on its lossless
 //! syntax tree (`nl_syntax::format`, which states the rules): spacing and
@@ -72,25 +93,40 @@ const USAGE: &str = "usage: nlc <command> [arguments]
 commands:
   parse <file>...                          print the syntax tree of each file; diagnostics go to stderr
   check [--decl <path>]... <file>...       report the errors, warnings and lints of each file
-  build --emit=lua|bc [--unchecked] [--strip] [-o path] <file>
-                                           print the Lua source or write the bytecode dump the file compiles to
+  build --emit=lua|bc [--minify] [--unchecked] [--strip] [-o path] <file>
+                                           print the Lua source or write the bytecode dump the file compiles to;
+                                           --minify: the Lua as a bundle carries it
   run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] <file>
                                            run the file on stock LuaJIT
-  bundle [-o path] [--case-tables=unicode|ascii] <entry.nl>...
-                                           write one Lua file for stock LuaJIT (Garry's Mod): the runtime, its
-                                           gmod host and every file the entries import, compiled with the
-                                           portable profile; --case-tables=ascii leaves out the Unicode case
-                                           tables of the String library
+  bundle [--profile=portable|gmod-client] [-o path] [--map path] [--minify] <entry.nl>...
+                                           write Lua for stock LuaJIT: the runtime, its gmod host and every file
+                                           the entries import, compiled with the profile (portable by default).
+                                           gmod-client: for Garry's Mod's client realm; minified, checked to
+                                           load, and split into <name>.lua, <name>_2.lua, ... when one file would
+                                           be over --part-limit bytes compressed (default 60000; gmod takes
+                                           64 KiB); put the files in lua/autorun/client/
+                                           --map path: write the sourcemap (positions of the bundle's chunks to
+                                           source files and lines; see `remap`)
+                                           --minify: minify a portable bundle too
+                                           --case-tables=ascii: leave out the String library's Unicode case tables
+  remap <map.json>...                      copy stdin to stdout with the positions of the bundles' chunks
+                                           (name.nl:12, nl runtime:345) replaced by their source files and lines
+  minify [--glua] [--escape-macro] [-o path] <file.lua>
+                                           the Lua file minified as bundles are (line breaks stay); --glua reads
+                                           Garry's Mod's dialect (// and /* */ comments, !=, &&, ||);
+                                           --escape-macro spells DEFINE_BASECLASS in quoted strings with an escape
   fmt [--check] [--stdout] [--fix] <file>...
                                            format each file in place; --check only reports the files that would
                                            change, --stdout prints the result, --fix rewrites continued strings
                                            as heredocs
 
-options of check, build and run (and bundle, except --profile):
+options of check, build and run (and bundle, whose --profile is portable or gmod-client):
   --decl <path>                            a declaration file (.d.nl) or a directory of them; repeatable
-  --profile=full|portable                  the subset of the language the target supports: everything (the
-                                           default), or what runs on stock LuaJIT 2.0 and 2.1 (no Regex,
-                                           Worker.new, load_nl or add_path; Lua source only)
+  --profile=full|portable|gmod-client      the subset of the language the target supports: everything (the
+                                           default); what runs on stock LuaJIT 2.0 and 2.1 (no Regex,
+                                           Worker.new, load_nl or add_path; Lua source only); or that, in
+                                           Garry's Mod's client realm (nothing gmod removes from Lua, nothing
+                                           server-side; code under `if SERVER` is left out). Not for `run`
   --no-static-resolution                   test everything at runtime: no proven checks, no static resolution
   --no-analyzer                            run only the resolver's checks
   --localize=none|std|all                  which Lua paths a file reads once, when it loads, into hidden locals:
@@ -109,13 +145,15 @@ fn main() -> ExitCode {
         "build" => run::cmd_build(rest, USAGE),
         "run" => run::cmd_run(rest, USAGE),
         "bundle" => bundle::cmd_bundle(rest, USAGE),
+        "remap" => cmd_remap(rest),
+        "minify" => cmd_minify(rest),
         "fmt" => fmt::cmd_fmt(rest, USAGE),
         "help" | "--help" | "-h" => {
             println!("{USAGE}");
             ExitCode::SUCCESS
         }
         other => {
-            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle` and `fmt`\n\n{USAGE}");
+            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle`, `remap`, `minify` and `fmt`\n\n{USAGE}");
             ExitCode::from(2)
         }
     }
@@ -164,6 +202,102 @@ fn cmd_parse(files: &[String]) -> ExitCode {
     }
     let _ = out.flush();
     if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+}
+
+/// `nlc remap <map.json>...`: stdin to stdout, remapped
+/// (`nl_capi::sourcemap::remap_text`).
+fn cmd_remap(maps: &[String]) -> ExitCode {
+    use std::io::Read as _;
+    if maps.is_empty() {
+        eprintln!("nlc remap: no sourcemap\n\n{USAGE}");
+        return ExitCode::from(2);
+    }
+    let mut loaded = Vec::new();
+    for path in maps {
+        let text = match std::fs::read_to_string(path) {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("{path}: error: cannot read the file: {e}");
+                return ExitCode::FAILURE;
+            }
+        };
+        match nl_capi::sourcemap::SourceMap::from_json(&text) {
+            Ok(m) => loaded.push(m),
+            Err(e) => {
+                eprintln!("{path}: error: {e}");
+                return ExitCode::FAILURE;
+            }
+        }
+    }
+    let mut input = Vec::new();
+    if let Err(e) = std::io::stdin().read_to_end(&mut input) {
+        eprintln!("nlc remap: cannot read stdin: {e}");
+        return ExitCode::FAILURE;
+    }
+    let text = String::from_utf8_lossy(&input);
+    let _ = std::io::stdout().write_all(nl_capi::sourcemap::remap_text(&loaded.iter().collect::<Vec<_>>(), &text).as_bytes());
+    ExitCode::SUCCESS
+}
+
+/// `nlc minify [--glua] [--escape-macro] [-o path] <file.lua>`.
+fn cmd_minify(args: &[String]) -> ExitCode {
+    let mut options = nl_capi::minify::MinifyOptions::default();
+    let mut output = None;
+    let mut file = None;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--glua" => options.glua = true,
+            "--escape-macro" => options.escape_gmod_macro = true,
+            "-o" => match it.next() {
+                Some(p) => output = Some(p.clone()),
+                None => {
+                    eprintln!("nlc minify: `-o` needs a path\n\n{USAGE}");
+                    return ExitCode::from(2);
+                }
+            },
+            s if s.starts_with('-') => {
+                eprintln!("nlc minify: unknown option `{s}`\n\n{USAGE}");
+                return ExitCode::from(2);
+            }
+            s if file.is_none() => file = Some(s.to_string()),
+            _ => {
+                eprintln!("nlc minify: one input file only\n\n{USAGE}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let Some(file) = file else {
+        eprintln!("nlc minify: no input file\n\n{USAGE}");
+        return ExitCode::from(2);
+    };
+    let bytes = match std::fs::read(&file) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("{file}: error: cannot read the file: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let text = match nl_capi::minify::minify(&String::from_utf8_lossy(&bytes), options) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("{file}: error: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    match output {
+        Some(path) => match std::fs::write(&path, text) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("{path}: error: cannot write the file: {e}");
+                ExitCode::FAILURE
+            }
+        },
+        None => {
+            let _ = std::io::stdout().write_all(text.as_bytes());
+            ExitCode::SUCCESS
+        }
+    }
 }
 
 /// Prints `path:line:col: error: message` and the snippet of the range.

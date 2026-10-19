@@ -566,10 +566,196 @@ fn portable_profile() {
     assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
     let root = parse.syntax();
     let res = resolve(&root, &AnyImports);
-    assert!(profile::check(&root, &res, Profile::Full).is_empty());
+    let decls = Declarations::default();
+    assert!(profile::check(&root, &res, &decls, Profile::Full).is_empty());
     let index = nl_syntax::LineIndex::new(src);
-    let found: Vec<(u32, &str)> = profile::check(&root, &res, Profile::Portable).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::Portable).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
     assert_eq!(found, [(1, "not-in-profile"), (2, "not-in-profile"), (3, "not-in-profile"), (4, "not-in-profile")]);
+    // gmod-client keeps the portable profile's rules.
+    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::GmodClient).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    assert_eq!(found, [(1, "not-in-profile"), (2, "not-in-profile"), (3, "not-in-profile"), (4, "not-in-profile")]);
+}
+
+/// A small slice of gmod's declarations (decl/glua.d.nl), with realms in
+/// its doc comments as the generator writes them.
+const GMOD_DECL: &str = "## gmod's library `net`. https://wiki.facepunch.com/gmod/net
+declare module Net = :net
+  ## Realm: server. https://wiki.facepunch.com/gmod/net.Broadcast
+  fn broadcast() as 'Broadcast'
+  ## Realm: client. https://wiki.facepunch.com/gmod/net.SendToServer
+  fn send_to_server() as 'SendToServer'
+  ## Realm: shared. https://wiki.facepunch.com/gmod/net.Start
+  fn start(name: String) as 'Start'
+end
+## gmod's class `Entity`. https://wiki.facepunch.com/gmod/Entity
+declare type Entity
+  ## Realm: shared. https://wiki.facepunch.com/gmod/Entity:GetPos
+  fn get_pos(self): Number as 'GetPos'
+  ## Realm: server. https://wiki.facepunch.com/gmod/Entity:Remove
+  fn remove(self) as 'Remove'
+end
+## gmod's class `Player`. https://wiki.facepunch.com/gmod/Player
+declare type Player : Entity
+  ## Realm: server. https://wiki.facepunch.com/gmod/Player:Kick
+  fn kick(self, reason: String?) as 'Kick'
+  ## Realm: client. https://wiki.facepunch.com/gmod/Player:ShouldDrawLocalPlayer
+  fn should_draw_local_player(self): Bool as 'ShouldDrawLocalPlayer'
+end
+## gmod's table of hooks `GM`. https://wiki.facepunch.com/gmod/GM_Hooks
+declare type GM
+  ## Realm: server. https://wiki.facepunch.com/gmod/GM:PlayerSpawn
+  fn player_spawn(self, ply: Player) as 'PlayerSpawn'
+end
+## Realm: client. https://wiki.facepunch.com/gmod/Global.LocalPlayer
+declare fn local_player(): Player = :LocalPlayer
+## Realm: server. https://wiki.facepunch.com/gmod/Global.BroadcastLua
+declare fn broadcast_lua(code: String) = :BroadcastLua
+## Realm: menu. https://wiki.facepunch.com/gmod/Global.JoinServer
+declare fn join_server(address: String) = :JoinServer
+declare const GAMEMODE: GM
+## Realm: shared. https://wiki.facepunch.com/gmod/Global_Variables
+declare const SERVER: Bool
+## Realm: shared. https://wiki.facepunch.com/gmod/Global_Variables
+declare const CLIENT: Bool
+";
+
+/// The errors of `profile::check` and `profile::check_members` for a file
+/// compiled with [`GMOD_DECL`] in the gmod-client profile, as (line, code).
+fn gmod_client_errors(src: &str) -> Vec<(u32, &'static str, String)> {
+    let parse = nl_syntax::parse_decl_file(GMOD_DECL);
+    assert!(parse.diagnostics().is_empty(), "{:?}", parse.diagnostics());
+    let mut files = crate::decl::prelude_files();
+    files.push(("gmod.d.nl".to_string(), parse.syntax()));
+    let (decls, diags) = Declarations::load(&files);
+    assert!(diags.is_empty(), "{diags:?}");
+    let p = nl_syntax::parse(src);
+    assert!(!p.has_errors(), "{:?}", p.diagnostics());
+    let root = p.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let mut diags = profile::check(&root, &res, &decls, Profile::GmodClient);
+    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: true };
+    let a = analyze(&root, &res, &opts);
+    assert!(!a.has_errors(), "{:?}", a.diagnostics);
+    diags.extend(profile::check_members(&root, &res, a.info.as_ref().unwrap(), &decls, Profile::GmodClient));
+    // Nothing outside gmod.
+    assert!(profile::check(&root, &res, &decls, Profile::Portable).iter().all(|d| d.code == profile::CODE));
+    let index = nl_syntax::LineIndex::new(src);
+    let mut out: Vec<(u32, &'static str, String)> = diags.iter().filter(|d| d.error).map(|d| (index.line_col(src, d.range.start()).line, d.code, d.message.clone())).collect();
+    out.sort_by_key(|(l, ..)| *l);
+    out
+}
+
+fn lines_codes(errors: &[(u32, &'static str, String)]) -> Vec<(u32, &'static str)> {
+    errors.iter().map(|(l, c, _)| (*l, *c)).collect()
+}
+
+/// What gmod's Lua state removes from LuaJIT's libraries, through prelude
+/// names, Lua paths and `require`; what it keeps is fine.
+#[test]
+fn gmod_client_environment() {
+    let src = "IO.write(\"x\")
+let f = loadstring(\"return 1\")
+let t = OS.time()
+OS.getenv(\"HOME\")
+:os.exit(1)
+let c = OS.clock() + :os.clock()
+Debug.setlocal(1, 1, 1)
+let tb = Debug.traceback()
+let p = Package.path
+let l = Package.loaded
+require(\"ffi\")
+require \"table.new\"
+:require(\"string.buffer\")
+require(\"mymodule\")
+let y = Coroutine.isyieldable()
+let r = Coroutine.running()
+:io.open(\"f\")
+dofile(\"x.lua\")
+print(f, t, c, tb, p, l, y, r)
+";
+    let errors = gmod_client_errors(src);
+    assert_eq!(
+        lines_codes(&errors),
+        [(1, "not-in-gmod"), (2, "not-in-gmod"), (4, "not-in-gmod"), (5, "not-in-gmod"), (7, "not-in-gmod"), (9, "not-in-gmod"), (11, "not-in-gmod"), (12, "not-in-gmod"), (13, "not-in-gmod"), (15, "not-in-gmod"), (17, "not-in-gmod"), (18, "not-in-gmod")],
+        "{errors:#?}"
+    );
+    assert!(errors[2].2.contains("`OS.getenv`") && errors[2].2.contains("`clock`, `date`, `difftime` and `time`"), "{}", errors[2].2);
+    assert!(errors[9].2.contains("LuaJIT 2.0.4"), "{}", errors[9].2);
+}
+
+/// The realm of declared functions, members of modules and types (through
+/// a parent), and Lua paths; the members of a table of hooks, and what the
+/// client realm has, are fine.
+#[test]
+fn gmod_client_realms() {
+    let src = "Net.start(\"msg\")
+Net.broadcast()
+Net.send_to_server()
+let me = local_player()
+me.kick(\"bye\")
+me.remove()
+let pos = me.get_pos()
+let d = me.should_draw_local_player()
+broadcast_lua(\"print(1)\")
+join_server(\"127.0.0.1\")
+:net.Broadcast()
+:net.SendToServer()
+GAMEMODE.player_spawn(me)
+print(pos, d)
+";
+    let errors = gmod_client_errors(src);
+    assert_eq!(
+        lines_codes(&errors),
+        [(2, "wrong-realm"), (5, "wrong-realm"), (6, "wrong-realm"), (9, "wrong-realm"), (10, "wrong-realm"), (11, "wrong-realm")],
+        "{errors:#?}"
+    );
+    let kick = &errors[1].2;
+    assert!(kick.contains("`Player.kick` exists only on the server") && kick.contains("`if SERVER`") && kick.contains("https://wiki.facepunch.com/gmod/Player:Kick"), "{kick}");
+    // A member found on a parent is named on the receiver's type.
+    assert!(errors[2].2.contains("`Player.remove`"), "{}", errors[2].2);
+    assert!(errors[4].2.contains("only in the main menu"), "{}", errors[4].2);
+}
+
+/// Code that the realm constants leave dead in the client realm is not
+/// checked: `if SERVER`, `elseif`/`else` after a branch always taken,
+/// `unless CLIENT`, modifiers, `not`, `and`, `or`. A local constant named
+/// `SERVER` decides nothing.
+#[test]
+fn gmod_client_dead_code() {
+    let src = "if SERVER
+  Net.broadcast()
+  IO.write(\"x\")
+elseif CLIENT
+  Net.send_to_server()
+else
+  Net.broadcast()
+end
+if CLIENT
+  print(1)
+else
+  Net.broadcast()
+end
+unless CLIENT
+  Net.broadcast()
+end
+Net.broadcast() if SERVER
+Net.broadcast() unless CLIENT
+Net.broadcast() if SERVER and Net.start(\"x\")
+Net.broadcast() if not (CLIENT or false)
+if :SERVER
+  Net.broadcast()
+end
+Net.broadcast() if CLIENT
+fn f
+  const SERVER = true
+  Net.broadcast() if SERVER
+end
+Net.broadcast() if Net.start(\"y\") and SERVER
+print(f)
+";
+    let errors = gmod_client_errors(src);
+    assert_eq!(lines_codes(&errors), [(24, "wrong-realm"), (27, "wrong-realm"), (29, "wrong-realm")], "{errors:#?}");
 }
 
 /// The host types of declaration files come with their parents, every

@@ -1,5 +1,5 @@
-//! The portable profile on the stock LuaJIT builds of Garry's Mod
-//! (tests/gmod/run.sh, which says what it runs), when they are built for
+//! The portable and gmod-client profiles on the stock LuaJIT builds of
+//! Garry's Mod (tests/gmod/run.sh, which says what it runs), when they are built for
 //! this machine: `target/stock-luajit/build-<version>-native` (or
 //! `build-2.0.4-native-x86`, with gcc -m32), which `tests/gmod/run.sh`
 //! builds on x86 Linux. Otherwise the test says so

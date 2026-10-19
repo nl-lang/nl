@@ -148,6 +148,7 @@ fn lower_counts(src: &str) -> (Count, Vec<&'static str>) {
         level: 0,
         localize: Localize::Std,
         imported_globals: Vec::new(),
+        profile: nl_sema::Profile::Full,
     };
     let out = lower(&root, src, &res, &opts);
     let mut c = Count::default();
@@ -201,6 +202,7 @@ fn lower_messages(src: &str) -> Vec<String> {
         level: 0,
         localize: Localize::Std,
         imported_globals: Vec::new(),
+        profile: nl_sema::Profile::Full,
     };
     lower(&root, src, &res, &opts).diagnostics.iter().map(|d| d.message.clone()).collect()
 }

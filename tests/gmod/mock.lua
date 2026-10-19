@@ -35,8 +35,14 @@
 --   isstring, isnumber, isbool, isfunction, istable, IsValid
 --   FindMetaTable, Entity(index), Player(userid): see Classes below
 --   the string metatable's __index also takes a number: ("abc")[2] == "b"
--- Removed: loadstring, load, loadfile, dofile, io, ffi, os apart from
--- os.time, os.clock and os.date.
+-- Removed, as gmod removes them (gmod-lua-shared's glua.cpp): loadstring,
+-- load, loadfile, dofile, io, ffi, os apart from os.time, os.clock,
+-- os.date and os.difftime, debug.setlocal, debug.setupvalue,
+-- debug.upvalueid and debug.upvaluejoin, package.path, package.cpath,
+-- package.loadlib and package.searchpath, jit.security.
+--
+-- Each argument is a Lua file run as gmod runs one; the parts of a split
+-- bundle are passed as files of their own, in any order.
 
 local args = { ... }
 local bundles, realm = {}, "client"
@@ -120,9 +126,17 @@ end
 
 function AddCSLuaFile() end
 
+-- gmod's `require` is its own and searches gmod's folders; the mock's is
+-- LuaJIT's, searching the working directory, with the search path that
+-- gmod's `package` table does not have set only while it runs.
+local real_package = package
 function require(name)
   if name == "ffi" then error("Module not found!", 2) end
-  return real_require(name)
+  real_package.path = "./?.lua"
+  local ok, result = pcall(real_require, name)
+  real_package.path = nil
+  if not ok then error(result, 2) end
+  return result
 end
 
 -- Classes ------------------------------------------------------------------
@@ -322,9 +336,12 @@ end
 
 loadstring, load, loadfile, dofile = nil, nil, nil, nil
 io = nil
-os = { time = os.time, clock = os.clock, date = os.date }
+os = { time = os.time, clock = os.clock, date = os.date, difftime = os.difftime }
 package.loaded.ffi = nil
 package.loaded.io = nil
+package.path, package.cpath, package.loadlib, package.searchpath = nil, nil, nil, nil
+debug.setlocal, debug.setupvalue, debug.upvalueid, debug.upvaluejoin = nil, nil, nil, nil
+if jit ~= nil then jit.security = nil end
 
 -- The run ----------------------------------------------------------------------
 

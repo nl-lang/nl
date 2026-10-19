@@ -40,8 +40,10 @@
 //!   lowering consumes. Declaration files are [`decl`]: the
 //!   resolver looks their names up after the prelude.
 //! - A [`profile`] other than the full language is checked on the
-//!   resolved file: a prelude name the profile leaves out is an error at
-//!   its use.
+//!   resolved file, and for Garry's Mod on what the analyzer recorded:
+//!   what the profile leaves out is an error at its use, and code that
+//!   gmod's realm constants leave dead (`if SERVER` on the client) is
+//!   neither checked nor compiled.
 
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
 

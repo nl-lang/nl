@@ -163,8 +163,51 @@ target/release/nlc run example.nl
 | `nlc build --emit=lua\|bc [-o path] <file>` | Print the generated Lua, or write a bytecode dump |
 | `nlc fmt [--check] <file>...` | Format files in place |
 | `nlc parse <file>...` | Print the syntax tree |
+| `nlc bundle [--profile=gmod-client] [-o path] [--map path] <entry.nl>...` | Write the runtime and a program as Lua for stock LuaJIT |
+| `nlc remap <map.json>...` | Map positions in an error or a log back to source files |
+| `nlc minify [--glua] <file.lua>` | Minify Lua or GLua, keeping line numbers |
 
 `nlc --help` lists every option.
+
+### Garry's Mod
+
+NL compiles to client-side Lua for the stock game, whose clients run LuaJIT
+2.0.4 (main branch) or 2.1.0-beta3 (x86-64 branch). From the addon's `lua/`
+folder:
+
+```sh
+nlc bundle --profile=gmod-client -o autorun/client/myaddon.lua \
+           --map ../myaddon.nlmap.json myaddon/main.nl
+```
+
+- **Checks.** The `gmod-client` profile rejects anything the stock client
+  doesn't have, at compile time: what Garry's Mod removes from Lua (`io`,
+  `loadstring`, most of `os`, …), LuaJIT 2.1-only functions, and gmod
+  functions, methods and values that exist only on the server or in the
+  menu. Garry's Mod's API declarations (`decl/glua.d.nl`) are built in.
+  `nlc check --profile=gmod-client` reports the same errors.
+- **`if SERVER`.** Code under `if SERVER`, `unless CLIENT`, `x if SERVER` and
+  other conditions decided by `SERVER` and `CLIENT` is not checked and is
+  left out of the output. A shared file can keep its server half, and that
+  code never ships to players.
+- **Output.** The runtime and the program are minified (line breaks stay, so
+  line numbers still match) and checked to load on LuaJIT. Garry's Mod sends
+  a client file only if it is at most 64 KiB compressed, so a bundle that
+  doesn't fit is split into `myaddon.lua`, `myaddon_2.lua`, … These parts
+  load in any order, and the last one to arrive runs the program.
+- **Sourcemap.** `--map` writes a JSON map from each chunk's lines (the
+  `short_src` and line LuaJIT reports) to NL and runtime source lines, for a
+  host that catches errors. `nlc remap` applies it to any text. Keep the map
+  out of `lua/`, since only `.lua` files belong there.
+- **From a host.** The packager, the minifier and sourcemaps are also a C
+  API in the compiler library (`libnl_capi.a`), declared in
+  [`crates/nl_capi/include/nlbundle.h`](crates/nl_capi/include/nlbundle.h).
+  It is pure: files come through the host's loader, and the host's VM checks
+  that chunks load. A host like a replacement `lua_shared` can package NL
+  for clients in-process and map the positions of Lua errors back to NL
+  source with the bundle's sourcemap. `tests/vm/minify_corpus.sh` checks the
+  GLua minifier on Garry's Mod's own Lua: each file must compile to the same
+  bytecode, debug info included.
 
 ### Building the VM
 

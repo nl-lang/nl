@@ -80,7 +80,7 @@ pub const NLC_DIAG_WARNING: c_int = 1;
 pub const NLC_DIAG_LINT: c_int = 2;
 
 /// The size of the buffer a loader's `resolve` writes the canonical name to.
-const NAME_MAX: usize = 4096;
+pub(crate) const NAME_MAX: usize = 4096;
 
 /// `nlc_Result`: opaque to C.
 pub struct NlcResult {
@@ -92,34 +92,41 @@ pub struct NlcResult {
 
 impl NlcResult {
     fn from_output(out: CompileOutput) -> NlcResult {
-        let mut strings = Vec::with_capacity(out.diagnostics.len() * 3);
-        let mut diagnostics = Vec::with_capacity(out.diagnostics.len());
-        for d in &out.diagnostics {
-            let code = c_string(d.code);
-            let message = c_string(&d.message);
-            let file = c_string(&d.file);
-            // The pointers stay valid when the CStrings move into `strings`:
-            // a CString owns a heap buffer that moving does not relocate.
-            diagnostics.push(NlcDiagnostic {
-                severity: match d.severity {
-                    Severity::Error => NLC_DIAG_ERROR,
-                    Severity::Warning => NLC_DIAG_WARNING,
-                    Severity::Lint => NLC_DIAG_LINT,
-                },
-                code: code.as_ptr(),
-                message: message.as_ptr(),
-                file: file.as_ptr(),
-                line: to_c_int(d.line),
-                column: to_c_int(d.column),
-                endline: to_c_int(d.end_line),
-                endcolumn: to_c_int(d.end_column),
-            });
-            strings.push(code);
-            strings.push(message);
-            strings.push(file);
-        }
+        let (diagnostics, strings) = c_diagnostics(&out.diagnostics);
         NlcResult { chunk: out.chunk, diagnostics, _strings: strings }
     }
+}
+
+/// Diagnostics for C, with the strings they point into; the pointers stay
+/// valid while the strings are kept.
+pub(crate) fn c_diagnostics(diags: &[Diagnostic]) -> (Vec<NlcDiagnostic>, Vec<CString>) {
+    let mut strings = Vec::with_capacity(diags.len() * 3);
+    let mut diagnostics = Vec::with_capacity(diags.len());
+    for d in diags {
+        let code = c_string(d.code);
+        let message = c_string(&d.message);
+        let file = c_string(&d.file);
+        // The pointers stay valid when the CStrings move into `strings`:
+        // a CString owns a heap buffer that moving does not relocate.
+        diagnostics.push(NlcDiagnostic {
+            severity: match d.severity {
+                Severity::Error => NLC_DIAG_ERROR,
+                Severity::Warning => NLC_DIAG_WARNING,
+                Severity::Lint => NLC_DIAG_LINT,
+            },
+            code: code.as_ptr(),
+            message: message.as_ptr(),
+            file: file.as_ptr(),
+            line: to_c_int(d.line),
+            column: to_c_int(d.column),
+            endline: to_c_int(d.end_line),
+            endcolumn: to_c_int(d.end_column),
+        });
+        strings.push(code);
+        strings.push(message);
+        strings.push(file);
+    }
+    (diagnostics, strings)
 }
 
 fn to_c_int(v: u32) -> c_int {
@@ -127,14 +134,14 @@ fn to_c_int(v: u32) -> c_int {
 }
 
 /// A C string for any Rust string: interior NULs become U+FFFD.
-fn c_string(s: &str) -> CString {
+pub(crate) fn c_string(s: &str) -> CString {
     CString::new(s).unwrap_or_else(|_| {
         let cleaned = s.replace('\0', "\u{FFFD}");
         CString::new(cleaned).unwrap_or_default()
     })
 }
 
-fn panic_message(payload: &(dyn Any + Send)) -> String {
+pub(crate) fn panic_message(payload: &(dyn Any + Send)) -> String {
     if let Some(s) = payload.downcast_ref::<&str>() {
         (*s).to_owned()
     } else if let Some(s) = payload.downcast_ref::<String>() {
@@ -171,22 +178,22 @@ fn internal_error(chunk_name: &str, payload: &(dyn Any + Send)) -> CompileOutput
 /// while [`Loader`] works in `String`. A name that is not UTF-8 is given to
 /// the compiler as a text that stands for it, and `names` maps that text
 /// back, so the loader always gets back exactly the bytes it returned.
-struct CLoader {
+pub(crate) struct CLoader {
     raw: NlcLoader,
     names: RefCell<HashMap<String, Vec<u8>>>,
     /// The declaration files (`nlc_Options.decls`), as text names.
-    decls: RefCell<Vec<String>>,
+    pub(crate) decls: RefCell<Vec<String>>,
     /// The declaration files `read` returned nothing for.
-    missing: RefCell<Vec<String>>,
+    pub(crate) missing: RefCell<Vec<String>>,
 }
 
 impl CLoader {
-    fn new(raw: NlcLoader) -> CLoader {
+    pub(crate) fn new(raw: NlcLoader) -> CLoader {
         CLoader { raw, names: RefCell::new(HashMap::new()), decls: RefCell::new(Vec::new()), missing: RefCell::new(Vec::new()) }
     }
 
     /// The text that stands for a name given as bytes.
-    fn to_text(&self, bytes: &[u8]) -> String {
+    pub(crate) fn to_text(&self, bytes: &[u8]) -> String {
         if let Ok(s) = std::str::from_utf8(bytes) {
             return s.to_owned();
         }

@@ -10,8 +10,8 @@ use std::rc::Rc;
 use mlua::{Function, Lua, MultiValue, Table, Value};
 use nl_capi::{CompileOptions, Loader, Severity, search};
 
-/// The runtime library, `runtime/*.lua` concatenated (build.rs).
-pub const RUNTIME: &str = include_str!(concat!(env!("OUT_DIR"), "/runtime.lua"));
+/// The runtime library, `runtime/*.lua` concatenated (nl_capi's build.rs).
+pub const RUNTIME: &str = nl_capi::bundle::RUNTIME;
 
 /// Finds files as `import` does: relative to the importing file's
 /// directory, then the working directory, then each search-path entry

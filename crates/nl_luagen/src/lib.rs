@@ -90,6 +90,34 @@ pub fn print_chunk(chunk: &Chunk) -> String {
     p.out
 }
 
+/// The line map of a chunk that [`print_chunk`] printed, as (output line,
+/// NL line) pairs, and the chunk without the call that installs it; the
+/// chunk as it is, and no pairs, when it has none. For a tool that maps
+/// the lines itself (`nlc bundle --map`): without the call, every line a
+/// trace or a message shows is the chunk's own, and only that tool
+/// translates. The call is on the first line, so the other lines keep
+/// their numbers.
+pub fn take_line_map(chunk: &str) -> (String, Vec<(u32, u32)>) {
+    const START: &str = " if __rt.linemap then __rt.linemap(";
+    const END: &str = "}) end;";
+    let first_line_end = chunk.find('\n').unwrap_or(chunk.len());
+    let Some(start) = chunk.get(..first_line_end).and_then(|l| l.find(START)) else { return (chunk.to_owned(), Vec::new()) };
+    let Some(len) = chunk.get(start..first_line_end).and_then(|s| s.find(END)) else { return (chunk.to_owned(), Vec::new()) };
+    let call = &chunk[start..start + len];
+    // The pairs are the numbers after the chunk name's string: `{1, 2, 3, 4`.
+    let Some(open) = call.rfind('{') else { return (chunk.to_owned(), Vec::new()) };
+    let numbers: Option<Vec<u32>> = call[open + 1..].split(',').map(|n| n.trim().parse().ok()).collect();
+    let Some(numbers) = numbers.filter(|n| n.len() % 2 == 0) else { return (chunk.to_owned(), Vec::new()) };
+    let pairs = numbers.chunks(2).filter_map(|p| match p {
+        [out, nl] => Some((*out, *nl)),
+        _ => None,
+    });
+    let mut rest = String::with_capacity(chunk.len());
+    rest.push_str(&chunk[..start]);
+    rest.push_str(&chunk[start + len + END.len()..]);
+    (rest, pairs.collect())
+}
+
 /// Whether a statement can run code of its own (a call, an index, an
 /// operator with a metamethod): what may raise an error, or be the line of
 /// a frame. The parts of a nested block or function do not count; they are
@@ -1092,6 +1120,32 @@ mod tests {
         let bare = lua.replace("\"continue\"", "").replace("_continue_", "");
         assert!(!bare.contains("continue"), "{lua}");
         assert!(lua.contains(r#"_continue_["continue"]()"#) && lua.contains(r#"__G["continue"]()"#), "{lua}");
+    }
+
+    /// `take_line_map` gives back the pairs `print_chunk` printed, and the
+    /// chunk without the call, with every line where it was.
+    #[test]
+    fn line_map_taken_out() {
+        let call = |name: &str, line: u32| Stmt { line, kind: StmtKind::Expr(Expr::call(Expr::Global(name.to_string()), Vec::new())) };
+        let main = Function {
+            params: Vec::new(),
+            vararg: true,
+            body: Block::new(vec![call("f", 5), call("g", 3), call("h", 8)]),
+            line: 1,
+            name: None,
+            method: false,
+            transient: false,
+        };
+        let chunk = Chunk { locals: Vec::new(), main, name: "@a{b}.nl".to_string(), owner: None };
+        let lua = print_chunk(&chunk);
+        let (rest, pairs) = take_line_map(&lua);
+        assert_eq!(pairs, [(6, 3)], "{lua}");
+        assert!(!rest.contains("linemap"), "{rest}");
+        assert_eq!(rest.lines().count(), lua.lines().count());
+        assert_eq!(rest, lua.replacen(" if __rt.linemap then __rt.linemap(\"@a{b}.nl\", {6, 3}) end;", "", 1));
+        // A chunk without a map is left as it is.
+        let plain = "local __rt = ...; return function(...) f() end\n";
+        assert_eq!(take_line_map(plain), (plain.to_string(), Vec::new()));
     }
 
     #[test]

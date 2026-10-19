@@ -35,6 +35,8 @@ struct Args {
     emit_given: bool,
     /// `build -o path`.
     output: Option<String>,
+    /// `build --minify`.
+    minify: bool,
     jit: Jit,
     /// `--decl` paths: declaration files or directories of them.
     decls: Vec<String>,
@@ -46,6 +48,7 @@ struct Parsed {
     options: CompileOptions,
     emit_given: bool,
     output: Option<String>,
+    minify: bool,
     jit: Jit,
     decls: Vec<String>,
 }
@@ -57,6 +60,7 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
     let mut options = CompileOptions::default();
     let mut emit_given = false;
     let mut output = None;
+    let mut minify = false;
     let mut jit = Jit::On;
     let mut decls = Vec::new();
     let mut it = args.iter();
@@ -69,7 +73,7 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
             s if s.starts_with("--profile=") => match nl_capi::Profile::from_name(s.trim_start_matches("--profile=")) {
                 Some(p) => options.profile = p,
                 None => {
-                    eprintln!("nlc {command}: `--profile` is `full` or `portable`\n\n{usage}");
+                    eprintln!("nlc {command}: `--profile` is `full`, `portable` or `gmod-client`\n\n{usage}");
                     return Err(ExitCode::from(2));
                 }
             },
@@ -92,6 +96,7 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
                 options.emit = Emit::Lua;
                 emit_given = true;
             }
+            "--minify" if command == "build" => minify = true,
             "--emit=bc" if command == "build" => {
                 options.emit = Emit::Bytecode;
                 emit_given = true;
@@ -123,20 +128,32 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
         eprintln!("nlc {command}: no input file\n\n{usage}");
         return Err(ExitCode::from(2));
     }
-    // The portable profile runs Lua source on stock LuaJIT; Garry's Mod
+    // The portable profiles run Lua source on stock LuaJIT; Garry's Mod
     // refuses bytecode.
-    if options.profile == nl_capi::Profile::Portable && options.emit == Emit::Bytecode {
+    if options.profile.is_stock() && options.emit == Emit::Bytecode {
         let what = if command == "run" { "`--backend=bc`" } else { "`--emit=bc`" };
-        eprintln!("nlc {command}: the portable profile compiles to Lua source; {what} is for the VM fork\n\n{usage}");
+        eprintln!("nlc {command}: the {} profile compiles to Lua source; {what} is for the VM fork\n\n{usage}", options.profile.name());
         return Err(ExitCode::from(2));
     }
-    Ok(Parsed { files, options, emit_given, output, jit, decls })
+    if options.profile.is_gmod() && command == "run" {
+        eprintln!(
+            "nlc run: a {} program runs in Garry's Mod, not here: bundle it with `nlc bundle --profile={}` (tests/gmod/mock.lua runs a bundle outside the game)\n\n{usage}",
+            options.profile.name(),
+            options.profile.name()
+        );
+        return Err(ExitCode::from(2));
+    }
+    if minify && options.emit != Emit::Lua {
+        eprintln!("nlc {command}: `--minify` is for Lua source (`--emit=lua`)\n\n{usage}");
+        return Err(ExitCode::from(2));
+    }
+    Ok(Parsed { files, options, emit_given, output, minify, jit, decls })
 }
 
 fn parse_args(args: &[String], command: &str, usage: &str) -> Result<Args, ExitCode> {
     let p = parse_options(args, command, usage, false)?;
     let file = p.files.into_iter().next().unwrap_or_default();
-    Ok(Args { file, options: p.options, emit_given: p.emit_given, output: p.output, jit: p.jit, decls: p.decls })
+    Ok(Args { file, options: p.options, emit_given: p.emit_given, output: p.output, minify: p.minify, jit: p.jit, decls: p.decls })
 }
 
 /// The text of the files that diagnostics point at, each read once: the
@@ -173,10 +190,8 @@ pub fn cmd_check(args: &[String], usage: &str) -> ExitCode {
         Err(code) => return code,
     };
     p.options.analyze = true;
-    let files = Files::new();
-    for d in &p.decls {
-        files.add_decl(d);
-    }
+    let files = files_for(&p.options, &p.decls);
+    let lua = Lua::new();
     let mut failed = false;
     for path in &p.files {
         let Ok(source) = std::fs::read(path) else {
@@ -187,7 +202,7 @@ pub fn cmd_check(args: &[String], usage: &str) -> ExitCode {
         let canonical = files.canonical(std::path::Path::new(path));
         let out = nl_capi::compile(&source, &format!("@{canonical}"), &p.options, &LoaderRef(&files));
         let mut sources = Sources::new(&canonical, &source);
-        for d in &out.diagnostics {
+        for d in out.diagnostics.iter().chain(&output_diagnostics(&lua, &p.options, &canonical, &source, out.chunk.as_deref())) {
             report(d, &mut sources);
             failed |= d.severity == Severity::Error;
         }
@@ -206,10 +221,7 @@ pub fn cmd_build(args: &[String], usage: &str) -> ExitCode {
         eprintln!("nlc build: say what to emit: `--emit=lua` or `--emit=bc`\n\n{usage}");
         return ExitCode::from(2);
     }
-    let files = Files::new();
-    for d in &a.decls {
-        files.add_decl(d);
-    }
+    let files = files_for(&a.options, &a.decls);
     let Ok(source) = std::fs::read(&a.file) else {
         eprintln!("{}: error: cannot read the file", a.file);
         return ExitCode::FAILURE;
@@ -217,10 +229,23 @@ pub fn cmd_build(args: &[String], usage: &str) -> ExitCode {
     let canonical = files.canonical(std::path::Path::new(&a.file));
     let out = nl_capi::compile(&source, &format!("@{canonical}"), &a.options, &LoaderRef(&files));
     let mut sources = Sources::new(&canonical, &source);
-    for d in &out.diagnostics {
+    let checked = output_diagnostics(&Lua::new(), &a.options, &canonical, &source, out.chunk.as_deref());
+    for d in out.diagnostics.iter().chain(&checked) {
         report(d, &mut sources);
     }
-    match out.chunk {
+    let chunk = if checked.is_empty() { out.chunk } else { None };
+    // `--minify`: as `nlc bundle` carries the file (nl_capi::minify).
+    let chunk = match chunk {
+        Some(c) if a.minify => match nl_capi::minify::minify(&String::from_utf8_lossy(&c), nl_capi::minify::MinifyOptions::COMPILED) {
+            Ok(m) => Some(m.into_bytes()),
+            Err(e) => {
+                eprintln!("{canonical}: error: internal error: the Lua of this file does not minify: {e}");
+                None
+            }
+        },
+        other => other,
+    };
+    match chunk {
         Some(c) => match &a.output {
             Some(path) => match std::fs::write(path, &c) {
                 Ok(()) => ExitCode::SUCCESS,
@@ -236,6 +261,40 @@ pub fn cmd_build(args: &[String], usage: &str) -> ExitCode {
             }
         },
         None => ExitCode::FAILURE,
+    }
+}
+
+/// The files of a compile; gmod's declarations, for a gmod profile, are
+/// the compiler's (nl_sema::decl::GMOD_SOURCE).
+fn files_for(_options: &CompileOptions, decls: &[String]) -> Files {
+    let files = Files::new();
+    for d in decls {
+        files.add_decl(d);
+    }
+    files
+}
+
+/// Whether a chunk loads on the stock LuaJIT that `nlc` embeds (the
+/// limits of gmod's 2.0.4 are those of this 2.1): the packager's check
+/// (`nl_capi::bundle::Check`).
+pub(crate) fn lua_check(lua: &Lua) -> impl Fn(&str, &str) -> Result<(), String> + '_ {
+    move |name, text| {
+        lua.load(text).set_name(name).set_mode(ChunkMode::Text).into_function().map(|_| ()).map_err(|e| match e {
+            mlua::Error::SyntaxError { message, .. } => message,
+            other => other.to_string(),
+        })
+    }
+}
+
+/// For a gmod profile, the errors of the Lua a file compiled to
+/// (`nl_capi::bundle::check_output`); nothing otherwise.
+fn output_diagnostics(lua: &Lua, options: &CompileOptions, name: &str, source: &[u8], chunk: Option<&[u8]>) -> Vec<nl_capi::Diagnostic> {
+    match chunk {
+        Some(c) if options.profile.is_gmod() && options.emit == Emit::Lua => {
+            let check = lua_check(lua);
+            nl_capi::bundle::check_output(name, &String::from_utf8_lossy(source), &String::from_utf8_lossy(c), Some(&check))
+        }
+        _ => Vec::new(),
     }
 }
 

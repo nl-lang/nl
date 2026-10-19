@@ -65,21 +65,68 @@ impl Lowerer<'_> {
         }
     }
 
+    /// What realm constants decide about the condition of an `if`,
+    /// `elseif`, `unless` or modifier (nl_sema::profile, "Realm
+    /// constants"): `None` when the condition is tested at run time.
+    pub(crate) fn decided(&self, owner: &SyntaxNode) -> Option<bool> {
+        if child(owner, LET_CONDITION).is_some() {
+            return None;
+        }
+        nl_sema::profile::static_condition(&expr_child(owner)?, self.res, self.opts.profile)
+    }
+
+    /// Emits the branches of a chain that are left; a chain whose first
+    /// branch is always taken is that branch's block alone, in a `do`.
+    fn emit_branches(&mut self, clauses: Vec<Clause>, otherwise: Option<Block>) {
+        if clauses.is_empty() {
+            if let Some(b) = otherwise {
+                self.emit(StmtKind::Do(b));
+            }
+            return;
+        }
+        self.emit_chain(clauses, otherwise);
+    }
+
+    /// `if`. A branch that realm constants never take is not lowered, and
+    /// one they always take is the chain's last: its block is the `else`,
+    /// and the branches after it are not lowered.
     pub(crate) fn lower_if(&mut self, node: &SyntaxNode, tail: Tail) {
         let mut clauses = Vec::new();
         let mut otherwise = None;
+        let mut taken = false;
         let line = self.line;
-        let (stmts, cond) = self.capture(|l| l.condition(node));
-        let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-        clauses.push(Clause { line, stmts, cond, body });
+        match self.decided(node) {
+            Some(false) => {}
+            Some(true) => {
+                otherwise = Some(block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default());
+                taken = true;
+            }
+            None => {
+                let (stmts, cond) = self.capture(|l| l.condition(node));
+                let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
+                clauses.push(Clause { line, stmts, cond, body });
+            }
+        }
         for c in node.children() {
+            if taken {
+                break;
+            }
             match c.kind() {
                 ELSEIF_CLAUSE => {
                     self.line = self.line_of(&c);
                     let line = self.line;
-                    let (stmts, cond) = self.capture(|l| l.condition(&c));
-                    let body = block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-                    clauses.push(Clause { line, stmts, cond, body });
+                    match self.decided(&c) {
+                        Some(false) => {}
+                        Some(true) => {
+                            otherwise = Some(block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default());
+                            taken = true;
+                        }
+                        None => {
+                            let (stmts, cond) = self.capture(|l| l.condition(&c));
+                            let body = block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
+                            clauses.push(Clause { line, stmts, cond, body });
+                        }
+                    }
                 }
                 ELSE_CLAUSE => otherwise = block(&c).map(|b| self.lower_block(&b, tail)),
                 _ => {}
@@ -88,14 +135,33 @@ impl Lowerer<'_> {
         if otherwise.is_none() {
             otherwise = self.missing_branch(tail);
         }
-        self.emit_chain(clauses, otherwise);
+        self.emit_branches(clauses, otherwise);
     }
 
+    /// `unless`, with the realm constants of `if`.
     pub(crate) fn lower_unless(&mut self, node: &SyntaxNode, tail: Tail) {
+        let else_block = |l: &mut Self| child(node, ELSE_CLAUSE).and_then(|c| block(&c)).map(|b| l.lower_block(&b, tail));
+        match self.decided(node) {
+            // The body never runs.
+            Some(true) => {
+                let otherwise = match else_block(self) {
+                    Some(b) => Some(b),
+                    None => self.missing_branch(tail),
+                };
+                self.emit_branches(Vec::new(), otherwise);
+                return;
+            }
+            Some(false) => {
+                let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
+                self.emit_branches(Vec::new(), Some(body));
+                return;
+            }
+            None => {}
+        }
         let line = self.line;
         let (stmts, cond) = self.capture(|l| l.condition(node));
         let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-        let mut otherwise = child(node, ELSE_CLAUSE).and_then(|c| block(&c)).map(|b| self.lower_block(&b, tail));
+        let mut otherwise = else_block(self);
         if otherwise.is_none() {
             otherwise = self.missing_branch(tail);
         }

@@ -6,8 +6,16 @@
 #   tests/gmod/run.sh [--no-glua] [--no-build] [--only=2.0.4|2.1.0-beta3] [name...]
 #
 # 1. Builds nlc and bundles (`nlc bundle`) every conformance program of
-#    tests/run that the profile allows (EXCLUDED below says why the others
-#    are left out) and every program of tests/gmod, into target/gmod/bundles.
+#    tests/run that the gmod-client profile allows (EXCLUDED below says why
+#    the others are left out), for the client realm, and every program of
+#    tests/gmod, into target/gmod/bundles: with the gmod-client profile
+#    for the client realm, and the portable one for the server realm (a
+#    program named client_* runs in the client realm only). A bundle over
+#    the size limit is split into parts, which all go to the mock, in
+#    reverse order; client_parts is bundled with a small `--part-limit`
+#    so that it always is. A bundle with a sourcemap (`<name>.map` beside
+#    the program says it gets one) has its output compared after
+#    `nlc remap`.
 # 2. Builds stock LuaJIT 2.0.4 (the 32-bit x86 VM of gmod's main branch)
 #    and 2.1.0-beta3 (the x86-64 branch's) from their release commits,
 #    which the LuaJIT/ clone has in its history (git archive), into
@@ -20,11 +28,12 @@
 #    link a 32-bit program, else in Docker (linux/386), else for x86-64,
 #    which the run reports. --no-build skips a VM that is not built yet
 #    instead of building it.
-# 3. Runs every bundle on both VMs, in the client realm, and the programs
-#    of tests/gmod in the server realm as well, and compares stdout with
-#    the .out file (stderr is ignored; the exit status must be 0). The
-#    programs of tests/gmod are about gmod's environment (hook, timers,
-#    classes); they are compiled with the declarations of tests/gmod/decl.
+# 3. Runs every bundle on both VMs, in its realm, and compares stdout
+#    with the .out file (stderr is ignored; the exit status must be 0).
+#    The programs of tests/gmod are about gmod's environment (hook,
+#    timers, classes, realms); their portable bundles are compiled with
+#    the declarations of tests/gmod/decl, their gmod-client ones with
+#    gmod's (built in) and tests/gmod/decl-client.
 # 4. Unless --no-glua: compiles every bundle, and every chunk a bundle
 #    holds as a string, with GLua's parser (the fork's NL_OPT_GLUA,
 #    tests/vm/glua_corpus.sh), so the output parses in gmod as well as in
@@ -90,18 +99,22 @@ mkdir -p "$T/bundles" "$T/out"
 echo "== build nlc"
 (cd "$ROOT" && cargo build -q -p nlc) || exit 1
 
-# The list of runs: one line per run, "name dir realm".
+# The list of runs: one line per run, "bundle dir realm expected", where
+# bundle names the bundle's files in $T/bundles (bundle.lua, and
+# bundle_2.lua, ... when it is in parts).
 LIST=$T/runs.txt
 : >"$LIST"
 skipped=0
 echo "== bundle"
-bundle() { # name dir file decl realms...
-  name=$1 dir=$2 file=$3 decl=$4
-  shift 4
-  if (cd "$dir" && "$NLC" bundle ${decl:+--decl "$decl"} -o "$T/bundles/$name.lua" "$file") >"$T/out/$name.bundle.err" 2>&1; then
-    for realm in "$@"; do echo "$name $dir $realm" >>"$LIST"; done
+bundle() { # bundle dir file expected realm profile [nlc options...]
+  bname=$1 dir=$2 file=$3 expected=$4 realm=$5 profile=$6
+  shift 6
+  map=
+  [ -f "$dir/${file%.nl}.map" ] && map="$T/bundles/$bname.nlmap.json"
+  if (cd "$dir" && "$NLC" bundle --profile="$profile" ${map:+--map "$map"} "$@" -o "$T/bundles/$bname.lua" "$file") >"$T/out/$bname.bundle.err" 2>&1; then
+    echo "$bname $dir $realm $expected" >>"$LIST"
   else
-    echo "FAIL  $name: nlc bundle: $(grep -m1 'error' "$T/out/$name.bundle.err")"
+    echo "FAIL  $bname: nlc bundle: $(grep -m1 'error' "$T/out/$bname.bundle.err")"
     fail=1
   fi
 }
@@ -111,14 +124,21 @@ for f in "$ROOT"/tests/run/*.nl; do
   selected "$name" || continue
   why=$(excluded "$name")
   if [ -n "$why" ]; then skipped=$((skipped + 1)); continue; fi
-  bundle "$name" "$ROOT/tests/run" "$name.nl" "" client
+  bundle "$name" "$ROOT/tests/run" "$name.nl" "${f%.nl}.out" client gmod-client
 done
 for f in "$ROOT"/tests/gmod/*.nl; do
   [ -f "$f" ] || continue
-  name=gmod_$(basename "$f" .nl)
+  base=$(basename "$f" .nl)
+  name=gmod_$base
   [ -f "${f%.nl}.out" ] || continue
   selected "$name" || continue
-  bundle "$name" "$ROOT/tests/gmod" "$(basename "$f")" decl client server
+  limit=
+  [ "$base" = client_parts ] && limit=--part-limit=8000
+  bundle "$name.client" "$ROOT/tests/gmod" "$base.nl" "${f%.nl}.out" client gmod-client --decl decl-client $limit
+  case "$base" in
+    client_*) ;;
+    *) bundle "$name.server" "$ROOT/tests/gmod" "$base.nl" "${f%.nl}.out" server portable --decl decl ;;
+  esac
 done
 echo "$(wc -l <"$LIST" | tr -d ' ') runs per VM; $skipped conformance programs left out (tests/gmod/run.sh, EXCLUDED)"
 
@@ -230,26 +250,28 @@ run_on() { # version luajit platform
   # One shell for all the runs: Docker starts once.
   in_vm_env "$platform" sh -c '
     luajit=$1 list=$2 od=$3 mock=$4 bundles=$5
-    while read -r name dir realm; do
+    while read -r name dir realm expected; do
       flag=--client
       [ "$realm" = server ] && flag=--server
-      (cd "$dir" && "$luajit" "$mock" $flag "$bundles/$name.lua") >"$od/$name.$realm.got" 2>"$od/$name.$realm.err"
-      echo $? >"$od/$name.$realm.code"
+      # Every part of the bundle, last first.
+      files=$(ls -r "$bundles/$name.lua" "$bundles/${name}"_[0-9]*.lua 2>/dev/null)
+      (cd "$dir" && "$luajit" "$mock" $flag $files) >"$od/$name.got" 2>"$od/$name.err"
+      echo $? >"$od/$name.code"
     done <"$list"
   ' sh "$luajit" "$LIST" "$od" "$ROOT/tests/gmod/mock.lua" "$T/bundles"
   pass=0 failed=0
-  while read -r name dir realm; do
-    case "$name" in
-      gmod_*) expected=$dir/${name#gmod_}.out ;;
-      *) expected=$dir/$name.out ;;
-    esac
-    code=$(cat "$od/$name.$realm.code" 2>/dev/null || echo "?")
-    if [ "$code" = 0 ] && cmp -s "$expected" "$od/$name.$realm.got"; then
+  while read -r name dir realm expected; do
+    # With a sourcemap, the output is compared remapped.
+    if [ -f "$T/bundles/$name.nlmap.json" ]; then
+      "$NLC" remap "$T/bundles/$name.nlmap.json" <"$od/$name.got" >"$od/$name.got.remapped" && mv "$od/$name.got.remapped" "$od/$name.got"
+    fi
+    code=$(cat "$od/$name.code" 2>/dev/null || echo "?")
+    if [ "$code" = 0 ] && cmp -s "$expected" "$od/$name.got"; then
       pass=$((pass + 1))
     else
       failed=$((failed + 1))
-      why=$(grep -m1 -v '^\s*$' "$od/$name.$realm.err" 2>/dev/null | cut -c1-200)
-      [ "$code" = 0 ] && why="stdout differs: $(diff "$expected" "$od/$name.$realm.got" | sed -n 2p | cut -c1-160)"
+      why=$(grep -m1 -v '^\s*$' "$od/$name.err" 2>/dev/null | cut -c1-200)
+      [ "$code" = 0 ] && why="stdout differs: $(diff "$expected" "$od/$name.got" | sed -n 2p | cut -c1-160)"
       echo "FAIL  $version $realm $name: exit $code: $why"
     fi
   done <"$LIST"
@@ -293,21 +315,29 @@ done
 if [ "$GLUA" = 1 ]; then
   # A bundle holds the runtime and the compiled files as strings, so the
   # chunks are checked one by one: the runtime's files, its gmod host, and
-  # every NL file of tests/run and tests/gmod that compiles with the
-  # profile (helpers too), as `nlc build --profile=portable` prints it.
+  # every NL file of tests/run and tests/gmod that compiles with a
+  # profile (helpers too), as `nlc build --profile=portable` prints it and
+  # as a gmod-client bundle carries it (`--minify`). The minifier only
+  # takes out comments and spaces (crates/nlc/src/minify.rs keeps those
+  # that GLua's operators need), so the runtime is checked as written.
   echo "== GLua's parser"
   G=$T/glua
   rm -rf "$G"
   mkdir -p "$G/runtime"
   cp "$ROOT"/runtime/*.lua "$ROOT/runtime/gmod/host.lua" "$G/runtime/"
   for dir in "$ROOT/tests/run" "$ROOT/tests/gmod"; do
-    decl=
-    [ "$dir" = "$ROOT/tests/gmod" ] && decl=decl
-    (cd "$dir" && find . -name '*.nl' ! -path './reject/*' ! -path './decl/*') | while read -r f; do
-      out=$G/$(basename "$dir")/${f#./}
-      mkdir -p "$(dirname "$out")"
-      (cd "$dir" && "$NLC" build --emit=lua --profile=portable ${decl:+--decl "$decl"} -o "${out%.nl}.lua" "$f") >/dev/null 2>&1 ||
-        rm -f "${out%.nl}.lua"
+    for profile in portable gmod-client; do
+      decl=
+      [ "$dir" = "$ROOT/tests/gmod" ] && decl=decl
+      [ "$dir" = "$ROOT/tests/gmod" ] && [ "$profile" = gmod-client ] && decl=decl-client
+      minify=
+      [ "$profile" = gmod-client ] && minify=--minify
+      (cd "$dir" && find . -name '*.nl' ! -path './reject/*' ! -path './decl*') | while read -r f; do
+        out=$G/$profile/$(basename "$dir")/${f#./}
+        mkdir -p "$(dirname "$out")"
+        (cd "$dir" && "$NLC" build --emit=lua --profile="$profile" $minify ${decl:+--decl "$decl"} -o "${out%.nl}.lua" "$f") >/dev/null 2>&1 ||
+          rm -f "${out%.nl}.lua"
+      done
     done
   done
   "$ROOT/tests/vm/glua_corpus.sh" "$G" "$T/bundles" || fail=1
