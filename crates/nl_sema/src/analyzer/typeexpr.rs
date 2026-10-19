@@ -428,6 +428,20 @@ impl Analyzer<'_> {
         self.decl_keys.get(&(owner, name.to_string())).cloned()
     }
 
+    /// An operator declared on a Lua class or host type
+    /// (`fn +(right: Vector): Vector`), its own or a parent's.
+    pub(crate) fn decl_operator(&self, owner: NamedId, op: &str) -> Option<Rc<FnType>> {
+        let mut cur = Some(owner);
+        for _ in 0..64 {
+            let c = cur?;
+            if let Some(sig) = self.decl_operators.get(&c).and_then(|m| m.get(op)) {
+                return Some(sig.clone());
+            }
+            cur = self.types.parent(c);
+        }
+        None
+    }
+
     /// The type of a declared `let`/`const` by name.
     pub(crate) fn decl_value_type(&self, name: &str) -> Option<Type> {
         self.decl_value_types.get(name).cloned()

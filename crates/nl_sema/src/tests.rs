@@ -264,6 +264,29 @@ fn declared_names_and_members() {
     assert!(keys.contains(&"ReturnLargest".to_string()) && keys.contains(&"coolnessFactor".to_string()), "{keys:?}");
 }
 
+/// The operators of a declared host type give the analyzer the result
+/// types, through a parent too.
+#[test]
+fn declared_operators_type_results() {
+    let decl = "declare type Vec\n  fn +(right: Vec): Vec\n  fn *(right: Number): Vec\n  fn -: Vec\nend\ndeclare type Pos : Vec\nend\ndeclare fn pos(): Pos = :pos\n";
+    let parse = nl_syntax::parse_decl_file(decl);
+    assert!(parse.diagnostics().is_empty(), "{:?}", parse.diagnostics());
+    let mut files = crate::decl::prelude_files();
+    files.push(("game.d.nl".to_string(), parse.syntax()));
+    let (decls, diags) = Declarations::load(&files);
+    assert!(diags.is_empty());
+    let src = "let a: String = pos() + pos()\nlet b: String = pos() * 2\nlet c: String = -pos()\nlet d: Vec = pos() + pos()\nprint a, b, c, d\n";
+    let p = nl_syntax::parse(src);
+    let root = p.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+    let a = analyze(&root, &res, &opts);
+    let index = nl_syntax::LineIndex::new(src);
+    let codes: Vec<(u32, &str)> = a.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    assert_eq!(codes, vec![(1, "type-mismatch"), (2, "type-mismatch"), (3, "type-mismatch")]);
+}
+
 fn resolution(src: &str) -> (nl_syntax::SyntaxNode, Resolution) {
     let parse = nl_syntax::parse(src);
     assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());

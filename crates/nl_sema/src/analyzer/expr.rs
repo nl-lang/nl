@@ -1217,6 +1217,8 @@ impl Analyzer<'_> {
             Some(MINUS) => match self.types.expand(&v.t) {
                 Type::Number => Ty::new(Type::Number, v.certain),
                 Type::Named(nid) if self.types.is_struct(nid) => self.types.operator(nid, "-").map(|s| Ty::uncertain(s.ret.clone())).unwrap_or_else(Ty::any),
+                // A Lua class or host type with a declared `-`.
+                Type::Named(nid) => self.decl_operator(nid, "-").map(|s| Ty::uncertain(s.ret.clone())).unwrap_or_else(Ty::any),
                 Type::Nil | Type::Bool if v.certain => {
                     let shown = self.show(&v.t);
                     self.error(node.text_range(), "bad-operand", format!("unary `-` on a {shown}"));
@@ -1368,6 +1370,15 @@ impl Analyzer<'_> {
                     return Ty::certain(Type::Bool);
                 }
                 match self.types.operator(*nid, &name) {
+                    Some(sig) => Ty::uncertain(sig.ret.clone()),
+                    None => Ty::any(),
+                }
+            }
+            // A Lua class or host type of a declaration file: the declared
+            // operator gives the result type; the metamethod runs.
+            Type::Named(nid) if !compare && (arithmetic || bitwise || concat) => {
+                let name = op.fixed_text().unwrap_or("").trim_end_matches('=');
+                match self.decl_operator(*nid, name) {
                     Some(sig) => Ty::uncertain(sig.ret.clone()),
                     None => Ty::any(),
                 }
