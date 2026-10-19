@@ -11,7 +11,8 @@
 # itself and runs make -e, so the copied Makefile adds the flag with
 # `override`.
 #
-# DEST is a copy of luajit-src-rs (its manifest without its workspace, its
+# DEST is a copy of the luajit-src crate that mlua-sys takes, as Cargo.lock
+# pins it, from cargo's registry (its manifest without its workspace, its
 # build logic), whose luajit2/ is the fork's working tree (tracked and
 # untracked files, minus ignored ones, as tests/vm/build-vm.sh copies it),
 # and whose luajit2/nl-runtime/ holds the runtime library (runtime/*.lua).
@@ -47,13 +48,19 @@ sync() {
   rsync -aiO --checksum "$@" >>"$CHANGED"
 }
 
-put "$DEST/src/lib.rs" <"$ROOT/luajit-src-rs/src/lib.rs"
+# The crate's directory in cargo's registry; cargo metadata downloads it if
+# needed. Its Cargo.toml.orig is the manifest as published, with the
+# workspace table of its own repository.
+SRC=$(cargo metadata --format-version 1 --locked --manifest-path "$ROOT/Cargo.toml" |
+  tr ',' '\n' | sed -n 's#^"manifest_path":"\(.*/luajit-src-[^/"]*\)/Cargo.toml"$#\1#p' | head -1)
+[ -n "$SRC" ] && [ -f "$SRC/src/lib.rs" ] && [ -f "$SRC/Cargo.toml.orig" ] ||
+  { echo "prepare_luajit_src: cargo metadata names no luajit-src crate in the registry" >&2; exit 1; }
+
+put "$DEST/src/lib.rs" <"$SRC/src/lib.rs"
 for f in luajit_relver.txt README.md LICENSE; do
-  sync "$ROOT/luajit-src-rs/$f" "$DEST/$f"
+  sync "$SRC/$f" "$DEST/$f"
 done
-# mlua-sys 0.13 (mlua 0.12) takes luajit-src 210.7, the version of the fork
-# of luajit-src-rs, so its manifest is used as it is.
-sed -e '/^\[workspace\]/,/^$/d' "$ROOT/luajit-src-rs/Cargo.toml" | put "$DEST/Cargo.toml"
+sed -e '/^\[workspace\]/,/^$/d' "$SRC/Cargo.toml.orig" | put "$DEST/Cargo.toml"
 
 (cd "$ROOT/LuaJIT" && git ls-files -co --exclude-standard) |
   while IFS= read -r f; do

@@ -301,7 +301,6 @@ functions and error reporting.
 | `runtime/` | The runtime and standard library (Lua, embedded in the VM) |
 | `decl/` | Declaration files (`.d.nl`) for the Lua and LuaJIT standard libraries |
 | `LuaJIT/` | The VM fork (submodule) |
-| `luajit-src-rs/` | The `luajit-src` crate, pointed at the fork (submodule) |
 | `tests/` | Parser snapshots, conformance programs, Lua compatibility suites, VM tests |
 | `bench/` | Benchmarks of NL against equivalent Lua |
 

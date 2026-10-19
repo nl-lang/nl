@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-# Git submodules; luajit-src-rs is a Cargo crate of its own.
-exclude = ["LuaJIT", "luajit-src-rs"]
+# The VM fork, a git submodule.
+exclude = ["LuaJIT"]
 
 [workspace.package]
 version = "0.1.0"

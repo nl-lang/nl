@@ -26,13 +26,11 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - uses: actions/checkout@v4
-      # .gitmodules uses SSH URLs; fetch the submodules over HTTPS instead.
-      # luajit-src-rs's own luajit2 submodule is not needed: the scripts copy
-      # LuaJIT/ in its place.
+      # .gitmodules uses an SSH URL; fetch the submodule over HTTPS instead.
       - name: Submodules
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init LuaJIT luajit-src-rs
+          git submodule update --init LuaJIT
       - uses: dtolnay/rust-toolchain@stable
       - name: Tools
         if: runner.os == 'Linux'

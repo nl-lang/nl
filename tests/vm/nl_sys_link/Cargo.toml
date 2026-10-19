@@ -16,6 +16,6 @@ mlua-sys = { version = "0.13", features = ["luajit", "vendored"] }
 mlua = { version = "0.12", features = ["luajit", "vendored"] }
 
 [patch.crates-io]
-# A copy of luajit-src-rs whose luajit2/ is the fork's working tree, made by
-# run.sh; nothing in the repository's git state changes.
+# A copy of the luajit-src crate whose luajit2/ is the fork's working tree,
+# made by run.sh; nothing in the repository's git state changes.
 luajit-src = { path = "../../../target/nl_sys_link/luajit-src" }

@@ -24,6 +24,7 @@ nl = { path = "../../../crates/nl", features = ["async"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "macros", "sync"] }
 
 [patch.crates-io]
-# A copy of luajit-src-rs whose luajit2/ is the fork's working tree and whose
-# default runtime is runtime/*.lua (tests/vm/support/prepare_luajit_src.sh).
+# A copy of the luajit-src crate whose luajit2/ is the fork's working tree
+# and whose default runtime is runtime/*.lua
+# (tests/vm/support/prepare_luajit_src.sh).
 luajit-src = { path = "../../../target/nl_host/luajit-src" }
