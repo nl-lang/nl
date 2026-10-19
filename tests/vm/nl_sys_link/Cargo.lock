@@ -99,7 +99,7 @@ dependencies = [
 
 [[package]]
 name = "luajit-src"
-version = "210.7.4+9375c57"
+version = "210.7.4+7c73edf"
 dependencies = [
  "cc",
  "which",
