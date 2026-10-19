@@ -1,0 +1,10 @@
+NL handler: bob spawned
+NL handler: ann spawned
+Lua handler greets kim
+true	true
+after removal
+new
+true
+manual 5
+on_run: event_hook.nl:46: bad argument #2 to 'on_run' (string expected, got table)
+run: event_hook.nl:51: bad argument #1 to 'run' (string expected, got table)

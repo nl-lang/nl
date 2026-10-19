@@ -1,0 +1,4 @@
+in helper.lua, CLIENT or SERVER: true
+helper returned 42
+true	true	true
+true	true

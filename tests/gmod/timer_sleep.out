@@ -1,0 +1,8 @@
+zero woke after at least 0s: true
+short woke after at least 0.1s: true
+tick 1
+tick 2
+tick 3
+Lua timer after 1s
+long woke after at least 2s: true
+all done: long, short, zero

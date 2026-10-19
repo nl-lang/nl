@@ -1,0 +1,6 @@
+hello bob
+Player player 1
+Entity prop_physics 10
+Weapon weapon_crowbar 11
+true	true	false
+TypeError: parameter 'p' of greet expects Player, got Entity

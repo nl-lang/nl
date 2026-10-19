@@ -21,8 +21,11 @@ case "$(uname -s)" in Linux) LIBS="-lm -ldl -lpthread" ;; esac
 
 mkdir -p "$T"
 if [ ! -f "$B/libluajit.a" ]; then
+  # The identity compiler with the stubs of the text and regex libraries,
+  # as tests/vm/run.sh builds it.
   $CC -O2 -fPIC -I"$ROOT/LuaJIT/src" -c "$ROOT/tests/vm/support/nlc_identity.c" -o "$T/nlc_identity.o"
-  ar rcs "$T/libnlc_identity.a" "$T/nlc_identity.o"
+  $CC -O2 -fPIC -I"$ROOT/LuaJIT/src" -c "$ROOT/LuaJIT/src/lj_nlnotext.c" -o "$T/nlc_identity_notext.o"
+  ar rcs "$T/libnlc_identity.a" "$T/nlc_identity.o" "$T/nlc_identity_notext.o"
   "$ROOT/tests/vm/build-vm.sh" "$T/fake-jit" "NL_RUNTIME_DIR=$ROOT/tests/vm/fake_runtime" \
     "NL_LIBNLC=$T/libnlc_identity.a" >"$T/fake-jit.log" 2>&1 ||
     { tail -20 "$T/fake-jit.log"; exit 1; }
