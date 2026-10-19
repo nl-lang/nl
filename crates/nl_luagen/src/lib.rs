@@ -1,5 +1,8 @@
-//! The Lua backend: prints the core IR as Lua source for stock LuaJIT 2.1
-//! (kept as `nlc build --emit=lua` and as the test oracle).
+//! The Lua backend: prints the core IR as Lua source for stock LuaJIT
+//! (`nlc build --emit=lua`, the test oracle, and the portable profile's
+//! target). The output runs on LuaJIT 2.0 and 2.1 and parses under
+//! Garry's Mod's GLua parser as well as Lua's: it uses no syntax of 2.1
+//! only, and no name that GLua reserves.
 //!
 //! # The chunk
 //!
@@ -106,9 +109,12 @@ fn runs_code(s: &Stmt) -> bool {
     }
 }
 
+/// Lua's reserved words, and `continue`, which Garry's Mod's parser
+/// (GLua) reserves too: a local, a global or a field key with one of these
+/// names is spelled another way, so the output parses under both.
 const LUA_KEYWORDS: &[&str] = &[
-    "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local", "nil", "not", "or",
-    "repeat", "return", "then", "true", "until", "while",
+    "and", "break", "continue", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local", "nil", "not",
+    "or", "repeat", "return", "then", "true", "until", "while",
 ];
 
 fn is_lua_identifier(s: &str) -> bool {
@@ -1060,6 +1066,32 @@ mod tests {
         let lua = print_chunk(&chunk);
         assert!(lua.contains(r#"__rt.lmethod["end"](o, 1)"#), "{lua}");
         assert!(lua.contains(r#"__rt.lmethod["end"](mk(), 1)"#), "{lua}");
+    }
+
+    /// GLua reserves `continue`: no local, global or field key is printed
+    /// with that name.
+    #[test]
+    fn continue_is_reserved() {
+        let o = LocalId(0);
+        let main = Function {
+            params: Vec::new(),
+            vararg: true,
+            body: Block::new(vec![
+                Stmt { line: 1, kind: StmtKind::Local { locals: vec![o], values: vec![Expr::Table(Vec::new())] } },
+                Stmt { line: 1, kind: StmtKind::Expr(Expr::MethodCall(Box::new(Expr::Local(o)), "continue".to_string(), Vec::new())) },
+                Stmt { line: 1, kind: StmtKind::Expr(Expr::call(Expr::Index(Box::new(Expr::Local(o)), Box::new(Expr::Str(b"continue".to_vec()))), Vec::new())) },
+                Stmt { line: 1, kind: StmtKind::Expr(Expr::call(Expr::Global("continue".to_string()), Vec::new())) },
+            ]),
+            line: 1,
+            name: None,
+            method: false,
+            transient: false,
+        };
+        let chunk = Chunk { locals: vec![LocalInfo { hint: "continue".to_string() }], main, name: "=t".to_string(), owner: None };
+        let lua = print_chunk(&chunk);
+        let bare = lua.replace("\"continue\"", "").replace("_continue_", "");
+        assert!(!bare.contains("continue"), "{lua}");
+        assert!(lua.contains(r#"_continue_["continue"]()"#) && lua.contains(r#"__G["continue"]()"#), "{lua}");
     }
 
     #[test]
