@@ -1,0 +1,49 @@
+# NL names that the mechanical rules of glua-decl get wrong or that clash:
+# a wiki address and the NL name, or `-` to leave the item out.
+# Addresses are the wiki's page names: `Entity:SetPos`, `net.ReadUInt`,
+# `Global.Vector`, `GM:PlayerSpawn`, a library (`player(library)`), a
+# class (`file_class`), an enum constant (`DMG_BURN`).
+
+# Classes whose gmod name is taken by a built-in declaration.
+file_class FileHandle
+Task NPCTask
+
+# Libraries: words the mechanical rule cannot split, and acronyms.
+math MathLib
+ai AI
+ai_schedule AISchedule
+ai_task AITask
+http HTTP
+sql SQL
+gui GUI
+vgui VGUI
+utf8 UTF8
+cvars CVars
+concommand ConCommand
+debugoverlay DebugOverlay
+dragndrop DragNDrop
+frame_blend FrameBlend
+gameevent GameEvent
+gmsave GMSave
+killicon KillIcon
+matproxy MatProxy
+menubar MenuBar
+motionsensor MotionSensor
+navmesh NavMesh
+physenv PhysEnv
+saverestore SaveRestore
+scripted_ents ScriptedEnts
+serverlist ServerList
+spawnmenu SpawnMenu
+usermessage UserMessage
+baseclass BaseClass
+controlpanel(library) ControlPanelLib
+player(library) PlayerLib
+
+# Lua's own `type` is reached as the Lua path `:type(x)`.
+Global.type -
+
+# Two pages for one panel class; this one is empty.
+DListViewLine -
+# gmod's `Error`, not Lua's `error`.
+Global.Error -

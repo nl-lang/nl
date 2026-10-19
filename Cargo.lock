@@ -315,6 +315,16 @@ name = "nl_fuzz"
 version = "0.1.0"
 
 [[package]]
+name = "nl_glua_decl"
+version = "0.1.0"
+dependencies = [
+ "nl_sema",
+ "nl_syntax",
+ "rowan",
+ "serde_json",
+]
+
+[[package]]
 name = "nl_ir"
 version = "0.1.0"
 dependencies = [
