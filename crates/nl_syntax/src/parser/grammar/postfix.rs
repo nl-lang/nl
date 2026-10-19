@@ -134,10 +134,8 @@ impl Parser<'_> {
 
     fn call_with(&mut self, e: Expr, safe: bool) -> Expr {
         if e.shape == Shape::Bang {
-            self.error(
-                "`f!` is the function itself: nothing that calls may follow it. Write `f(…)` to \
-                 call `f`",
-            );
+            let msg = self.bang_call_message(e.start);
+            self.error(msg);
         }
         let m = e.cm.precede(self);
         if safe {
@@ -150,6 +148,34 @@ impl Parser<'_> {
             shape = Shape::BlockCall;
         }
         Expr { cm: m.complete(self, CALL_EXPR), shape, start: e.start }
+    }
+
+    /// The error for an argument list after `f!`, the `!` expression
+    /// starting at token `start`: the ways to call the function value, and
+    /// for `Type.name!(…)` the plain call through the type.
+    fn bang_call_message(&self, start: usize) -> String {
+        let text = self.text_between(start, self.pos());
+        let Some(callee) = text.strip_suffix('!') else {
+            return "`f!` is the function itself: nothing that calls may follow it. Write \
+                    `(f!)(…)` to call the function value"
+                .to_string();
+        };
+        let head = format!("`{text}` is the function itself: nothing that calls may follow it");
+        match callee.rsplit_once('.') {
+            Some((owner, name)) if owner.starts_with(|c: char| c.is_ascii_uppercase()) => format!(
+                "{head}. Write `({text})(…)` to call it with the arguments as written; for a \
+                 method defined on `Number`, `String` or `Bool`, `{owner}.{name}(…)` does the \
+                 same"
+            ),
+            Some(_) => format!(
+                "{head}. Write `{callee}(…)` to call it as a member, or `({text})(…)` to call \
+                 it with the arguments as written"
+            ),
+            None => format!(
+                "{head}. Write `{callee}(…)` to call `{callee}`, or `({text})(…)` to call the \
+                 function value"
+            ),
+        }
     }
 
     /// `call_args = "(" [ arg { "," arg } [ "," ] ] ")"`, `arg = expr | "*"

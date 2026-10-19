@@ -1,5 +1,5 @@
-SOURCE_FILE@0..68
-  BLOCK@0..68
+SOURCE_FILE@0..99
+  BLOCK@0..99
     COMMENT@0..46 "# Nothing that calls may follow a postfix `!`."
     NEWLINE@46..47 "\n"
     EXPR_STMT@47..52
@@ -37,8 +37,40 @@ SOURCE_FILE@0..68
             WHITESPACE@63..64 " "
           END_KW@64..67 "end"
     NEWLINE@67..68 "\n"
-  EOF@68..68 ""
+    EXPR_STMT@68..84
+      CALL_EXPR@68..84
+        BANG_EXPR@68..81
+          FIELD_EXPR@68..80
+            NAME_REF@68..74
+              CNAME@68..74 "String"
+            DOT@74..75 "."
+            LNAME@75..80 "shout"
+          BANG_POSTFIX@80..81 "!"
+        ARG_LIST@81..84
+          L_PAREN@81..82 "("
+          NAME_REF@82..83
+            LNAME@82..83 "s"
+          R_PAREN@83..84 ")"
+    NEWLINE@84..85 "\n"
+    EXPR_STMT@85..98
+      CALL_EXPR@85..98
+        BANG_EXPR@85..94
+          FIELD_EXPR@85..93
+            NAME_REF@85..86
+              LNAME@85..86 "p"
+            DOT@86..87 "."
+            LNAME@87..93 "damage"
+          BANG_POSTFIX@93..94 "!"
+        ARG_LIST@94..98
+          L_PAREN@94..95 "("
+          LITERAL@95..97
+            NUMBER@95..97 "10"
+          R_PAREN@97..98 ")"
+    NEWLINE@98..99 "\n"
+  EOF@99..99 ""
 ---
-error@49..50 2:3: `f!` is the function itself: nothing that calls may follow it. Write `f(…)` to call `f`
+error@49..50 2:3: `f!` is the function itself: nothing that calls may follow it. Write `f(…)` to call `f`, or `(f!)(…)` to call the function value
 error@56..57 3:4: `f!` is the function itself and cannot be called: to call it, write `f(…)` or `f x` without the `!`
 error@61..63 4:4: `f!` is the function itself: nothing that calls may follow it, not even a block
+error@81..82 5:14: `String.shout!` is the function itself: nothing that calls may follow it. Write `(String.shout!)(…)` to call it with the arguments as written; for a method defined on `Number`, `String` or `Bool`, `String.shout(…)` does the same
+error@94..95 6:10: `p.damage!` is the function itself: nothing that calls may follow it. Write `p.damage(…)` to call it as a member, or `(p.damage!)(…)` to call it with the arguments as written

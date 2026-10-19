@@ -502,6 +502,9 @@ fn postfix_bang() {
     one_error("x = t[1]!", "`!` can only follow a name");
     one_error("x = :f!", "a Lua path is never called automatically");
     one_error("x = f!(a)", "nothing that calls may follow it");
+    one_error("x = f!(a)", "or `(f!)(…)` to call the function value");
+    one_error("x = String.shout!(s)", "Write `(String.shout!)(…)` to call it with the arguments as written; for a method defined on `Number`, `String` or `Bool`, `String.shout(…)` does the same");
+    one_error("x = p.damage!(10)", "Write `p.damage(…)` to call it as a member, or `(p.damage!)(…)`");
     one_error("a! = b", "`a!` is the function value itself");
 }
 

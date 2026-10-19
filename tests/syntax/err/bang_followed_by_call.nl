@@ -2,3 +2,5 @@
 f!(x)
 f! x
 f! do end
+String.shout!(s)
+p.damage!(10)
