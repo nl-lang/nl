@@ -157,6 +157,10 @@
 -- intrinsics that generated code calls (`rt.mcall`, `rt.check`, …; listed
 -- in each file's header) and these names for embedders:
 --
+--   rt.forget(name) -> {names}                  the file and its importers are no longer
+--                                               imported: the next import runs each again
+--                                               (nl_70_module.lua), for a host that reloads
+--                                               changed files
 --   rt.runmain(main, chunkname)                 runs a file's main function; an uncaught
 --                                               error is re-raised as a message with its trace
 --   rt.pump() -> boolean                        delivers what is queued (job results of the

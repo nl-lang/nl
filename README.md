@@ -206,6 +206,11 @@ nlc bundle --profile=gmod-client -o autorun/client/myaddon.lua \
   parts includes the others by their Lua paths (the `-o` path, from the
   addon's `lua/` folder), so the first file alone runs the bundle: an
   `include` of it, or an entity's `cl_init.lua`, wherever the parts are.
+- **Autorefresh.** A bundle that runs again (gmod sends clients the new
+  file when it changes on the server) runs again the files in it whose
+  source changed, and the files that import them; the runtime's
+  `rt.forget` does it, and a host that reloads changed files can call it
+  too.
 - **Sourcemap.** `--map` writes a JSON map from each chunk's lines (the
   `short_src` and line LuaJIT reports) to NL and runtime source lines, for a
   host that catches errors. `nlc remap` applies it to any text. Keep the map

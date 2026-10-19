@@ -202,3 +202,30 @@ fn runtime_of_its_own_and_included_parts() {
     let parts = std::fs::read_dir(dir.join("nl")).unwrap().count() as i64;
     assert_eq!(includes, parts);
 }
+
+/// gmod's autorefresh sends a client the new bundle of a changed file. A
+/// bundle that comes again runs again the files whose source changed, and
+/// the files that import them; the others, as before, run once.
+#[test]
+fn a_bundle_that_comes_again_reruns_what_changed() {
+    let dir = scratch("reload");
+    let entry = "import { value } from \"./m\"\nprint \"a sees #{value()}\"\n";
+    std::fs::write(dir.join("a.nl"), entry).unwrap();
+    std::fs::write(dir.join("b.nl"), "print \"b ran\"\n").unwrap();
+    let bundle = |name: &str, entry: &str| {
+        let out = nlc(&dir, &["bundle", "--profile=gmod-client", "-o", &format!("{name}.lua"), entry]);
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        dir.join(format!("{name}.lua"))
+    };
+    std::fs::write(dir.join("m.nl"), "pub fn value: Number\n  1\nend\n").unwrap();
+    let a1 = bundle("a1", "a.nl");
+    let b = bundle("b", "b.nl");
+    std::fs::write(dir.join("m.nl"), "pub fn value: Number\n  2\nend\n").unwrap();
+    let a2 = bundle("a2", "a.nl");
+
+    let lua = mlua::Lua::new();
+    lua.load("printed = {} print = function(s) printed[#printed + 1] = s end").exec().unwrap();
+    run_parts(&lua, &[a1.clone(), b.clone(), a1, b, a2]);
+    let printed: Vec<String> = lua.load("printed").eval::<Vec<String>>().unwrap();
+    assert_eq!(printed, ["a sees 1", "b ran", "a sees 2"]);
+}

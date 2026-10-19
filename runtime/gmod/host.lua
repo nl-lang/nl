@@ -260,10 +260,18 @@ do
     -- imports (from .. "\0" .. path -> canonical name), registers the
     -- host types of its declaration files (register_types), then runs
     -- each entry, in order, as `import` would: a file that has run in this
-    -- state already is not run again. Returns the export table of each
-    -- entry. An error is raised as text, with the NL trace.
+    -- state already is not run again, unless the bundle brings it, or a
+    -- file it imports, with a source that changed since (gmod's
+    -- autorefresh sends a client the new bundle of a changed file): then
+    -- it runs again (rt.forget). Returns the export table of each entry.
+    -- An error is raised as text, with the NL trace.
     function rt.run_bundle(files, imports, entries, types)
-      for name, source in pairs(files) do sources[name] = source end
+      local changed = {}
+      for name, source in pairs(files) do
+        if sources[name] ~= nil and sources[name] ~= source then changed[#changed + 1] = name end
+        sources[name] = source
+      end
+      for i = 1, #changed do rt.forget(changed[i]) end
       for key, name in pairs(imports) do resolved[key] = name end
       register_types(rt, types)
       local results = {}

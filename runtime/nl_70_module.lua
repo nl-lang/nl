@@ -3,7 +3,8 @@
 --
 -- Fixed names: rt.import, rt.load, rt.addpath. Prelude functions:
 -- rt.include, rt.add_path, rt.load_nl. Intrinsics: rt.import_from,
--- rt.owner. For the fork's sandbox: rt.searcher.
+-- rt.owner. For the fork's sandbox: rt.searcher. For hosts that reload
+-- changed files: rt.forget.
 --
 -- One run per state: a file is identified by its canonical
 -- name (`host.resolve`), and I.loaded keeps the export table of every file
@@ -128,6 +129,9 @@ do
 
   -- Files imported by this state, by canonical name: their export tables.
   I.loaded = {}
+  -- Who imports whom: importers[name][from] for each import of the file
+  -- `name` by the file `from` (canonical names), for rt.forget.
+  local importers = {}
   -- Files whose main function is running, by canonical name, and the same
   -- names in the order they started (for the message of a cycle).
   local running, running_order = {}, {}
@@ -177,7 +181,37 @@ do
   local function import_path(from, path)
     local name = host.resolve(from, path)
     if name == nil then return nil, "cannot find the file '" .. tostring(path) .. "' to import" end
+    if from ~= nil then
+      local by = importers[name]
+      if by == nil then by = {} importers[name] = by end
+      by[from] = true
+    end
     return import_name(name)
+  end
+
+  -- `rt.forget(name)`: the file with canonical name `name` and every file
+  -- that imports it, directly or through others, are no longer imported:
+  -- the next import of each runs it again, with its source as it is then.
+  -- A host that reloads a changed file calls it, then runs again the
+  -- files it runs itself (entries) among those returned. Returns the
+  -- names, the file's first, then its importers outward.
+  function rt.forget(name)
+    local out, seen, i = { name }, { [name] = true }, 1
+    while out[i] ~= nil do
+      local n = out[i]
+      I.loaded[n] = nil
+      local by = importers[n]
+      if by ~= nil then
+        local more = {}
+        for from in pairs(by) do
+          if not seen[from] then seen[from] = true more[#more + 1] = from end
+        end
+        tsort(more)
+        for j = 1, #more do out[#out + 1] = more[j] end
+      end
+      i = i + 1
+    end
+    return out
   end
 
   -- Intrinsic of `import` (lowering: crates/nl_ir/src/lower/import.rs).
