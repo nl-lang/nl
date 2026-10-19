@@ -7,7 +7,9 @@
 #   - its luajit_relver.txt is that commit's time, which LuaJIT puts in its
 #     version string;
 #   - its version's build metadata names that commit;
-#   - its nl-runtime/ is a copy of runtime/*.lua.
+#   - its nl-runtime/ is a copy of runtime/*.lua;
+#   - the lockfiles of the crates in tests/vm that patch luajit-src with a
+#     copy of it name that version, so running them changes nothing.
 #
 #   tests/vm/support/sync_luajit_src_rs.sh [--check]
 #
@@ -34,6 +36,11 @@ grep -q "^version = \"$VERSION+$SHORT\"$" "$L/Cargo.toml" || differs "version is
 for f in "$ROOT"/runtime/*.lua; do
   cmp -s "$f" "$L/nl-runtime/${f##*/}" || differs "nl-runtime/${f##*/} differs from runtime/"
 done
+LOCKS=$(ls "$ROOT"/tests/vm/*/Cargo.lock 2>/dev/null || true)
+for f in $LOCKS; do
+  grep -A1 '^name = "luajit-src"$' "$f" | grep -q "^version = \"$VERSION+$SHORT\"$" ||
+    differs "${f#"$ROOT"/} does not lock luajit-src $VERSION+$SHORT"
+done
 for f in "$L"/nl-runtime/*.lua; do
   [ -e "$f" ] || continue
   [ -e "$ROOT/runtime/${f##*/}" ] || differs "nl-runtime/${f##*/} is not in runtime/"
@@ -55,4 +62,8 @@ mkdir -p "$L/nl-runtime"
 rm -f "$L"/nl-runtime/*.lua
 cp "$ROOT"/runtime/*.lua "$L/nl-runtime/"
 git -C "$L" add -A luajit_relver.txt Cargo.toml nl-runtime
+for f in $LOCKS; do
+  sed -e "/^name = \"luajit-src\"$/{n;s/^version = \"$VERSION+[^\"]*\"$/version = \"$VERSION+$SHORT\"/;}" "$f" >"$f.tmp"
+  mv -f "$f.tmp" "$f"
+done
 echo "luajit-src-rs: updated to the fork at $SHORT and runtime/; commit it, then the submodule here"
