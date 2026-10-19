@@ -16,8 +16,9 @@
 #    (debug info), then run on stock and fork in the same four modes. Output
 #    (stdout, stderr, exit status; addresses and the interpreter's path
 #    normalized) must be identical, or differ exactly as an entry of
-#    expected-differences.txt says. Files whose output differs between two
-#    runs on stock itself are compared by exit status only.
+#    expected-differences.txt says. The benchmarks that print their own
+#    timings, and files whose output differs between two runs on stock
+#    itself, are compared by exit status only.
 #
 # Everything runs twice: with the fork built with the fake runtime
 # (tests/vm/fake_runtime: the VM changes alone) and with the real one
@@ -113,6 +114,10 @@ bench_args() {
   esac
 }
 "$STOCK" "$S/bench/fasta.lua" 1000 >"$C/fasta1000.txt"
+# Benchmarks that print how long they took: compared by exit status only.
+timed() {
+  case "$1" in bench/scimark-2010-12-20.lua|bench/series.lua) return 0 ;; *) return 1 ;; esac
+}
 bench_stdin() {
   case "$1" in
     k-nucleotide|revcomp) echo "$C/fasta1000.txt" ;;
@@ -172,7 +177,10 @@ for m in $MODES; do
         run_one stock "$build" "$opt" "$f" "$key" "$form" >"$R/a2.out"
         samest=0; [ "$(tail -1 "$R/a.out")" = "$(tail -1 "$R/b.out")" ] && samest=1
         # shellcheck disable=SC2086
-        if why=$($COMPARE corpus "$f" "$R/a.out" "$R/b.out" "$EXP" "$NL_COMPAT_RUNTIME" 2>&1); then
+        if timed "$f" && [ $samest = 1 ]; then
+          mo=$((mo + 1))
+          echo "$name $f ($form)" >>"$R/corpus-status-only.txt"
+        elif why=$($COMPARE corpus "$f" "$R/a.out" "$R/b.out" "$EXP" "$NL_COMPAT_RUNTIME" 2>&1); then
           me=$((me + 1))
           echo "$name $f ($form): $why" >>"$R/corpus-expected.txt"
         elif ! cmp -s "$R/a.out" "$R/a2.out" && [ $samest = 1 ]; then

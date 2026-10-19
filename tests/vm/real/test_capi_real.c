@@ -974,15 +974,16 @@ static void test_loader(void)
 
 /* -- Out of memory while bytecode loads ------------------------------------------ */
 
-/* An allocator that fails the failat-th growth after it is armed. */
-typedef struct FailAlloc { long n, failat; } FailAlloc;
+/* An allocator that fails the failat-th growth after it is armed. It wraps
+** the state's own allocator (f, ud): memory from realloc can lie above the
+** 47 bits of address a GC64 state needs, as on arm64 Linux. */
+typedef struct FailAlloc { lua_Alloc f; void *ud; long n, failat; } FailAlloc;
 
 static void *failalloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
   FailAlloc *fa = (FailAlloc *)ud;
-  if (nsize == 0) { free(ptr); return NULL; }
   if (fa->failat > 0 && nsize > osize && ++fa->n == fa->failat) return NULL;
-  return realloc(ptr, nsize);
+  return fa->f(fa->ud, ptr, osize, nsize);
 }
 
 typedef struct DumpBuf { char data[4096]; size_t len; } DumpBuf;
@@ -998,11 +999,9 @@ static int dumpwriter(lua_State *L, const void *p, size_t sz, void *ud)
 }
 
 /* lua_load of bytecode whose main function has upvalues makes its closure
-** with lj_func_newL_empty, which made the closure before its upvalues (as
-** lj_func_newL_gc did): an upvalue that ran out of
-** memory left a closure freed as one without upvalues, and the GC's byte
-** count drifted (the assertion build checks it when the state closes). Every
-** allocation that loading makes fails in turn here.
+** with lj_func_newL_empty. Every allocation that loading makes fails in turn
+** here: each must give LUA_ERRMEM and leave the GC's byte count right (the
+** assertion build checks it when the state closes).
 */
 static void test_load_bytecode_oom(void)
 {
@@ -1018,13 +1017,14 @@ static void test_load_bytecode_oom(void)
   lua_close(L);
   for (k = 1; k < 10000; k++) {
     int st;
-    fa.n = 0;
-    fa.failat = 0;
-    L = lua_newstate(failalloc, &fa);
+    L = luaL_newstate();
     if (!L) { CHECK(0); return; }
+    fa.f = lua_getallocf(L, &fa.ud);
+    fa.n = 0;
     fa.failat = k;
+    lua_setallocf(L, failalloc, &fa);
     st = luaL_loadbuffer(L, bc.data, bc.len, "=bc");
-    fa.failat = 0;
+    lua_setallocf(L, fa.f, fa.ud);  /* lua_close releases the state's own allocator */
     if (st == 0) {  /* nothing failed: every point was tried */
       lua_close(L);
       break;

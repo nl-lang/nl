@@ -5,6 +5,8 @@
 #   tests/vm/run.sh --no-tsan  without the ThreadSanitizer build
 #   tests/vm/run.sh --no-asan  without the AddressSanitizer build
 #
+# On arm64 Linux the sanitizer builds are skipped (see ASAN=0 below).
+#
 # 1. Builds the fork three times, JIT on, JIT off (LUAJIT_DISABLE_JIT), and
 #    JIT on with LuaJIT's assertions and API checks (LUA_USE_ASSERT,
 #    LUA_USE_APICHECK), with the fake runtime (tests/vm/fake_runtime) and the
@@ -57,6 +59,29 @@ esac
 CC=${CC:-cc}
 LIBS="-lm"
 case "$(uname -s)" in Linux) LIBS="-lm -ldl -lpthread" ;; esac
+
+# The ASan, UBSan and TSan builds use the system allocator
+# (LUAJIT_USE_SYSMALLOC), and a GC64 state must lie in the low 47 bits of
+# the address space. On arm64 Linux, malloc and the sanitizers' heaps both
+# hand out addresses above that, so lua_newstate fails there. Those builds
+# run on x64 Linux and on macOS.
+case "$(uname -s)-$(uname -m)" in
+  Linux-aarch64|Linux-arm64)
+    if [ $ASAN = 1 ] || [ $TSAN = 1 ]; then
+      echo "== sanitizer builds skipped: the system allocator is out of GC64's range on arm64 Linux"
+    fi
+    ASAN=0; TSAN=0 ;;
+esac
+
+# ASan and UBSan flags. Shifts are not checked. Alignment is not checked:
+# upstream lj_parse.c reads a misaligned GCobj pointer by design. Clang's
+# function check (calls through a cast function pointer) is off where the
+# compiler has it; GCC does not.
+NOSAN=shift,alignment
+if $CC -fsanitize=undefined -fno-sanitize=function -c -x c /dev/null -o /dev/null 2>/dev/null; then
+  NOSAN=$NOSAN,function
+fi
+SAN="-fsanitize=address,undefined -fno-sanitize=$NOSAN -fno-omit-frame-pointer"
 
 FAILED=""
 fail() { FAILED="$FAILED
@@ -118,9 +143,7 @@ done
 
 if [ $ASAN = 1 ]; then
   # The host tools (buildvm, minilua) are built without sanitizers: buildvm's
-  # offsetof idioms trip UBSan. Alignment is not checked: upstream lj_parse.c
-  # reads a misaligned GCobj pointer by design.
-  SAN="-fsanitize=address,undefined -fno-sanitize=shift,function,alignment -fno-omit-frame-pointer"
+  # offsetof idioms trip UBSan.
   if build asan $FAKE "XCFLAGS=-DLUAJIT_USE_SYSMALLOC -DLUA_USE_ASSERT -DLUA_USE_APICHECK -DLUAJIT_DISABLE_JIT" \
        "CC=$CC $SAN" "HOST_CC=$CC" "CCDEBUG=-g" "CCOPT=-O1"; then
     B=$T/asan/src
@@ -191,7 +214,6 @@ if [ $ASAN = 1 ]; then
   # UndefinedBehaviorSanitizer, the real runtime and the release libnlc
   # (not instrumented): ports, requests and messages are freed on other
   # threads than the ones that made them.
-  SAN="-fsanitize=address,undefined -fno-sanitize=shift,function,alignment -fno-omit-frame-pointer"
   build real-asan "NL_LIBNLC=$ROOT/target/release/libnl_capi.a" "NL_LIBNLC_LIBS=$RNATIVE" \
     "XCFLAGS=-DLUAJIT_USE_SYSMALLOC -DLUA_USE_ASSERT -DLUA_USE_APICHECK -DLUAJIT_DISABLE_JIT" \
     "CC=$CC $SAN" "HOST_CC=$CC" "CCDEBUG=-g" "CCOPT=-O1" && {

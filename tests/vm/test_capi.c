@@ -764,14 +764,17 @@ static void test_translator(void)
   lua_close(L);
 }
 
-/* An allocator that fails on demand, for LUA_ERRMEM. */
+/* An allocator that fails on demand, for LUA_ERRMEM. It wraps the state's
+** own allocator: memory from realloc can lie above the 47 bits of address a
+** GC64 state needs, as on arm64 Linux. */
 static int alloc_fail;
+static lua_Alloc base_alloc;
+static void *base_ud;
 static void *limited_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 {
-  (void)ud; (void)osize;
-  if (nsize == 0) { free(ptr); return NULL; }
+  (void)ud;
   if (alloc_fail && nsize > osize) return NULL;
-  return realloc(ptr, nsize);
+  return base_alloc(base_ud, ptr, osize, nsize);
 }
 
 static int allocates(lua_State *L)
@@ -784,17 +787,18 @@ static int allocates(lua_State *L)
 
 static void test_pcall_errmem(void)
 {
-  lua_State *L = lua_newstate(limited_alloc, NULL);
-  if (!L) {
-    printf("# lua_newstate with a custom allocator is not supported here\n");
-    return;
-  }
+  lua_State *L = luaL_newstate();
+  CHECK(L != NULL);
+  if (!L) return;
+  base_alloc = lua_getallocf(L, &base_ud);
+  lua_setallocf(L, limited_alloc, NULL);
   luaL_openlibs(L);
   lua_pushcfunction(L, allocates);
   CHECK(nl_pcall(L, 0, 0) == LUA_ERRMEM);
   alloc_fail = 0;
   CHECK(lua_type(L, -1) == LUA_TSTRING);
   CHECK_CONTAINS(lua_tostring(L, -1), "not enough memory");
+  lua_setallocf(L, base_alloc, base_ud);  /* lua_close releases the state's own allocator */
   lua_close(L);
 }
 

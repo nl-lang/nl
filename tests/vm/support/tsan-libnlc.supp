@@ -9,7 +9,13 @@
 #
 # TSan only records frames of instrumented code, so a Rust function shows up
 # in a report only as the direct caller of one of those intercepted calls.
-# Every Rust function name contains "::" and no C function name does, so
-# this suppresses exactly the reports where one side is the Rust library.
-# Races between C accesses are still reported.
+# These patterns match Rust function names and no C function name, so they
+# suppress exactly the reports where one side is the Rust library. Races
+# between C accesses are still reported.
+#
+# Demangled Rust names contain "::" (clang's TSan runtime demangles them).
 race:::
+# Mangled ones start with _R (v0 mangling) or _ZN (legacy mangling); GCC's
+# TSan runtime prints v0 names mangled.
+race:^_R
+race:^_ZN
