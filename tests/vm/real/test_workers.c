@@ -930,6 +930,34 @@ static void test_parent_in_callbacks(void)
   }
 }
 
+static void test_parent_no_job(void)
+{
+  /* A timer's callback outside any task runs for no job: Worker.parent is
+  ** nil there, as in the main state. The callback of a call the job made to
+  ** a dedicated worker runs for the job, as the file the result needs
+  ** loads for it (its `main() unless Worker.parent` stays quiet).
+  */
+  {
+    lua_State *L = newstate(1);
+    CHECK_STR(run_main(L, "import { job_a } from 'pjnone'\npub async fn run\n  spawn job_a().await\nend\n"),
+	      "callback: nil, call's callback: a handle, job: a handle");
+    lua_close(L);
+  }
+  /* A file that a pool worker loads for no job (for the result of a spawn
+  ** made by such a callback, which brings a struct the worker has not
+  ** loaded): Worker.parent is a WorkerError there, so that the file's
+  ** `main() unless Worker.parent` does not run. The callback keeps its
+  ** worker busy, so that the other pool worker runs the spawned job.
+  */
+  {
+    lua_State *L = newstate(2);
+    CHECK_STR(run_main(L, "import { job_a } from 'pjload'\npub async fn run\n  spawn job_a().await\nend\n"),
+	      "WorkerError: Worker.parent is unknown here: this pool worker is loading a file for code that runs "
+	      "for no job");
+    lua_close(L);
+  }
+}
+
 /* For tests only (lj_nlworker.c): how many more worker states may be made. */
 extern int lj_nl_test_workerstates;
 
@@ -1364,6 +1392,46 @@ int main(int argc, char **argv)
   writefile("selfp.nl",
 	    "pub fn inner\n  Worker.parent.emit \"X\", 1\n  \"emitted\"\nend\n"
 	    "pub async fn outer\n  (spawn inner()).await\nend\n");
+  writefile("pjnone.nl",
+	    "let seen = \"not run\"\n"
+	    "fn which\n  if Worker.parent == nil\n    \"nil\"\n  else\n    \"a handle\"\n  end\nend\n"
+	    "pub async fn job_a\n"
+	    "  let t = Task.sleep(0.01)\n"
+	    "  t.on_done do |v|\n    seen = which()\n  end\n"
+	    "  Task.sleep(0.05).await\n"
+	    "  let d = Worker.new 'ptsvc'\n"
+	    "  let c = d.point()\n"
+	    "  let seen_call = \"not run\"\n"
+	    "  c.on_done do |p|\n    seen_call = which()\n  end\n"
+	    "  c.await\n"
+	    "  d.stop\n"
+	    "  \"callback: #{seen}, call's callback: #{seen_call}, job: #{which()}\"\n"
+	    "end\n");
+  writefile("ptypes.nl",
+	    "pub struct P\n  x: Number\nend\n"
+	    "fn main\n  print \"the main state's code ran in a worker\"\nend\n"
+	    "main() unless Worker.parent\n");
+  writefile("ptsvc.nl", "import { P } from 'ptypes'\npub fn point\n  P { x: 1 }\nend\n");
+  writefile("pjload.nl",
+	    "let outcome = \"pending\"\n"
+	    "pub async fn make\n"
+	    "  let d = Worker.new 'ptsvc'\n"
+	    "  let p = d.point().await\n"
+	    "  d.stop\n"
+	    "  p\n"
+	    "end\n"
+	    "pub async fn job_a\n"
+	    "  let t = Task.sleep(0.01)\n"
+	    "  t.on_done do |v|\n"
+	    "    let r = spawn make()\n"
+	    "    r.on_done do |p|\n      outcome = \"loaded\"\n    end\n"
+	    "    r.on_error do |e|\n      outcome = \"#{typeof(e)}: #{e.message}\"\n    end\n"
+	    "    let t0 = :os.clock()\n"
+	    "    while :os.clock() - t0 < 0.2\n    end\n"
+	    "  end\n"
+	    "  while outcome == \"pending\"\n    Task.sleep(0.01).await\n  end\n"
+	    "  outcome\n"
+	    "end\n");
   writefile("dsvc.nl",
 	    "import { job_b } from 'pj'\n"
 	    "let heard = []\n"
@@ -1392,6 +1460,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_discarded_parent);
   RUN_TEST(test_worker_search);
   RUN_TEST(test_parent_in_callbacks);
+  RUN_TEST(test_parent_no_job);
   RUN_TEST(test_pool_dies);
   RUN_TEST(test_churn);
   RUN_TEST(test_wakeup);

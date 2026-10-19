@@ -600,12 +600,19 @@ do
     -- made then (coroutine.create and coroutine.wrap, below), so that
     -- Worker.parent names that job's state in all of them.
     local job_parent = setmetatable({}, { __mode = "k" })
-    local last_parent = nil
-    -- The job whose spawn's result is being delivered (rt.workerin): the
-    -- callbacks that its task runs (on_done, on_error) belong to it.
+    -- The job a message being handled belongs to, outside its tasks: a job
+    -- while its arguments are decoded (its files load), and the job that
+    -- made a spawn or a call while the result is decoded and delivered
+    -- (rt.workerin), so that the callbacks its task runs (on_done,
+    -- on_error) belong to that job.
     local delivering_parent = nil
+    -- The job of the running code; nil for code that runs for no job.
+    local function current_job()
+      local co = corunning()
+      return (co ~= nil and job_parent[co]) or delivering_parent
+    end
     I.on_start = function(co, creator)
-      local p = creator ~= nil and job_parent[creator] or nil
+      local p = (creator ~= nil and job_parent[creator]) or delivering_parent
       if p ~= nil then job_parent[co] = p end
     end
     if kind ~= nil and type(coroutine) == "table" then
@@ -613,8 +620,7 @@ do
       local create, cowrap = coroutine.create, coroutine.wrap
       local resume = coroutine.resume
       local function inherit(co)
-        local cur = corunning()
-        local p = cur ~= nil and job_parent[cur] or delivering_parent
+        local p = current_job()
         if p ~= nil then job_parent[co] = p end
         return co
       end
@@ -644,8 +650,7 @@ do
       local ok, err = HW.spawn(labels, id, named[f][1], f, unpack(args, 1, n))
       if not ok then I.throw("WorkerError", err) end
       local t = rt.newtask()
-      local cur = corunning()
-      waiting[id] = { t, where, (cur ~= nil and job_parent[cur]) or delivering_parent }
+      waiting[id] = { t, where, current_job() }
       return t
     end
 
@@ -688,7 +693,6 @@ do
 
     local function run(req, port, f, args, first)
       local is_async = I.async_fns[f]
-      last_parent = port
       local job = I.start(function()
         local co = corunning()
         if co ~= nil then job_parent[co] = port end
@@ -708,14 +712,16 @@ do
 
     -- A job of the pool (lj_nlworker.c, job_f).
     function rt.workerjob(box, req, port)
-      -- Worker.parent is the job's state while its files load, too: a top
-      -- level guarded by `unless Worker.parent` stays quiet.
-      last_parent = port
       if pool_failure ~= nil then
         HW.replyerror(req, pool_failure)
         return
       end
+      -- Worker.parent is the job's state while its files load, too: a top
+      -- level guarded by `unless Worker.parent` stays quiet.
+      local was = delivering_parent
+      delivering_parent = port
       local ok, vals = decode(box)
+      delivering_parent = was
       if not ok then
         reply(req, "failed", vals)
         return
@@ -805,6 +811,10 @@ do
         local w = waiting[a]
         if w == nil then return end
         waiting[a] = nil
+        -- The result is decoded (files it needs load) and the task's
+        -- callbacks run inside I.finish for the job that made the request.
+        local was = delivering_parent
+        delivering_parent = w[3]
         local state, value
         if b == 2 then
           state, value = "failed", rt.new(rt.WorkerError, { message = tostring(d) })
@@ -817,10 +827,6 @@ do
           end
         end
         if state == "failed" then add_trace(value, w[2]) end
-        -- The task's callbacks run inside I.finish, for the job that
-        -- spawned it.
-        local was = delivering_parent
-        delivering_parent = w[3]
         local ok, err = pcall(I.finish, w[1], state, value)
         delivering_parent = was
         if not ok then error(err, 0) end
@@ -880,7 +886,7 @@ do
       local id = next_id
       HW.call(w, labels, id, name, ...)
       local t = rt.newtask()
-      waiting[id] = { t, caller_position() }
+      waiting[id] = { t, caller_position(), current_job() }
       return t
     end
 
@@ -930,7 +936,9 @@ do
     -- job whose task is running: the job's own task, or a task started
     -- while one of the job's tasks ran (I.on_start). Code that runs for no
     -- job (a handler of an event, a timer's callback outside a task) gets
-    -- the job started last. nil in the main state.
+    -- nil, as the main state does; a file that loads for no job raises
+    -- WorkerError instead, so that a top level guarded by
+    -- `unless Worker.parent` never takes the worker for the main state.
     local Parent = {}
     I.typeof_special[Parent] = "Worker"
     local parent_emit = I.mark(function(h, ...)
@@ -955,8 +963,11 @@ do
         if k ~= "parent" or kind == nil then return nil end
         local port
         if kind == "pool" then
-          local co = corunning()
-          port = (co ~= nil and job_parent[co]) or delivering_parent or last_parent
+          port = current_job()
+          if port == nil and I.worker_loading then
+            I.throw("WorkerError", "Worker.parent is unknown here: this pool worker is loading a file"
+              .. " for code that runs for no job")
+          end
         else
           port = parent_port
         end
