@@ -466,18 +466,6 @@ unsafe extern "C-unwind" fn c_reject(l: *mut lua::lua_State) -> c_int {
     0
 }
 
-/// Raises the TypeError that `nlL_checkisa` raises for `nil` against the
-/// type at 1: its message names the type (`Type::name`).
-unsafe extern "C-unwind" fn c_checknil(l: *mut lua::lua_State) -> c_int {
-    // SAFETY: called by nl_pcall with the type at 1.
-    unsafe {
-        lua::lua_settop(l, 1);
-        lua::lua_pushnil(l);
-        nl::nlL_checkisa(l, 2, 1);
-    }
-    0
-}
-
 pub(crate) fn import(lua: &Lua, path: &str) -> Result<Outcome> {
     pcall_c(lua, c_import, MultiValue::from_vec(vec![Value::String(lua.create_string(path)?)]))
 }
@@ -508,10 +496,6 @@ pub(crate) fn resolve(lua: &Lua, task: &Table, value: Value) -> Result<Outcome> 
 
 pub(crate) fn reject(lua: &Lua, task: &Table, error: Value) -> Result<Outcome> {
     pcall_c(lua, c_reject, MultiValue::from_vec(vec![Value::Table(task.clone()), error]))
-}
-
-pub(crate) fn checknil(lua: &Lua, ty: &Table) -> Result<Outcome> {
-    pcall_c(lua, c_checknil, MultiValue::from_vec(vec![Value::Table(ty.clone())]))
 }
 
 // -- Calls that raise nothing, or only memory errors -------------------------
@@ -636,6 +620,21 @@ pub(crate) fn typeof_(lua: &Lua, v: Value) -> Result<Option<String>> {
     unsafe {
         lua.exec_raw::<()>(v, |l| {
             let s = nl::nl_typeof(l, 1);
+            if !s.is_null() {
+                name = Some(CStr::from_ptr(s).to_string_lossy().into_owned());
+            }
+        })?;
+    }
+    Ok(name)
+}
+
+pub(crate) fn typename(lua: &Lua, ty: &Table) -> Result<Option<String>> {
+    let mut name = None;
+    // SAFETY: nl_typename raises nothing; the string belongs to the state
+    // and is copied before the stack is restored.
+    unsafe {
+        lua.exec_raw::<()>(ty.clone(), |l| {
+            let s = nl::nl_typename(l, 1);
             if !s.is_null() {
                 name = Some(CStr::from_ptr(s).to_string_lossy().into_owned());
             }

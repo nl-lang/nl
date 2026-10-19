@@ -203,6 +203,10 @@ static void test_host_types(void)
   CHECK(!lua_isnil(L, 3) && !lua_isnil(L, 4));
   CHECK(nl_isa(L, 1, 3) && nl_isa(L, 1, 4));
   CHECK(nl_isa(L, 2, 3) && !nl_isa(L, 2, 4));
+  /* nl_typename names a type; a value of the type is not one. */
+  CHECK_STR(nl_typename(L, 3), "Unit");
+  CHECK_STR(nl_typename(L, 4), "Hero");
+  CHECK(nl_typename(L, 1) == NULL);
   lua_settop(L, 2);
   /* NL code sees the host type's name through typeof. (An annotation or
   ** `is` naming it needs a declaration file: the compiler rejects an
@@ -255,6 +259,30 @@ static void test_structs_and_new(void)
   lua_getfield(L, -1, "y");
   CHECK(lua_tonumber(L, -1) == 2);
   lua_pop(L, 2);
+  lua_settop(L, 0);
+  /* nl_typename: the kinds of type NL declares, built-in types, and NULL
+  ** for what is not a type (a module, an instance, a plain table, a number).
+  */
+  CHECK(donl(L, "pub struct Point\n  x: Number\nend\npub enum Color\n  Red\nend\n"
+	    "pub interface Named\n  fn title: String\nend\n"
+	    "pub module Tools\n  fn hammer\n    1\n  end\nend\n", "=typenames") == 0);
+  exp = lua_gettop(L);
+  lua_getfield(L, exp, "Point"); CHECK_STR(nl_typename(L, -1), "Point"); lua_pop(L, 1);
+  lua_getfield(L, exp, "Color"); CHECK_STR(nl_typename(L, -1), "Color"); lua_pop(L, 1);
+  lua_getfield(L, exp, "Named"); CHECK_STR(nl_typename(L, -1), "Named"); lua_pop(L, 1);
+  lua_getfield(L, exp, "Tools"); CHECK(nl_typename(L, -1) == NULL); lua_pop(L, 1);
+  lua_getfield(L, exp, "Point");
+  lua_newtable(L);
+  lua_pushnumber(L, 2);
+  lua_setfield(L, -2, "x");
+  nl_new(L, -2);
+  CHECK(nl_typename(L, -1) == NULL);
+  CHECK_STR(nl_typename(L, -2), nl_typeof(L, -1));
+  lua_pop(L, 2);
+  nl_gettype(L, "Task"); CHECK_STR(nl_typename(L, -1), "Task"); lua_pop(L, 1);
+  nl_gettype(L, "TypeError"); CHECK_STR(nl_typename(L, -1), "TypeError"); lua_pop(L, 1);
+  CHECK(nl_typename(L, exp) == NULL);
+  lua_pushnumber(L, 1); CHECK(nl_typename(L, -1) == NULL); lua_pop(L, 1);
   lua_settop(L, 0);
   lua_close(L);
 }

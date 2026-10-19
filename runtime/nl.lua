@@ -88,6 +88,7 @@
 --   rt.typeof(v) -> string                      nl_typeof
 --   rt.isa(v, T) -> boolean                     nl_isa
 --   rt.gettype(name) -> type | nil              nl_gettype
+--   rt.typenameof(T) -> string | nil            nl_typename; nil when T is not a type
 --   rt.settype(mt, name, parent_mt | nil)       nl_settype
 --   rt.new(T, fields) -> instance               nl_new
 --   rt.range(first, last, exclusive) -> range   nl_pushrange

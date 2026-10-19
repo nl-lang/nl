@@ -163,6 +163,7 @@ unsafe extern "C-unwind" {
 
     // Types and values.
     pub fn nl_typeof(L: *mut lua_State, idx: c_int) -> *const c_char;
+    pub fn nl_typename(L: *mut lua_State, idx: c_int) -> *const c_char;
     pub fn nl_isa(L: *mut lua_State, idx: c_int, ty: c_int) -> c_int;
     pub fn nl_gettype(L: *mut lua_State, name: *const c_char);
     pub fn nl_settype(L: *mut lua_State, idx: c_int, name: *const c_char, parent: c_int);

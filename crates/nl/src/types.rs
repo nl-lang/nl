@@ -5,7 +5,7 @@ use mlua::{
     Table, UserData, Value, WeakLua,
 };
 
-use crate::exception::{NlErrorExt, convert, values};
+use crate::exception::{convert, values};
 use crate::raw;
 
 /// The `Lua` a value belongs to.
@@ -20,22 +20,12 @@ pub(crate) fn lua_of(weak: &WeakLua) -> Result<Lua> {
 pub struct Type(Table);
 
 impl Type {
-    /// The type's NL name (`Player`, `Unit`).
-    ///
-    /// No function of `nl.h` names a type; this reads the name from the
-    /// `TypeError` that `nlL_checkisa` raises for `nil` against it.
+    /// The type's NL name (`Player`, `Unit`), as `typeof` names its values
+    /// (`nl_typename`). An error when the table is not a type (a module, or
+    /// any other table).
     pub fn name(&self) -> Result<String> {
         let lua = lua_of(self.0.weak_lua())?;
-        let err = match values(&lua, || raw::checknil(&lua, &self.0)) {
-            Ok(_) => return Err(Error::runtime("nl: this type accepts nil, so it cannot be named")),
-            Err(e) => e,
-        };
-        let message = err.exception().map(|e| e.message().to_owned()).unwrap_or_default();
-        message
-            .strip_prefix("argument 2 expects ")
-            .and_then(|rest| rest.rsplit_once(", got "))
-            .map(|(name, _)| name.to_owned())
-            .ok_or(err)
+        raw::typename(&lua, &self.0)?.ok_or_else(|| Error::runtime("nl: this table is not a type, so it has no name"))
     }
 
     /// `value is T`. An enum's values are its strings or numbers.

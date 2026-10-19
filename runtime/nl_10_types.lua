@@ -112,6 +112,20 @@ do
   end
   rt.typename = typename
 
+  -- nl_typename: the name of a type value, nil for a value that is not
+  -- one (a module, an instance, any other table).
+  function rt.typenameof(t)
+    if type(t) ~= "table" then return nil end
+    local info = I.info[t]
+    if info then
+      if I.isa_kind[info.kind] == nil then return nil end
+      return info.name
+    end
+    local name = rawget(t, "name")
+    if type(name) == "string" and type(rawget(t, "test")) == "function" then return name end
+    return nil
+  end
+
   isa = function(v, t)
     local info = I.info[t]
     if info then

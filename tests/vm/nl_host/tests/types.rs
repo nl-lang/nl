@@ -104,6 +104,14 @@ pub enum Color
   Red
   Green
 end
+pub interface Named
+  fn title: String
+end
+pub module Tools
+  fn hammer
+    1
+  end
+end
 "##;
     let m: Table = lua.load_nl(src, "=game")?.try_call(())?;
     let player: Type = m.get("Player")?;
@@ -120,6 +128,15 @@ end
     let red: Value = color.as_table().get("Red")?;
     assert!(color.has(&red));
     assert!(!color.has(&Value::Boolean(true)));
+    assert_eq!(color.name()?, "Color");
+
+    // nl_typename: every kind of type, and an error for a table that is not
+    // one.
+    assert_eq!(m.get::<Type>("Named")?.name()?, "Named");
+    let tools: Table = m.get("Tools")?;
+    assert!(Type::from_lua(Value::Table(tools), &lua)?.name().is_err());
+    assert!(Type::from_lua(Value::Table(lua.create_table()?), &lua)?.name().is_err());
+    assert_eq!(lua.nl_type("Task")?.expect("built-in").name()?, "Task");
 
     let exc = lua.nl_type("Exception")?.expect("built-in");
     assert_eq!(exc.name()?, "Exception");
