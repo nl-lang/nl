@@ -15,6 +15,10 @@
 #   fork-fails: PATTERN  the fork fails, its first line matching the pattern
 #                        (the exit status may differ); for a suite entry,
 #                        stock passes the test and the fork's result matches
+#   either-fails: PATTERN   corpus only: one side fails, its first line
+#                        matching the pattern, and the other passes with no
+#                        output; for a file whose result depends on the heap
+#                        layout on stock too
 # A suite entry must occur (so that the list stays exact); a corpus entry is
 # checked when its file differs.
 suite	fake	lib/contents.lua --- base	added: event include typeof raise add_path load_nl __fake_rt	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude; __fake_rt is the fake runtime's test hook.
@@ -46,3 +50,4 @@ suite	any	lang/meta/len.lua --- table	fork-fails: len[.%w]*:%d+: assertion faile
 suite	any	lang/meta/comp_jit.lua --- Mixed metamethods for ordered comparisons.	fork-fails: comp_jit[.%w]*:%d+: assertion failed!	the fork lets __lt and __le compare operands of different types and with different handlers, as Lua 5.2 does; the test asserts Lua 5.1's errors.
 corpus	any	test/lang/meta/len.lua	fork-fails: len[.%w]*:%d+: assertion failed!	as the suite entry lang/meta/len.lua --- table.
 corpus	any	test/lang/meta/comp_jit.lua	fork-fails: comp_jit[.%w]*:%d+: assertion failed!	as the suite entry lang/meta/comp_jit.lua --- Mixed metamethods for ordered comparisons.
+corpus	any	test/misc/stackov.lua	either-fails: stackov[.%w]*:11: assertion failed!	with the JIT on, whether a stack overflow is reported with the position of the overflowing call depends on which hot counters the recursive function shares, so on the addresses of its bytecode; the opened runtime moves them. Stock LuaJIT fails the same way at other layouts (on x64, with a few functions defined before the test), and either side may be the one that fails.

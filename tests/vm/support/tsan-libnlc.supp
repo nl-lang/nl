@@ -1,0 +1,15 @@
+# ThreadSanitizer suppressions for the builds that link the release
+# libnl_capi.a (tests/vm/run.sh, real-tsan).
+#
+# The Rust library is not instrumented, so TSan sees none of its
+# synchronization: not its atomics, and not the futex calls that park its
+# threads on Linux. It still sees the malloc, free, memcpy and memcmp calls
+# the library makes, and memory passed between the compiler thread and the
+# loader over std::sync::mpsc then looks unsynchronized.
+#
+# TSan only records frames of instrumented code, so a Rust function shows up
+# in a report only as the direct caller of one of those intercepted calls.
+# Every Rust function name contains "::" and no C function name does, so
+# this suppresses exactly the reports where one side is the Rust library.
+# Races between C accesses are still reported.
+race:::

@@ -217,7 +217,8 @@ if [ $TSAN = 1 ]; then
   # The workers with ThreadSanitizer: the C side (the fork, its inboxes,
   # queues and ports, and the tests) instrumented, the real runtime, and
   # the release libnlc, which TSan cannot instrument on stable Rust. JIT
-  # off, system allocator, as for the tsan build above.
+  # off, system allocator, as for the tsan build above. Reports from inside
+  # the Rust library are suppressed (tests/vm/support/tsan-libnlc.supp).
   build real-tsan "NL_LIBNLC=$ROOT/target/release/libnl_capi.a" "NL_LIBNLC_LIBS=$RNATIVE" \
     "XCFLAGS=-DLUAJIT_DISABLE_JIT -DLUAJIT_USE_SYSMALLOC" \
     "CC=$CC -fsanitize=thread -g" "CCOPT=-O1 -fno-omit-frame-pointer" && {
@@ -230,7 +231,8 @@ if [ $TSAN = 1 ]; then
         echo "== $n (real, ThreadSanitizer)"
         case $n in test_workers) A="$(mktemp -d "$T/tmp/tsan.XXXXXX") --stress" ;; *) A="" ;; esac
         # shellcheck disable=SC2086
-        TSAN_OPTIONS="halt_on_error=1 exitcode=66 ${TSAN_OPTIONS:-}" "$T/$n-realtsan" $A >"$T/$n-realtsan.out" 2>&1 ||
+        TSAN_OPTIONS="halt_on_error=1 exitcode=66 suppressions=$ROOT/tests/vm/support/tsan-libnlc.supp ${TSAN_OPTIONS:-}" \
+          "$T/$n-realtsan" $A >"$T/$n-realtsan.out" 2>&1 ||
           { tail -60 "$T/$n-realtsan.out"; fail "$n under ThreadSanitizer (real)"; }
         grep -v '^ok' "$T/$n-realtsan.out" | head -20
       else

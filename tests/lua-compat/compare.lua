@@ -166,6 +166,15 @@ elseif mode == "corpus" then
     if (flines[1] or ""):match(pat) and flines[#flines] ~= "exit status 0" then print(spec); os.exit(0) end
     print("the fork does not fail as listed: " .. tostring(flines[1]))
     os.exit(1)
+  elseif spec:match("^either%-fails: ") then
+    -- One side fails with the given error and the other passes, either way.
+    local pat = spec:match("^either%-fails: (.*)$")
+    local function fails(lines) return (lines[1] or ""):match(pat) and lines[#lines] ~= "exit status 0" end
+    local function passes(lines) return #lines == 1 and lines[1] == "exit status 0" end
+    if (fails(slines) and passes(flines)) or (fails(flines) and passes(slines)) then print(spec); os.exit(0) end
+    print("not one side failing as listed and the other passing: stock " .. tostring(slines[1])
+          .. "; fork " .. tostring(flines[1]))
+    os.exit(1)
   end
   print("unknown spec " .. spec)
   os.exit(1)
