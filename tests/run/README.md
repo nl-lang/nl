@@ -31,7 +31,7 @@ Area prefixes name the part of the language: `lex_` (lexical structure), `var_` 
 | Files | Needs |
 |---|---|
 | `regex_*` | the regex library of the fork; on stock LuaJIT (`nlc run`, the oracle) `Regex.new` raises, so they are excluded there |
-| `string_case_unicode.nl` | Unicode case tables, which the fork's string library has; the Lua stand-in used on stock LuaJIT has none, so it is excluded there |
+| `string_case_unicode.nl` | Unicode case tables: the fork's string library has them, and the Lua stand-in used on stock LuaJIT reads the same mappings from its host (`nlc run` gives them; a portable bundle carries them unless it is built without) |
 | `worker_*` | the worker runtime of the fork, where they run with 0, 1 and 8 pool workers (`tests/vm/conformance.sh`); on stock LuaJIT the same-state stand-in of `spawn` runs all of them but two: `worker_dedicated` (it needs `Worker.new`) and `worker_spawn_block` (it reads a file-level variable that each worker has a copy of) are excluded there |
 | `reject/type_*` | the analyzer: these are type errors, caught in the compiler, so on every target |
 | `reject/regex_*` | compile-time validation of literal patterns, in the compiler, so on every target |

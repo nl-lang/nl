@@ -115,7 +115,7 @@ fn first_line(bytes: &[u8]) -> String {
 }
 
 fn excluded(stem: &str) -> bool {
-    stem.starts_with("regex_") || stem.starts_with("worker_") || stem == "string_case_unicode"
+    stem.starts_with("regex_") || stem.starts_with("worker_")
 }
 
 #[test]

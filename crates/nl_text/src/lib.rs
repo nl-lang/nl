@@ -23,6 +23,8 @@
 /// The C ABI (`nltext.h`). The only module allowed unsafe code.
 #[allow(unsafe_code)]
 pub mod abi;
+/// The case mappings as text, for a string library written in Lua.
+pub mod case_tables;
 
 /// The byte index of the first invalid UTF-8 sequence, or `None` when the
 /// bytes are valid (Rust's rules: no overlong forms, no surrogates, nothing

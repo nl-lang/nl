@@ -1,7 +1,7 @@
 //! The host side of `nlc run` on stock LuaJIT:
 //! the file resolver of `import`, the host table the runtime is opened
-//! with (runtime/nl.lua, "HOST TABLE"), and a stand-in for Lua's `debug`
-//! library.
+//! with (runtime/nl.lua, "HOST TABLE"; with Unicode case tables for the
+//! String stand-in), and a stand-in for Lua's `debug` library.
 
 use std::cell::RefCell;
 use std::path::{Component, Path, PathBuf};
@@ -168,6 +168,7 @@ pub fn host_table(lua: &Lua, files: Rc<Files>, options: CompileOptions) -> mlua:
     )?;
     let f = files.clone();
     host.set("canonical", lua.create_function(move |_, path: String| Ok(f.canonical_file(&path)))?)?;
+    host.set("case_tables", case_tables(lua)?)?;
     let f = files;
     host.set(
         "add_path",
@@ -177,6 +178,18 @@ pub fn host_table(lua: &Lua, files: Rc<Files>, options: CompileOptions) -> mlua:
         })?,
     )?;
     Ok(host)
+}
+
+/// `host.case_tables`: Rust's Unicode case mappings for the String
+/// stand-in (`nl_text::case_tables`), so that case mapping agrees with the
+/// fork's text library.
+fn case_tables(lua: &Lua) -> mlua::Result<Table> {
+    let t = nl_capi::nl_text::case_tables::case_tables();
+    let out = lua.create_table()?;
+    for (k, v) in [("up", t.up), ("upx", t.upx), ("down", t.down), ("downx", t.downx), ("swapx", t.swapx)] {
+        out.set(k, v)?;
+    }
+    Ok(out)
 }
 
 /// mlua opens only the safe standard libraries, and loading `debug` needs

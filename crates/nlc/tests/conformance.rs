@@ -18,8 +18,7 @@
 //! itself (an error on the same line of a file it imports does not count).
 //!
 //! The exclusions are the README's ("Which programs need what") for stock
-//! LuaJIT: the `regex_*` programs, `string_case_unicode.nl`, and the two
-//! worker programs that the same-state stand-in of `spawn` cannot run
+//! LuaJIT: the `regex_*` programs and the two worker programs that the same-state stand-in of `spawn` cannot run
 //! (`worker_dedicated`, which needs `Worker.new`, and `worker_spawn_block`,
 //! which reads a file-level variable that each worker has a copy of); the
 //! other `worker_*` programs run on the stand-in. Every rejected
@@ -130,7 +129,7 @@ fn run_dir() -> PathBuf {
 }
 
 fn excluded_run(name: &str) -> bool {
-    name.starts_with("regex_") || name == "string_case_unicode" || name == "worker_dedicated" || name == "worker_spawn_block"
+    name.starts_with("regex_") || name == "worker_dedicated" || name == "worker_spawn_block"
 }
 
 fn excluded_reject(_name: &str) -> bool {

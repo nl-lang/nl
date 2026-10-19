@@ -6,10 +6,11 @@
 -- over the text library of libnlc (crates/nl_text): validity remembered in
 -- the string object, counting and position scans with an ASCII fast path,
 -- substrings by character range, Unicode case mapping. Without it (stock
--- LuaJIT, the `nlc run` oracle) the Lua stand-ins below do the same work
--- in Lua, except that case mapping is ASCII-only (string_case_unicode.nl
--- is excluded there). Everything built on the primitives (search, split,
--- strip, padding, replacement) is the same Lua on both.
+-- LuaJIT: the `nlc run` oracle, portable bundles) the Lua stand-ins below
+-- do the same work in Lua; Unicode case mapping needs the host's tables
+-- (host.case_tables), without which it is ASCII-only. Everything built on
+-- the primitives (search, split, strip, padding, replacement) is the same
+-- Lua on both.
 --
 -- Encoding. The character operations check the whole string first and
 -- raise EncodingError for invalid UTF-8 (overlong forms, surrogates, code
@@ -223,8 +224,8 @@ do
       return bsub(s, i, advance(s, i, last - first + 1) - 1)
     end
 
-    -- Case mapping is ASCII-only in the stand-in: non-ASCII characters
-    -- pass through unchanged.
+    -- Without the host's tables (below), case mapping is ASCII-only in
+    -- the stand-in: non-ASCII characters pass through unchanged.
     upcase, downcase = upper, lower
 
     function capitalize(s)
@@ -238,6 +239,108 @@ do
     end
     function swapcase(s)
       return (gsub(s, "%a", swap))
+    end
+
+    -- With the host's Unicode tables (host.case_tables, encoded as
+    -- crates/nl_text/src/case_tables.rs describes), case mapping is the
+    -- text library's: Rust's mappings, one character to one or several.
+    -- An ASCII string keeps the ASCII functions above, which give the same
+    -- result. The tables are read on first use.
+    local tables = type(host) == "table" and type(host.case_tables) == "table" and host.case_tables or nil
+    if tables ~= nil then
+      local ascii_upcase, ascii_downcase, ascii_capitalize = upcase, downcase, capitalize
+      local up, down, swapmap -- character -> its mapping, as strings
+
+      local function hex(x) return tonumber(x, 16) end
+      local function read_runs(t, runs)
+        for start, n, step, sign, delta in gmatch(runs or "", "(%x+) (%x+) (%x+) ([+-])(%x+);") do
+          start, n, step, delta = hex(start), hex(n), hex(step), hex(delta)
+          if sign == "-" then delta = -delta end
+          for k = 0, n - 1 do
+            local c = start + k * step
+            t[encode(c)] = encode(c + delta)
+          end
+        end
+      end
+      local function read_multi(t, entries)
+        for c, to in gmatch(entries or "", "(%x+):([%x.]+);") do
+          local parts = {}
+          for x in gmatch(to, "%x+") do parts[#parts + 1] = encode(hex(x)) end
+          t[encode(hex(c))] = concat(parts)
+        end
+      end
+      local function load()
+        up, down, swapmap = {}, {}, {}
+        read_runs(up, tables.up)
+        read_multi(up, tables.upx)
+        read_runs(down, tables.down)
+        read_multi(down, tables.downx)
+        for k, v in pairs(up) do swapmap[k] = v end
+        for k, v in pairs(down) do swapmap[k] = v end
+        read_multi(swapmap, tables.swapx)
+      end
+
+      local function nonascii(s) return find(s, "[\128-\255]") ~= nil end
+
+      function upcase(s)
+        if not nonascii(s) then return ascii_upcase(s) end
+        if up == nil then load() end
+        return (gsub(s, charpattern, up))
+      end
+
+      -- A capital sigma lowercases to the final form when it ends a word
+      -- (str::to_lowercase): a cased character comes before it and none
+      -- after it, skipping the characters that case ignores. Here a cased
+      -- character is one with a case mapping, and the ignored ones are the
+      -- usual apostrophes and dots and the combining diacritical marks, a
+      -- subset of Unicode's Case_Ignorable.
+      local SIGMA = "\206\163"
+      local ignorable = { ["'"] = true, ["."] = true, [":"] = true, ["^"] = true, ["`"] = true,
+        ["\194\168"] = true, ["\194\173"] = true, ["\194\175"] = true, ["\194\180"] = true,
+        ["\194\183"] = true, ["\194\184"] = true, ["\226\128\152"] = true, ["\226\128\153"] = true,
+        ["\226\128\164"] = true, ["\226\128\167"] = true }
+      local function is_ignorable(ch)
+        if ignorable[ch] then return true end
+        local cp = decode(ch, 1)
+        return cp >= 0x300 and cp <= 0x36F
+      end
+      local function cased_at(list, i, dir)
+        while list[i] ~= nil and is_ignorable(list[i]) do i = i + dir end
+        local ch = list[i]
+        return ch ~= nil and (up[ch] ~= nil or down[ch] ~= nil)
+      end
+
+      function downcase(s)
+        if not nonascii(s) then return ascii_downcase(s) end
+        if down == nil then load() end
+        if not find(s, SIGMA, 1, true) then return (gsub(s, charpattern, down)) end
+        local list = chars(s)
+        local out = {}
+        for i = 1, #list do
+          local ch = list[i]
+          if ch == SIGMA then
+            local final = cased_at(list, i - 1, -1) and not cased_at(list, i + 1, 1)
+            out[i] = final and "\207\130" or "\207\131"
+          else
+            out[i] = down[ch] or ch
+          end
+        end
+        return concat(out)
+      end
+
+      function capitalize(s)
+        if not nonascii(s) then return ascii_capitalize(s) end
+        if up == nil then load() end
+        local first = smatch(s, "^" .. charpattern)
+        if first == nil then return s end
+        return (up[first] or first) .. downcase(bsub(s, #first + 1))
+      end
+
+      function swapcase(s)
+        if not nonascii(s) then return (gsub(s, "%a", swap)) end
+        if up == nil then load() end
+        return (gsub(s, charpattern, swapmap))
+      end
     end
   end
 
