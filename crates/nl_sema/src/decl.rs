@@ -173,6 +173,40 @@ impl Declarations {
     pub fn is_type(&self, id: DeclId) -> bool {
         matches!(self.get(id).map(|i| i.kind), Some(DeclItemKind::Struct | DeclItemKind::HostType))
     }
+
+    /// The host types (`declare type Name : Parent`), each with the name
+    /// of its parent, every parent before its children: what a host
+    /// registers so that runtime checks against them work.
+    pub fn host_types(&self) -> Vec<(String, Option<String>)> {
+        let parent_of = |item: &DeclItem| {
+            child(&item.node, STRUCT_PARENT).and_then(|p| type_child(&p)).map(|t| t.text().to_string().trim().to_owned()).filter(|t| !t.is_empty())
+        };
+        let all: Vec<(String, Option<String>)> =
+            self.items.iter().filter(|i| i.kind == DeclItemKind::HostType).map(|i| (i.name.clone(), parent_of(i))).collect();
+        let mut out: Vec<(String, Option<String>)> = Vec::with_capacity(all.len());
+        // Parents first: repeated passes, each taking the types whose
+        // parent is placed (or not a declared host type); a cycle, which
+        // the analyzer reports, ends the loop and is left out.
+        let declared: std::collections::HashSet<&str> = all.iter().map(|(n, _)| n.as_str()).collect();
+        let mut placed: std::collections::HashSet<String> = std::collections::HashSet::new();
+        loop {
+            let before = out.len();
+            for (name, parent) in &all {
+                if placed.contains(name) {
+                    continue;
+                }
+                let ready = parent.as_deref().is_none_or(|p| !declared.contains(p) || placed.contains(p));
+                if ready {
+                    placed.insert(name.clone());
+                    out.push((name.clone(), parent.clone()));
+                }
+            }
+            if out.len() == before {
+                break;
+            }
+        }
+        out
+    }
 }
 
 /// The `LuaRoot` of a `LUA_PATH` in a declaration (a

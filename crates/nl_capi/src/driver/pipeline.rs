@@ -1,6 +1,7 @@
 //! The stages of [`super::compile`], in order: bytes to text, parse,
-//! resolve ([`nl_sema`]), analyze ([`nl_sema::analyze`]), check literal
-//! regex patterns ([`super::regex_literal`]), lower ([`nl_ir`]), then print
+//! resolve ([`nl_sema`]) and check the profile ([`nl_sema::profile`]),
+//! analyze ([`nl_sema::analyze`]), check literal regex patterns
+//! ([`super::regex_literal`]), lower ([`nl_ir`]), then print
 //! ([`nl_luagen`]) or emit bytecode ([`nl_codegen`]) as
 //! [`CompileOptions::emit`] says.
 //!
@@ -227,6 +228,8 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let res = nl_sema::resolve_with(&root, &imports, &decls);
     let sema_severity = |d: &nl_sema::SemaDiagnostic| if d.error { Severity::Error } else if d.lint { Severity::Lint } else { Severity::Warning };
     diags.extend(res.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+    // The names the profile leaves out, at their uses.
+    diags.extend(nl_sema::profile::check(&root, &res, options.profile).iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
     if res.has_errors() || diags.iter().any(|d| d.severity == Severity::Error) {
         let mut out = failed(diags);
         out.diagnostics.extend(imports.into_diagnostics());

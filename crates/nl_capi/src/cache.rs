@@ -65,6 +65,7 @@ struct OptKey {
     static_resolution: bool,
     level: u8,
     localize: crate::driver::Localize,
+    profile: crate::driver::Profile,
 }
 
 impl OptKey {
@@ -77,6 +78,7 @@ impl OptKey {
             static_resolution: o.static_resolution,
             level: o.level,
             localize: o.localize,
+            profile: o.profile,
         }
     }
 }

@@ -1,4 +1,5 @@
-//! `nlc check`, `nlc build` and `nlc run`.
+//! `nlc check`, `nlc build` and `nlc run`, and what `nlc bundle` shares
+//! with them.
 //!
 //! A diagnostic is printed with the source line it points at and a caret
 //! underline (`nl_capi::snippet`), under a first
@@ -65,6 +66,13 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
             "--strip" => options.strip = true,
             "--no-static-resolution" => options.static_resolution = false,
             "--no-analyzer" => options.analyze = false,
+            s if s.starts_with("--profile=") => match nl_capi::Profile::from_name(s.trim_start_matches("--profile=")) {
+                Some(p) => options.profile = p,
+                None => {
+                    eprintln!("nlc {command}: `--profile` is `full` or `portable`\n\n{usage}");
+                    return Err(ExitCode::from(2));
+                }
+            },
             s if s.starts_with("--localize=") => match nl_capi::Localize::from_name(s.trim_start_matches("--localize=")) {
                 Some(l) => options.localize = l,
                 None => {
@@ -115,6 +123,13 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
         eprintln!("nlc {command}: no input file\n\n{usage}");
         return Err(ExitCode::from(2));
     }
+    // The portable profile runs Lua source on stock LuaJIT; Garry's Mod
+    // refuses bytecode.
+    if options.profile == nl_capi::Profile::Portable && options.emit == Emit::Bytecode {
+        let what = if command == "run" { "`--backend=bc`" } else { "`--emit=bc`" };
+        eprintln!("nlc {command}: the portable profile compiles to Lua source; {what} is for the VM fork\n\n{usage}");
+        return Err(ExitCode::from(2));
+    }
     Ok(Parsed { files, options, emit_given, output, jit, decls })
 }
 
@@ -128,21 +143,21 @@ fn parse_args(args: &[String], command: &str, usage: &str) -> Result<Args, ExitC
 /// compiled file from the bytes that were compiled, an imported one again
 /// from its canonical name (relative to the working directory, or
 /// absolute; host.rs).
-struct Sources(HashMap<String, Option<String>>);
+pub(crate) struct Sources(HashMap<String, Option<String>>);
 
 impl Sources {
     /// `name` is the canonical name of the compiled file, `bytes` its source.
-    fn new(name: &str, bytes: &[u8]) -> Sources {
+    pub(crate) fn new(name: &str, bytes: &[u8]) -> Sources {
         Sources(HashMap::from([(name.to_string(), Some(String::from_utf8_lossy(bytes).into_owned()))]))
     }
 
-    fn get(&mut self, file: &str) -> Option<&str> {
+    pub(crate) fn get(&mut self, file: &str) -> Option<&str> {
         self.0.entry(file.to_string()).or_insert_with(|| std::fs::read(file).ok().map(|b| String::from_utf8_lossy(&b).into_owned())).as_deref()
     }
 }
 
 /// Prints a diagnostic with its snippet (see the module doc).
-fn report(d: &nl_capi::Diagnostic, sources: &mut Sources) {
+pub(crate) fn report(d: &nl_capi::Diagnostic, sources: &mut Sources) {
     let text = match sources.get(&d.file) {
         Some(src) => nl_capi::snippet::render(d, src),
         None => nl_capi::snippet::header(d),

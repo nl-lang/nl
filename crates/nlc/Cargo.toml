@@ -14,6 +14,8 @@ path = "src/main.rs"
 [dependencies]
 nl_syntax = { path = "../nl_syntax" }
 nl_capi = { path = "../nl_capi" }
+# The host types of the declaration files, for `nlc bundle`.
+nl_sema = { path = "../nl_sema" }
 # Stock LuaJIT for `nlc run`: mlua builds it from
 # crates.io's luajit-src. The fork is not used here on purpose.
 mlua = { version = "0.12", features = ["luajit", "vendored"] }

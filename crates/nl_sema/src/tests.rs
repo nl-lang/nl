@@ -555,3 +555,33 @@ end
         assert_eq!(mask(name), Some(bits), "{name}");
     }
 }
+
+/// The portable profile reports `Regex`, `load_nl`, `add_path` and
+/// `Worker.new` at their uses, and nothing in the full profile; a local
+/// that shadows a prelude name, `Worker.run` and `Event` are fine.
+#[test]
+fn portable_profile() {
+    let src = "let r = Regex.new(\"a\")\nload_nl(\"print 1\")\nadd_path(\"lib\")\nlet w = Worker.new(\"w.nl\")\nlet t = Worker.run(|x| -> x, 1)\nEvent.run(\"E\")\nfn f(load_nl)\n  load_nl\nend\nprint(r, w, t, f)\n";
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    let root = parse.syntax();
+    let res = resolve(&root, &AnyImports);
+    assert!(profile::check(&root, &res, Profile::Full).is_empty());
+    let index = nl_syntax::LineIndex::new(src);
+    let found: Vec<(u32, &str)> = profile::check(&root, &res, Profile::Portable).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    assert_eq!(found, [(1, "not-in-profile"), (2, "not-in-profile"), (3, "not-in-profile"), (4, "not-in-profile")]);
+}
+
+/// The host types of declaration files come with their parents, every
+/// parent before its children.
+#[test]
+fn host_types_parents_first() {
+    let src = "declare type Player : Entity\nend\ndeclare type Weapon : Entity\nend\ndeclare type Entity\nend\ndeclare type Lone\nend\ndeclare struct Color\nend\n";
+    let parse = nl_syntax::parse_decl_file(src);
+    assert!(!parse.has_errors(), "{:?}", parse.diagnostics());
+    let (decls, diags) = Declarations::load(&[("t.d.nl".to_string(), parse.syntax())]);
+    assert!(diags.is_empty(), "{diags:?}");
+    let got = decls.host_types();
+    let names: Vec<(&str, Option<&str>)> = got.iter().map(|(n, p)| (n.as_str(), p.as_deref())).collect();
+    assert_eq!(names, [("Entity", None), ("Lone", None), ("Player", Some("Entity")), ("Weapon", Some("Entity"))]);
+}

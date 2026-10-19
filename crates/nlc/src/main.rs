@@ -4,11 +4,15 @@
 //! nlc parse <file>...                   print the syntax tree of each file
 //! nlc check [--decl <path>]... <file>...
 //!                                       report every diagnostic of each file
-//! nlc build --emit=lua|bc [--unchecked] [--strip] [-o path] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] <file>
+//! nlc build --emit=lua|bc [--unchecked] [--strip] [-o path] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable] <file>
 //!                                       the Lua source or the bytecode dump
 //!                                       the file compiles to
-//! nlc run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] <file>
+//! nlc run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable] <file>
 //!                                       run the file on stock LuaJIT
+//! nlc bundle [--profile=portable] [-o path] [--case-tables=unicode|ascii] [--unchecked] [--decl <path>]... <entry.nl>...
+//!                                       one Lua file with the runtime and
+//!                                       every file the entries import, for
+//!                                       stock LuaJIT (Garry's Mod)
 //! nlc fmt [--check] [--stdout] [--fix] <file>...
 //!                                       format each file in place
 //! ```
@@ -34,6 +38,11 @@
 //! it imports; `--jit` is for debugging the bytecode backend: `off` is
 //! `jit.off()`, `hot` is `jit.opt.start("hotloop=1")`.
 //!
+//! `--profile=portable` holds a file and its imports to the portable
+//! profile (`nl_sema::profile`): what runs on an unmodified stock LuaJIT
+//! 2.0 or 2.1, through the Lua backend, so `build` and `run` refuse the
+//! bytecode backend with it. `nlc bundle` always uses it (bundle.rs).
+//!
 //! `nlc fmt` formats each file on its lossless
 //! syntax tree (`nl_syntax::format`, which states the rules): spacing and
 //! indentation are normalized, line breaks are kept. `--check` only
@@ -53,6 +62,7 @@ use std::process::ExitCode;
 
 use nl_syntax::{Diagnostic, DumpOptions, LineIndex, Severity, dump_tree, parse, source_from_bytes};
 
+mod bundle;
 mod fmt;
 mod host;
 mod run;
@@ -66,13 +76,21 @@ commands:
                                            print the Lua source or write the bytecode dump the file compiles to
   run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] <file>
                                            run the file on stock LuaJIT
+  bundle [-o path] [--case-tables=unicode|ascii] <entry.nl>...
+                                           write one Lua file for stock LuaJIT (Garry's Mod): the runtime, its
+                                           gmod host and every file the entries import, compiled with the
+                                           portable profile; --case-tables=ascii leaves out the Unicode case
+                                           tables of the String library
   fmt [--check] [--stdout] [--fix] <file>...
                                            format each file in place; --check only reports the files that would
                                            change, --stdout prints the result, --fix rewrites continued strings
                                            as heredocs
 
-options of check, build and run:
+options of check, build and run (and bundle, except --profile):
   --decl <path>                            a declaration file (.d.nl) or a directory of them; repeatable
+  --profile=full|portable                  the subset of the language the target supports: everything (the
+                                           default), or what runs on stock LuaJIT 2.0 and 2.1 (no Regex,
+                                           Worker.new, load_nl or add_path; Lua source only)
   --no-static-resolution                   test everything at runtime: no proven checks, no static resolution
   --no-analyzer                            run only the resolver's checks
   --localize=none|std|all                  which Lua paths a file reads once, when it loads, into hidden locals:
@@ -90,13 +108,14 @@ fn main() -> ExitCode {
         "check" => run::cmd_check(rest, USAGE),
         "build" => run::cmd_build(rest, USAGE),
         "run" => run::cmd_run(rest, USAGE),
+        "bundle" => bundle::cmd_bundle(rest, USAGE),
         "fmt" => fmt::cmd_fmt(rest, USAGE),
         "help" | "--help" | "-h" => {
             println!("{USAGE}");
             ExitCode::SUCCESS
         }
         other => {
-            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run` and `fmt`\n\n{USAGE}");
+            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle` and `fmt`\n\n{USAGE}");
             ExitCode::from(2)
         }
     }

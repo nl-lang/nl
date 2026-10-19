@@ -27,6 +27,7 @@
 //! importing file; in any other chunk they resolve with no importing file.
 
 pub use nl_ir::Localize;
+pub use nl_sema::Profile;
 
 /// Which backend produces the chunk.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -65,11 +66,24 @@ pub struct CompileOptions {
     /// Which Lua paths are read once, when the file loads, into hidden
     /// locals (`NL_OPT_LOCALIZE`).
     pub localize: Localize,
+    /// The subset of the language the target supports: a use of a name
+    /// the profile leaves out is an error (`nl_sema::profile`), in this
+    /// file and in the files it imports.
+    pub profile: Profile,
 }
 
 impl Default for CompileOptions {
     fn default() -> Self {
-        CompileOptions { checks: true, strip: false, emit: Emit::Lua, analyze: true, static_resolution: true, level: 0, localize: Localize::Std }
+        CompileOptions {
+            checks: true,
+            strip: false,
+            emit: Emit::Lua,
+            analyze: true,
+            static_resolution: true,
+            level: 0,
+            localize: Localize::Std,
+            profile: Profile::Full,
+        }
     }
 }
 

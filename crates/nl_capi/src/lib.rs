@@ -23,4 +23,4 @@ pub use nl_text;
 #[allow(unsafe_code)]
 pub mod capi;
 
-pub use driver::{CompileOptions, CompileOutput, Diagnostic, Emit, Loader, Localize, Severity, compile};
+pub use driver::{CompileOptions, CompileOutput, Diagnostic, Emit, Loader, Localize, Profile, Severity, compile};

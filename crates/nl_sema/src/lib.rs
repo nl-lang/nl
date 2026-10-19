@@ -39,6 +39,9 @@
 //!   errors, warnings and lints, and records the [`hints::Hints`] the
 //!   lowering consumes. Declaration files are [`decl`]: the
 //!   resolver looks their names up after the prelude.
+//! - A [`profile`] other than the full language is checked on the
+//!   resolved file: a prelude name the profile leaves out is an error at
+//!   its use.
 
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
 
@@ -49,6 +52,7 @@ mod checks;
 pub mod decl;
 pub mod hints;
 pub mod prelude;
+pub mod profile;
 mod resolver;
 pub mod types;
 pub mod util;
@@ -58,6 +62,7 @@ pub use binding::*;
 pub use decl::{DeclId, Declarations, LuaArg, LuaRoot, LuaStep, prelude_declarations};
 pub use hints::{AsHint, Hints, LoopHint, MemberHint};
 pub use prelude::{Access, Prelude, PreludeClass};
+pub use profile::Profile;
 pub use resolver::{decode_plain_string, has_function_param, lua_path_root};
 
 use nl_syntax::SyntaxNode;

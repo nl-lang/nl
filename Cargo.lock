@@ -395,6 +395,7 @@ dependencies = [
  "mlua",
  "nl_capi",
  "nl_fuzz",
+ "nl_sema",
  "nl_syntax",
 ]
 
