@@ -15,8 +15,11 @@
 #    cannot build or run them itself (2.0.4 has no arm64 port, and Rosetta
 #    cannot give a non-GC64 VM its low memory), they are built and run in
 #    Docker: linux/386 for 2.0.4, linux/amd64 for 2.1.0-beta3 (with GC64).
-#    NL_GMOD_DOCKER=never forbids that, =always forces it. --no-build
-#    skips a VM that is not built yet instead of building it.
+#    NL_GMOD_DOCKER=never forbids that, =always forces it. On x86-64
+#    Linux, 2.0.4 is built for 32-bit x86 too: with gcc -m32 when it can
+#    link a 32-bit program, else in Docker (linux/386), else for x86-64,
+#    which the run reports. --no-build skips a VM that is not built yet
+#    instead of building it.
 # 3. Runs every bundle on both VMs, in the client realm, and the programs
 #    of tests/gmod in the server realm as well, and compares stdout with
 #    the .out file (stderr is ignored; the exit status must be 0). The
@@ -127,15 +130,28 @@ COMMIT_204=69e5342e
 COMMIT_210B3=8271c643
 
 ARCH=$(uname -m)
+docker_usable() { command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; }
 case "${NL_GMOD_DOCKER:-auto}" in
   always) DOCKER=1 ;;
   never) DOCKER=0 ;;
   *)
     case "$(uname -s)/$ARCH" in
       Linux/x86_64 | Linux/i?86) DOCKER=0 ;;
-      *) if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then DOCKER=1; else DOCKER=0; fi ;;
+      *) if docker_usable; then DOCKER=1; else DOCKER=0; fi ;;
     esac ;;
 esac
+DOCKER_DEFAULT=$DOCKER
+# The C compiler for a native build (empty: the Makefile's own), and the
+# suffix of its build directory.
+VMCC=
+NATIVE=native
+
+# Whether gcc -m32 links a program that uses libm.
+m32_links() {
+  mkdir -p "$T"
+  printf '#include <math.h>\nint main(int c, char **v) { (void)v; return (int)sqrt((double)c) - 1; }\n' >"$T/m32.c"
+  gcc -m32 "$T/m32.c" -o "$T/m32" -lm >/dev/null 2>&1 && "$T/m32"
+}
 
 source_of() { # version commit
   src=$SL/src-$1
@@ -174,7 +190,10 @@ in_vm_env() { # platform command...
   shift
   if [ "$DOCKER" = 1 ]; then
     img=$(docker_image "$platform") || { echo "cannot make the Docker image for linux/$platform" >&2; return 1; }
-    docker run --rm --platform "linux/$platform" -v "$ROOT:$ROOT" -w "$ROOT" "$img" "$@"
+    # On Linux, as this user: the build and its output land in the worktree.
+    user=
+    [ "$(uname -s)" = Linux ] && user="--user=$(id -u):$(id -g)"
+    docker run --rm $user --platform "linux/$platform" -v "$ROOT:$ROOT" -w "$ROOT" "$img" "$@"
   else
     "$@"
   fi
@@ -185,13 +204,13 @@ build_vm() { # version commit platform make-args...
   version=$1 commit=$2 platform=$3
   shift 3
   out=$SL/build-$version-$platform
-  [ "$DOCKER" = 1 ] || out=$SL/build-$version-native
+  [ "$DOCKER" = 1 ] || out=$SL/build-$version-$NATIVE
   if [ ! -x "$out/src/luajit" ]; then
     [ "$BUILD" = 1 ] || { echo "LuaJIT $version is not built ($out)" >&2; return 2; }
     source_of "$version" "$commit" || { echo "cannot get the source of LuaJIT $version" >&2; return 1; }
     rm -rf "$out"
     cp -R "$SL/src-$version" "$out"
-    in_vm_env "$platform" make -C "$out" -j4 "$@" >"$out.log" 2>&1 || { echo "cannot build LuaJIT $version (log: $out.log)" >&2; return 1; }
+    in_vm_env "$platform" make -C "$out" -j4 ${VMCC:+"CC=$VMCC"} "$@" >"$out.log" 2>&1 || { echo "cannot build LuaJIT $version (log: $out.log)" >&2; return 1; }
   fi
   echo "$out/src/luajit"
 }
@@ -241,6 +260,17 @@ run_on() { # version luajit platform
 for v in 2.0.4 2.1.0-beta3; do
   [ -z "$ONLY" ] || [ "$ONLY" = "$v" ] || continue
   echo "== LuaJIT $v"
+  DOCKER=$DOCKER_DEFAULT VMCC= NATIVE=native
+  # gmod ships 2.0.4 for 32-bit x86, which an x86-64 Linux machine can run.
+  if [ "$v" = 2.0.4 ] && [ "$DOCKER" = 0 ] && [ "$(uname -s)/$ARCH" = Linux/x86_64 ]; then
+    if m32_links; then
+      VMCC="gcc -m32" NATIVE=native-x86
+    elif [ "${NL_GMOD_DOCKER:-auto}" = auto ] && docker_usable; then
+      DOCKER=1
+    else
+      echo "NOTE  LuaJIT $v is built for x86-64, not 32-bit x86: gcc -m32 cannot link (no 32-bit C library) and Docker is not used"
+    fi
+  fi
   if ! can_build "$v"; then
     echo "SKIP  LuaJIT $v: cannot be built on $(uname -s)/$ARCH without Docker"
     continue

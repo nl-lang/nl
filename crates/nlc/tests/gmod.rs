@@ -1,7 +1,8 @@
 //! The portable profile on the stock LuaJIT builds of Garry's Mod
 //! (tests/gmod/run.sh, which says what it runs), when they are built for
-//! this machine: `target/stock-luajit/build-<version>-native`, which
-//! `tests/gmod/run.sh` builds on x86 Linux. Otherwise the test says so
+//! this machine: `target/stock-luajit/build-<version>-native` (or
+//! `build-2.0.4-native-x86`, with gcc -m32), which `tests/gmod/run.sh`
+//! builds on x86 Linux. Otherwise the test says so
 //! and passes; the script itself builds the VMs, in Docker where the
 //! machine cannot run them.
 
@@ -15,7 +16,11 @@ fn portable_bundles_on_stock_luajit() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let built: Vec<&str> = ["2.0.4", "2.1.0-beta3"]
         .into_iter()
-        .filter(|v| root.join(format!("target/stock-luajit/build-{v}-native/src/luajit")).is_file())
+        .filter(|v| {
+            ["native", "native-x86"]
+                .iter()
+                .any(|n| root.join(format!("target/stock-luajit/build-{v}-{n}/src/luajit")).is_file())
+        })
         .collect();
     if built.is_empty() {
         eprintln!("skipped: no stock LuaJIT built for this machine (run tests/gmod/run.sh)");
