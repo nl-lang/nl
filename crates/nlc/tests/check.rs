@@ -38,6 +38,7 @@ fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
         ("expr_compare_logic", &["unused-binding", "unused-binding"]),
         ("expr_ranges", &["unused-binding", "unused-binding"]),
         ("fn_return", &["unused-binding"]),
+        ("lua_path_own_function", &["lua-path-own-function"]),
         ("op_arith", &["unused-binding"]),
         ("op_coerce", &["unused-binding"]),
         ("pattern_bind_rules", &["shadowing"]),

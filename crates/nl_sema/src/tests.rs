@@ -202,6 +202,27 @@ fn lints() {
 }
 
 #[test]
+fn lua_path_to_own_function() {
+    let code = "lua-path-own-function";
+    // A call, a step after a call, a closure inside the function, a module
+    // function, a function assigned to a variable, and a path on a line of
+    // its own.
+    assert!(has_code("pub fn f(x)\n  :f(x)\nend\n", 2, code));
+    assert!(has_code("fn f(x)\n  if x\n    print :f(x).y\n  end\nend\n", 3, code));
+    assert!(has_code("fn f\n  let g = fn(y) :f(y) end\n  g\nend\n", 2, code));
+    assert!(has_code("module M\n  fn f(x)\n    :f(x)\n  end\nend\n", 3, code));
+    assert!(has_code("let f = nil\nf = fn(x)\n  :f(x)\nend\n", 3, code));
+    assert!(has_code("fn f\n  :f\n  1\nend\n", 2, code));
+    // The global through `_G`; the function's own value; a `let` whose
+    // initializer cannot see the name, so `:g` is the global; another
+    // function's name.
+    let quiet = ["fn f(x)\n  :_G.f(x)\nend\n", "fn f\n  let me = :f\n  me\nend\n", "fn f\n  :f\nend\n", "let g = fn(x)\n  :g(x)\nend\nprint g\n", "fn f(x)\n  x\nend\nfn h(x)\n  :f(x)\nend\n"];
+    for src in quiet {
+        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != code), "{src}: {:?}", analyzer_codes(src));
+    }
+}
+
+#[test]
 fn primitive_method_through_its_type() {
     // `String.shout(s)`: the first argument is `self`, checked against the type.
     let decl = "fn String.wrap(l: String, r: String): String\n  l <> self <> r\nend\n";

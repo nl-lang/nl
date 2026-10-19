@@ -1,10 +1,11 @@
-//! Lints that need the whole file: unused bindings, and the
-//! top-level statements a worker would repeat. The lints that are
+//! Lints that need the whole file: unused bindings, a Lua path that
+//! names the function it is in, and the top-level statements a worker
+//! would repeat. The lints that are
 //! found along the walk (a global read, a redundant `!`, a function-kind
 //! name passed without `!`, shadowing in the resolver) live where they
 //! are found.
 
-use nl_syntax::{SyntaxKind, SyntaxNode};
+use nl_syntax::{SyntaxKind, SyntaxNode, TextRange};
 
 use super::Analyzer;
 use crate::binding::*;
@@ -15,6 +16,46 @@ use SyntaxKind::*;
 impl Analyzer<'_> {
     pub(crate) fn lints(&mut self, root: &SyntaxNode) {
         self.unused_bindings(root);
+        self.lua_paths_to_own_function(root);
+    }
+
+    /// A Lua path whose first name is the function it is written in:
+    /// `pub fn f(x) :f(x) end`. The first name binds the NL function, not
+    /// the Lua global of that name, so a wrapper of a host function of the
+    /// same name calls itself forever. Calls are reported, in any position
+    /// and in closures inside the function, and so are the other steps,
+    /// which read a field of a function; a bare `:f` whose value is used
+    /// is the function itself, as `f!` is, and is left alone.
+    fn lua_paths_to_own_function(&mut self, root: &SyntaxNode) {
+        for path in root.descendants().filter(|n| n.kind() == LUA_PATH) {
+            let Some(first) = crate::resolver::lua_path_root(&path) else { continue };
+            let Some(Ref::Binding(id)) = self.res.reference(first.text_range()) else { continue };
+            let id = *id;
+            let has_step = path.children().any(|c| matches!(c.kind(), LUA_FIELD | LUA_INDEX | LUA_CALL | LUA_METHOD));
+            // A statement whose value is discarded calls the path.
+            let statement = path.parent().is_some_and(|p| p.kind() == EXPR_STMT && self.res.value_discarded(p.text_range()));
+            if !has_step && !statement {
+                continue;
+            }
+            if !path.ancestors().skip(1).any(|a| self.is_function_of(&a, id)) {
+                continue;
+            }
+            let name = first.text().to_string();
+            let range = TextRange::new(path.text_range().start(), first.text_range().end());
+            self.lint(range, "lua-path-own-function", format!("`:{name}` is this function itself, not the Lua global `{name}`: the first name of a Lua path is an NL name when one is in scope; write `:_G.{name}` to reach the global"));
+        }
+    }
+
+    /// `node` is the function bound to `id`: the `fn` declaration of the
+    /// name, or a `fn` or short function assigned to it (`f = fn … end`).
+    fn is_function_of(&self, node: &SyntaxNode, id: BindingId) -> bool {
+        match node.kind() {
+            FN_DECL => child(node, NAME).is_some_and(|n| self.res.declaration(n.text_range()) == Some(id)),
+            FN_EXPR | LAMBDA_EXPR => node.parent().filter(|p| p.kind() == ASSIGN_STMT).and_then(|p| expr_child(&p)).is_some_and(|target| {
+                target != *node && target.kind() == NAME_REF && matches!(self.res.reference(target.text_range()), Some(Ref::Binding(t)) if *t == id)
+            }),
+            _ => false,
+        }
     }
 
     /// A `let`, `const`, loop or pattern variable that nothing reads.

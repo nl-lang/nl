@@ -39,7 +39,7 @@ Area prefixes name the part of the language: `lex_` (lexical structure), `var_` 
 
 Everything else must pass through both backends, with the JIT on, off and forced, and with static resolution from declared types on and off. The worker programs must print the same output with 0, 1 and N pool workers.
 
-Every file, including the helpers and the rejected programs, must parse. `nlc check` on a program to run reports no error; warnings and lints are expected in some files (shadowing in pattern tests, unused bindings, the use of a `global`, a file-level variable read in a `spawn do` block). `crates/nlc/tests/check.rs` runs `nlc check` on every entry program and holds the table of the diagnostic codes each one is expected to produce; a new program that is expected to warn is added there.
+Every file, including the helpers and the rejected programs, must parse. `nlc check` on a program to run reports no error; warnings and lints are expected in some files (shadowing in pattern tests, unused bindings, the use of a `global`, a file-level variable read in a `spawn do` block, a Lua path that names the function it is in). `crates/nlc/tests/check.rs` runs `nlc check` on every entry program and holds the table of the diagnostic codes each one is expected to produce; a new program that is expected to warn is added there.
 
 ## Rejected programs
 
