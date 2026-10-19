@@ -1,7 +1,12 @@
 -- Events. The fork opens the C `event` library before this
 -- chunk runs. On stock LuaJIT the global `event` is absent and this
 -- file installs a Lua stand-in with the same three functions, which
--- behaves as the C library does (the same programs run on both):
+-- behaves as the C library does (the same programs run on both). A host
+-- may bring its own library instead (host.event: Garry's Mod's is built
+-- on its `hook` library, runtime/gmod/host.lua, with that library's
+-- rules); it becomes the global `event` when there is none.
+--
+-- The C library and the stand-in:
 --
 --   event.run(name, ...)            calls the handlers in the order they were
 --                                   added; the first that returns a value
@@ -24,7 +29,12 @@
 -- Intrinsic: rt.on, what `on` compiles to. The library table: rt.Event.
 do
   local function pack(...) return { n = select("#", ...), ... } end
-  local ev = rawget(_G, "event")
+  local ev = type(host) == "table" and type(host.event) == "table" and host.event or nil
+  if ev ~= nil then
+    if rawget(_G, "event") == nil then rawset(_G, "event", ev) end
+  else
+    ev = rawget(_G, "event")
+  end
   if ev == nil then
     -- The store has the shape the C library gives it (lib_event.c), and
     -- `run` is the loop of lj_nlevent.lua, so the two behave alike:

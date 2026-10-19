@@ -55,6 +55,33 @@
 --       is read through the host's loader when there is one, and gets the
 --       sandbox's environment. `include` of a Lua file uses
 --       it; without it, `loadfile`.
+--   host.load(name) -> P | nil, message         (optional; bundles)
+--       The chunk of the file with canonical name `name`, loaded and not
+--       yet called: the `P` of the two-step protocol below. A bundle built
+--       ahead of time carries its files compiled, and its host has no
+--       compiler. When present, `import`, `require` and `include` of an NL
+--       file use it and never `host.read` or `host.compile`.
+--   host.include(path) -> ...                   (optional; Garry's Mod)
+--       Runs a Lua file the host's way and returns its values: `include`
+--       of a path that does not end in `.nl` calls it, in place of
+--       `host.loadfile` and `loadfile`.
+--   host.loadstring(source, chunkname) -> function | nil, message   (optional)
+--       Lua's `loadstring`, for an environment that has none (Garry's Mod
+--       has `CompileString`). The runtime uses it only for the constructors
+--       of struct literals (nl_20_struct.lua).
+--   host.skip_globals                           (optional)
+--       A set of names (name -> true) of the prelude globals that the
+--       runtime leaves alone: the environment has its own (`include` in
+--       Garry's Mod), or they cannot work there (`load_nl`, `add_path`).
+--       NL code reaches the prelude through `rt` and is not affected.
+--   host.event                                  (optional)
+--       The event library to use, a table with `run`, `on_run` and
+--       `remove` (nl_62_event.lua): Garry's Mod's host builds it over the
+--       `hook` library. Without it, the global `event` or the stand-in.
+--   host.case_tables                            (optional)
+--       Unicode case mappings for the String stand-in, in the encoding
+--       nl_80_string.lua reads; without them (and without host.text) case
+--       mapping is ASCII-only.
 --   host.vm                                     (optional; the fork)
 --       The VM's method mark: `markmethod(f)` sets it
 --       on a function, `ismethod(f)` reads it. The runtime marks every
@@ -78,6 +105,8 @@
 -- Lua source from the oracle backend) is loaded in two steps:
 --
 --   local main = assert(loadstring(chunk, chunkname))(rt)
+--
+-- (`host.load` gives the result of the first step directly.)
 --
 -- `main()` runs the file and returns its export table. A file's chunk name
 -- is "@" followed by its canonical name.
@@ -120,7 +149,8 @@
 -- (lib_event.c). When the global `event` is absent (stock LuaJIT), this
 -- chunk installs a Lua stand-in with the same three functions, which
 -- follows the rules of the C library (nl_62_event.lua) and is also
--- `package.loaded.event`.
+-- `package.loaded.event`. A host's `host.event` comes before both, and
+-- becomes the global `event` when there is none.
 
 --
 -- ADDITIONS. Beyond the fixed names above, `rt` holds the
@@ -176,6 +206,9 @@ local rawget, rawset, rawequal = rawget, rawset, rawequal
 local tostring, tonumber, error, pcall, xpcall = tostring, tonumber, error, pcall, xpcall
 local unpack = unpack or table.unpack
 local loadstring, loadfile = loadstring or load, loadfile
+if type(host) == "table" and host.loadstring ~= nil and loadstring == nil then
+  loadstring = host.loadstring
+end
 local lstring, math, table, coroutine = string, math, table, coroutine
 local bit = bit or require("bit")
 local ldebug = type(debug) == "table" and debug or {}

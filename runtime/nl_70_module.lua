@@ -25,19 +25,41 @@ do
   -- (`nlc run`) have no sandbox.
   local sandbox = host.sandbox
   local loadlua = host.loadfile or loadfile
+  -- A bundle's files, compiled ahead of time (host.load), and the host's
+  -- way to run a Lua file (host.include).
+  local host_load, host_include = host.load, host.include
 
-  -- NL source to the file's main function (the two-step protocol of the
-  -- header). The functions of the file inherit P's environment.
-  function rt.load(source, chunkname)
-    local chunk, msg = host.compile(source, chunkname)
-    if chunk == nil then return nil, msg end
-    local P, err = loadstring(chunk, chunkname)
-    if P == nil then return nil, err end
+  -- The second step of the protocol of the header: P(rt) gives the file's
+  -- main function. The functions of the file inherit P's environment.
+  local function main_of(P)
     if sandbox ~= nil then sandbox(P) end
     local main = P(rt)
     -- A frame of it is "in main chunk" in a trace (nl_50_error.lua).
     if type(main) == "function" then I.mains[main] = true end
     return main
+  end
+
+  -- NL source to the file's main function.
+  function rt.load(source, chunkname)
+    local chunk, msg = host.compile(source, chunkname)
+    if chunk == nil then return nil, msg end
+    local P, err = loadstring(chunk, chunkname)
+    if P == nil then return nil, err end
+    return main_of(P)
+  end
+
+  -- The main function of the file with canonical name `name`: from
+  -- host.load when the host has it, otherwise read and compiled. `why`
+  -- ends the message when the file cannot be read (" to import").
+  local function load_name(name, why)
+    if host_load ~= nil then
+      local P, err = host_load(name)
+      if P == nil then return nil, err or ("cannot load the file '" .. name .. "'" .. why) end
+      return main_of(P)
+    end
+    local source = host.read(name)
+    if source == nil then return nil, "cannot read the file '" .. name .. "'" .. why end
+    return rt.load(source, "@" .. name)
   end
 
   -- `load_nl(source, name)`: like `loadstring`.
@@ -88,9 +110,15 @@ do
         name = canonical(path)
         if name == nil then error("cannot read " .. path .. ": no such file", 2) end
       end
-      local source = host.read(name)
-      if source == nil then error("cannot read " .. path, 2) end
-      f, err = rt.load(source, "@" .. name)
+      if host_load ~= nil then
+        f, err = load_name(name, "")
+      else
+        local source = host.read(name)
+        if source == nil then error("cannot read " .. path, 2) end
+        f, err = rt.load(source, "@" .. name)
+      end
+    elseif host_include ~= nil then
+      return host_include(path)
     else
       f, err = loadlua(path)
     end
@@ -140,9 +168,7 @@ do
     local done = I.loaded[name]
     if done ~= nil then return done end
     if running[name] then return nil, cycle_message(name) end
-    local source = host.read(name)
-    if source == nil then return nil, "cannot read the file '" .. name .. "' to import" end
-    local main, err = rt.load(source, "@" .. name)
+    local main, err = load_name(name, " to import")
     if main == nil then return nil, err end
     return run_as(name, main)
   end
