@@ -9,7 +9,8 @@
 //!                                       the file compiles to
 //! nlc run [--backend=lua|bc] [--jit=on|off|hot] [--unchecked] [--decl <path>]... [--no-static-resolution] [--localize=none|std|all] [--profile=full|portable] <file>
 //!                                       run the file on stock LuaJIT
-//! nlc bundle [--profile=portable|gmod-client] [-o path] [--map path] [--minify] [--part-limit=bytes] [--case-tables=unicode|ascii] [--unchecked] [--decl <path>]... <entry.nl>...
+//! nlc bundle [--profile=portable|gmod-client] [-o path] [--map path] [--minify] [--part-limit=bytes] [--case-tables=unicode|ascii] [--runtime-include <lua path>] [--include-parts[=lua path]] [--unchecked] [--decl <path>]... <entry.nl>...
+//! nlc runtime [--profile=portable|gmod-client] [-o path] [--map path] [--minify] [--part-limit=bytes] [--case-tables=unicode|ascii] [--include-parts[=lua path]]
 //!                                       the runtime and every file the
 //!                                       entries import, as Lua for stock
 //!                                       LuaJIT; for Garry's Mod's client
@@ -109,6 +110,15 @@ commands:
                                            source files and lines; see `remap`)
                                            --minify: minify a portable bundle too
                                            --case-tables=ascii: leave out the String library's Unicode case tables
+                                           --runtime-include <lua path>: leave the runtime out; the bundle runs
+                                           gmod's include of that path when the state has none (see `runtime`)
+                                           --include-parts[=lua path]: the first file includes the other parts,
+                                           by the first file's Lua path (default: the -o path), so that it alone
+                                           runs the bundle
+  runtime [--profile=portable|gmod-client] [-o path] [--include-parts[=lua path]]
+                                           write the runtime alone, the file that bundles made with
+                                           --runtime-include include; bundle's --map, --minify, --part-limit and
+                                           --case-tables apply
   remap <map.json>...                      copy stdin to stdout with the positions of the bundles' chunks
                                            (name.nl:12, nl runtime:345) replaced by their source files and lines
   minify [--glua] [--escape-macro] [-o path] <file.lua>
@@ -145,6 +155,7 @@ fn main() -> ExitCode {
         "build" => run::cmd_build(rest, USAGE),
         "run" => run::cmd_run(rest, USAGE),
         "bundle" => bundle::cmd_bundle(rest, USAGE),
+        "runtime" => bundle::cmd_runtime(rest, USAGE),
         "remap" => cmd_remap(rest),
         "minify" => cmd_minify(rest),
         "fmt" => fmt::cmd_fmt(rest, USAGE),

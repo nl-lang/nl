@@ -68,7 +68,27 @@
 //!
 //! One runtime per Lua state: the first bundle to run installs it under
 //! the global `__nl_runtime`, and every later bundle uses that one, if its
-//! interface version is the same ([`INTERFACE`]). The runtime and its host
+//! interface version is the same ([`INTERFACE`]).
+//!
+//! # A runtime of its own
+//!
+//! With [`BundleOptions::runtime_include`] a bundle carries no runtime:
+//! where the block above installs it, the bundle runs gmod's `include` of
+//! that Lua path when no runtime is in the state yet. [`runtime`] makes the
+//! file to put there, the runtime alone. Then the runtime is sent to
+//! clients once, in a file of its own that every bundle shares, and a
+//! client keeps it in its cache as long as it does not change.
+//!
+//! ```lua
+//! local rt = rawget(_G, "__nl_runtime")
+//! if rt == nil then
+//!   include("nl/runtime.lua")
+//!   rt = rawget(_G, "__nl_runtime")
+//!   if rt == nil then error(…) end
+//! end
+//! if rt.bundle_interface ~= 1 then error(…) end
+//! return rt.run_bundle(…)
+//! ``` The runtime and its host
 //! are loaded from text under the chunk names `nl runtime` and `nl host`,
 //! which traces leave out. Each file is kept as the text of its chunk and
 //! loaded by name when it is first imported, with `@` and its canonical
@@ -87,7 +107,10 @@
 //! `nl bundle <name>`, which traces leave out) and runs the bundle. The
 //! parts run in any order: gmod runs the files of a folder in its own. A
 //! part of another build starts the set over, so a set mixed from two
-//! builds runs neither.
+//! builds runs neither. With [`BundleOptions::include_parts`] the first
+//! part includes the others before it keeps its own piece, so that the
+//! first file alone (an `include` of it, an entity's `cl_init.lua`) runs
+//! the bundle, wherever the parts are.
 //!
 //! ```lua
 //! -- Built by `nlc bundle` (gmod-client): part 2 of 3 of `name`, build 5f0c2b7e9a14d3c8
@@ -173,6 +196,14 @@ pub struct BundleOptions<'a> {
     pub sourcemap: bool,
     /// Whether a chunk loads on LuaJIT; `None` takes it on trust.
     pub check: Option<Check<'a>>,
+    /// Leave the runtime out: the bundle runs gmod's `include` of this Lua
+    /// path when the state has no runtime yet (module docs, A runtime of
+    /// its own). [`runtime`] makes that file.
+    pub runtime_include: Option<&'a str>,
+    /// The Lua path of the first file, as `include` takes it
+    /// (`autorun/client/x.lua`): the first part of a bundle in parts then
+    /// includes the others (`autorun/client/x_2.lua`, ...) by their paths.
+    pub include_parts: Option<&'a str>,
 }
 
 impl Default for BundleOptions<'_> {
@@ -186,6 +217,8 @@ impl Default for BundleOptions<'_> {
             part_limit: DEFAULT_PART_LIMIT,
             sourcemap: false,
             check: None,
+            runtime_include: None,
+            include_parts: None,
         }
     }
 }
@@ -260,9 +293,8 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
     let minify_all = options.minify || gmod;
     let recording = Recording { inner: loader, resolved: RefCell::new(Vec::new()) };
     let mut out = Bundle::default();
-    // The name goes in file names and in a comment of every part.
-    if options.name.is_empty() || options.name.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | '`')) {
-        out.diagnostics.push(diagnostic(options.name, 1, "bundle-name", "a bundle's name is not empty and has no control character, `/`, `\\` or backquote: it names the bundle's files".to_owned()));
+    if !valid_name(options.name) {
+        out.diagnostics.push(name_diagnostic(options.name));
         return out;
     }
 
@@ -326,35 +358,103 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
         return out;
     }
 
-    // The runtime and its host, minified like the files.
-    let (runtime, host) = if minify_all {
-        match (minify(RUNTIME, MinifyOptions::COMPILED), minify(GMOD_HOST, MinifyOptions::COMPILED)) {
-            (Ok(r), Ok(h)) => (r, h),
-            (Err(e), _) | (_, Err(e)) => {
-                out.diagnostics.push(diagnostic("nl runtime", 1, "internal-error", format!("internal error: the runtime does not minify: {e}")));
+    // The runtime and its host, minified like the files, unless the bundle
+    // leaves them to a file of their own.
+    let runtime = match options.runtime_include {
+        Some(path) => Runtime::Included(path),
+        None => match runtime_texts(minify_all) {
+            Ok((r, h)) => Runtime::Carried(r, h),
+            Err(d) => {
+                out.diagnostics.push(d);
                 return out;
             }
-        }
-    } else {
-        (RUNTIME.to_owned(), GMOD_HOST.to_owned())
+        },
     };
     let texts: BTreeMap<String, String> = chunks.iter().map(|(n, c)| (n.clone(), c.text.clone())).collect();
     let types = host_types(loader, profile);
-    let payload = bundle_text(&names, &texts, &imports, &types, options.case_tables, &runtime, &host, profile);
-    out.build = build_hash(payload.as_bytes());
+    let payload = bundle_text(&names, &texts, &imports, &types, options.case_tables, &runtime, profile);
+    finish(&mut out, options, gmod, payload);
+    if options.sourcemap && !out.parts.is_empty() {
+        let parts = out.parts.iter().map(|p| p.name.clone()).collect();
+        let carried = match &runtime {
+            Runtime::Carried(r, h) => Some((r.as_str(), h.as_str())),
+            Runtime::Included(_) => None,
+        };
+        out.sourcemap = Some(source_map(options.name, &out.build, parts, &chunks, carried));
+    }
+    out
+}
 
-    // One file, or the parts of a gmod bundle too large for one.
+/// The runtime alone, for bundles made with
+/// [`BundleOptions::runtime_include`]: installed in the state when it runs,
+/// unless a runtime is there already (module docs, A runtime of its own).
+/// Its files are named and split as a bundle's; only the profile, name,
+/// minify, case tables, part limit, include_parts and sourcemap options
+/// apply.
+pub fn runtime(options: &BundleOptions<'_>) -> Bundle {
+    let gmod = options.profile == Profile::GmodClient;
+    let mut out = Bundle::default();
+    if !valid_name(options.name) {
+        out.diagnostics.push(name_diagnostic(options.name));
+        return out;
+    }
+    let (runtime, host) = match runtime_texts(options.minify || gmod) {
+        Ok(t) => t,
+        Err(d) => {
+            out.diagnostics.push(d);
+            return out;
+        }
+    };
+    let mut payload = String::new();
+    if gmod {
+        payload.push_str("-- The NL runtime and its Garry's Mod host, for gmod's client realm: bundles include it.\n");
+    } else {
+        let _ = writeln!(payload, "{MARK}, {} profile: the NL runtime and its Garry's Mod host, for stock LuaJIT 2.0 and 2.1.", options.profile.name());
+    }
+    let _ = writeln!(payload, "local rt = rawget(_G, {})", quoted(RUNTIME_KEY));
+    payload.push_str(&install_text(options.case_tables, &runtime, &host));
+    finish(&mut out, options, gmod, payload);
+    if options.sourcemap && !out.parts.is_empty() {
+        let parts = out.parts.iter().map(|p| p.name.clone()).collect();
+        out.sourcemap = Some(source_map(options.name, &out.build, parts, &BTreeMap::new(), Some((&runtime, &host))));
+    }
+    out
+}
+
+/// Where a bundle's runtime comes from.
+enum Runtime<'a> {
+    /// The runtime and its host, as the bundle carries them.
+    Carried(String, String),
+    /// The Lua path of the runtime's file (BundleOptions::runtime_include).
+    Included(&'a str),
+}
+
+/// The runtime and its host, minified when asked.
+fn runtime_texts(minify_them: bool) -> Result<(String, String), Diagnostic> {
+    if !minify_them {
+        return Ok((RUNTIME.to_owned(), GMOD_HOST.to_owned()));
+    }
+    match (minify(RUNTIME, MinifyOptions::COMPILED), minify(GMOD_HOST, MinifyOptions::COMPILED)) {
+        (Ok(r), Ok(h)) => Ok((r, h)),
+        (Err(e), _) | (_, Err(e)) => Err(diagnostic("nl runtime", 1, "internal-error", format!("internal error: the runtime does not minify: {e}"))),
+    }
+}
+
+/// Sets the build of `out` and its files from `payload`: one file, or the
+/// parts of a gmod bundle too large for one.
+fn finish(out: &mut Bundle, options: &BundleOptions<'_>, gmod: bool, payload: String) {
+    out.build = build_hash(payload.as_bytes());
     let limit = options.part_limit.clamp(MIN_PART_LIMIT, GMOD_FILE_LIMIT);
     let texts: Vec<String> = if gmod {
         let single = format!("{MARK} (gmod-client)\n{GUARD}{payload}");
         if lzma_size(single.as_bytes()) <= limit {
             vec![single]
         } else {
-            match split(&payload, options.name, &out.build, limit) {
+            match split(&payload, options.name, &out.build, limit, options.include_parts) {
                 Ok(parts) => parts,
                 Err(e) => {
                     out.diagnostics.push(diagnostic(options.name, 1, "bundle-too-large", e));
-                    return out;
+                    return;
                 }
             }
         }
@@ -362,16 +462,28 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
         vec![payload]
     };
     out.parts = texts.into_iter().enumerate().map(|(i, text)| Part { name: part_name(options.name, i + 1), text }).collect();
-    if options.sourcemap {
-        let parts = out.parts.iter().map(|p| p.name.clone()).collect();
-        out.sourcemap = Some(source_map(options.name, &out.build, parts, &chunks, &runtime, &host));
-    }
-    out
+}
+
+/// Whether `name` can name a bundle: it goes in file names and in a
+/// comment of every part.
+fn valid_name(name: &str) -> bool {
+    !name.is_empty() && !name.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | '`'))
+}
+
+fn name_diagnostic(name: &str) -> Diagnostic {
+    diagnostic(name, 1, "bundle-name", "a bundle's name is not empty and has no control character, `/`, `\\` or backquote: it names the bundle's files".to_owned())
 }
 
 /// The name of the `i`th file of the bundle `name` (from 1).
 pub fn part_name(name: &str, i: usize) -> String {
     if i == 1 { format!("{name}.lua") } else { format!("{name}_{i}.lua") }
+}
+
+/// The Lua path of the `i`th file of a bundle whose first file is `first`
+/// (BundleOptions::include_parts): `x.lua`, `x_2.lua`, ...
+pub fn part_path(first: &str, i: usize) -> String {
+    let stem = first.strip_suffix(".lua").unwrap_or(first);
+    if i == 1 { format!("{stem}.lua") } else { format!("{stem}_{i}.lua") }
 }
 
 /// The errors of the Lua text of the file `name` (its canonical name;
@@ -425,16 +537,18 @@ fn finish_chunk(name: &str, source: &str, text: String, sourcemap: bool, minify_
 }
 
 /// The sourcemap of a bundle (sourcemap.rs).
-fn source_map(name: &str, build: &str, parts: Vec<String>, chunks: &BTreeMap<String, Compiled>, runtime: &str, host: &str) -> SourceMap {
+fn source_map(name: &str, build: &str, parts: Vec<String>, chunks: &BTreeMap<String, Compiled>, runtime: Option<(&str, &str)>) -> SourceMap {
     let lines = |t: &str| u32::try_from(t.lines().count()).unwrap_or(u32::MAX);
     let mut map = SourceMap { bundle: name.to_owned(), build: build.to_owned(), parts, ..SourceMap::default() };
     for (file, c) in chunks {
         map.add_file_chunk(file, file, lines(&c.text), &c.moved);
     }
-    // The minifier keeps every line, so the runtime's lines are its files'.
-    debug_assert_eq!(lines(runtime), RUNTIME_FILES.iter().map(|(_, n)| n).sum::<u32>());
-    map.add_concatenation("nl runtime", RUNTIME_FILES);
-    map.add_concatenation("nl host", &[(GMOD_HOST_FILE, lines(host))]);
+    if let Some((runtime, host)) = runtime {
+        // The minifier keeps every line, so the runtime's lines are its files'.
+        debug_assert_eq!(lines(runtime), RUNTIME_FILES.iter().map(|(_, n)| n).sum::<u32>());
+        map.add_concatenation("nl runtime", RUNTIME_FILES);
+        map.add_concatenation("nl host", &[(GMOD_HOST_FILE, lines(host))]);
+    }
     map
 }
 
@@ -461,7 +575,7 @@ const GUARD: &str = "if SERVER then AddCSLuaFile() return end\n";
 
 /// The parts of a bundle whose text is `payload` (module docs, Parts),
 /// each at most `limit` bytes compressed.
-fn split(payload: &str, name: &str, build: &str, limit: usize) -> Result<Vec<String>, String> {
+fn split(payload: &str, name: &str, build: &str, limit: usize, include_parts: Option<&str>) -> Result<Vec<String>, String> {
     let total = lzma_size(payload.as_bytes()).max(1);
     // Bytes of text per compressed byte, from the whole; each part is
     // then measured, and the pieces made smaller until every part fits.
@@ -470,7 +584,7 @@ fn split(payload: &str, name: &str, build: &str, limit: usize) -> Result<Vec<Str
     for _ in 0..16 {
         let pieces = cut(payload, piece.max(1024));
         let n = pieces.len();
-        let parts: Vec<String> = pieces.iter().enumerate().map(|(i, p)| part_text(name, build, i + 1, n, p)).collect();
+        let parts: Vec<String> = pieces.iter().enumerate().map(|(i, p)| part_text(name, build, i + 1, n, p, include_parts)).collect();
         if parts.iter().all(|p| lzma_size(p.as_bytes()) <= limit) {
             return Ok(parts);
         }
@@ -495,12 +609,21 @@ fn cut(text: &str, size: usize) -> Vec<&str> {
     out
 }
 
-fn part_text(name: &str, build: &str, i: usize, n: usize, piece: &str) -> String {
+fn part_text(name: &str, build: &str, i: usize, n: usize, piece: &str, include_parts: Option<&str>) -> String {
     let key = quoted(name);
     let mut out = String::new();
     let _ = writeln!(out, "{MARK} (gmod-client): part {i} of {n} of `{name}`, build {build}");
-    out.push_str("-- Every part goes in one folder (lua/autorun/client/); they run in any order, and the last to arrive runs the bundle.\n");
+    match include_parts {
+        Some(_) if i == 1 => out.push_str("-- This part includes the others; running it runs the bundle.\n"),
+        Some(_) => out.push_str("-- The first part includes this one.\n"),
+        None => out.push_str("-- Every part goes in one folder (lua/autorun/client/); they run in any order, and the last to arrive runs the bundle.\n"),
+    }
     out.push_str(GUARD);
+    if let (Some(first), 1) = (include_parts, i) {
+        for k in 2..=n {
+            let _ = writeln!(out, "include({})", quoted(&part_path(first, k)));
+        }
+    }
     out.push_str("local all = rawget(_G, \"__nl_bundle_parts\")\n");
     out.push_str("if all == nil then all = {} rawset(_G, \"__nl_bundle_parts\", all) end\n");
     let _ = writeln!(out, "local b = all[{key}]");
@@ -591,8 +714,7 @@ fn bundle_text(
     imports: &BTreeMap<String, String>,
     types: &[(String, Option<String>)],
     case_tables: bool,
-    runtime: &str,
-    host: &str,
+    runtime: &Runtime<'_>,
     profile: Profile,
 ) -> String {
     let s = quoted;
@@ -608,6 +730,56 @@ fn bundle_text(
         let _ = writeln!(out, "--   {name}");
     }
     let _ = writeln!(out, "local rt = rawget(_G, {})", s(RUNTIME_KEY));
+    match runtime {
+        Runtime::Carried(runtime, host) => out.push_str(&install_text(case_tables, runtime, host)),
+        Runtime::Included(path) => {
+            out.push_str("if rt == nil then\n");
+            let _ = writeln!(out, "  include({})", s(path));
+            let _ = writeln!(out, "  rt = rawget(_G, {})", s(RUNTIME_KEY));
+            let _ = writeln!(
+                out,
+                "  if rt == nil then error({}, 0) end",
+                s(&format!("this bundle needs the NL runtime, which include(\"{path}\") did not install"))
+            );
+            out.push_str("end\n");
+            let _ = writeln!(out, "if rt.bundle_interface ~= {INTERFACE} then");
+            let _ = writeln!(
+                out,
+                "  error(\"this bundle needs version {INTERFACE} of the NL runtime's interface, and the runtime loaded in this Lua state has version \" .. tostring(rt.bundle_interface), 0)"
+            );
+            out.push_str("end\n");
+        }
+    }
+    out.push_str("return rt.run_bundle({\n");
+    for (name, chunk) in chunks {
+        let _ = writeln!(out, "[{}] = {},", s(name), long_string(chunk));
+    }
+    out.push_str("}, {\n");
+    for (key, name) in imports {
+        let _ = writeln!(out, "[{}] = {},", s(key), s(name));
+    }
+    out.push_str("}, {");
+    out.push_str(&entries.iter().map(|e| s(e)).collect::<Vec<_>>().join(", "));
+    out.push_str("}, {");
+    for (name, parent) in types {
+        match parent {
+            Some(p) => {
+                let _ = write!(out, "\n{{{}, {}}},", s(name), s(p));
+            }
+            None => {
+                let _ = write!(out, "\n{{{}}},", s(name));
+            }
+        }
+    }
+    out.push_str("})\n");
+    out
+}
+
+/// The block that installs the runtime in a state that has none, after
+/// `local rt = rawget(_G, "__nl_runtime")` (module docs, Output).
+fn install_text(case_tables: bool, runtime: &str, host: &str) -> String {
+    let s = quoted;
+    let mut out = String::new();
     out.push_str("if rt == nil then\n");
     // gmod has CompileString in place of loadstring; it names the chunk
     // after its identifier.
@@ -633,28 +805,6 @@ fn bundle_text(
         "  error(\"this bundle needs version {INTERFACE} of the NL runtime's interface, and the runtime already loaded in this Lua state by another bundle has version \" .. tostring(rt.bundle_interface), 0)"
     );
     out.push_str("end\n");
-    out.push_str("return rt.run_bundle({\n");
-    for (name, chunk) in chunks {
-        let _ = writeln!(out, "[{}] = {},", s(name), long_string(chunk));
-    }
-    out.push_str("}, {\n");
-    for (key, name) in imports {
-        let _ = writeln!(out, "[{}] = {},", s(key), s(name));
-    }
-    out.push_str("}, {");
-    out.push_str(&entries.iter().map(|e| s(e)).collect::<Vec<_>>().join(", "));
-    out.push_str("}, {");
-    for (name, parent) in types {
-        match parent {
-            Some(p) => {
-                let _ = write!(out, "\n{{{}, {}}},", s(name), s(p));
-            }
-            None => {
-                let _ = write!(out, "\n{{{}}},", s(name));
-            }
-        }
-    }
-    out.push_str("})\n");
     out
 }
 
@@ -686,6 +836,7 @@ mod tests {
     #[test]
     fn part_names() {
         assert_eq!([part_name("client", 1), part_name("client", 2)], ["client.lua", "client_2.lua"]);
+        assert_eq!([part_path("autorun/client/x.lua", 1), part_path("autorun/client/x.lua", 3)], ["autorun/client/x.lua", "autorun/client/x_3.lua"]);
     }
 
     #[test]
@@ -717,7 +868,7 @@ mod tests {
             x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
             let _ = writeln!(payload, "t[{i}] = \"{:016x}é]]\"", x);
         }
-        let parts = split(&payload, "test", "abc", 20_000).unwrap();
+        let parts = split(&payload, "test", "abc", 20_000, None).unwrap();
         assert!(parts.len() >= 3, "{}", parts.len());
         let mut joined = String::new();
         for p in &parts {

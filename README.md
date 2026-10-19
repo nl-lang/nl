@@ -164,6 +164,7 @@ target/release/nlc run example.nl
 | `nlc fmt [--check] <file>...` | Format files in place |
 | `nlc parse <file>...` | Print the syntax tree |
 | `nlc bundle [--profile=gmod-client] [-o path] [--map path] <entry.nl>...` | Write the runtime and a program as Lua for stock LuaJIT |
+| `nlc runtime [--profile=gmod-client] [-o path]` | Write the runtime alone, for bundles made with `--runtime-include` |
 | `nlc remap <map.json>...` | Map positions in an error or a log back to source files |
 | `nlc minify [--glua] <file.lua>` | Minify Lua or GLua, keeping line numbers |
 
@@ -195,6 +196,16 @@ nlc bundle --profile=gmod-client -o autorun/client/myaddon.lua \
   a client file only if it is at most 64 KiB compressed, so a bundle that
   doesn't fit is split into `myaddon.lua`, `myaddon_2.lua`, … These parts
   load in any order, and the last one to arrive runs the program.
+- **One runtime.** Every bundle carries NL's runtime (about 30 KiB
+  compressed) unless it is made with `--runtime-include nl/runtime.lua`:
+  then it includes that file when no runtime is loaded yet, and
+  `nlc runtime --profile=gmod-client -o nl/runtime.lua` writes the file.
+  Clients download the runtime once, in one file every bundle shares, and
+  keep it in their cache until it changes.
+- **Included parts.** With `--include-parts` the first file of a bundle in
+  parts includes the others by their Lua paths (the `-o` path, from the
+  addon's `lua/` folder), so the first file alone runs the bundle: an
+  `include` of it, or an entity's `cl_init.lua`, wherever the parts are.
 - **Sourcemap.** `--map` writes a JSON map from each chunk's lines (the
   `short_src` and line LuaJIT reports) to NL and runtime source lines, for a
   host that catches errors. `nlc remap` applies it to any text. Keep the map

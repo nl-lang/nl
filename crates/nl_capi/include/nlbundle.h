@@ -34,7 +34,7 @@ extern "C" {
 /* The version of this header's types and functions; compare with
 ** nlb_abi_version() at run time when the library is linked separately.
 */
-#define NLB_ABI_VERSION		1
+#define NLB_ABI_VERSION		2
 int nlb_abi_version(void);
 
 /* Same layout and contract as nl_Loader (nl.h). */
@@ -119,6 +119,18 @@ typedef struct nlb_Options {
   size_t ndecls;
   nlb_Check check;		/* NULL: chunks are taken on trust. */
   void *check_data;
+  /* Leave NL's runtime out of the bundle: it runs gmod's include of this
+  ** Lua path (as include takes it: "nl/runtime.lua") when the Lua state has
+  ** no runtime yet. nlb_runtime makes the file to put there; every bundle
+  ** then shares it, and clients download it once. NULL: the bundle
+  ** carries the runtime. */
+  const char *runtime_include;
+  /* gmod: the Lua path of the bundle's first file ("autorun/client/x.lua").
+  ** A bundle in parts then has its first part include the others
+  ** ("autorun/client/x_2.lua", ...) before it keeps its own piece, so that
+  ** running or including the first file alone runs the bundle. NULL: the
+  ** parts run by themselves (lua/autorun/client/), in any order. */
+  const char *include_parts;
 } nlb_Options;
 
 typedef struct nlb_Result nlb_Result;
@@ -133,6 +145,15 @@ void nlb_options_init(nlb_Options *o);
 */
 nlb_Result *nlb_bundle(const char *const *entries, size_t nentries,
 		       const nlb_Options *options, const nlb_Loader *loader);
+
+/* The runtime alone, the file that bundles made with runtime_include
+** include: it installs NL's runtime (with its gmod host and, unless
+** case_tables is 0, the String library's case tables) in a Lua state that
+** has none. Of the options, profile, name, minify, case_tables,
+** part_limit, include_parts and sourcemap apply; its files are named and
+** split as a bundle's. Read it as an nlb_bundle result.
+*/
+nlb_Result *nlb_runtime(const nlb_Options *options);
 
 /* The files of the bundle, in order: none when a diagnostic is an error.
 ** nlb_part's text is NUL-terminated; *size (when size is not NULL) does

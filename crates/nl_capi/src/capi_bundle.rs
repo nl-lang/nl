@@ -20,7 +20,7 @@ use crate::minify::MinifyOptions;
 use crate::sourcemap::SourceMap;
 
 /// `NLB_ABI_VERSION`: changes when a type or function of the header does.
-pub const NLB_ABI_VERSION: c_int = 1;
+pub const NLB_ABI_VERSION: c_int = 2;
 
 pub const NLB_PROFILE_PORTABLE: c_int = 0;
 pub const NLB_PROFILE_GMOD_CLIENT: c_int = 1;
@@ -50,6 +50,8 @@ pub struct NlbOptions {
     pub ndecls: usize,
     pub check: Option<NlbCheck>,
     pub check_data: *mut c_void,
+    pub runtime_include: *const c_char,
+    pub include_parts: *const c_char,
 }
 
 /// `nlb_Result`: opaque to C.
@@ -173,6 +175,8 @@ pub unsafe extern "C" fn nlb_options_init(o: *mut NlbOptions) {
             ndecls: 0,
             check: None,
             check_data: ptr::null_mut(),
+            runtime_include: ptr::null(),
+            include_parts: ptr::null(),
         };
     }
 }
@@ -188,6 +192,29 @@ pub unsafe extern "C" fn nlb_options_init(o: *mut NlbOptions) {
 /// its contract; all for the duration of the call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn nlb_bundle(entries: *const *const c_char, nentries: usize, options: *const NlbOptions, loader: *const NlcLoader) -> *mut NlbResult {
+    // SAFETY: as the caller promises.
+    unsafe { make(entries, nentries, options, loader, false) }
+}
+
+/// The runtime alone, for bundles made with `runtime_include` (nlbundle.h).
+/// Returns NULL only when the result cannot be built at all.
+///
+/// # Safety
+///
+/// `options` is NULL or points to an `nlb_Options` whose strings and
+/// arrays are valid for the duration of the call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nlb_runtime(options: *const NlbOptions) -> *mut NlbResult {
+    // SAFETY: no entries and no loader; `options` as the caller promises.
+    unsafe { make(ptr::null(), 0, options, ptr::null(), true) }
+}
+
+/// `nlb_bundle`, or with `runtime_only` `nlb_runtime`.
+///
+/// # Safety
+///
+/// As for `nlb_bundle`.
+unsafe fn make(entries: *const *const c_char, nentries: usize, options: *const NlbOptions, loader: *const NlcLoader, runtime_only: bool) -> *mut NlbResult {
     let body = AssertUnwindSafe(|| {
         // SAFETY: a non-NULL `loader` points to an nlb_Loader, copied.
         let raw = unsafe { loader.as_ref() }.copied().unwrap_or(NlcLoader { resolve: None, read: None, release: None, data: ptr::null_mut() });
@@ -222,6 +249,10 @@ pub unsafe extern "C" fn nlb_bundle(entries: *const *const c_char, nentries: usi
         }
         // SAFETY: a non-NULL name is NUL-terminated.
         let name = unsafe { c_str(o.name) }.map_or_else(|| "bundle".to_owned(), |n| n.to_string_lossy().into_owned());
+        // SAFETY: non-NULL paths are NUL-terminated.
+        let runtime_include = unsafe { c_str(o.runtime_include) }.map(|p| p.to_string_lossy().into_owned());
+        // SAFETY: as above.
+        let include_parts = unsafe { c_str(o.include_parts) }.map(|p| p.to_string_lossy().into_owned());
         let check_fn = o.check;
         let check_data = o.check_data;
         let check = move |chunkname: &str, text: &str| -> Result<(), String> {
@@ -247,9 +278,12 @@ pub unsafe extern "C" fn nlb_bundle(entries: *const *const c_char, nentries: usi
             part_limit: if o.part_limit == 0 { DEFAULT_PART_LIMIT } else { o.part_limit },
             sourcemap: o.sourcemap != 0,
             check: if check_fn.is_some() { Some(&check) } else { None },
+            runtime_include: runtime_include.as_deref(),
+            include_parts: include_parts.as_deref(),
         };
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
-        let mut out = match catch_unwind(AssertUnwindSafe(|| crate::bundle::bundle(&refs, &options, &cloader))) {
+        let made = || if runtime_only { crate::bundle::runtime(&options) } else { crate::bundle::bundle(&refs, &options, &cloader) };
+        let mut out = match catch_unwind(AssertUnwindSafe(made)) {
             Ok(out) => out,
             Err(payload) => crate::bundle::Bundle {
                 diagnostics: vec![Diagnostic {

@@ -155,3 +155,50 @@ end
     let nl = remapped.lines().find(|l| l.contains("addon/main.nl:")).unwrap();
     assert!(nl.contains("addon/main.nl:7:"), "{remapped}");
 }
+
+/// A runtime of its own (`nlc runtime`, `--runtime-include`): bundles carry
+/// no runtime and include its file when the state has none; two bundles
+/// share it, and it runs once. A runtime in parts made with
+/// `--include-parts` runs from its first file alone.
+#[test]
+fn runtime_of_its_own_and_included_parts() {
+    let dir = scratch("runtime");
+    std::fs::create_dir_all(dir.join("nl")).unwrap();
+    std::fs::write(dir.join("a.nl"), "print \"a ran\"\n").unwrap();
+    std::fs::write(dir.join("b.nl"), "print \"b ran\"\n").unwrap();
+    let out = nlc(&dir, &["runtime", "--profile=gmod-client", "--part-limit=12000", "--include-parts", "-o", "nl/runtime.lua"]);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(dir.join("nl/runtime_2.lua").is_file());
+    let first = std::fs::read_to_string(dir.join("nl/runtime.lua")).unwrap();
+    assert!(first.contains("include(\"nl/runtime_2.lua\")"), "{first}");
+    for name in ["a", "b"] {
+        let out = nlc(&dir, &["bundle", "--profile=gmod-client", "--runtime-include", "nl/runtime.lua", "-o", &format!("{name}.lua"), &format!("{name}.nl")]);
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        let text = std::fs::read_to_string(dir.join(format!("{name}.lua"))).unwrap();
+        assert!(!text.contains("nl runtime"), "the bundle carries the runtime");
+        assert!(text.len() < 20_000, "{}", text.len());
+    }
+
+    let lua = mlua::Lua::new();
+    let files = lua.create_table().unwrap();
+    for entry in std::fs::read_dir(dir.join("nl")).unwrap() {
+        let path = entry.unwrap().path();
+        let key = format!("nl/{}", path.file_name().unwrap().to_string_lossy());
+        files.set(key, std::fs::read_to_string(&path).unwrap()).unwrap();
+    }
+    lua.globals().set("files", files).unwrap();
+    lua.load(
+        "printed = {} print = function(s) printed[#printed + 1] = s end
+         includes = 0
+         include = function(p) includes = includes + 1 return assert(loadstring(assert(files[p], p), '@' .. p))() end",
+    )
+    .exec()
+    .unwrap();
+    run_parts(&lua, &[dir.join("a.lua"), dir.join("b.lua")]);
+    let printed: Vec<String> = lua.load("printed").eval::<Vec<String>>().unwrap();
+    assert_eq!(printed, ["a ran", "b ran"]);
+    // The runtime's file and its parts, once: the second bundle found it.
+    let includes: i64 = lua.load("includes").eval().unwrap();
+    let parts = std::fs::read_dir(dir.join("nl")).unwrap().count() as i64;
+    assert_eq!(includes, parts);
+}

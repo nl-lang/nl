@@ -155,6 +155,36 @@ int main(void) {
   nlb_text_free(t);
   nlb_sourcemap_free(map);
 
+  /* A bundle without the runtime, which includes the runtime's file; the
+  ** runtime alone, its first part including the others.
+  */
+  nlb_options_init(&o);
+  CHECK(o.runtime_include == NULL && o.include_parts == NULL);
+  o.profile = NLB_PROFILE_GMOD_CLIENT;
+  o.name = "hud";
+  o.decls = decls;
+  o.ndecls = 1;
+  o.runtime_include = "nl/runtime.lua";
+  r = nlb_bundle(entries, 1, &o, &loader);
+  CHECK(r != NULL && nlb_ndiagnostics(r) == 0 && nlb_nparts(r) == 1);
+  {
+    const char *text = nlb_part(r, 0, &size);
+    CHECK(strstr(text, "include(\"nl/runtime.lua\")") != NULL);
+    CHECK(strstr(text, "nl runtime") == NULL);
+  }
+  nlb_free(r);
+  nlb_options_init(&o);
+  o.profile = NLB_PROFILE_GMOD_CLIENT;
+  o.name = "runtime";
+  o.part_limit = 12000;
+  o.include_parts = "nl/runtime.lua";
+  r = nlb_runtime(&o);
+  CHECK(r != NULL && nlb_ndiagnostics(r) == 0 && nlb_nparts(r) >= 3);
+  CHECK(strcmp(nlb_part_name(r, 1), "runtime_2.lua") == 0);
+  CHECK(strstr(nlb_part(r, 0, NULL), "include(\"nl/runtime_2.lua\")") != NULL);
+  CHECK(strstr(nlb_part(r, 1, NULL), "include(") == NULL);
+  nlb_free(r);
+
   {
     const char *glua = "local a = 1 // one\nif a != 2 then /* two */ print(a) end\n";
     t = nlb_minify(glua, strlen(glua), NLB_MINIFY_GLUA);

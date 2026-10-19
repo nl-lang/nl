@@ -30,11 +30,17 @@ struct Args {
     case_tables: bool,
     minify: bool,
     part_limit: usize,
+    runtime_include: Option<String>,
+    include_parts: Option<String>,
 }
 
-fn parse(args: &[String], usage: &str) -> Result<Args, ExitCode> {
+/// `--include-parts` without a path: the first file's Lua path is the `-o`
+/// path (nlc runs from the addon's `lua/` folder).
+const FROM_OUTPUT: &str = "";
+
+fn parse(args: &[String], usage: &str, command: &str) -> Result<Args, ExitCode> {
     let usage_error = |msg: &str| {
-        eprintln!("nlc bundle: {msg}\n\n{usage}");
+        eprintln!("nlc {command}: {msg}\n\n{usage}");
         Err(ExitCode::from(2))
     };
     let mut compile = CompileOptions::default();
@@ -46,6 +52,8 @@ fn parse(args: &[String], usage: &str) -> Result<Args, ExitCode> {
     let mut case_tables = true;
     let mut minify = false;
     let mut part_limit = None;
+    let mut runtime_include = None;
+    let mut include_parts = None;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -81,18 +89,53 @@ fn parse(args: &[String], usage: &str) -> Result<Args, ExitCode> {
                 None => return usage_error("`--map` needs a path"),
             },
             s if s.starts_with("--map=") => map = Some(s.trim_start_matches("--map=").to_string()),
+            "--runtime-include" => match it.next() {
+                Some(p) => runtime_include = Some(p.clone()),
+                None => return usage_error("`--runtime-include` needs a Lua path"),
+            },
+            s if s.starts_with("--runtime-include=") => runtime_include = Some(s.trim_start_matches("--runtime-include=").to_string()),
+            "--include-parts" => include_parts = Some(FROM_OUTPUT.to_owned()),
+            s if s.starts_with("--include-parts=") => include_parts = Some(s.trim_start_matches("--include-parts=").to_string()),
             "--watch" => return usage_error("`--watch` is not available yet"),
             s if s.starts_with('-') => return usage_error(&format!("unknown option `{s}`")),
             s => entries.push(s.to_string()),
         }
     }
-    if entries.is_empty() {
+    if command == "runtime" {
+        if !entries.is_empty() {
+            return usage_error("the runtime has no entry files");
+        }
+        if runtime_include.is_some() {
+            return usage_error("`--runtime-include` is for `nlc bundle`");
+        }
+    } else if entries.is_empty() {
         return usage_error("no entry file");
     }
     if part_limit.is_some() && !profile.is_gmod() {
         return usage_error("`--part-limit` is for the gmod-client profile");
     }
-    Ok(Args { entries, compile, profile, output, map, decls, case_tables, minify, part_limit: part_limit.unwrap_or(DEFAULT_PART_LIMIT) })
+    if include_parts.is_some() && !profile.is_gmod() {
+        return usage_error("`--include-parts` is for the gmod-client profile");
+    }
+    if include_parts.as_deref() == Some(FROM_OUTPUT) {
+        match &output {
+            Some(o) => include_parts = Some(o.replace('\\', "/")),
+            None => return usage_error("`--include-parts` without a path takes the first file's Lua path from `-o`"),
+        }
+    }
+    Ok(Args {
+        entries,
+        compile,
+        profile,
+        output,
+        map,
+        decls,
+        case_tables,
+        minify,
+        part_limit: part_limit.unwrap_or(DEFAULT_PART_LIMIT),
+        runtime_include,
+        include_parts,
+    })
 }
 
 /// The files of `nlc` as the packager's loader. A path of no file (an
@@ -118,7 +161,17 @@ impl Loader for FilesLoader<'_> {
 
 /// `nlc bundle [options] <entry.nl>...`.
 pub fn cmd_bundle(args: &[String], usage: &str) -> ExitCode {
-    let a = match parse(args, usage) {
+    cmd(args, usage, "bundle")
+}
+
+/// `nlc runtime [options]`: the file that bundles made with
+/// `--runtime-include` include.
+pub fn cmd_runtime(args: &[String], usage: &str) -> ExitCode {
+    cmd(args, usage, "runtime")
+}
+
+fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
+    let a = match parse(args, usage, command) {
         Ok(a) => a,
         Err(code) => return code,
     };
@@ -135,7 +188,8 @@ pub fn cmd_bundle(args: &[String], usage: &str) -> ExitCode {
         }
         entries.push(files.canonical(Path::new(path)));
     }
-    let name = a.output.as_deref().and_then(|o| Path::new(o).file_stem()).map_or_else(|| "bundle".to_owned(), |s| s.to_string_lossy().into_owned());
+    let default_name = if command == "runtime" { "runtime" } else { "bundle" };
+    let name = a.output.as_deref().and_then(|o| Path::new(o).file_stem()).map_or_else(|| default_name.to_owned(), |s| s.to_string_lossy().into_owned());
     let lua = mlua::Lua::new();
     let check = lua_check(&lua);
     let options = BundleOptions {
@@ -147,9 +201,11 @@ pub fn cmd_bundle(args: &[String], usage: &str) -> ExitCode {
         part_limit: a.part_limit,
         sourcemap: a.map.is_some(),
         check: Some(&check),
+        runtime_include: a.runtime_include.as_deref(),
+        include_parts: a.include_parts.as_deref(),
     };
     let entry_refs: Vec<&str> = entries.iter().map(String::as_str).collect();
-    let out = nl_capi::bundle::bundle(&entry_refs, &options, &FilesLoader(&files));
+    let out = if command == "runtime" { nl_capi::bundle::runtime(&options) } else { nl_capi::bundle::bundle(&entry_refs, &options, &FilesLoader(&files)) };
 
     // Each diagnostic with its snippet (Sources reads each file once).
     let mut sources = Sources::new("", &[]);
@@ -172,7 +228,7 @@ pub fn cmd_bundle(args: &[String], usage: &str) -> ExitCode {
     }
     let Some(output) = &a.output else {
         if out.parts.len() > 1 {
-            eprintln!("nlc bundle: error: the bundle is over {} bytes compressed, so it is written as several files: give their path with `-o`", a.part_limit);
+            eprintln!("nlc {command}: error: the bundle is over {} bytes compressed, so it is written as several files: give their path with `-o`", a.part_limit);
             return ExitCode::FAILURE;
         }
         use std::io::Write as _;
@@ -188,7 +244,8 @@ pub fn cmd_bundle(args: &[String], usage: &str) -> ExitCode {
     remove_stale_parts(Path::new(output), out.parts.len());
     if out.parts.len() > 1 {
         let names: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
-        eprintln!("nlc bundle: the bundle is {} files, each under {} bytes compressed: {}; put them all in one folder (lua/autorun/client/)", out.parts.len(), a.part_limit, names.join(", "));
+        let place = if a.include_parts.is_some() { "the first includes the others" } else { "put them all in one folder (lua/autorun/client/)" };
+        eprintln!("nlc {command}: the bundle is {} files, each under {} bytes compressed: {}; {place}", out.parts.len(), a.part_limit, names.join(", "));
     }
     ExitCode::SUCCESS
 }
