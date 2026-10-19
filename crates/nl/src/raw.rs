@@ -1006,35 +1006,6 @@ pub(crate) fn isworker(lua: &Lua) -> Result<bool> {
 
 pub(crate) type WorkerInitFn = dyn Fn(&crate::WorkerInit<'_>) -> Result<()> + Send + Sync;
 
-/// What attaching mlua to a worker's state and opening nl in it may
-/// allocate, at most, in bytes (measured: about 31 KB on arm64 with the
-/// init closure of tests/vm/nl_host; this leaves four times that). mlua's
-/// attachment allocates outside any protected call, so a memory error there
-/// (`NL_OPT_WORKERMEM`) would unwind through Rust frames: the init
-/// trampoline checks the room first.
-const INIT_RESERVE: i64 = 128 * 1024;
-
-/// The message of a worker whose memory limit leaves less than
-/// [`INIT_RESERVE`] for the init closure, or `None`.
-///
-/// # Safety
-///
-/// `l` is a worker's state, inside the VM's call of the init function.
-unsafe fn init_room(l: *mut lua::lua_State) -> Option<String> {
-    // SAFETY: the caller's guarantee; these calls raise nothing.
-    let (limit, used) = unsafe {
-        let limit = nl::nl_getoption(l, nl::NL_OPT_WORKERMEM) as i64;
-        let used = lua::lua_gc(l, lua::LUA_GCCOUNT, 0) as i64 * 1024 + lua::lua_gc(l, lua::LUA_GCCOUNTB, 0) as i64;
-        (limit, used)
-    };
-    (limit > 0 && limit - used < INIT_RESERVE).then(|| {
-        format!(
-            "the memory limit of a worker (NL_OPT_WORKERMEM, {limit} bytes) leaves less than {INIT_RESERVE} bytes \
-             for nl and the Rust worker-init closure ({used} bytes in use)"
-        )
-    })
-}
-
 /// The text a failing init function leaves for the worker's `WorkerError`.
 fn init_failure(err: &Error) -> String {
     use crate::exception::NlErrorExt;
@@ -1056,13 +1027,11 @@ unsafe extern "C-unwind" fn worker_init_cb(l: *mut lua::lua_State) -> c_int {
         // Box<WorkerInitFn> the main state keeps until it closes, which is
         // after its workers have stopped (lj_nl_freestate).
         let f = unsafe { &*lua::lua_touserdata(l, 1).cast::<Box<WorkerInitFn>>() };
-        // SAFETY: l is the worker's state, inside the VM's call.
-        if let Some(msg) = unsafe { init_room(l) } {
-            return Some(msg);
-        }
         // SAFETY: l is the worker's main state, alive for this call; the Lua
         // reaches the closure only inside a WorkerInit, which hands out no
-        // handle that could outlive it.
+        // handle that could outlive it. The VM lifts the worker's memory
+        // limit while this function runs, so the attachment, which allocates
+        // outside any protected call, cannot fail on it.
         let lua = unsafe { Lua::get_or_init_from_ptr(l) };
         match crate::worker::init(lua, f) {
             Ok(()) => None,

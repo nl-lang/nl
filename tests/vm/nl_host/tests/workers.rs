@@ -411,6 +411,40 @@ fn a_memory_limit_near_what_the_libraries_need() -> LuaResult<()> {
 }
 
 #[test]
+fn the_init_closure_runs_without_the_memory_limit() -> LuaResult<()> {
+    // The closure allocates past the worker's limit; what it leaves counts:
+    // garbage is collected, data kept alive fails the worker with
+    // WorkerError.
+    for keep in [false, true] {
+        let dir = nl_host::tmpdir(if keep { "initkeep" } else { "initgarbage" });
+        std::fs::write(dir.join("jobs.nl"), JOBS).expect("write");
+        let lua = nl::new()?;
+        lua.set_unhandled(|_, _| {});
+        lua.add_path(&dir)?;
+        lua.set_workers(1);
+        lua.set_option(NlOption::WorkerMemory(2 << 20))?;
+        nl_host::set_worker_init(&lua, move |w| {
+            let big: Vec<String> = (0..100_000).map(|i| format!("a string of some length, number {i}")).collect();
+            w.set_global("big", big)?;
+            if !keep {
+                w.set_global("big", Value::Nil)?;
+            }
+            Ok(())
+        });
+        let jobs = lua.import("jobs")?;
+        let t = lua.spawn(&jobs.get::<Function>("square")?, 3)?;
+        if keep {
+            let e = failed(&lua, &t);
+            assert_eq!(e.type_name(), "WorkerError");
+            assert!(e.message().contains("memory limit"), "{e}");
+        } else {
+            assert_eq!(done::<f64>(&lua, &t), 9.0);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn register_transfer_needs_register_type() -> LuaResult<()> {
     #[derive(Default)]
     struct Other;

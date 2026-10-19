@@ -738,9 +738,28 @@ static int big_init(lua_State *W)
   return 0;
 }
 
+/* As big_init, but the table is garbage when it returns. */
+static int garbage_init(lua_State *W)
+{
+  lua_createtable(W, 400000, 0);
+  lua_pop(W, 1);
+  return 0;
+}
+
 static void test_init_over_limit(void)
 {
   int workers;
+  /* The init function runs without the limit: what it leaves counts, and
+  ** its garbage is collected before the limit applies again.
+  */
+  for (workers = 0; workers < 2; workers++) {
+    lua_State *L = newstate(workers);
+    nl_setworkerinit(L, garbage_init, NULL);
+    CHECK(nl_setoption(L, NL_OPT_WORKERMEM, 2 << 20) == 1);
+    CHECK_STR(run_main(L, "import { square } from 'jobs'\npub async fn run\n  \"#{spawn square(2).await}\"\nend\n"),
+	      "4");
+    lua_close(L);
+  }
   for (workers = 0; workers < 2; workers++) {
     lua_State *L = newstate(workers);
     int before, after, i;
