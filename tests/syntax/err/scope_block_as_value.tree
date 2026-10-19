@@ -1,0 +1,29 @@
+SOURCE_FILE@0..55
+  BLOCK@0..55
+    COMMENT@0..35 "# `let x = do … end` is an error."
+    NEWLINE@35..36 "\n"
+    LET_DECL@36..54
+      LET_KW@36..39 "let"
+      WHITESPACE@39..40 " "
+      BIND_PAT@40..41
+        NAME@40..41
+          LNAME@40..41 "x"
+      WHITESPACE@41..42 " "
+      EQ@42..43 "="
+      WHITESPACE@43..44 " "
+      EXPR_LIST@44..54
+        ERROR_NODE@44..54
+          DO_BLOCK@44..54
+            DO_KW@44..46 "do"
+            BLOCK@46..51
+              NEWLINE@46..47 "\n"
+              WHITESPACE@47..49 "  "
+              EXPR_STMT@49..50
+                LITERAL@49..50
+                  NUMBER@49..50 "1"
+              NEWLINE@50..51 "\n"
+            END_KW@51..54 "end"
+    NEWLINE@54..55 "\n"
+  EOF@55..55 ""
+---
+error@44..46 2:9: `do … end` here is a scope block, which is a statement, not a value; a block passed to a call follows the call on the same line

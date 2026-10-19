@@ -1,0 +1,36 @@
+SOURCE_FILE@0..77
+  BLOCK@0..77
+    COMMENT@0..52 "# After `else` the block may start on the same line."
+    NEWLINE@52..53 "\n"
+    EXPR_STMT@53..76
+      IF_EXPR@53..76
+        IF_KW@53..55 "if"
+        WHITESPACE@55..56 " "
+        NAME_REF@56..57
+          LNAME@56..57 "a"
+        BLOCK@57..64
+          NEWLINE@57..58 "\n"
+          WHITESPACE@58..60 "  "
+          EXPR_STMT@60..63
+            CALL_EXPR@60..63
+              NAME_REF@60..61
+                LNAME@60..61 "x"
+              ARG_LIST@61..63
+                L_PAREN@61..62 "("
+                R_PAREN@62..63 ")"
+          NEWLINE@63..64 "\n"
+        ELSE_CLAUSE@64..73
+          ELSE_KW@64..68 "else"
+          BLOCK@68..73
+            WHITESPACE@68..69 " "
+            EXPR_STMT@69..72
+              CALL_EXPR@69..72
+                NAME_REF@69..70
+                  LNAME@69..70 "y"
+                ARG_LIST@70..72
+                  L_PAREN@70..71 "("
+                  R_PAREN@71..72 ")"
+            WHITESPACE@72..73 " "
+        END_KW@73..76 "end"
+    NEWLINE@76..77 "\n"
+  EOF@77..77 ""

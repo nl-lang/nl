@@ -1,0 +1,38 @@
+SOURCE_FILE@0..154
+  BLOCK@0..154
+    COMMENT@0..58 "# After a keyword that does not follow `.`, `!` is prefix:"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..114 "# `if!done` is `if !done`, `return!ok` is `return !ok`."
+    NEWLINE@114..115 "\n"
+    FN_DECL@115..153
+      FN_KW@115..117 "fn"
+      WHITESPACE@117..118 " "
+      NAME@118..119
+        LNAME@118..119 "f"
+      BLOCK@119..150
+        NEWLINE@119..120 "\n"
+        WHITESPACE@120..122 "  "
+        EXPR_STMT@122..149
+          IF_EXPR@122..149
+            IF_KW@122..124 "if"
+            PREFIX_EXPR@124..129
+              BANG@124..125 "!"
+              NAME_REF@125..129
+                LNAME@125..129 "done"
+            BLOCK@129..146
+              NEWLINE@129..130 "\n"
+              WHITESPACE@130..134 "    "
+              RETURN_STMT@134..143
+                RETURN_KW@134..140 "return"
+                EXPR_LIST@140..143
+                  PREFIX_EXPR@140..143
+                    BANG@140..141 "!"
+                    NAME_REF@141..143
+                      LNAME@141..143 "ok"
+              NEWLINE@143..144 "\n"
+              WHITESPACE@144..146 "  "
+            END_KW@146..149 "end"
+        NEWLINE@149..150 "\n"
+      END_KW@150..153 "end"
+    NEWLINE@153..154 "\n"
+  EOF@154..154 ""

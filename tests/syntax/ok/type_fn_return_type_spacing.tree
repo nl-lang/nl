@@ -1,0 +1,55 @@
+SOURCE_FILE@0..191
+  BLOCK@0..191
+    COMMENT@0..61 "# In a `Function(…)` type every `:` is the return type; the"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..127 "# Lua-path reading is only for `fn` headers and block parameters."
+    NEWLINE@127..128 "\n"
+    TYPE_DECL@128..164
+      TYPE_KW@128..132 "type"
+      WHITESPACE@132..133 " "
+      NAME@133..134
+        CNAME@133..134 "F"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      FN_TYPE@137..164
+        CNAME@137..145 "Function"
+        FN_TYPE_PARAMS@145..156
+          L_PAREN@145..146 "("
+          FN_TYPE_PARAM@146..155
+            NAME@146..147
+              LNAME@146..147 "a"
+            COLON@147..148 ":"
+            WHITESPACE@148..149 " "
+            NAMED_TYPE@149..155
+              QUAL_NAME@149..155
+                CNAME@149..155 "Number"
+          R_PAREN@155..156 ")"
+        WHITESPACE@156..157 " "
+        RETURN_TYPE@157..164
+          COLON@157..158 ":"
+          NAMED_TYPE@158..164
+            QUAL_NAME@158..164
+              CNAME@158..164 "Number"
+    NEWLINE@164..165 "\n"
+    TYPE_DECL@165..190
+      TYPE_KW@165..169 "type"
+      WHITESPACE@169..170 " "
+      NAME@170..171
+        CNAME@170..171 "G"
+      WHITESPACE@171..172 " "
+      EQ@172..173 "="
+      WHITESPACE@173..174 " "
+      FN_TYPE@174..190
+        CNAME@174..182 "Function"
+        FN_TYPE_PARAMS@182..184
+          L_PAREN@182..183 "("
+          R_PAREN@183..184 ")"
+        WHITESPACE@184..185 " "
+        RETURN_TYPE@185..190
+          COLON@185..186 ":"
+          WHITESPACE@186..187 " "
+          NAMED_TYPE@187..190
+            NIL_KW@187..190 "nil"
+    NEWLINE@190..191 "\n"
+  EOF@191..191 ""

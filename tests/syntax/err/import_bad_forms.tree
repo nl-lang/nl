@@ -1,0 +1,55 @@
+SOURCE_FILE@0..149
+  BLOCK@0..149
+    COMMENT@0..53 "# No renaming inside braces, the path must be a plain"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..83 "# string, `from` is required."
+    NEWLINE@83..84 "\n"
+    IMPORT_DECL@84..112
+      IMPORT_KW@84..90 "import"
+      WHITESPACE@90..91 " "
+      IMPORT_LIST@91..101
+        L_CURLY@91..92 "{"
+        WHITESPACE@92..93 " "
+        NAME@93..94
+          LNAME@93..94 "a"
+        WHITESPACE@94..95 " "
+        ERROR_NODE@95..99
+          AS_KW@95..97 "as"
+          WHITESPACE@97..98 " "
+          LNAME@98..99 "b"
+        WHITESPACE@99..100 " "
+        R_CURLY@100..101 "}"
+      WHITESPACE@101..102 " "
+      FROM_KW@102..106 "from"
+      WHITESPACE@106..107 " "
+      STRING@107..112 "'lib'"
+    NEWLINE@112..113 "\n"
+    IMPORT_DECL@113..133
+      IMPORT_KW@113..119 "import"
+      WHITESPACE@119..120 " "
+      NAME@120..121
+        LNAME@120..121 "c"
+      WHITESPACE@121..122 " "
+      FROM_KW@122..126 "from"
+      WHITESPACE@126..127 " "
+      INTERP_STRING@127..133
+        STR_BEGIN@127..130 "\"#{"
+        NAME_REF@130..131
+          LNAME@130..131 "p"
+        STR_END@131..133 "}\""
+    NEWLINE@133..134 "\n"
+    IMPORT_DECL@134..142
+      IMPORT_KW@134..140 "import"
+      WHITESPACE@140..141 " "
+      NAME@141..142
+        LNAME@141..142 "d"
+    WHITESPACE@142..143 " "
+    EXPR_STMT@143..148
+      LITERAL@143..148
+        STRING@143..148 "'lib'"
+    NEWLINE@148..149 "\n"
+  EOF@149..149 ""
+---
+error@95..97 3:12: names cannot be renamed inside `import { … }`
+error@127..130 4:15: an import path is a plain string, without interpolation
+error@143..148 5:10: expected `from` and the path of the file, found a string

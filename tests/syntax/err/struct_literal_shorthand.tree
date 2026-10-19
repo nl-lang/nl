@@ -1,0 +1,25 @@
+SOURCE_FILE@0..62
+  BLOCK@0..62
+    COMMENT@0..42 "# A struct literal has no `{x}` shorthand."
+    NEWLINE@42..43 "\n"
+    ASSIGN_STMT@43..61
+      NAME_REF@43..44
+        LNAME@43..44 "m"
+      WHITESPACE@44..45 " "
+      EQ@45..46 "="
+      WHITESPACE@46..47 " "
+      STRUCT_LIT@47..61
+        NAME_REF@47..54
+          CNAME@47..54 "Monster"
+        WHITESPACE@54..55 " "
+        L_CURLY@55..56 "{"
+        WHITESPACE@56..57 " "
+        ERROR_NODE@57..59
+          NAME_REF@57..59
+            LNAME@57..59 "id"
+        WHITESPACE@59..60 " "
+        R_CURLY@60..61 "}"
+    NEWLINE@61..62 "\n"
+  EOF@62..62 ""
+---
+error@57..59 2:15: a struct literal has no shorthand: write `id: id`

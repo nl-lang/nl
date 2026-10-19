@@ -1,0 +1,18 @@
+SOURCE_FILE@0..48
+  BLOCK@0..48
+    COMMENT@0..38 "# Recovery: the file ends in a header."
+    NEWLINE@38..39 "\n"
+    EXPR_STMT@39..48
+      IF_EXPR@39..48
+        IF_KW@39..41 "if"
+        WHITESPACE@41..42 " "
+        BIN_EXPR@42..47
+          NAME_REF@42..43
+            LNAME@42..43 "x"
+          WHITESPACE@43..44 " "
+          AND_KW@44..47 "and"
+        BLOCK@47..48
+          NEWLINE@47..48 "\n"
+  EOF@48..48 ""
+---
+error@48..48 3:1: expected an expression, found the end of the file

@@ -1,0 +1,61 @@
+SOURCE_FILE@0..252
+  BLOCK@0..252
+    COMMENT@0..59 "# After a header that ends in an expression a line break or"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..136 "# `;` is required, so a closer on the header's line is an error (`if x end`,"
+    NEWLINE@136..137 "\n"
+    COMMENT@137..209 "# `while x end`), and `f(if a 1 else 2 end)` cannot parse as `if (a 1)`."
+    NEWLINE@209..210 "\n"
+    EXPR_STMT@210..218
+      IF_EXPR@210..218
+        IF_KW@210..212 "if"
+        WHITESPACE@212..213 " "
+        NAME_REF@213..214
+          LNAME@213..214 "x"
+        BLOCK@214..215
+          WHITESPACE@214..215 " "
+        END_KW@215..218 "end"
+    NEWLINE@218..219 "\n"
+    WHILE_STMT@219..230
+      WHILE_KW@219..224 "while"
+      WHITESPACE@224..225 " "
+      NAME_REF@225..226
+        LNAME@225..226 "x"
+      BLOCK@226..227
+        WHITESPACE@226..227 " "
+      END_KW@227..230 "end"
+    NEWLINE@230..231 "\n"
+    EXPR_STMT@231..251
+      CALL_EXPR@231..251
+        NAME_REF@231..232
+          LNAME@231..232 "f"
+        ARG_LIST@232..251
+          L_PAREN@232..233 "("
+          IF_EXPR@233..250
+            IF_KW@233..235 "if"
+            WHITESPACE@235..236 " "
+            COMMAND_CALL@236..239
+              NAME_REF@236..237
+                LNAME@236..237 "a"
+              WHITESPACE@237..238 " "
+              COMMAND_ARGS@238..239
+                LITERAL@238..239
+                  NUMBER@238..239 "1"
+            BLOCK@239..240
+              WHITESPACE@239..240 " "
+            ELSE_CLAUSE@240..247
+              ELSE_KW@240..244 "else"
+              BLOCK@244..247
+                WHITESPACE@244..245 " "
+                EXPR_STMT@245..246
+                  LITERAL@245..246
+                    NUMBER@245..246 "2"
+                WHITESPACE@246..247 " "
+            END_KW@247..250 "end"
+          R_PAREN@250..251 ")"
+    NEWLINE@251..252 "\n"
+  EOF@252..252 ""
+---
+error@215..218 4:6: unexpected `end`: the header of `if` ends at the end of its line; put the body on the next line, or separate it with `;`
+error@227..230 5:9: unexpected `end`: the header of `while` ends at the end of its line; put the body on the next line, or separate it with `;`
+error@240..244 6:10: unexpected `else`: the header of `if` ends at the end of its line; put the body on the next line, or separate it with `;`

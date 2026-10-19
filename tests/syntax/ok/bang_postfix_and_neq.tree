@@ -1,0 +1,107 @@
+SOURCE_FILE@0..194
+  BLOCK@0..194
+    COMMENT@0..47 "# `!=` in every spacing; postfix `!` touching a"
+    NEWLINE@47..48 "\n"
+    COMMENT@48..110 "# name, an AT_NAME, a keyword after `.`; prefix `!` otherwise."
+    NEWLINE@110..111 "\n"
+    ASSIGN_STMT@111..121
+      NAME_REF@111..112
+        LNAME@111..112 "a"
+      WHITESPACE@112..113 " "
+      EQ@113..114 "="
+      WHITESPACE@114..115 " "
+      BIN_EXPR@115..121
+        NAME_REF@115..116
+          LNAME@115..116 "x"
+        WHITESPACE@116..117 " "
+        NEQ@117..119 "!="
+        WHITESPACE@119..120 " "
+        NAME_REF@120..121
+          LNAME@120..121 "y"
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..131
+      NAME_REF@122..123
+        LNAME@122..123 "a"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      BIN_EXPR@126..131
+        NAME_REF@126..127
+          LNAME@126..127 "x"
+        NEQ@127..129 "!="
+        WHITESPACE@129..130 " "
+        NAME_REF@130..131
+          LNAME@130..131 "y"
+    NEWLINE@131..132 "\n"
+    ASSIGN_STMT@132..140
+      NAME_REF@132..133
+        LNAME@132..133 "a"
+      WHITESPACE@133..134 " "
+      EQ@134..135 "="
+      WHITESPACE@135..136 " "
+      BIN_EXPR@136..140
+        NAME_REF@136..137
+          LNAME@136..137 "x"
+        NEQ@137..139 "!="
+        NAME_REF@139..140
+          LNAME@139..140 "y"
+    NEWLINE@140..141 "\n"
+    ASSIGN_STMT@141..147
+      NAME_REF@141..142
+        LNAME@141..142 "g"
+      WHITESPACE@142..143 " "
+      EQ@143..144 "="
+      WHITESPACE@144..145 " "
+      BANG_EXPR@145..147
+        NAME_REF@145..146
+          LNAME@145..146 "f"
+        BANG_POSTFIX@146..147 "!"
+    NEWLINE@147..148 "\n"
+    ASSIGN_STMT@148..160
+      NAME_REF@148..149
+        LNAME@148..149 "g"
+      WHITESPACE@149..150 " "
+      EQ@150..151 "="
+      WHITESPACE@151..152 " "
+      BANG_EXPR@152..160
+        FIELD_EXPR@152..159
+          NAME_REF@152..155
+            LNAME@152..155 "obj"
+          DOT@155..156 "."
+          LNAME@156..159 "end"
+        BANG_POSTFIX@159..160 "!"
+    NEWLINE@160..161 "\n"
+    ASSIGN_STMT@161..174
+      NAME_REF@161..162
+        LNAME@161..162 "g"
+      WHITESPACE@162..163 " "
+      EQ@163..164 "="
+      WHITESPACE@164..165 " "
+      BANG_EXPR@165..174
+        AT_EXPR@165..173
+          AT_NAME@165..173 "@handler"
+        BANG_POSTFIX@173..174 "!"
+    NEWLINE@174..175 "\n"
+    ASSIGN_STMT@175..186
+      NAME_REF@175..176
+        LNAME@175..176 "g"
+      WHITESPACE@176..177 " "
+      EQ@177..178 "="
+      WHITESPACE@178..179 " "
+      BANG_EXPR@179..186
+        NAME_REF@179..185
+          CNAME@179..185 "ON_HIT"
+        BANG_POSTFIX@185..186 "!"
+    NEWLINE@186..187 "\n"
+    ASSIGN_STMT@187..193
+      NAME_REF@187..188
+        LNAME@187..188 "n"
+      WHITESPACE@188..189 " "
+      EQ@189..190 "="
+      WHITESPACE@190..191 " "
+      PREFIX_EXPR@191..193
+        BANG@191..192 "!"
+        NAME_REF@192..193
+          LNAME@192..193 "x"
+    NEWLINE@193..194 "\n"
+  EOF@194..194 ""

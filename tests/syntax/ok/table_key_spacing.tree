@@ -1,0 +1,74 @@
+SOURCE_FILE@0..168
+  BLOCK@0..168
+    COMMENT@0..48 "# A word before `:` at the start of an item is a"
+    NEWLINE@48..49 "\n"
+    COMMENT@49..122 "# key whatever the spacing; a Lua path value needs the key's colon first."
+    NEWLINE@122..123 "\n"
+    ASSIGN_STMT@123..146
+      NAME_REF@123..124
+        LNAME@123..124 "t"
+      WHITESPACE@124..125 " "
+      EQ@125..126 "="
+      WHITESPACE@126..127 " "
+      TABLE_EXPR@127..146
+        L_CURLY@127..128 "{"
+        TABLE_PAIR@128..132
+          TABLE_KEY@128..129
+            LNAME@128..129 "a"
+          WHITESPACE@129..130 " "
+          COLON@130..131 ":"
+          LITERAL@131..132
+            NUMBER@131..132 "1"
+        COMMA@132..133 ","
+        WHITESPACE@133..134 " "
+        TABLE_PAIR@134..138
+          TABLE_KEY@134..135
+            LNAME@134..135 "f"
+          WHITESPACE@135..136 " "
+          COLON@136..137 ":"
+          NAME_REF@137..138
+            LNAME@137..138 "x"
+        COMMA@138..139 ","
+        WHITESPACE@139..140 " "
+        TABLE_PAIR@140..145
+          TABLE_KEY@140..141
+            LNAME@140..141 "b"
+          WHITESPACE@141..142 " "
+          COLON@142..143 ":"
+          WHITESPACE@143..144 " "
+          LITERAL@144..145
+            NUMBER@144..145 "2"
+        R_CURLY@145..146 "}"
+    NEWLINE@146..147 "\n"
+    ASSIGN_STMT@147..167
+      NAME_REF@147..148
+        LNAME@147..148 "u"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      TABLE_EXPR@151..167
+        L_CURLY@151..152 "{"
+        TABLE_PAIR@152..157
+          TABLE_KEY@152..153
+            LNAME@152..153 "f"
+          COLON@153..154 ":"
+          WHITESPACE@154..155 " "
+          LUA_PATH@155..157
+            COLON@155..156 ":"
+            LNAME@156..157 "x"
+        COMMA@157..158 ","
+        WHITESPACE@158..159 " "
+        TABLE_PAIR@159..166
+          TABLE_KEY@159..160
+            LNAME@159..160 "g"
+          COLON@160..161 ":"
+          WHITESPACE@161..162 " "
+          LUA_PATH@162..166
+            COLON@162..163 ":"
+            LNAME@163..164 "a"
+            LUA_FIELD@164..166
+              DOT@164..165 "."
+              LNAME@165..166 "b"
+        R_CURLY@166..167 "}"
+    NEWLINE@167..168 "\n"
+  EOF@168..168 ""

@@ -1,0 +1,8 @@
+cannot send a function without a name (argument 2, at .callbacks[2])
+cannot send a coroutine (argument 2, at [1])
+cannot send a task (argument 2, at .t)
+cannot send a table with a metatable that is not a struct (argument 2, at .m)
+cannot send a table with a metatable that is not a struct (argument 2, at .r)
+cannot send an instance of struct Inner, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 2, at .s)
+cannot send a function without a name (argument 2, at ["a b"].inner[1])
+cannot send a value of type Userdata (argument 2, at .u)

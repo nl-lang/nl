@@ -1,0 +1,17 @@
+[package]
+name = "nl_example"
+version = "0.1.0"
+edition = "2024"
+
+# Only because this crate sits inside the NL repository, whose workspace it
+# is not part of; a host's own crate has no such table.
+[workspace]
+
+[dependencies]
+nl = { path = "../../../crates/nl", features = ["async"] }
+
+[patch.crates-io]
+# The fork, as a local luajit-src prepared by run.sh
+# (tests/vm/support/prepare_luajit_src.sh); published, a git or registry
+# source of luajit-src that carries the fork and the runtime.
+luajit-src = { path = "../../../target/nl_example/luajit-src" }

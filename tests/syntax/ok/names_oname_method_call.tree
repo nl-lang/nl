@@ -1,0 +1,19 @@
+SOURCE_FILE@0..105
+  BLOCK@0..105
+    COMMENT@0..57 "# An ONAME is allowed as the method name after a `:` that"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..81 "# touches the receiver."
+    NEWLINE@81..82 "\n"
+    EXPR_STMT@82..104
+      METHOD_CALL@82..104
+        NAME_REF@82..86
+          LNAME@82..86 "conn"
+        COLON@86..87 ":"
+        ONAME@87..98 "sendMessage"
+        ARG_LIST@98..104
+          L_PAREN@98..99 "("
+          LITERAL@99..103
+            STRING@99..103 "\"hi\""
+          R_PAREN@103..104 ")"
+    NEWLINE@104..105 "\n"
+  EOF@105..105 ""

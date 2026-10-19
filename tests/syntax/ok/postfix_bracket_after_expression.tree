@@ -1,0 +1,100 @@
+SOURCE_FILE@0..240
+  BLOCK@0..240
+    COMMENT@0..64 "# A `[` on the same line after a postfix expression is an index;"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..142 "# in a pattern it opens a positional pattern, in a type an array type, at the"
+    NEWLINE@142..143 "\n"
+    COMMENT@143..172 "# start of an operand a list."
+    NEWLINE@172..173 "\n"
+    ASSIGN_STMT@173..182
+      NAME_REF@173..174
+        LNAME@173..174 "x"
+      WHITESPACE@174..175 " "
+      EQ@175..176 "="
+      WHITESPACE@176..177 " "
+      INDEX_EXPR@177..182
+        NAME_REF@177..178
+          LNAME@177..178 "f"
+        WHITESPACE@178..179 " "
+        L_BRACK@179..180 "["
+        LITERAL@180..181
+          NUMBER@180..181 "1"
+        R_BRACK@181..182 "]"
+    NEWLINE@182..183 "\n"
+    LET_DECL@183..194
+      LET_KW@183..186 "let"
+      WHITESPACE@186..187 " "
+      BRACKET_PAT@187..190
+        L_BRACK@187..188 "["
+        BIND_PAT@188..189
+          NAME@188..189
+            LNAME@188..189 "a"
+        R_BRACK@189..190 "]"
+      WHITESPACE@190..191 " "
+      EQ@191..192 "="
+      WHITESPACE@192..193 " "
+      EXPR_LIST@193..194
+        NAME_REF@193..194
+          LNAME@193..194 "t"
+    NEWLINE@194..195 "\n"
+    LET_DECL@195..214
+      LET_KW@195..198 "let"
+      WHITESPACE@198..199 " "
+      TYPED_PAT@199..210
+        BIND_PAT@199..200
+          NAME@199..200
+            LNAME@199..200 "y"
+        COLON@200..201 ":"
+        WHITESPACE@201..202 " "
+        ARRAY_TYPE@202..210
+          L_BRACK@202..203 "["
+          NAMED_TYPE@203..209
+            QUAL_NAME@203..209
+              CNAME@203..209 "Number"
+          R_BRACK@209..210 "]"
+      WHITESPACE@210..211 " "
+      EQ@211..212 "="
+      WHITESPACE@212..213 " "
+      EXPR_LIST@213..214
+        NAME_REF@213..214
+          LNAME@213..214 "t"
+    NEWLINE@214..215 "\n"
+    ASSIGN_STMT@215..225
+      NAME_REF@215..216
+        LNAME@215..216 "z"
+      WHITESPACE@216..217 " "
+      EQ@217..218 "="
+      WHITESPACE@218..219 " "
+      LIST_EXPR@219..225
+        L_BRACK@219..220 "["
+        NAME_REF@220..221
+          LNAME@220..221 "k"
+        COMMA@221..222 ","
+        WHITESPACE@222..223 " "
+        LITERAL@223..224
+          NUMBER@223..224 "1"
+        R_BRACK@224..225 "]"
+    NEWLINE@225..226 "\n"
+    ASSIGN_STMT@226..239
+      NAME_REF@226..227
+        LNAME@226..227 "w"
+      WHITESPACE@227..228 " "
+      EQ@228..229 "="
+      WHITESPACE@229..230 " "
+      CALL_EXPR@230..239
+        NAME_REF@230..231
+          LNAME@230..231 "f"
+        ARG_LIST@231..239
+          L_PAREN@231..232 "("
+          LIST_EXPR@232..238
+            L_BRACK@232..233 "["
+            LITERAL@233..234
+              NUMBER@233..234 "1"
+            COMMA@234..235 ","
+            WHITESPACE@235..236 " "
+            LITERAL@236..237
+              NUMBER@236..237 "2"
+            R_BRACK@237..238 "]"
+          R_PAREN@238..239 ")"
+    NEWLINE@239..240 "\n"
+  EOF@240..240 ""

@@ -1,0 +1,58 @@
+SOURCE_FILE@0..188
+  BLOCK@0..188
+    COMMENT@0..44 "# Every name of a path is a Lua name, in any"
+    NEWLINE@44..45 "\n"
+    COMMENT@45..120 "# capitalization and keywords included, also after a call or a method step."
+    NEWLINE@120..121 "\n"
+    ASSIGN_STMT@121..145
+      NAME_REF@121..122
+        LNAME@121..122 "v"
+      WHITESPACE@122..123 " "
+      EQ@123..124 "="
+      WHITESPACE@124..125 " "
+      LUA_PATH@125..145
+        COLON@125..126 ":"
+        LNAME@126..127 "f"
+        LUA_CALL@127..129
+          ARG_LIST@127..129
+            L_PAREN@127..128 "("
+            R_PAREN@128..129 ")"
+        LUA_FIELD@129..133
+          DOT@129..130 "."
+          LNAME@130..133 "end"
+        LUA_METHOD@133..140
+          COLON@133..134 ":"
+          CNAME@134..138 "Type"
+          ARG_LIST@138..140
+            L_PAREN@138..139 "("
+            R_PAREN@139..140 ")"
+        LUA_FIELD@140..145
+          DOT@140..141 "."
+          ONAME@141..145 "getX"
+    NEWLINE@145..146 "\n"
+    ASSIGN_STMT@146..187
+      NAME_REF@146..147
+        LNAME@146..147 "w"
+      WHITESPACE@147..148 " "
+      EQ@148..149 "="
+      WHITESPACE@149..150 " "
+      LUA_PATH@150..187
+        COLON@150..151 ":"
+        LNAME@151..155 "game"
+        LUA_FIELD@155..166
+          DOT@155..156 "."
+          CNAME@156..166 "GetService"
+        LUA_CALL@166..171
+          ARG_LIST@166..171
+            L_PAREN@166..167 "("
+            LITERAL@167..170
+              STRING@167..170 "\"x\""
+            R_PAREN@170..171 ")"
+        LUA_FIELD@171..183
+          DOT@171..172 "."
+          CNAME@172..183 "LocalPlayer"
+        LUA_FIELD@183..187
+          DOT@183..184 "."
+          LNAME@184..187 "len"
+    NEWLINE@187..188 "\n"
+  EOF@188..188 ""

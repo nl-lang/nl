@@ -1,0 +1,111 @@
+SOURCE_FILE@0..264
+  BLOCK@0..264
+    COMMENT@0..59 "# Every misuse of `.len` parses (`x.len = v`, `x.len += v`,"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..137 "# `x.len!`, `x.len()`, `x.len a`, `x.len do … end`, `@len`, a field `len`);"
+    NEWLINE@137..138 "\n"
+    COMMENT@138..166 "# the resolver reports them."
+    NEWLINE@166..167 "\n"
+    ASSIGN_STMT@167..176
+      FIELD_EXPR@167..172
+        NAME_REF@167..168
+          LNAME@167..168 "x"
+        DOT@168..169 "."
+        LNAME@169..172 "len"
+      WHITESPACE@172..173 " "
+      EQ@173..174 "="
+      WHITESPACE@174..175 " "
+      NAME_REF@175..176
+        LNAME@175..176 "v"
+    NEWLINE@176..177 "\n"
+    COMPOUND_ASSIGN_STMT@177..187
+      FIELD_EXPR@177..182
+        NAME_REF@177..178
+          LNAME@177..178 "x"
+        DOT@178..179 "."
+        LNAME@179..182 "len"
+      WHITESPACE@182..183 " "
+      PLUS_EQ@183..185 "+="
+      WHITESPACE@185..186 " "
+      NAME_REF@186..187
+        LNAME@186..187 "v"
+    NEWLINE@187..188 "\n"
+    ASSIGN_STMT@188..198
+      NAME_REF@188..189
+        LNAME@188..189 "f"
+      WHITESPACE@189..190 " "
+      EQ@190..191 "="
+      WHITESPACE@191..192 " "
+      BANG_EXPR@192..198
+        FIELD_EXPR@192..197
+          NAME_REF@192..193
+            LNAME@192..193 "x"
+          DOT@193..194 "."
+          LNAME@194..197 "len"
+        BANG_POSTFIX@197..198 "!"
+    NEWLINE@198..199 "\n"
+    EXPR_STMT@199..206
+      CALL_EXPR@199..206
+        FIELD_EXPR@199..204
+          NAME_REF@199..200
+            LNAME@199..200 "x"
+          DOT@200..201 "."
+          LNAME@201..204 "len"
+        ARG_LIST@204..206
+          L_PAREN@204..205 "("
+          R_PAREN@205..206 ")"
+    NEWLINE@206..207 "\n"
+    EXPR_STMT@207..214
+      COMMAND_CALL@207..214
+        FIELD_EXPR@207..212
+          NAME_REF@207..208
+            LNAME@207..208 "x"
+          DOT@208..209 "."
+          LNAME@209..212 "len"
+        WHITESPACE@212..213 " "
+        COMMAND_ARGS@213..214
+          NAME_REF@213..214
+            LNAME@213..214 "a"
+    NEWLINE@214..215 "\n"
+    EXPR_STMT@215..227
+      CALL_EXPR@215..227
+        FIELD_EXPR@215..220
+          NAME_REF@215..216
+            LNAME@215..216 "x"
+          DOT@216..217 "."
+          LNAME@217..220 "len"
+        WHITESPACE@220..221 " "
+        TRAILING_BLOCK@221..227
+          DO_KW@221..223 "do"
+          BLOCK@223..224
+            WHITESPACE@223..224 " "
+          END_KW@224..227 "end"
+    NEWLINE@227..228 "\n"
+    ASSIGN_STMT@228..236
+      NAME_REF@228..229
+        LNAME@228..229 "y"
+      WHITESPACE@229..230 " "
+      EQ@230..231 "="
+      WHITESPACE@231..232 " "
+      AT_EXPR@232..236
+        AT_NAME@232..236 "@len"
+    NEWLINE@236..237 "\n"
+    STRUCT_DECL@237..263
+      STRUCT_KW@237..243 "struct"
+      WHITESPACE@243..244 " "
+      NAME@244..245
+        CNAME@244..245 "S"
+      NEWLINE@245..246 "\n"
+      WHITESPACE@246..248 "  "
+      FIELD_DECL@248..259
+        NAME@248..251
+          LNAME@248..251 "len"
+        COLON@251..252 ":"
+        WHITESPACE@252..253 " "
+        NAMED_TYPE@253..259
+          QUAL_NAME@253..259
+            CNAME@253..259 "Number"
+      NEWLINE@259..260 "\n"
+      END_KW@260..263 "end"
+    NEWLINE@263..264 "\n"
+  EOF@264..264 ""

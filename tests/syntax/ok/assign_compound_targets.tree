@@ -1,0 +1,59 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..51 "# A compound assignment has one target of any kind."
+    NEWLINE@51..52 "\n"
+    COMPOUND_ASSIGN_STMT@52..62
+      NAME_REF@52..57
+        CNAME@52..57 "Score"
+      WHITESPACE@57..58 " "
+      PLUS_EQ@58..60 "+="
+      WHITESPACE@60..61 " "
+      LITERAL@61..62
+        NUMBER@61..62 "5"
+    NEWLINE@62..63 "\n"
+    COMPOUND_ASSIGN_STMT@63..71
+      AT_EXPR@63..66
+        AT_NAME@63..66 "@hp"
+      WHITESPACE@66..67 " "
+      MINUS_EQ@67..69 "-="
+      WHITESPACE@69..70 " "
+      LITERAL@70..71
+        NUMBER@70..71 "1"
+    NEWLINE@71..72 "\n"
+    COMPOUND_ASSIGN_STMT@72..81
+      INDEX_EXPR@72..76
+        NAME_REF@72..73
+          LNAME@72..73 "t"
+        L_BRACK@73..74 "["
+        NAME_REF@74..75
+          LNAME@74..75 "i"
+        R_BRACK@75..76 "]"
+      WHITESPACE@76..77 " "
+      STAR_EQ@77..79 "*="
+      WHITESPACE@79..80 " "
+      LITERAL@80..81
+        NUMBER@80..81 "2"
+    NEWLINE@81..82 "\n"
+    COMPOUND_ASSIGN_STMT@82..93
+      LUA_PATH@82..88
+        COLON@82..83 ":"
+        LNAME@83..86 "cfg"
+        LUA_FIELD@86..88
+          DOT@86..87 "."
+          LNAME@87..88 "n"
+      WHITESPACE@88..89 " "
+      PLUS_EQ@89..91 "+="
+      WHITESPACE@91..92 " "
+      LITERAL@92..93
+        NUMBER@92..93 "1"
+    NEWLINE@93..94 "\n"
+    COMPOUND_ASSIGN_STMT@94..107
+      NAME_REF@94..97
+        LNAME@94..97 "var"
+      WHITESPACE@97..98 " "
+      PIPE2_EQ@98..101 "||="
+      WHITESPACE@101..102 " "
+      LITERAL@102..107
+        STRING@102..107 "\"owo\""
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""

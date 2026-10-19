@@ -1,0 +1,49 @@
+SOURCE_FILE@0..125
+  BLOCK@0..125
+    COMMENT@0..58 "# The parent of a struct is a `type_ref`, a type name with"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..85 "# optional type arguments."
+    NEWLINE@85..86 "\n"
+    STRUCT_DECL@86..103
+      STRUCT_KW@86..92 "struct"
+      WHITESPACE@92..93 " "
+      NAME@93..94
+        CNAME@93..94 "A"
+      WHITESPACE@94..95 " "
+      STRUCT_PARENT@95..99
+        COLON@95..96 ":"
+        WHITESPACE@96..97 " "
+        OPTIONAL_TYPE@97..99
+          NAMED_TYPE@97..98
+            QUAL_NAME@97..98
+              CNAME@97..98 "B"
+          QUESTION@98..99 "?"
+      NEWLINE@99..100 "\n"
+      END_KW@100..103 "end"
+    NEWLINE@103..104 "\n"
+    STRUCT_DECL@104..124
+      STRUCT_KW@104..110 "struct"
+      WHITESPACE@110..111 " "
+      NAME@111..112
+        CNAME@111..112 "C"
+      WHITESPACE@112..113 " "
+      STRUCT_PARENT@113..120
+        COLON@113..114 ":"
+        WHITESPACE@114..115 " "
+        UNION_TYPE@115..120
+          NAMED_TYPE@115..116
+            QUAL_NAME@115..116
+              CNAME@115..116 "D"
+          WHITESPACE@116..117 " "
+          PIPE@117..118 "|"
+          WHITESPACE@118..119 " "
+          NAMED_TYPE@119..120
+            QUAL_NAME@119..120
+              CNAME@119..120 "E"
+      NEWLINE@120..121 "\n"
+      END_KW@121..124 "end"
+    NEWLINE@124..125 "\n"
+  EOF@125..125 ""
+---
+error@97..99 3:12: the parent of a struct is a type name such as `Foo` or `Box<T>`, not a union, an optional or another type expression
+error@115..120 5:12: the parent of a struct is a type name such as `Foo` or `Box<T>`, not a union, an optional or another type expression

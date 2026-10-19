@@ -1,0 +1,56 @@
+SOURCE_FILE@0..127
+  BLOCK@0..127
+    COMMENT@0..62 "# A header ends at the first significant line break; the block"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..73 "# follows."
+    NEWLINE@73..74 "\n"
+    EXPR_STMT@74..97
+      IF_EXPR@74..97
+        IF_KW@74..76 "if"
+        WHITESPACE@76..77 " "
+        BIN_EXPR@77..87
+          NAME_REF@77..78
+            LNAME@77..78 "a"
+          WHITESPACE@78..79 " "
+          AND_KW@79..82 "and"
+          NEWLINE@82..83 "\n"
+          WHITESPACE@83..86 "   "
+          NAME_REF@86..87
+            LNAME@86..87 "b"
+        BLOCK@87..94
+          NEWLINE@87..88 "\n"
+          WHITESPACE@88..90 "  "
+          EXPR_STMT@90..93
+            CALL_EXPR@90..93
+              NAME_REF@90..91
+                LNAME@90..91 "c"
+              ARG_LIST@91..93
+                L_PAREN@91..92 "("
+                R_PAREN@92..93 ")"
+          NEWLINE@93..94 "\n"
+        END_KW@94..97 "end"
+    NEWLINE@97..98 "\n"
+    WHILE_STMT@98..126
+      WHILE_KW@98..103 "while"
+      WHITESPACE@103..104 " "
+      FIELD_EXPR@104..113
+        NAME_REF@104..105
+          LNAME@104..105 "x"
+        NEWLINE@105..106 "\n"
+        WHITESPACE@106..108 "  "
+        DOT@108..109 "."
+        LNAME@109..113 "busy"
+      BLOCK@113..123
+        NEWLINE@113..114 "\n"
+        WHITESPACE@114..116 "  "
+        EXPR_STMT@116..122
+          CALL_EXPR@116..122
+            NAME_REF@116..120
+              LNAME@116..120 "wait"
+            ARG_LIST@120..122
+              L_PAREN@120..121 "("
+              R_PAREN@121..122 ")"
+        NEWLINE@122..123 "\n"
+      END_KW@123..126 "end"
+    NEWLINE@126..127 "\n"
+  EOF@127..127 ""

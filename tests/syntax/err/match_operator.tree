@@ -1,0 +1,93 @@
+SOURCE_FILE@0..191
+  BLOCK@0..191
+    COMMENT@0..58 "# There is no match operator `=~`; the targeted error in a"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..124 "# header, on the right of `=`, in a `let` and inside parentheses."
+    NEWLINE@124..125 "\n"
+    EXPR_STMT@125..146
+      IF_EXPR@125..146
+        IF_KW@125..127 "if"
+        WHITESPACE@127..128 " "
+        NAME_REF@128..129
+          LNAME@128..129 "x"
+        WHITESPACE@129..130 " "
+        ERROR_NODE@130..135
+          EQ@130..131 "="
+          PREFIX_EXPR@131..135
+            TILDE@131..132 "~"
+            WHITESPACE@132..133 " "
+            NAME_REF@133..135
+              LNAME@133..135 "re"
+        BLOCK@135..143
+          NEWLINE@135..136 "\n"
+          WHITESPACE@136..138 "  "
+          EXPR_STMT@138..142
+            CALL_EXPR@138..142
+              NAME_REF@138..140
+                LNAME@138..140 "go"
+              ARG_LIST@140..142
+                L_PAREN@140..141 "("
+                R_PAREN@141..142 ")"
+          NEWLINE@142..143 "\n"
+        END_KW@143..146 "end"
+    NEWLINE@146..147 "\n"
+    ASSIGN_STMT@147..159
+      NAME_REF@147..149
+        LNAME@147..149 "ok"
+      WHITESPACE@149..150 " "
+      EQ@150..151 "="
+      WHITESPACE@151..152 " "
+      NAME_REF@152..153
+        LNAME@152..153 "x"
+      WHITESPACE@153..154 " "
+      ERROR_NODE@154..159
+        EQ@154..155 "="
+        PREFIX_EXPR@155..159
+          TILDE@155..156 "~"
+          WHITESPACE@156..157 " "
+          NAME_REF@157..159
+            LNAME@157..159 "re"
+    NEWLINE@159..160 "\n"
+    LET_DECL@160..169
+      LET_KW@160..163 "let"
+      WHITESPACE@163..164 " "
+      BIND_PAT@164..165
+        NAME@164..165
+          LNAME@164..165 "m"
+      WHITESPACE@165..166 " "
+      EQ@166..167 "="
+      WHITESPACE@167..168 " "
+      EXPR_LIST@168..169
+        NAME_REF@168..169
+          LNAME@168..169 "x"
+    WHITESPACE@169..170 " "
+    ERROR_NODE@170..175
+      EQ@170..171 "="
+      PREFIX_EXPR@171..175
+        TILDE@171..172 "~"
+        WHITESPACE@172..173 " "
+        NAME_REF@173..175
+          LNAME@173..175 "re"
+    NEWLINE@175..176 "\n"
+    EXPR_STMT@176..190
+      CALL_EXPR@176..190
+        NAME_REF@176..181
+          LNAME@176..181 "print"
+        ARG_LIST@181..190
+          L_PAREN@181..182 "("
+          NAME_REF@182..183
+            LNAME@182..183 "x"
+          WHITESPACE@183..184 " "
+          ERROR_NODE@184..189
+            EQ@184..185 "="
+            TILDE@185..186 "~"
+            WHITESPACE@186..187 " "
+            LNAME@187..189 "re"
+          R_PAREN@189..190 ")"
+    NEWLINE@190..191 "\n"
+  EOF@191..191 ""
+---
+error@130..131 3:6: there is no match operator `=~`: use `re.test(x)` or `x.match(re)`
+error@154..155 6:8: there is no match operator `=~`: use `re.test(x)` or `x.match(re)`
+error@170..171 7:11: there is no match operator `=~`: use `re.test(x)` or `x.match(re)`
+error@184..185 8:9: there is no match operator `=~`: use `re.test(x)` or `x.match(re)`

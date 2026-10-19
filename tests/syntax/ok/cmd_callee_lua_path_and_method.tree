@@ -1,0 +1,64 @@
+SOURCE_FILE@0..131
+  BLOCK@0..131
+    COMMENT@0..56 "# A Lua path and a method call target `x:m` are callees."
+    NEWLINE@56..57 "\n"
+    EXPR_STMT@57..83
+      COMMAND_CALL@57..83
+        LUA_PATH@57..70
+          COLON@57..58 ":"
+          LNAME@58..62 "http"
+          LUA_FIELD@62..70
+            DOT@62..63 "."
+            LNAME@63..70 "request"
+        WHITESPACE@70..71 " "
+        COMMAND_ARGS@71..83
+          NAME_REF@71..74
+            LNAME@71..74 "url"
+          COMMA@74..75 ","
+          WHITESPACE@75..76 " "
+          NAME_REF@76..83
+            LNAME@76..83 "resolve"
+    NEWLINE@83..84 "\n"
+    EXPR_STMT@84..92
+      COMMAND_CALL@84..92
+        LUA_PATH@84..90
+          COLON@84..85 ":"
+          LNAME@85..90 "print"
+        WHITESPACE@90..91 " "
+        COMMAND_ARGS@91..92
+          NAME_REF@91..92
+            LNAME@91..92 "x"
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..109
+      COMMAND_CALL@93..109
+        METHOD_CALL@93..102
+          NAME_REF@93..97
+            LNAME@93..97 "conn"
+          COLON@97..98 ":"
+          LNAME@98..102 "send"
+        WHITESPACE@102..103 " "
+        COMMAND_ARGS@103..109
+          LITERAL@103..106
+            STRING@103..106 "\"x\""
+          COMMA@106..107 ","
+          WHITESPACE@107..108 " "
+          NAME_REF@108..109
+            LNAME@108..109 "y"
+    NEWLINE@109..110 "\n"
+    EXPR_STMT@110..130
+      COMMAND_CALL@110..130
+        LUA_PATH@110..125
+          COLON@110..111 ":"
+          LNAME@111..114 "hud"
+          LUA_FIELD@114..120
+            DOT@114..115 "."
+            LNAME@115..120 "panel"
+          LUA_METHOD@120..125
+            COLON@120..121 ":"
+            LNAME@121..125 "show"
+        WHITESPACE@125..126 " "
+        COMMAND_ARGS@126..130
+          LITERAL@126..130
+            TRUE_KW@126..130 "true"
+    NEWLINE@130..131 "\n"
+  EOF@131..131 ""

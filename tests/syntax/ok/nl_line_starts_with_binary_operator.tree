@@ -1,0 +1,64 @@
+SOURCE_FILE@0..169
+  BLOCK@0..169
+    COMMENT@0..61 "# A line that starts with a binary operator that cannot begin"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..106 "# an expression continues the previous line."
+    NEWLINE@106..107 "\n"
+    LET_DECL@107..139
+      LET_KW@107..110 "let"
+      WHITESPACE@110..111 " "
+      BIND_PAT@111..116
+        NAME@111..116
+          LNAME@111..116 "total"
+      WHITESPACE@116..117 " "
+      EQ@117..118 "="
+      WHITESPACE@118..119 " "
+      EXPR_LIST@119..139
+        BIN_EXPR@119..139
+          NAME_REF@119..123
+            LNAME@119..123 "base"
+          NEWLINE@123..124 "\n"
+          WHITESPACE@124..126 "  "
+          PLUS@126..127 "+"
+          WHITESPACE@127..128 " "
+          BIN_EXPR@128..139
+            NAME_REF@128..133
+              LNAME@128..133 "bonus"
+            NEWLINE@133..134 "\n"
+            WHITESPACE@134..136 "  "
+            STAR@136..137 "*"
+            WHITESPACE@137..138 " "
+            LITERAL@138..139
+              NUMBER@138..139 "2"
+    NEWLINE@139..140 "\n"
+    ASSIGN_STMT@140..168
+      NAME_REF@140..142
+        LNAME@140..142 "ok"
+      WHITESPACE@142..143 " "
+      EQ@143..144 "="
+      WHITESPACE@144..145 " "
+      BIN_EXPR@145..168
+        BIN_EXPR@145..154
+          NAME_REF@145..146
+            LNAME@145..146 "a"
+          NEWLINE@146..147 "\n"
+          WHITESPACE@147..149 "  "
+          AND_KW@149..152 "and"
+          WHITESPACE@152..153 " "
+          NAME_REF@153..154
+            LNAME@153..154 "b"
+        NEWLINE@154..155 "\n"
+        WHITESPACE@155..157 "  "
+        OR_KW@157..159 "or"
+        WHITESPACE@159..160 " "
+        BIN_EXPR@160..168
+          NAME_REF@160..161
+            LNAME@160..161 "c"
+          NEWLINE@161..162 "\n"
+          WHITESPACE@162..164 "  "
+          EQ2@164..166 "=="
+          WHITESPACE@166..167 " "
+          NAME_REF@167..168
+            LNAME@167..168 "d"
+    NEWLINE@168..169 "\n"
+  EOF@169..169 ""

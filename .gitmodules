@@ -1,0 +1,6 @@
+[submodule "LuaJIT"]
+	path = LuaJIT
+	url = git@github.com:nl-lang/LuaJIT
+[submodule "luajit-src-rs"]
+	path = luajit-src-rs
+	url = git@github.com:nl-lang/luajit-src-rs

@@ -1,0 +1,140 @@
+SOURCE_FILE@0..271
+  BLOCK@0..271
+    COMMENT@0..54 "# `a...b` is the range that leaves out its end, at the"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..132 "# level of `..`; with numbers, names, calls and negative bounds, in an index,"
+    NEWLINE@132..133 "\n"
+    COMMENT@133..156 "# a `for` and a `when`."
+    NEWLINE@156..157 "\n"
+    ASSIGN_STMT@157..167
+      NAME_REF@157..158
+        LNAME@157..158 "a"
+      WHITESPACE@158..159 " "
+      EQ@159..160 "="
+      WHITESPACE@160..161 " "
+      BIN_EXPR@161..167
+        LITERAL@161..162
+          NUMBER@161..162 "1"
+        DOT3@162..165 "..."
+        LITERAL@165..167
+          NUMBER@165..167 "10"
+    NEWLINE@167..168 "\n"
+    ASSIGN_STMT@168..179
+      NAME_REF@168..169
+        LNAME@168..169 "b"
+      WHITESPACE@169..170 " "
+      EQ@170..171 "="
+      WHITESPACE@171..172 " "
+      BIN_EXPR@172..179
+        NAME_REF@172..174
+          LNAME@172..174 "lo"
+        DOT3@174..177 "..."
+        NAME_REF@177..179
+          LNAME@177..179 "hi"
+    NEWLINE@179..180 "\n"
+    ASSIGN_STMT@180..196
+      NAME_REF@180..181
+        LNAME@180..181 "c"
+      WHITESPACE@181..182 " "
+      EQ@182..183 "="
+      WHITESPACE@183..184 " "
+      BIN_EXPR@184..196
+        CALL_EXPR@184..188
+          NAME_REF@184..185
+            LNAME@184..185 "f"
+          ARG_LIST@185..188
+            L_PAREN@185..186 "("
+            NAME_REF@186..187
+              LNAME@186..187 "x"
+            R_PAREN@187..188 ")"
+        DOT3@188..191 "..."
+        FIELD_EXPR@191..196
+          NAME_REF@191..192
+            LNAME@191..192 "n"
+          DOT@192..193 "."
+          LNAME@193..196 "len"
+    NEWLINE@196..197 "\n"
+    ASSIGN_STMT@197..208
+      NAME_REF@197..198
+        LNAME@197..198 "d"
+      WHITESPACE@198..199 " "
+      EQ@199..200 "="
+      WHITESPACE@200..201 " "
+      BIN_EXPR@201..208
+        PREFIX_EXPR@201..203
+          MINUS@201..202 "-"
+          LITERAL@202..203
+            NUMBER@202..203 "3"
+        DOT3@203..206 "..."
+        PREFIX_EXPR@206..208
+          MINUS@206..207 "-"
+          LITERAL@207..208
+            NUMBER@207..208 "1"
+    NEWLINE@208..209 "\n"
+    ASSIGN_STMT@209..221
+      NAME_REF@209..210
+        LNAME@209..210 "e"
+      WHITESPACE@210..211 " "
+      EQ@211..212 "="
+      WHITESPACE@212..213 " "
+      INDEX_EXPR@213..221
+        NAME_REF@213..214
+          LNAME@213..214 "s"
+        L_BRACK@214..215 "["
+        BIN_EXPR@215..220
+          LITERAL@215..216
+            NUMBER@215..216 "2"
+          DOT3@216..219 "..."
+          LITERAL@219..220
+            NUMBER@219..220 "4"
+        R_BRACK@220..221 "]"
+    NEWLINE@221..222 "\n"
+    FOR_STMT@222..240
+      FOR_KW@222..225 "for"
+      WHITESPACE@225..226 " "
+      BIND_PAT@226..227
+        NAME@226..227
+          LNAME@226..227 "i"
+      WHITESPACE@227..228 " "
+      IN_KW@228..230 "in"
+      WHITESPACE@230..231 " "
+      BIN_EXPR@231..236
+        LITERAL@231..232
+          NUMBER@231..232 "0"
+        DOT3@232..235 "..."
+        NAME_REF@235..236
+          LNAME@235..236 "n"
+      BLOCK@236..237
+        NEWLINE@236..237 "\n"
+      END_KW@237..240 "end"
+    NEWLINE@240..241 "\n"
+    EXPR_STMT@241..270
+      CASE_EXPR@241..270
+        CASE_KW@241..245 "case"
+        WHITESPACE@245..246 " "
+        NAME_REF@246..247
+          LNAME@246..247 "v"
+        NEWLINE@247..248 "\n"
+        WHEN_CLAUSE@248..267
+          WHEN_KW@248..252 "when"
+          WHITESPACE@252..253 " "
+          BIN_EXPR@253..258
+            LITERAL@253..254
+              NUMBER@253..254 "1"
+            DOT3@254..257 "..."
+            LITERAL@257..258
+              NUMBER@257..258 "5"
+          BLOCK@258..267
+            NEWLINE@258..259 "\n"
+            WHITESPACE@259..261 "  "
+            EXPR_STMT@261..266
+              CALL_EXPR@261..266
+                NAME_REF@261..264
+                  LNAME@261..264 "low"
+                ARG_LIST@264..266
+                  L_PAREN@264..265 "("
+                  R_PAREN@265..266 ")"
+            NEWLINE@266..267 "\n"
+        END_KW@267..270 "end"
+    NEWLINE@270..271 "\n"
+  EOF@271..271 ""

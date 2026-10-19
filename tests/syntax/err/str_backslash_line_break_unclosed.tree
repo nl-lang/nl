@@ -1,0 +1,27 @@
+SOURCE_FILE@0..149
+  BLOCK@0..149
+    COMMENT@0..53 "# A backslash before a line break continues a `\"…\"`"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..128 "# string for one line only; the next line must close it or continue again."
+    NEWLINE@128..129 "\n"
+    ASSIGN_STMT@129..142
+      NAME_REF@129..130
+        LNAME@129..130 "a"
+      WHITESPACE@130..131 " "
+      EQ@131..132 "="
+      WHITESPACE@132..133 " "
+      LITERAL@133..142
+        STRING@133..142 "\"abc\\\ndef"
+    NEWLINE@142..143 "\n"
+    ASSIGN_STMT@143..148
+      NAME_REF@143..144
+        LNAME@143..144 "b"
+      WHITESPACE@144..145 " "
+      EQ@145..146 "="
+      WHITESPACE@146..147 " "
+      LITERAL@147..148
+        NUMBER@147..148 "1"
+    NEWLINE@148..149 "\n"
+  EOF@149..149 ""
+---
+error@133..142 3:5: unterminated string: a `"…"` string must close on the line where it starts; for text on several lines use a heredoc `"""`

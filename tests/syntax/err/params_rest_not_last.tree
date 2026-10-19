@@ -1,0 +1,52 @@
+SOURCE_FILE@0..98
+  BLOCK@0..98
+    COMMENT@0..55 "# `*args` is the last parameter, and there is only one."
+    NEWLINE@55..56 "\n"
+    FN_DECL@56..74
+      FN_KW@56..58 "fn"
+      WHITESPACE@58..59 " "
+      NAME@59..60
+        LNAME@59..60 "f"
+      PARAM_LIST@60..70
+        L_PAREN@60..61 "("
+        REST_PARAM@61..66
+          STAR@61..62 "*"
+          NAME@62..66
+            LNAME@62..66 "args"
+        COMMA@66..67 ","
+        WHITESPACE@67..68 " "
+        PARAM@68..69
+          BIND_PAT@68..69
+            NAME@68..69
+              LNAME@68..69 "b"
+        R_PAREN@69..70 ")"
+      BLOCK@70..71
+        NEWLINE@70..71 "\n"
+      END_KW@71..74 "end"
+    NEWLINE@74..75 "\n"
+    FN_DECL@75..97
+      FN_KW@75..77 "fn"
+      WHITESPACE@77..78 " "
+      NAME@78..79
+        LNAME@78..79 "h"
+      PARAM_LIST@79..93
+        L_PAREN@79..80 "("
+        REST_PARAM@80..85
+          STAR@80..81 "*"
+          NAME@81..85
+            LNAME@81..85 "args"
+        COMMA@85..86 ","
+        WHITESPACE@86..87 " "
+        REST_PARAM@87..92
+          STAR@87..88 "*"
+          NAME@88..92
+            LNAME@88..92 "more"
+        R_PAREN@92..93 ")"
+      BLOCK@93..94
+        NEWLINE@93..94 "\n"
+      END_KW@94..97 "end"
+    NEWLINE@97..98 "\n"
+  EOF@98..98 ""
+---
+error@68..69 2:13: `*rest` must be the last parameter, or followed only by `**opts`
+error@87..88 4:13: `*rest` must be the last parameter, or followed only by `**opts`

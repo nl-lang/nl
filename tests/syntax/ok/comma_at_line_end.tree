@@ -1,0 +1,101 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..48 "# A list goes on after a `,` that ends the line."
+    NEWLINE@48..49 "\n"
+    RETURN_STMT@49..62
+      RETURN_KW@49..55 "return"
+      WHITESPACE@55..56 " "
+      EXPR_LIST@56..62
+        NAME_REF@56..57
+          LNAME@56..57 "a"
+        COMMA@57..58 ","
+        NEWLINE@58..59 "\n"
+        WHITESPACE@59..61 "  "
+        NAME_REF@61..62
+          LNAME@61..62 "b"
+    NEWLINE@62..63 "\n"
+    EXPR_STMT@63..71
+      COMMAND_CALL@63..71
+        NAME_REF@63..64
+          LNAME@63..64 "f"
+        WHITESPACE@64..65 " "
+        COMMAND_ARGS@65..71
+          NAME_REF@65..66
+            LNAME@65..66 "a"
+          COMMA@66..67 ","
+          NEWLINE@67..68 "\n"
+          WHITESPACE@68..70 "  "
+          NAME_REF@70..71
+            LNAME@70..71 "b"
+    NEWLINE@71..72 "\n"
+    MULTI_ASSIGN_STMT@72..87
+      TARGET_LIST@72..78
+        NAME_REF@72..73
+          LNAME@72..73 "x"
+        COMMA@73..74 ","
+        NEWLINE@74..75 "\n"
+        WHITESPACE@75..77 "  "
+        NAME_REF@77..78
+          LNAME@77..78 "y"
+      WHITESPACE@78..79 " "
+      EQ@79..80 "="
+      WHITESPACE@80..81 " "
+      EXPR_LIST@81..87
+        LITERAL@81..82
+          NUMBER@81..82 "1"
+        COMMA@82..83 ","
+        NEWLINE@83..84 "\n"
+        WHITESPACE@84..86 "  "
+        LITERAL@86..87
+          NUMBER@86..87 "2"
+    NEWLINE@87..88 "\n"
+    LET_DECL@88..105
+      LET_KW@88..91 "let"
+      WHITESPACE@91..92 " "
+      BIND_PAT@92..93
+        NAME@92..93
+          LNAME@92..93 "c"
+      COMMA@93..94 ","
+      NEWLINE@94..95 "\n"
+      WHITESPACE@95..97 "  "
+      BIND_PAT@97..98
+        NAME@97..98
+          LNAME@97..98 "d"
+      WHITESPACE@98..99 " "
+      EQ@99..100 "="
+      WHITESPACE@100..101 " "
+      EXPR_LIST@101..105
+        LITERAL@101..102
+          NUMBER@101..102 "1"
+        COMMA@102..103 ","
+        WHITESPACE@103..104 " "
+        LITERAL@104..105
+          NUMBER@104..105 "2"
+    NEWLINE@105..106 "\n"
+    EXPR_STMT@106..132
+      CASE_EXPR@106..132
+        CASE_KW@106..110 "case"
+        WHITESPACE@110..111 " "
+        NAME_REF@111..112
+          LNAME@111..112 "x"
+        NEWLINE@112..113 "\n"
+        WHEN_CLAUSE@113..129
+          WHEN_KW@113..117 "when"
+          WHITESPACE@117..118 " "
+          LITERAL@118..119
+            NUMBER@118..119 "1"
+          COMMA@119..120 ","
+          NEWLINE@120..121 "\n"
+          WHITESPACE@121..123 "  "
+          LITERAL@123..124
+            NUMBER@123..124 "2"
+          BLOCK@124..129
+            NEWLINE@124..125 "\n"
+            WHITESPACE@125..127 "  "
+            EXPR_STMT@127..128
+              NAME_REF@127..128
+                LNAME@127..128 "y"
+            NEWLINE@128..129 "\n"
+        END_KW@129..132 "end"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""

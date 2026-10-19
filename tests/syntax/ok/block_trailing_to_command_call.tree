@@ -1,0 +1,59 @@
+SOURCE_FILE@0..176
+  BLOCK@0..176
+    COMMENT@0..52 "# In a command call the block belongs to the command"
+    NEWLINE@52..53 "\n"
+    COMMENT@53..124 "# call, after its last argument; in `a b(c) do … end` it goes to `a`."
+    NEWLINE@124..125 "\n"
+    EXPR_STMT@125..161
+      COMMAND_CALL@125..161
+        FIELD_EXPR@125..141
+          NAME_REF@125..129
+            LNAME@125..129 "date"
+          DOT@129..130 "."
+          LNAME@130..141 "replace_all"
+        WHITESPACE@141..142 " "
+        COMMAND_ARGS@142..146
+          NAME_REF@142..146
+            LNAME@142..146 "text"
+        WHITESPACE@146..147 " "
+        TRAILING_BLOCK@147..161
+          DO_KW@147..149 "do"
+          WHITESPACE@149..150 " "
+          BLOCK_PARAMS@150..153
+            PIPE@150..151 "|"
+            PARAM@151..152
+              BIND_PAT@151..152
+                NAME@151..152
+                  LNAME@151..152 "m"
+            PIPE@152..153 "|"
+          BLOCK@153..158
+            NEWLINE@153..154 "\n"
+            WHITESPACE@154..156 "  "
+            EXPR_STMT@156..157
+              NAME_REF@156..157
+                LNAME@156..157 "m"
+            NEWLINE@157..158 "\n"
+          END_KW@158..161 "end"
+    NEWLINE@161..162 "\n"
+    EXPR_STMT@162..175
+      COMMAND_CALL@162..175
+        NAME_REF@162..163
+          LNAME@162..163 "a"
+        WHITESPACE@163..164 " "
+        COMMAND_ARGS@164..168
+          CALL_EXPR@164..168
+            NAME_REF@164..165
+              LNAME@164..165 "b"
+            ARG_LIST@165..168
+              L_PAREN@165..166 "("
+              NAME_REF@166..167
+                LNAME@166..167 "c"
+              R_PAREN@167..168 ")"
+        WHITESPACE@168..169 " "
+        TRAILING_BLOCK@169..175
+          DO_KW@169..171 "do"
+          BLOCK@171..172
+            NEWLINE@171..172 "\n"
+          END_KW@172..175 "end"
+    NEWLINE@175..176 "\n"
+  EOF@176..176 ""

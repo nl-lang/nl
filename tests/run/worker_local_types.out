@@ -1,0 +1,4 @@
+SendError	cannot send an instance of struct LS, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)
+SendError	cannot send the enum LE, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)
+SendError	cannot send the interface LI, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)
+SendError	cannot send the module LM, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)

@@ -1,0 +1,89 @@
+SOURCE_FILE@0..110
+  BLOCK@0..110
+    COMMENT@0..40 "# Longest match between operator tokens."
+    NEWLINE@40..41 "\n"
+    COMPOUND_ASSIGN_STMT@41..49
+      NAME_REF@41..42
+        LNAME@41..42 "x"
+      WHITESPACE@42..43 " "
+      USHR_EQ@43..47 ">>>="
+      WHITESPACE@47..48 " "
+      LITERAL@48..49
+        NUMBER@48..49 "1"
+    NEWLINE@49..50 "\n"
+    COMPOUND_ASSIGN_STMT@50..57
+      NAME_REF@50..51
+        LNAME@50..51 "x"
+      WHITESPACE@51..52 " "
+      SHR_EQ@52..55 ">>="
+      WHITESPACE@55..56 " "
+      LITERAL@56..57
+        NUMBER@56..57 "1"
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..79
+      NAME_REF@58..59
+        LNAME@58..59 "y"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      BIN_EXPR@62..79
+        BIN_EXPR@62..74
+          BIN_EXPR@62..69
+            NAME_REF@62..63
+              LNAME@62..63 "a"
+            WHITESPACE@63..64 " "
+            USHR@64..67 ">>>"
+            WHITESPACE@67..68 " "
+            NAME_REF@68..69
+              LNAME@68..69 "b"
+          WHITESPACE@69..70 " "
+          SHR@70..72 ">>"
+          WHITESPACE@72..73 " "
+          NAME_REF@73..74
+            LNAME@73..74 "c"
+        WHITESPACE@74..75 " "
+        GT_EQ@75..77 ">="
+        WHITESPACE@77..78 " "
+        NAME_REF@78..79
+          LNAME@78..79 "d"
+    NEWLINE@79..80 "\n"
+    ASSIGN_STMT@80..90
+      NAME_REF@80..81
+        LNAME@80..81 "z"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      BIN_EXPR@84..90
+        NAME_REF@84..85
+          LNAME@84..85 "a"
+        WHITESPACE@85..86 " "
+        STAR2@86..88 "**"
+        WHITESPACE@88..89 " "
+        NAME_REF@89..90
+          LNAME@89..90 "b"
+    NEWLINE@90..91 "\n"
+    ASSIGN_STMT@91..101
+      NAME_REF@91..92
+        LNAME@91..92 "w"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      BIN_EXPR@95..101
+        NAME_REF@95..96
+          LNAME@95..96 "a"
+        WHITESPACE@96..97 " "
+        SLASH2@97..99 "//"
+        WHITESPACE@99..100 " "
+        NAME_REF@100..101
+          LNAME@100..101 "b"
+    NEWLINE@101..102 "\n"
+    COMPOUND_ASSIGN_STMT@102..109
+      NAME_REF@102..103
+        LNAME@102..103 "v"
+      WHITESPACE@103..104 " "
+      PIPE2_EQ@104..107 "||="
+      WHITESPACE@107..108 " "
+      NAME_REF@108..109
+        LNAME@108..109 "b"
+    NEWLINE@109..110 "\n"
+  EOF@110..110 ""

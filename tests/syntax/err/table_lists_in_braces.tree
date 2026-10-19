@@ -1,0 +1,115 @@
+SOURCE_FILE@0..180
+  BLOCK@0..180
+    COMMENT@0..68 "# A brace table holds pairs only; computed keys are not written in a"
+    NEWLINE@68..69 "\n"
+    COMMENT@69..110 "# literal; `[` after a value is an index."
+    NEWLINE@110..111 "\n"
+    ASSIGN_STMT@111..121
+      NAME_REF@111..112
+        LNAME@111..112 "a"
+      WHITESPACE@112..113 " "
+      EQ@113..114 "="
+      WHITESPACE@114..115 " "
+      TABLE_EXPR@115..121
+        L_CURLY@115..116 "{"
+        TABLE_ITEM@116..117
+          LITERAL@116..117
+            NUMBER@116..117 "1"
+        COMMA@117..118 ","
+        WHITESPACE@118..119 " "
+        TABLE_ITEM@119..120
+          LITERAL@119..120
+            NUMBER@119..120 "2"
+        R_CURLY@120..121 "}"
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..140
+      NAME_REF@122..123
+        LNAME@122..123 "b"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      TABLE_EXPR@126..140
+        L_CURLY@126..127 "{"
+        TABLE_PAIR@127..131
+          TABLE_KEY@127..128
+            LNAME@127..128 "a"
+          COLON@128..129 ":"
+          WHITESPACE@129..130 " "
+          LITERAL@130..131
+            NUMBER@130..131 "1"
+        COMMA@131..132 ","
+        WHITESPACE@132..133 " "
+        TABLE_PAIR@133..139
+          TABLE_KEY@133..136
+            L_BRACK@133..134 "["
+            NAME_REF@134..135
+              LNAME@134..135 "k"
+            R_BRACK@135..136 "]"
+          COLON@136..137 ":"
+          WHITESPACE@137..138 " "
+          LITERAL@138..139
+            NUMBER@138..139 "2"
+        R_CURLY@139..140 "}"
+    NEWLINE@140..141 "\n"
+    ASSIGN_STMT@141..154
+      NAME_REF@141..142
+        LNAME@141..142 "c"
+      WHITESPACE@142..143 " "
+      EQ@143..144 "="
+      WHITESPACE@144..145 " "
+      TABLE_EXPR@145..154
+        L_CURLY@145..146 "{"
+        TABLE_PAIR@146..153
+          ERROR_NODE@146..150
+            TRUE_KW@146..150 "true"
+          COLON@150..151 ":"
+          WHITESPACE@151..152 " "
+          LITERAL@152..153
+            NUMBER@152..153 "1"
+        R_CURLY@153..154 "}"
+    NEWLINE@154..155 "\n"
+    ASSIGN_STMT@155..167
+      NAME_REF@155..156
+        LNAME@155..156 "d"
+      WHITESPACE@156..157 " "
+      EQ@157..158 "="
+      WHITESPACE@158..159 " "
+      INDEX_EXPR@159..167
+        NAME_REF@159..160
+          LNAME@159..160 "f"
+        WHITESPACE@160..161 " "
+        L_BRACK@161..162 "["
+        LITERAL@162..163
+          NUMBER@162..163 "1"
+        ERROR_NODE@163..166
+          COMMA@163..164 ","
+          WHITESPACE@164..165 " "
+          NUMBER@165..166 "2"
+        R_BRACK@166..167 "]"
+    NEWLINE@167..168 "\n"
+    ASSIGN_STMT@168..179
+      NAME_REF@168..169
+        LNAME@168..169 "e"
+      WHITESPACE@169..170 " "
+      EQ@170..171 "="
+      WHITESPACE@171..172 " "
+      TABLE_EXPR@172..179
+        L_CURLY@172..173 "{"
+        TABLE_PAIR@173..178
+          TABLE_KEY@173..175
+            MINUS@173..174 "-"
+            NUMBER@174..175 "1"
+          COLON@175..176 ":"
+          WHITESPACE@176..177 " "
+          NAME_REF@177..178
+            LNAME@177..178 "x"
+        R_CURLY@178..179 "}"
+    NEWLINE@179..180 "\n"
+  EOF@180..180 ""
+---
+error@116..117 3:6: a brace table holds `key: value` pairs; a list is written with brackets: `[1]`
+error@119..120 3:9: a brace table holds `key: value` pairs; a list is written with brackets: `[2]`
+error@133..136 4:12: a key is a word, a number or a plain string; a computed key is set with an assignment, `t[k] = …`
+error@146..150 5:6: `true` is not a key name here. For the string key write `{"true": 1}`; a boolean key is set with an assignment, `t[true] = 1`
+error@163..164 6:9: `[` after a value is an index, which takes one expression; to pass a list, write `f([1, 2])`
+error@173..174 7:6: a table key cannot be negative: set it with an assignment, `t[-1] = …`

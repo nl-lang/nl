@@ -1,0 +1,13 @@
+SOURCE_FILE@0..70
+  BLOCK@0..70
+    COMMENT@0..64 "# The file may end without a line break; EOF ends the statement."
+    NEWLINE@64..65 "\n"
+    ASSIGN_STMT@65..70
+      NAME_REF@65..66
+        LNAME@65..66 "x"
+      WHITESPACE@66..67 " "
+      EQ@67..68 "="
+      WHITESPACE@68..69 " "
+      LITERAL@69..70
+        NUMBER@69..70 "1"
+  EOF@70..70 ""

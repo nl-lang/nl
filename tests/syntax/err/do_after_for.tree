@@ -1,0 +1,39 @@
+SOURCE_FILE@0..76
+  BLOCK@0..76
+    COMMENT@0..44 "# `do` at the end of a header: `for … do`."
+    NEWLINE@44..45 "\n"
+    FOR_STMT@45..75
+      FOR_KW@45..48 "for"
+      WHITESPACE@48..49 " "
+      BIND_PAT@49..50
+        NAME@49..50
+          LNAME@49..50 "i"
+      WHITESPACE@50..51 " "
+      IN_KW@51..53 "in"
+      WHITESPACE@53..54 " "
+      BIN_EXPR@54..58
+        LITERAL@54..55
+          NUMBER@54..55 "1"
+        DOT2@55..57 ".."
+        LITERAL@57..58
+          NUMBER@57..58 "3"
+      WHITESPACE@58..59 " "
+      ERROR_NODE@59..61
+        DO_KW@59..61 "do"
+      BLOCK@61..72
+        NEWLINE@61..62 "\n"
+        WHITESPACE@62..64 "  "
+        EXPR_STMT@64..71
+          COMMAND_CALL@64..71
+            NAME_REF@64..69
+              LNAME@64..69 "print"
+            WHITESPACE@69..70 " "
+            COMMAND_ARGS@70..71
+              NAME_REF@70..71
+                LNAME@70..71 "i"
+        NEWLINE@71..72 "\n"
+      END_KW@72..75 "end"
+    NEWLINE@75..76 "\n"
+  EOF@76..76 ""
+---
+error@59..61 2:15: unexpected `do`: the header of `for` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

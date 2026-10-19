@@ -1,0 +1,30 @@
+SOURCE_FILE@0..73
+  BLOCK@0..73
+    COMMENT@0..46 "# A `for` pattern may carry a type annotation."
+    NEWLINE@46..47 "\n"
+    FOR_STMT@47..72
+      FOR_KW@47..50 "for"
+      WHITESPACE@50..51 " "
+      TYPED_PAT@51..60
+        BIND_PAT@51..52
+          NAME@51..52
+            LNAME@51..52 "i"
+        COLON@52..53 ":"
+        WHITESPACE@53..54 " "
+        NAMED_TYPE@54..60
+          QUAL_NAME@54..60
+            CNAME@54..60 "Number"
+      WHITESPACE@60..61 " "
+      IN_KW@61..63 "in"
+      WHITESPACE@63..64 " "
+      BIN_EXPR@64..68
+        LITERAL@64..65
+          NUMBER@64..65 "1"
+        DOT2@65..67 ".."
+        LITERAL@67..68
+          NUMBER@67..68 "3"
+      BLOCK@68..69
+        NEWLINE@68..69 "\n"
+      END_KW@69..72 "end"
+    NEWLINE@72..73 "\n"
+  EOF@73..73 ""

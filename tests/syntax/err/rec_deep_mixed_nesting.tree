@@ -1,0 +1,91 @@
+SOURCE_FILE@0..218
+  BLOCK@0..218
+    COMMENT@0..71 "# Recovery: a missing `end` deep inside mixed constructs, in a function"
+    NEWLINE@71..72 "\n"
+    COMMENT@72..117 "# argument; the outer constructs still close."
+    NEWLINE@117..118 "\n"
+    FN_DECL@118..211
+      FN_KW@118..120 "fn"
+      WHITESPACE@120..121 " "
+      NAME@121..126
+        LNAME@121..126 "outer"
+      PARAM_LIST@126..128
+        L_PAREN@126..127 "("
+        R_PAREN@127..128 ")"
+      BLOCK@128..208
+        NEWLINE@128..129 "\n"
+        WHITESPACE@129..131 "  "
+        EXPR_STMT@131..208
+          CALL_EXPR@131..208
+            FIELD_EXPR@131..141
+              NAME_REF@131..136
+                LNAME@131..136 "items"
+              DOT@136..137 "."
+              LNAME@137..141 "each"
+            WHITESPACE@141..142 " "
+            TRAILING_BLOCK@142..208
+              DO_KW@142..144 "do"
+              WHITESPACE@144..145 " "
+              BLOCK_PARAMS@145..148
+                PIPE@145..146 "|"
+                PARAM@146..147
+                  BIND_PAT@146..147
+                    NAME@146..147
+                      LNAME@146..147 "x"
+                PIPE@147..148 "|"
+              BLOCK@148..208
+                NEWLINE@148..149 "\n"
+                WHITESPACE@149..153 "    "
+                EXPR_STMT@153..207
+                  CASE_EXPR@153..207
+                    CASE_KW@153..157 "case"
+                    WHITESPACE@157..158 " "
+                    NAME_REF@158..159
+                      LNAME@158..159 "x"
+                    NEWLINE@159..160 "\n"
+                    WHITESPACE@160..164 "    "
+                    WHEN_CLAUSE@164..204
+                      WHEN_KW@164..168 "when"
+                      WHITESPACE@168..169 " "
+                      LITERAL@169..170
+                        NUMBER@169..170 "1"
+                      BLOCK@170..204
+                        NEWLINE@170..171 "\n"
+                        WHITESPACE@171..177 "      "
+                        EXPR_STMT@177..201
+                          IF_EXPR@177..201
+                            IF_KW@177..179 "if"
+                            WHITESPACE@179..180 " "
+                            NAME_REF@180..181
+                              LNAME@180..181 "y"
+                            BLOCK@181..198
+                              NEWLINE@181..182 "\n"
+                              WHITESPACE@182..190 "        "
+                              EXPR_STMT@190..193
+                                CALL_EXPR@190..193
+                                  NAME_REF@190..191
+                                    LNAME@190..191 "a"
+                                  ARG_LIST@191..193
+                                    L_PAREN@191..192 "("
+                                    R_PAREN@192..193 ")"
+                              NEWLINE@193..194 "\n"
+                              WHITESPACE@194..198 "    "
+                            END_KW@198..201 "end"
+                        NEWLINE@201..202 "\n"
+                        WHITESPACE@202..204 "  "
+                    END_KW@204..207 "end"
+                NEWLINE@207..208 "\n"
+      END_KW@208..211 "end"
+    NEWLINE@211..212 "\n"
+    ASSIGN_STMT@212..217
+      NAME_REF@212..213
+        LNAME@212..213 "z"
+      WHITESPACE@213..214 " "
+      EQ@214..215 "="
+      WHITESPACE@215..216 " "
+      LITERAL@216..217
+        NUMBER@216..217 "1"
+    NEWLINE@217..218 "\n"
+  EOF@218..218 ""
+---
+error@208..211 11:1: the `do` on line 4 has no `end`: by its indentation, this `end` closes an enclosing block

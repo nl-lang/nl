@@ -1,0 +1,56 @@
+SOURCE_FILE@0..91
+  BLOCK@0..91
+    COMMENT@0..43 "# With `step` the iterable must be a range."
+    NEWLINE@43..44 "\n"
+    FOR_STMT@44..65
+      FOR_KW@44..47 "for"
+      WHITESPACE@47..48 " "
+      BIND_PAT@48..49
+        NAME@48..49
+          LNAME@48..49 "i"
+      WHITESPACE@49..50 " "
+      IN_KW@50..52 "in"
+      WHITESPACE@52..53 " "
+      NAME_REF@53..54
+        LNAME@53..54 "r"
+      WHITESPACE@54..55 " "
+      FOR_STEP@55..61
+        STEP_KW@55..59 "step"
+        WHITESPACE@59..60 " "
+        LITERAL@60..61
+          NUMBER@60..61 "2"
+      BLOCK@61..62
+        NEWLINE@61..62 "\n"
+      END_KW@62..65 "end"
+    NEWLINE@65..66 "\n"
+    FOR_STMT@66..90
+      FOR_KW@66..69 "for"
+      WHITESPACE@69..70 " "
+      BIND_PAT@70..71
+        NAME@70..71
+          LNAME@70..71 "i"
+      WHITESPACE@71..72 " "
+      IN_KW@72..74 "in"
+      WHITESPACE@74..75 " "
+      CALL_EXPR@75..79
+        NAME_REF@75..76
+          LNAME@75..76 "f"
+        ARG_LIST@76..79
+          L_PAREN@76..77 "("
+          NAME_REF@77..78
+            LNAME@77..78 "x"
+          R_PAREN@78..79 ")"
+      WHITESPACE@79..80 " "
+      FOR_STEP@80..86
+        STEP_KW@80..84 "step"
+        WHITESPACE@84..85 " "
+        LITERAL@85..86
+          NUMBER@85..86 "2"
+      BLOCK@86..87
+        NEWLINE@86..87 "\n"
+      END_KW@87..90 "end"
+    NEWLINE@90..91 "\n"
+  EOF@91..91 ""
+---
+error@53..61 2:10: `step` needs a range written in the header, such as `for i in 1..10 step 2`
+error@75..86 4:10: `step` needs a range written in the header, such as `for i in 1..10 step 2`

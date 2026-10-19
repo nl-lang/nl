@@ -1,0 +1,49 @@
+SOURCE_FILE@0..215
+  BLOCK@0..215
+    COMMENT@0..72 "# Recovery: an unclosed `{` of a table; the declaration on the next line"
+    NEWLINE@72..73 "\n"
+    COMMENT@73..147 "# parses. (A next line such as `y = 3` is read as a missing comma instead;"
+    NEWLINE@147..148 "\n"
+    COMMENT@148..188 "# see the report of the snapshot suite.)"
+    NEWLINE@188..189 "\n"
+    ASSIGN_STMT@189..204
+      NAME_REF@189..190
+        LNAME@189..190 "x"
+      WHITESPACE@190..191 " "
+      EQ@191..192 "="
+      WHITESPACE@192..193 " "
+      TABLE_EXPR@193..204
+        L_CURLY@193..194 "{"
+        TABLE_PAIR@194..198
+          TABLE_KEY@194..195
+            LNAME@194..195 "a"
+          COLON@195..196 ":"
+          WHITESPACE@196..197 " "
+          LITERAL@197..198
+            NUMBER@197..198 "1"
+        COMMA@198..199 ","
+        WHITESPACE@199..200 " "
+        TABLE_PAIR@200..204
+          TABLE_KEY@200..201
+            LNAME@200..201 "b"
+          COLON@201..202 ":"
+          WHITESPACE@202..203 " "
+          LITERAL@203..204
+            NUMBER@203..204 "2"
+    NEWLINE@204..205 "\n"
+    LET_DECL@205..214
+      LET_KW@205..208 "let"
+      WHITESPACE@208..209 " "
+      BIND_PAT@209..210
+        NAME@209..210
+          LNAME@209..210 "y"
+      WHITESPACE@210..211 " "
+      EQ@211..212 "="
+      WHITESPACE@212..213 " "
+      EXPR_LIST@213..214
+        LITERAL@213..214
+          NUMBER@213..214 "3"
+    NEWLINE@214..215 "\n"
+  EOF@215..215 ""
+---
+error@205..208 5:1: expected `}` to close this `{`, found `let`

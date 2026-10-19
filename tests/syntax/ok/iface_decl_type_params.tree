@@ -1,0 +1,92 @@
+SOURCE_FILE@0..143
+  BLOCK@0..143
+    COMMENT@0..59 "# `interface From<T>`; signatures may have type parameters."
+    NEWLINE@59..60 "\n"
+    INTERFACE_DECL@60..142
+      INTERFACE_KW@60..69 "interface"
+      WHITESPACE@69..70 " "
+      NAME@70..74
+        CNAME@70..74 "From"
+      TYPE_PARAMS@74..77
+        LT@74..75 "<"
+        TYPE_PARAM@75..76
+          NAME@75..76
+            CNAME@75..76 "T"
+        GT@76..77 ">"
+      NEWLINE@77..78 "\n"
+      WHITESPACE@78..80 "  "
+      IFACE_METHOD@80..101
+        FN_KW@80..82 "fn"
+        WHITESPACE@82..83 " "
+        NAME@83..87
+          LNAME@83..87 "from"
+        PARAM_LIST@87..95
+          L_PAREN@87..88 "("
+          PARAM@88..94
+            TYPED_PAT@88..94
+              BIND_PAT@88..91
+                NAME@88..91
+                  LNAME@88..91 "val"
+              COLON@91..92 ":"
+              WHITESPACE@92..93 " "
+              NAMED_TYPE@93..94
+                QUAL_NAME@93..94
+                  CNAME@93..94 "T"
+          R_PAREN@94..95 ")"
+        RETURN_TYPE@95..101
+          COLON@95..96 ":"
+          WHITESPACE@96..97 " "
+          NAMED_TYPE@97..101
+            SELF_TYPE_KW@97..101 "Self"
+      NEWLINE@101..102 "\n"
+      WHITESPACE@102..104 "  "
+      IFACE_METHOD@104..138
+        FN_KW@104..106 "fn"
+        WHITESPACE@106..107 " "
+        NAME@107..110
+          LNAME@107..110 "map"
+        TYPE_PARAMS@110..113
+          LT@110..111 "<"
+          TYPE_PARAM@111..112
+            NAME@111..112
+              CNAME@111..112 "U"
+          GT@112..113 ">"
+        PARAM_LIST@113..135
+          L_PAREN@113..114 "("
+          PARAM@114..134
+            TYPED_PAT@114..134
+              BIND_PAT@114..115
+                NAME@114..115
+                  LNAME@114..115 "f"
+              COLON@115..116 ":"
+              WHITESPACE@116..117 " "
+              FN_TYPE@117..134
+                CNAME@117..125 "Function"
+                FN_TYPE_PARAMS@125..131
+                  L_PAREN@125..126 "("
+                  FN_TYPE_PARAM@126..130
+                    NAME@126..127
+                      LNAME@126..127 "x"
+                    COLON@127..128 ":"
+                    WHITESPACE@128..129 " "
+                    NAMED_TYPE@129..130
+                      QUAL_NAME@129..130
+                        CNAME@129..130 "T"
+                  R_PAREN@130..131 ")"
+                RETURN_TYPE@131..134
+                  COLON@131..132 ":"
+                  WHITESPACE@132..133 " "
+                  NAMED_TYPE@133..134
+                    QUAL_NAME@133..134
+                      CNAME@133..134 "U"
+          R_PAREN@134..135 ")"
+        RETURN_TYPE@135..138
+          COLON@135..136 ":"
+          WHITESPACE@136..137 " "
+          NAMED_TYPE@137..138
+            QUAL_NAME@137..138
+              CNAME@137..138 "U"
+      NEWLINE@138..139 "\n"
+      END_KW@139..142 "end"
+    NEWLINE@142..143 "\n"
+  EOF@143..143 ""

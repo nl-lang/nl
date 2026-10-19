@@ -1,0 +1,82 @@
+SOURCE_FILE@0..166
+  BLOCK@0..166
+    COMMENT@0..60 "# `return` with nothing, one value, several values; `return`"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..76 "# before `end`."
+    NEWLINE@76..77 "\n"
+    FN_DECL@77..94
+      FN_KW@77..79 "fn"
+      WHITESPACE@79..80 " "
+      NAME@80..81
+        LNAME@80..81 "f"
+      BLOCK@81..91
+        NEWLINE@81..82 "\n"
+        WHITESPACE@82..84 "  "
+        RETURN_STMT@84..90
+          RETURN_KW@84..90 "return"
+        NEWLINE@90..91 "\n"
+      END_KW@91..94 "end"
+    NEWLINE@94..95 "\n"
+    FN_DECL@95..114
+      FN_KW@95..97 "fn"
+      WHITESPACE@97..98 " "
+      NAME@98..99
+        LNAME@98..99 "g"
+      BLOCK@99..111
+        NEWLINE@99..100 "\n"
+        WHITESPACE@100..102 "  "
+        RETURN_STMT@102..110
+          RETURN_KW@102..108 "return"
+          WHITESPACE@108..109 " "
+          EXPR_LIST@109..110
+            LITERAL@109..110
+              NUMBER@109..110 "1"
+        NEWLINE@110..111 "\n"
+      END_KW@111..114 "end"
+    NEWLINE@114..115 "\n"
+    FN_DECL@115..137
+      FN_KW@115..117 "fn"
+      WHITESPACE@117..118 " "
+      NAME@118..119
+        LNAME@118..119 "h"
+      BLOCK@119..134
+        NEWLINE@119..120 "\n"
+        WHITESPACE@120..122 "  "
+        RETURN_STMT@122..133
+          RETURN_KW@122..128 "return"
+          WHITESPACE@128..129 " "
+          EXPR_LIST@129..133
+            NAME_REF@129..130
+              LNAME@129..130 "a"
+            COMMA@130..131 ","
+            WHITESPACE@131..132 " "
+            NAME_REF@132..133
+              LNAME@132..133 "b"
+        NEWLINE@133..134 "\n"
+      END_KW@134..137 "end"
+    NEWLINE@137..138 "\n"
+    FN_DECL@138..165
+      FN_KW@138..140 "fn"
+      WHITESPACE@140..141 " "
+      NAME@141..142
+        LNAME@141..142 "k"
+      BLOCK@142..162
+        NEWLINE@142..143 "\n"
+        WHITESPACE@143..145 "  "
+        EXPR_STMT@145..161
+          IF_EXPR@145..161
+            IF_KW@145..147 "if"
+            WHITESPACE@147..148 " "
+            NAME_REF@148..149
+              LNAME@148..149 "x"
+            SEMI@149..150 ";"
+            BLOCK@150..158
+              WHITESPACE@150..151 " "
+              RETURN_STMT@151..157
+                RETURN_KW@151..157 "return"
+              WHITESPACE@157..158 " "
+            END_KW@158..161 "end"
+        NEWLINE@161..162 "\n"
+      END_KW@162..165 "end"
+    NEWLINE@165..166 "\n"
+  EOF@166..166 ""

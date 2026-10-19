@@ -1,0 +1,72 @@
+SOURCE_FILE@0..115
+  BLOCK@0..115
+    COMMENT@0..56 "# `do` at the end of a header: `if`, `elseif`, `unless`."
+    NEWLINE@56..57 "\n"
+    EXPR_STMT@57..92
+      IF_EXPR@57..92
+        IF_KW@57..59 "if"
+        WHITESPACE@59..60 " "
+        NAME_REF@60..61
+          LNAME@60..61 "a"
+        WHITESPACE@61..62 " "
+        ERROR_NODE@62..64
+          DO_KW@62..64 "do"
+        BLOCK@64..71
+          NEWLINE@64..65 "\n"
+          WHITESPACE@65..67 "  "
+          EXPR_STMT@67..70
+            CALL_EXPR@67..70
+              NAME_REF@67..68
+                LNAME@67..68 "x"
+              ARG_LIST@68..70
+                L_PAREN@68..69 "("
+                R_PAREN@69..70 ")"
+          NEWLINE@70..71 "\n"
+        ELSEIF_CLAUSE@71..89
+          ELSEIF_KW@71..77 "elseif"
+          WHITESPACE@77..78 " "
+          NAME_REF@78..79
+            LNAME@78..79 "b"
+          WHITESPACE@79..80 " "
+          ERROR_NODE@80..82
+            DO_KW@80..82 "do"
+          BLOCK@82..89
+            NEWLINE@82..83 "\n"
+            WHITESPACE@83..85 "  "
+            EXPR_STMT@85..88
+              CALL_EXPR@85..88
+                NAME_REF@85..86
+                  LNAME@85..86 "y"
+                ARG_LIST@86..88
+                  L_PAREN@86..87 "("
+                  R_PAREN@87..88 ")"
+            NEWLINE@88..89 "\n"
+        END_KW@89..92 "end"
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..114
+      UNLESS_EXPR@93..114
+        UNLESS_KW@93..99 "unless"
+        WHITESPACE@99..100 " "
+        NAME_REF@100..101
+          LNAME@100..101 "c"
+        WHITESPACE@101..102 " "
+        ERROR_NODE@102..104
+          DO_KW@102..104 "do"
+        BLOCK@104..111
+          NEWLINE@104..105 "\n"
+          WHITESPACE@105..107 "  "
+          EXPR_STMT@107..110
+            CALL_EXPR@107..110
+              NAME_REF@107..108
+                LNAME@107..108 "z"
+              ARG_LIST@108..110
+                L_PAREN@108..109 "("
+                R_PAREN@109..110 ")"
+          NEWLINE@110..111 "\n"
+        END_KW@111..114 "end"
+    NEWLINE@114..115 "\n"
+  EOF@115..115 ""
+---
+error@62..64 2:6: unexpected `do`: the header of `if` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@80..82 4:10: unexpected `do`: the header of `elseif` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@102..104 7:10: unexpected `do`: the header of `unless` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

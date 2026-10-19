@@ -1,0 +1,145 @@
+SOURCE_FILE@0..233
+  BLOCK@0..233
+    COMMENT@0..75 "# A positional argument or a spread after a keyed one is an error; a second"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..131 "# `**` parameter, or one that is not last, is an error."
+    NEWLINE@131..132 "\n"
+    EXPR_STMT@132..142
+      CALL_EXPR@132..142
+        NAME_REF@132..133
+          LNAME@132..133 "f"
+        ARG_LIST@133..142
+          L_PAREN@133..134 "("
+          KEYED_ARG@134..138
+            LNAME@134..135 "k"
+            COLON@135..136 ":"
+            WHITESPACE@136..137 " "
+            LITERAL@137..138
+              NUMBER@137..138 "1"
+          COMMA@138..139 ","
+          WHITESPACE@139..140 " "
+          LITERAL@140..141
+            NUMBER@140..141 "2"
+          R_PAREN@141..142 ")"
+    NEWLINE@142..143 "\n"
+    EXPR_STMT@143..159
+      COMMAND_CALL@143..159
+        NAME_REF@143..144
+          LNAME@143..144 "f"
+        WHITESPACE@144..145 " "
+        COMMAND_ARGS@145..159
+          NAME_REF@145..146
+            LNAME@145..146 "a"
+          COMMA@146..147 ","
+          WHITESPACE@147..148 " "
+          KEYED_ARG@148..152
+            LNAME@148..149 "k"
+            COLON@149..150 ":"
+            WHITESPACE@150..151 " "
+            LITERAL@151..152
+              NUMBER@151..152 "1"
+          COMMA@152..153 ","
+          WHITESPACE@153..154 " "
+          SPREAD_ARG@154..159
+            STAR@154..155 "*"
+            NAME_REF@155..159
+              LNAME@155..159 "list"
+    NEWLINE@159..160 "\n"
+    EXPR_STMT@160..175
+      CALL_EXPR@160..175
+        NAME_REF@160..161
+          LNAME@160..161 "f"
+        ARG_LIST@161..175
+          L_PAREN@161..162 "("
+          SPREAD_ARG@162..167
+            STAR@162..163 "*"
+            NAME_REF@163..167
+              LNAME@163..167 "list"
+          COMMA@167..168 ","
+          WHITESPACE@168..169 " "
+          SPREAD_ARG@169..174
+            STAR@169..170 "*"
+            NAME_REF@170..174
+              LNAME@170..174 "more"
+          R_PAREN@174..175 ")"
+    NEWLINE@175..176 "\n"
+    FN_DECL@176..192
+      FN_KW@176..178 "fn"
+      WHITESPACE@178..179 " "
+      NAME@179..180
+        LNAME@179..180 "g"
+      PARAM_LIST@180..188
+        L_PAREN@180..181 "("
+        KEYED_PARAM@181..184
+          STAR2@181..183 "**"
+          NAME@183..184
+            LNAME@183..184 "a"
+        COMMA@184..185 ","
+        WHITESPACE@185..186 " "
+        PARAM@186..187
+          BIND_PAT@186..187
+            NAME@186..187
+              LNAME@186..187 "b"
+        R_PAREN@187..188 ")"
+      BLOCK@188..189
+        NEWLINE@188..189 "\n"
+      END_KW@189..192 "end"
+    NEWLINE@192..193 "\n"
+    FN_DECL@193..211
+      FN_KW@193..195 "fn"
+      WHITESPACE@195..196 " "
+      NAME@196..197
+        LNAME@196..197 "h"
+      PARAM_LIST@197..207
+        L_PAREN@197..198 "("
+        KEYED_PARAM@198..201
+          STAR2@198..200 "**"
+          NAME@200..201
+            LNAME@200..201 "a"
+        COMMA@201..202 ","
+        WHITESPACE@202..203 " "
+        KEYED_PARAM@203..206
+          STAR2@203..205 "**"
+          NAME@205..206
+            LNAME@205..206 "b"
+        R_PAREN@206..207 ")"
+      BLOCK@207..208
+        NEWLINE@207..208 "\n"
+      END_KW@208..211 "end"
+    NEWLINE@211..212 "\n"
+    FN_DECL@212..232
+      FN_KW@212..214 "fn"
+      WHITESPACE@214..215 " "
+      NAME@215..216
+        LNAME@215..216 "i"
+      PARAM_LIST@216..228
+        L_PAREN@216..217 "("
+        REST_PARAM@217..219
+          STAR@217..218 "*"
+          NAME@218..219
+            LNAME@218..219 "a"
+        COMMA@219..220 ","
+        WHITESPACE@220..221 " "
+        PARAM@221..222
+          BIND_PAT@221..222
+            NAME@221..222
+              LNAME@221..222 "b"
+        COMMA@222..223 ","
+        WHITESPACE@223..224 " "
+        KEYED_PARAM@224..227
+          STAR2@224..226 "**"
+          NAME@226..227
+            LNAME@226..227 "c"
+        R_PAREN@227..228 ")"
+      BLOCK@228..229
+        NEWLINE@228..229 "\n"
+      END_KW@229..232 "end"
+    NEWLINE@232..233 "\n"
+  EOF@233..233 ""
+---
+error@140..141 3:9: positional arguments come before the keyed arguments `key: value`
+error@154..155 4:12: positional arguments and the spread come before the keyed arguments `key: value`
+error@169..170 5:10: a spread argument `*list` must be the last positional argument
+error@186..187 6:11: `**opts` must be the last parameter
+error@203..205 8:11: `**opts` must be the last parameter
+error@221..222 10:10: `*rest` must be the last parameter, or followed only by `**opts`

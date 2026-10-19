@@ -1,0 +1,52 @@
+[package]
+name = "nl"
+description = "The safe Rust host API of NL, on mlua"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+# The workspace builds mlua against stock LuaJIT (for nlc), so a test binary
+# of this crate cannot link here: nl_sys references nl_version_0_1 and the
+# rest of nl.h, which only the fork defines. The tests live outside the
+# workspace, in tests/vm/nl_host, built against the fork.
+test = false
+doctest = false
+
+[features]
+# Rust futures as NL tasks and NL tasks as Rust futures.
+async = ["mlua/async"]
+# Passed through to mlua.
+serde = ["mlua/serde"]
+send = ["mlua/send"]
+macros = ["mlua/macros"]
+
+[dependencies]
+# The mlua of nl_sys's mlua-sys (0.13): a graph holds one crate that links
+# "lua". A host links the fork by patching luajit-src.
+# Pinned to the exact version that was checked: the abort in
+# src/state.rs (`impl Drop for NlState`) relies on a private detail of
+# mlua 0.12.2, that ExtraData::drop drops its own Lua before the app data.
+# If a later mlua drops them the other way, every worker close aborts, and
+# tests/vm/nl_host (tests/workers.rs, `a_worker_close_keeps_mlua_s_drop_order`
+# and every test that ends a worker) fails at once. Check that before
+# moving the pin, with mlua-sys in crates/nl_sys/Cargo.toml.
+mlua = { version = "=0.12.2", features = ["luajit", "vendored"] }
+nl_sys = { path = "../nl_sys" }
+# Localize and Severity are the compiler's.
+nl_capi = { path = "../nl_capi" }
+
+# The workspace lints, except that unsafe code is denied instead of forbidden,
+# so that src/raw.rs alone can allow it: the calls into nl.h (inside
+# Lua::exec_raw) and the callbacks the VM calls. Keep the rest in step with
+# [workspace.lints] in the root Cargo.toml.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"

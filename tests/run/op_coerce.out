@@ -1,0 +1,11 @@
+coerce 2
+7
+coerce 3
+15
+coerce 1
+true
+coerce 4
+true
+false
+NoAdd.coerce
+error after coerce

@@ -1,0 +1,41 @@
+SOURCE_FILE@0..71
+  BLOCK@0..71
+    COMMENT@0..45 "# Generic constraints are not part of NL yet."
+    NEWLINE@45..46 "\n"
+    FN_DECL@46..70
+      FN_KW@46..48 "fn"
+      WHITESPACE@48..49 " "
+      NAME@49..50
+        LNAME@49..50 "f"
+      TYPE_PARAMS@50..60
+        LT@50..51 "<"
+        TYPE_PARAM@51..59
+          NAME@51..52
+            CNAME@51..52 "T"
+          ERROR_NODE@52..59
+            COLON@52..53 ":"
+            WHITESPACE@53..54 " "
+            NAMED_TYPE@54..59
+              QUAL_NAME@54..59
+                CNAME@54..59 "Shape"
+        GT@59..60 ">"
+      PARAM_LIST@60..66
+        L_PAREN@60..61 "("
+        PARAM@61..65
+          TYPED_PAT@61..65
+            BIND_PAT@61..62
+              NAME@61..62
+                LNAME@61..62 "x"
+            COLON@62..63 ":"
+            WHITESPACE@63..64 " "
+            NAMED_TYPE@64..65
+              QUAL_NAME@64..65
+                CNAME@64..65 "T"
+        R_PAREN@65..66 ")"
+      BLOCK@66..67
+        NEWLINE@66..67 "\n"
+      END_KW@67..70 "end"
+    NEWLINE@70..71 "\n"
+  EOF@71..71 ""
+---
+error@52..53 2:7: generic constraints such as `<T: Shape>` are not part of NL yet

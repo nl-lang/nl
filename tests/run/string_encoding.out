@@ -1,0 +1,11 @@
+true
+false
+2
+104,255
+h
+3
+2
+4
+length: EncodingError
+upcase: EncodingError
+iteration: EncodingError

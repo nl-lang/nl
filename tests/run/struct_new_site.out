@@ -1,0 +1,13 @@
+100 x named: LuaError: struct_new_site.nl:12: Vec has no field 'name'
+100 x named: LuaError: struct_new_site.nl:12: cannot construct Kinds: it is not a struct
+100 x named: LuaError: struct_new_site.nl:12: cannot construct Mode: it is not a struct
+100 x named: LuaError: struct_new_site.nl:12: cannot construct a Number value: it is not a struct
+100 x named: LuaError: struct_new_site.nl:12: cannot construct a Vec value: it is not a struct
+100 x named: Tagged 3
+100 x plain: LuaError: struct_new_site.nl:8: cannot construct Kinds: it is not a struct
+100 x plain: LuaError: struct_new_site.nl:8: cannot construct Mode: it is not a struct
+100 x plain: LuaError: struct_new_site.nl:8: cannot construct a Number value: it is not a struct
+100 x plain: LuaError: struct_new_site.nl:8: cannot construct a Vec value: it is not a struct
+100 x plain: LuaError: struct_new_site.nl:8: cannot construct a nil value: it is not a struct
+100 x plain: Tagged 3
+100 x plain: Vec 3

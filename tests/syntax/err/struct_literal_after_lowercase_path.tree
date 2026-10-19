@@ -1,0 +1,33 @@
+SOURCE_FILE@0..79
+  BLOCK@0..79
+    COMMENT@0..51 "# `shapes.Circle { r: 1 }` is not a struct literal."
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..78
+      NAME_REF@52..53
+        LNAME@52..53 "c"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      FIELD_EXPR@56..69
+        NAME_REF@56..62
+          LNAME@56..62 "shapes"
+        DOT@62..63 "."
+        CNAME@63..69 "Circle"
+      WHITESPACE@69..70 " "
+      ERROR_NODE@70..78
+        TABLE_EXPR@70..78
+          L_CURLY@70..71 "{"
+          WHITESPACE@71..72 " "
+          TABLE_PAIR@72..76
+            TABLE_KEY@72..73
+              LNAME@72..73 "r"
+            COLON@73..74 ":"
+            WHITESPACE@74..75 " "
+            LITERAL@75..76
+              NUMBER@75..76 "1"
+          WHITESPACE@76..77 " "
+          R_CURLY@77..78 "}"
+    NEWLINE@78..79 "\n"
+  EOF@79..79 ""
+---
+error@70..71 2:19: `{` cannot follow this expression on the same line: a struct literal needs a capitalized name (`Point { x: 1 }`), and a table passed as an argument needs a function name (`f {a: 1}`) or parentheses (`f(x, {a: 1})`)

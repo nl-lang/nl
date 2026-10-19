@@ -1,0 +1,8 @@
+stack traceback:
+trace_level.nl:6: in function 'fail'
+msg
+lib/traceback.lua:2: in function 'here'
+true
+other
+stack traceback:
+true	table

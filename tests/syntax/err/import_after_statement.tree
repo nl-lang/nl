@@ -1,0 +1,57 @@
+SOURCE_FILE@0..178
+  BLOCK@0..178
+    COMMENT@0..50 "# Imports are the first statements of the file; an"
+    NEWLINE@50..51 "\n"
+    COMMENT@51..103 "# `import` after another statement is reported once."
+    NEWLINE@103..104 "\n"
+    IMPORT_DECL@104..123
+      IMPORT_KW@104..110 "import"
+      WHITESPACE@110..111 " "
+      NAME@111..112
+        LNAME@111..112 "a"
+      WHITESPACE@112..113 " "
+      FROM_KW@113..117 "from"
+      WHITESPACE@117..118 " "
+      STRING@118..123 "'lib'"
+    NEWLINE@123..124 "\n"
+    LET_DECL@124..133
+      LET_KW@124..127 "let"
+      WHITESPACE@127..128 " "
+      BIND_PAT@128..129
+        NAME@128..129
+          LNAME@128..129 "x"
+      WHITESPACE@129..130 " "
+      EQ@130..131 "="
+      WHITESPACE@131..132 " "
+      EXPR_LIST@132..133
+        LITERAL@132..133
+          NUMBER@132..133 "1"
+    NEWLINE@133..134 "\n"
+    IMPORT_DECL@134..153
+      IMPORT_KW@134..140 "import"
+      WHITESPACE@140..141 " "
+      NAME@141..142
+        LNAME@141..142 "b"
+      WHITESPACE@142..143 " "
+      FROM_KW@143..147 "from"
+      WHITESPACE@147..148 " "
+      STRING@148..153 "'lib'"
+    NEWLINE@153..154 "\n"
+    IMPORT_DECL@154..177
+      IMPORT_KW@154..160 "import"
+      WHITESPACE@160..161 " "
+      IMPORT_LIST@161..166
+        L_CURLY@161..162 "{"
+        WHITESPACE@162..163 " "
+        NAME@163..164
+          LNAME@163..164 "c"
+        WHITESPACE@164..165 " "
+        R_CURLY@165..166 "}"
+      WHITESPACE@166..167 " "
+      FROM_KW@167..171 "from"
+      WHITESPACE@171..172 " "
+      STRING@172..177 "'lib'"
+    NEWLINE@177..178 "\n"
+  EOF@178..178 ""
+---
+error@134..140 5:1: `import` must come before every other statement of the file: move the imports to the top

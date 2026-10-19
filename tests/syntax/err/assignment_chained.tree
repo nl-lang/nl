@@ -1,0 +1,22 @@
+SOURCE_FILE@0..64
+  BLOCK@0..64
+    COMMENT@0..53 "# Assignment is a statement: `a = b = 1` is an error."
+    NEWLINE@53..54 "\n"
+    ASSIGN_STMT@54..63
+      NAME_REF@54..55
+        LNAME@54..55 "a"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      NAME_REF@58..59
+        LNAME@58..59 "b"
+      WHITESPACE@59..60 " "
+      ERROR_NODE@60..63
+        EQ@60..61 "="
+        WHITESPACE@61..62 " "
+        LITERAL@62..63
+          NUMBER@62..63 "1"
+    NEWLINE@63..64 "\n"
+  EOF@64..64 ""
+---
+error@60..61 2:7: assignment is a statement, not an expression: `a = b = 1` is not allowed; assign each target on its own line

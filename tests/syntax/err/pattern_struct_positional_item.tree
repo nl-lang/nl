@@ -1,0 +1,26 @@
+SOURCE_FILE@0..67
+  BLOCK@0..67
+    COMMENT@0..47 "# Struct pattern items are keyed by field name."
+    NEWLINE@47..48 "\n"
+    LET_DECL@48..66
+      LET_KW@48..51 "let"
+      WHITESPACE@51..52 " "
+      STRUCT_PAT@52..62
+        QUAL_NAME@52..58
+          CNAME@52..58 "Circle"
+        WHITESPACE@58..59 " "
+        L_CURLY@59..60 "{"
+        ERROR_NODE@60..61
+          LITERAL_PAT@60..61
+            NUMBER@60..61 "1"
+        R_CURLY@61..62 "}"
+      WHITESPACE@62..63 " "
+      EQ@63..64 "="
+      WHITESPACE@64..65 " "
+      EXPR_LIST@65..66
+        NAME_REF@65..66
+          LNAME@65..66 "c"
+    NEWLINE@66..67 "\n"
+  EOF@67..67 ""
+---
+error@60..61 2:13: the items of a struct pattern are keyed by field name: `field: pattern`, or a field name

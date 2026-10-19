@@ -1,0 +1,26 @@
+SOURCE_FILE@0..75
+  BLOCK@0..75
+    COMMENT@0..48 "# After `,` the next argument may be on the next"
+    NEWLINE@48..49 "\n"
+    COMMENT@49..56 "# line."
+    NEWLINE@56..57 "\n"
+    EXPR_STMT@57..74
+      COMMAND_CALL@57..74
+        NAME_REF@57..62
+          LNAME@57..62 "print"
+        WHITESPACE@62..63 " "
+        COMMAND_ARGS@63..74
+          NAME_REF@63..64
+            LNAME@63..64 "a"
+          COMMA@64..65 ","
+          NEWLINE@65..66 "\n"
+          WHITESPACE@66..68 "  "
+          NAME_REF@68..69
+            LNAME@68..69 "b"
+          COMMA@69..70 ","
+          NEWLINE@70..71 "\n"
+          WHITESPACE@71..73 "  "
+          NAME_REF@73..74
+            LNAME@73..74 "c"
+    NEWLINE@74..75 "\n"
+  EOF@75..75 ""

@@ -1,0 +1,16 @@
+SOURCE_FILE@0..70
+  BLOCK@0..70
+    COMMENT@0..51 "# The flags are `-`, `=` or `-=`; `=-` is an error."
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..69
+      NAME_REF@52..53
+        LNAME@52..53 "a"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      LITERAL@56..69
+        STRING@56..69 "\"\"\"=-\n  x\n\"\"\""
+    NEWLINE@69..70 "\n"
+  EOF@70..70 ""
+---
+error@56..61 2:5: write the heredoc flags in the order `-=`, as in `"""-=`

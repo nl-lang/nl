@@ -1,0 +1,141 @@
+SOURCE_FILE@0..190
+  BLOCK@0..190
+    COMMENT@0..78 "# `??` on the level of `or`, left associative; `??=` is a compound assignment."
+    NEWLINE@78..79 "\n"
+    ASSIGN_STMT@79..89
+      NAME_REF@79..80
+        LNAME@79..80 "x"
+      WHITESPACE@80..81 " "
+      EQ@81..82 "="
+      WHITESPACE@82..83 " "
+      BIN_EXPR@83..89
+        NAME_REF@83..84
+          LNAME@83..84 "a"
+        WHITESPACE@84..85 " "
+        QUESTION2@85..87 "??"
+        WHITESPACE@87..88 " "
+        NAME_REF@88..89
+          LNAME@88..89 "b"
+    NEWLINE@89..90 "\n"
+    ASSIGN_STMT@90..105
+      NAME_REF@90..91
+        LNAME@90..91 "x"
+      WHITESPACE@91..92 " "
+      EQ@92..93 "="
+      WHITESPACE@93..94 " "
+      BIN_EXPR@94..105
+        BIN_EXPR@94..100
+          NAME_REF@94..95
+            LNAME@94..95 "a"
+          WHITESPACE@95..96 " "
+          QUESTION2@96..98 "??"
+          WHITESPACE@98..99 " "
+          NAME_REF@99..100
+            LNAME@99..100 "b"
+        WHITESPACE@100..101 " "
+        QUESTION2@101..103 "??"
+        WHITESPACE@103..104 " "
+        NAME_REF@104..105
+          LNAME@104..105 "c"
+    NEWLINE@105..106 "\n"
+    ASSIGN_STMT@106..121
+      NAME_REF@106..107
+        LNAME@106..107 "x"
+      WHITESPACE@107..108 " "
+      EQ@108..109 "="
+      WHITESPACE@109..110 " "
+      BIN_EXPR@110..121
+        BIN_EXPR@110..116
+          NAME_REF@110..111
+            LNAME@110..111 "a"
+          WHITESPACE@111..112 " "
+          OR_KW@112..114 "or"
+          WHITESPACE@114..115 " "
+          NAME_REF@115..116
+            LNAME@115..116 "b"
+        WHITESPACE@116..117 " "
+        QUESTION2@117..119 "??"
+        WHITESPACE@119..120 " "
+        NAME_REF@120..121
+          LNAME@120..121 "c"
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..138
+      NAME_REF@122..123
+        LNAME@122..123 "x"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      BIN_EXPR@126..138
+        NAME_REF@126..127
+          LNAME@126..127 "a"
+        WHITESPACE@127..128 " "
+        QUESTION2@128..130 "??"
+        WHITESPACE@130..131 " "
+        BIN_EXPR@131..138
+          NAME_REF@131..132
+            LNAME@131..132 "b"
+          WHITESPACE@132..133 " "
+          AND_KW@133..136 "and"
+          WHITESPACE@136..137 " "
+          NAME_REF@137..138
+            LNAME@137..138 "c"
+    NEWLINE@138..139 "\n"
+    ASSIGN_STMT@139..155
+      NAME_REF@139..140
+        LNAME@139..140 "x"
+      WHITESPACE@140..141 " "
+      EQ@141..142 "="
+      WHITESPACE@142..143 " "
+      BIN_EXPR@143..155
+        FIELD_EXPR@143..147
+          NAME_REF@143..144
+            LNAME@143..144 "a"
+          QUESTION_DOT@144..146 "?."
+          LNAME@146..147 "b"
+        WHITESPACE@147..148 " "
+        QUESTION2@148..150 "??"
+        WHITESPACE@150..151 " "
+        CALL_EXPR@151..155
+          NAME_REF@151..152
+            LNAME@151..152 "f"
+          ARG_LIST@152..155
+            L_PAREN@152..153 "("
+            NAME_REF@153..154
+              LNAME@153..154 "c"
+            R_PAREN@154..155 ")"
+    NEWLINE@155..156 "\n"
+    COMPOUND_ASSIGN_STMT@156..163
+      NAME_REF@156..157
+        LNAME@156..157 "x"
+      WHITESPACE@157..158 " "
+      QUESTION2_EQ@158..161 "??="
+      WHITESPACE@161..162 " "
+      LITERAL@162..163
+        NUMBER@162..163 "1"
+    NEWLINE@163..164 "\n"
+    COMPOUND_ASSIGN_STMT@164..175
+      INDEX_EXPR@164..168
+        NAME_REF@164..165
+          LNAME@164..165 "t"
+        L_BRACK@165..166 "["
+        NAME_REF@166..167
+          LNAME@166..167 "k"
+        R_BRACK@167..168 "]"
+      WHITESPACE@168..169 " "
+      QUESTION2_EQ@169..172 "??="
+      WHITESPACE@172..173 " "
+      LIST_EXPR@173..175
+        L_BRACK@173..174 "["
+        R_BRACK@174..175 "]"
+    NEWLINE@175..176 "\n"
+    COMPOUND_ASSIGN_STMT@176..189
+      AT_EXPR@176..182
+        AT_NAME@176..182 "@cache"
+      WHITESPACE@182..183 " "
+      QUESTION2_EQ@183..186 "??="
+      WHITESPACE@186..187 " "
+      TABLE_EXPR@187..189
+        L_CURLY@187..188 "{"
+        R_CURLY@188..189 "}"
+    NEWLINE@189..190 "\n"
+  EOF@190..190 ""

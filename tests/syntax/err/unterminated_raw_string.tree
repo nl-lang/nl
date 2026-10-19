@@ -1,0 +1,25 @@
+SOURCE_FILE@0..54
+  BLOCK@0..54
+    COMMENT@0..38 "# A line break before the closing `'`."
+    NEWLINE@38..39 "\n"
+    ASSIGN_STMT@39..47
+      NAME_REF@39..40
+        LNAME@39..40 "a"
+      WHITESPACE@40..41 " "
+      EQ@41..42 "="
+      WHITESPACE@42..43 " "
+      LITERAL@43..47
+        STRING@43..47 "'abc"
+    NEWLINE@47..48 "\n"
+    ASSIGN_STMT@48..53
+      NAME_REF@48..49
+        LNAME@48..49 "b"
+      WHITESPACE@49..50 " "
+      EQ@50..51 "="
+      WHITESPACE@51..52 " "
+      LITERAL@52..53
+        NUMBER@52..53 "1"
+    NEWLINE@53..54 "\n"
+  EOF@54..54 ""
+---
+error@43..47 2:5: unterminated string: a `'…'` string must close on the line where it starts; for raw text on several lines use a heredoc `"""=`

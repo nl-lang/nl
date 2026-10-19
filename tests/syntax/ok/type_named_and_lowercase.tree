@@ -1,0 +1,95 @@
+SOURCE_FILE@0..188
+  BLOCK@0..188
+    COMMENT@0..63 "# Named types, qualified names, `Self`, and the lowercase types"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..94 "# nil, any, unknown and never."
+    NEWLINE@94..95 "\n"
+    LET_DECL@95..108
+      LET_KW@95..98 "let"
+      WHITESPACE@98..99 " "
+      TYPED_PAT@99..108
+        BIND_PAT@99..100
+          NAME@99..100
+            LNAME@99..100 "a"
+        COLON@100..101 ":"
+        WHITESPACE@101..102 " "
+        NAMED_TYPE@102..108
+          QUAL_NAME@102..108
+            CNAME@102..108 "Number"
+    NEWLINE@108..109 "\n"
+    LET_DECL@109..125
+      LET_KW@109..112 "let"
+      WHITESPACE@112..113 " "
+      TYPED_PAT@113..125
+        BIND_PAT@113..114
+          NAME@113..114
+            LNAME@113..114 "b"
+        COLON@114..115 ":"
+        WHITESPACE@115..116 " "
+        NAMED_TYPE@116..125
+          QUAL_NAME@116..125
+            CNAME@116..119 "Geo"
+            DOT@119..120 "."
+            CNAME@120..125 "Point"
+    NEWLINE@125..126 "\n"
+    LET_DECL@126..137
+      LET_KW@126..129 "let"
+      WHITESPACE@129..130 " "
+      TYPED_PAT@130..137
+        BIND_PAT@130..131
+          NAME@130..131
+            LNAME@130..131 "c"
+        COLON@131..132 ":"
+        WHITESPACE@132..133 " "
+        NAMED_TYPE@133..137
+          SELF_TYPE_KW@133..137 "Self"
+    NEWLINE@137..138 "\n"
+    LET_DECL@138..148
+      LET_KW@138..141 "let"
+      WHITESPACE@141..142 " "
+      TYPED_PAT@142..148
+        BIND_PAT@142..143
+          NAME@142..143
+            LNAME@142..143 "d"
+        COLON@143..144 ":"
+        WHITESPACE@144..145 " "
+        NAMED_TYPE@145..148
+          NIL_KW@145..148 "nil"
+    NEWLINE@148..149 "\n"
+    LET_DECL@149..159
+      LET_KW@149..152 "let"
+      WHITESPACE@152..153 " "
+      TYPED_PAT@153..159
+        BIND_PAT@153..154
+          NAME@153..154
+            LNAME@153..154 "e"
+        COLON@154..155 ":"
+        WHITESPACE@155..156 " "
+        NAMED_TYPE@156..159
+          LNAME@156..159 "any"
+    NEWLINE@159..160 "\n"
+    LET_DECL@160..174
+      LET_KW@160..163 "let"
+      WHITESPACE@163..164 " "
+      TYPED_PAT@164..174
+        BIND_PAT@164..165
+          NAME@164..165
+            LNAME@164..165 "f"
+        COLON@165..166 ":"
+        WHITESPACE@166..167 " "
+        NAMED_TYPE@167..174
+          LNAME@167..174 "unknown"
+    NEWLINE@174..175 "\n"
+    LET_DECL@175..187
+      LET_KW@175..178 "let"
+      WHITESPACE@178..179 " "
+      TYPED_PAT@179..187
+        BIND_PAT@179..180
+          NAME@179..180
+            LNAME@179..180 "g"
+        COLON@180..181 ":"
+        WHITESPACE@181..182 " "
+        NAMED_TYPE@182..187
+          LNAME@182..187 "never"
+    NEWLINE@187..188 "\n"
+  EOF@188..188 ""

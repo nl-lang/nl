@@ -1,0 +1,228 @@
+SOURCE_FILE@0..357
+  BLOCK@0..357
+    COMMENT@0..63 "# `<` after a declared name opens type parameters; in a type it"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..136 "# opens type arguments; after `as` and in an expression it is less-than;"
+    NEWLINE@136..137 "\n"
+    COMMENT@137..179 "# after `fn Type.` it is an operator name."
+    NEWLINE@179..180 "\n"
+    FN_DECL@180..197
+      FN_KW@180..182 "fn"
+      WHITESPACE@182..183 " "
+      NAME@183..184
+        LNAME@183..184 "f"
+      TYPE_PARAMS@184..187
+        LT@184..185 "<"
+        TYPE_PARAM@185..186
+          NAME@185..186
+            CNAME@185..186 "T"
+        GT@186..187 ">"
+      PARAM_LIST@187..193
+        L_PAREN@187..188 "("
+        PARAM@188..192
+          TYPED_PAT@188..192
+            BIND_PAT@188..189
+              NAME@188..189
+                LNAME@188..189 "x"
+            COLON@189..190 ":"
+            WHITESPACE@190..191 " "
+            NAMED_TYPE@191..192
+              QUAL_NAME@191..192
+                CNAME@191..192 "T"
+        R_PAREN@192..193 ")"
+      BLOCK@193..194
+        NEWLINE@193..194 "\n"
+      END_KW@194..197 "end"
+    NEWLINE@197..198 "\n"
+    STRUCT_DECL@198..215
+      STRUCT_KW@198..204 "struct"
+      WHITESPACE@204..205 " "
+      NAME@205..208
+        CNAME@205..208 "Box"
+      TYPE_PARAMS@208..211
+        LT@208..209 "<"
+        TYPE_PARAM@209..210
+          NAME@209..210
+            CNAME@209..210 "T"
+        GT@210..211 ">"
+      WHITESPACE@211..212 " "
+      END_KW@212..215 "end"
+    NEWLINE@215..216 "\n"
+    TYPE_DECL@216..246
+      TYPE_KW@216..220 "type"
+      WHITESPACE@220..221 " "
+      NAME@221..225
+        CNAME@221..225 "Pair"
+      TYPE_PARAMS@225..231
+        LT@225..226 "<"
+        TYPE_PARAM@226..227
+          NAME@226..227
+            CNAME@226..227 "A"
+        COMMA@227..228 ","
+        WHITESPACE@228..229 " "
+        TYPE_PARAM@229..230
+          NAME@229..230
+            CNAME@229..230 "B"
+        GT@230..231 ">"
+      WHITESPACE@231..232 " "
+      EQ@232..233 "="
+      WHITESPACE@233..234 " "
+      RECORD_TYPE@234..246
+        L_CURLY@234..235 "{"
+        RECORD_FIELD@235..239
+          LNAME@235..236 "a"
+          COLON@236..237 ":"
+          WHITESPACE@237..238 " "
+          NAMED_TYPE@238..239
+            QUAL_NAME@238..239
+              CNAME@238..239 "A"
+        COMMA@239..240 ","
+        WHITESPACE@240..241 " "
+        RECORD_FIELD@241..245
+          LNAME@241..242 "b"
+          COLON@242..243 ":"
+          WHITESPACE@243..244 " "
+          NAMED_TYPE@244..245
+            QUAL_NAME@244..245
+              CNAME@244..245 "B"
+        R_CURLY@245..246 "}"
+    NEWLINE@246..247 "\n"
+    LET_DECL@247..264
+      LET_KW@247..250 "let"
+      WHITESPACE@250..251 " "
+      TYPED_PAT@251..260
+        BIND_PAT@251..252
+          NAME@251..252
+            LNAME@251..252 "b"
+        COLON@252..253 ":"
+        WHITESPACE@253..254 " "
+        NAMED_TYPE@254..260
+          QUAL_NAME@254..257
+            CNAME@254..257 "Box"
+          TYPE_ARGS@257..260
+            LT@257..258 "<"
+            NAMED_TYPE@258..259
+              QUAL_NAME@258..259
+                CNAME@258..259 "T"
+            GT@259..260 ">"
+      WHITESPACE@260..261 " "
+      EQ@261..262 "="
+      WHITESPACE@262..263 " "
+      EXPR_LIST@263..264
+        NAME_REF@263..264
+          LNAME@263..264 "x"
+    NEWLINE@264..265 "\n"
+    ASSIGN_STMT@265..286
+      NAME_REF@265..267
+        LNAME@265..267 "ok"
+      WHITESPACE@267..268 " "
+      EQ@268..269 "="
+      WHITESPACE@269..270 " "
+      BIN_EXPR@270..286
+        AS_EXPR@270..281
+          NAME_REF@270..271
+            LNAME@270..271 "x"
+          WHITESPACE@271..272 " "
+          AS_KW@272..274 "as"
+          WHITESPACE@274..275 " "
+          NAMED_TYPE@275..281
+            QUAL_NAME@275..281
+              CNAME@275..281 "Number"
+        WHITESPACE@281..282 " "
+        LT@282..283 "<"
+        WHITESPACE@283..284 " "
+        LITERAL@284..286
+          NUMBER@284..286 "10"
+    NEWLINE@286..287 "\n"
+    ASSIGN_STMT@287..297
+      NAME_REF@287..289
+        LNAME@287..289 "ok"
+      WHITESPACE@289..290 " "
+      EQ@290..291 "="
+      WHITESPACE@291..292 " "
+      BIN_EXPR@292..297
+        NAME_REF@292..293
+          LNAME@292..293 "a"
+        WHITESPACE@293..294 " "
+        LT@294..295 "<"
+        WHITESPACE@295..296 " "
+        NAME_REF@296..297
+          LNAME@296..297 "b"
+    NEWLINE@297..298 "\n"
+    FN_DECL@298..311
+      FN_KW@298..300 "fn"
+      WHITESPACE@300..301 " "
+      QUAL_NAME@301..302
+        CNAME@301..302 "V"
+      DOT@302..303 "."
+      OP_NAME@303..304
+        LT@303..304 "<"
+      PARAM_LIST@304..307
+        L_PAREN@304..305 "("
+        PARAM@305..306
+          BIND_PAT@305..306
+            NAME@305..306
+              LNAME@305..306 "o"
+        R_PAREN@306..307 ")"
+      BLOCK@307..308
+        WHITESPACE@307..308 " "
+      END_KW@308..311 "end"
+    NEWLINE@311..312 "\n"
+    FN_DECL@312..326
+      FN_KW@312..314 "fn"
+      WHITESPACE@314..315 " "
+      QUAL_NAME@315..316
+        CNAME@315..316 "V"
+      DOT@316..317 "."
+      OP_NAME@317..319
+        LT_EQ@317..319 "<="
+      PARAM_LIST@319..322
+        L_PAREN@319..320 "("
+        PARAM@320..321
+          BIND_PAT@320..321
+            NAME@320..321
+              LNAME@320..321 "o"
+        R_PAREN@321..322 ")"
+      BLOCK@322..323
+        WHITESPACE@322..323 " "
+      END_KW@323..326 "end"
+    NEWLINE@326..327 "\n"
+    FN_DECL@327..341
+      FN_KW@327..329 "fn"
+      WHITESPACE@329..330 " "
+      QUAL_NAME@330..331
+        CNAME@330..331 "V"
+      DOT@331..332 "."
+      OP_NAME@332..334
+        SHL@332..334 "<<"
+      PARAM_LIST@334..337
+        L_PAREN@334..335 "("
+        PARAM@335..336
+          BIND_PAT@335..336
+            NAME@335..336
+              LNAME@335..336 "o"
+        R_PAREN@336..337 ")"
+      BLOCK@337..338
+        WHITESPACE@337..338 " "
+      END_KW@338..341 "end"
+    NEWLINE@341..342 "\n"
+    FN_DECL@342..356
+      FN_KW@342..344 "fn"
+      WHITESPACE@344..345 " "
+      QUAL_NAME@345..346
+        CNAME@345..346 "V"
+      DOT@346..347 "."
+      OP_NAME@347..349
+        CONCAT@347..349 "<>"
+      PARAM_LIST@349..352
+        L_PAREN@349..350 "("
+        PARAM@350..351
+          BIND_PAT@350..351
+            NAME@350..351
+              LNAME@350..351 "o"
+        R_PAREN@351..352 ")"
+      BLOCK@352..353
+        WHITESPACE@352..353 " "
+      END_KW@353..356 "end"
+    NEWLINE@356..357 "\n"
+  EOF@357..357 ""

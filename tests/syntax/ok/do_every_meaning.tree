@@ -1,0 +1,65 @@
+SOURCE_FILE@0..224
+  BLOCK@0..224
+    COMMENT@0..65 "# `do` at the start of a statement is a scope block; after a call"
+    NEWLINE@65..66 "\n"
+    COMMENT@66..145 "# it attaches a trailing block; after `spawn`, `on Name` and `async` it is part"
+    NEWLINE@145..146 "\n"
+    COMMENT@146..163 "# of those forms."
+    NEWLINE@163..164 "\n"
+    DO_BLOCK@164..170
+      DO_KW@164..166 "do"
+      BLOCK@166..167
+        NEWLINE@166..167 "\n"
+      END_KW@167..170 "end"
+    NEWLINE@170..171 "\n"
+    EXPR_STMT@171..179
+      CALL_EXPR@171..179
+        NAME_REF@171..172
+          LNAME@171..172 "f"
+        WHITESPACE@172..173 " "
+        TRAILING_BLOCK@173..179
+          DO_KW@173..175 "do"
+          BLOCK@175..176
+            WHITESPACE@175..176 " "
+          END_KW@176..179 "end"
+    NEWLINE@179..180 "\n"
+    ASSIGN_STMT@180..196
+      NAME_REF@180..181
+        LNAME@180..181 "t"
+      WHITESPACE@181..182 " "
+      EQ@182..183 "="
+      WHITESPACE@183..184 " "
+      SPAWN_EXPR@184..196
+        SPAWN_KW@184..189 "spawn"
+        WHITESPACE@189..190 " "
+        DO_KW@190..192 "do"
+        BLOCK@192..193
+          WHITESPACE@192..193 " "
+        END_KW@193..196 "end"
+    NEWLINE@196..197 "\n"
+    EXPR_STMT@197..208
+      ON_EXPR@197..208
+        ON_KW@197..199 "on"
+        WHITESPACE@199..200 " "
+        QUAL_NAME@200..201
+          CNAME@200..201 "E"
+        WHITESPACE@201..202 " "
+        DO_KW@202..204 "do"
+        BLOCK@204..205
+          WHITESPACE@204..205 " "
+        END_KW@205..208 "end"
+    NEWLINE@208..209 "\n"
+    EXPR_STMT@209..223
+      CALL_EXPR@209..223
+        NAME_REF@209..210
+          LNAME@209..210 "f"
+        WHITESPACE@210..211 " "
+        TRAILING_BLOCK@211..223
+          ASYNC_KW@211..216 "async"
+          WHITESPACE@216..217 " "
+          DO_KW@217..219 "do"
+          BLOCK@219..220
+            WHITESPACE@219..220 " "
+          END_KW@220..223 "end"
+    NEWLINE@223..224 "\n"
+  EOF@224..224 ""

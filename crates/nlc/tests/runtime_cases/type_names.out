@@ -1,0 +1,2 @@
+parameter 'x' of opt_union expects (Number | String)?, got Table
+parameter 'x' of opt_neg expects (~String)?, got String

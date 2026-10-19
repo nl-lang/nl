@@ -1,0 +1,124 @@
+SOURCE_FILE@0..214
+  BLOCK@0..214
+    COMMENT@0..58 "# Record types (word, keyword and string field names), map"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..83 "# types and array types."
+    NEWLINE@83..84 "\n"
+    LET_DECL@84..114
+      LET_KW@84..87 "let"
+      WHITESPACE@87..88 " "
+      TYPED_PAT@88..114
+        BIND_PAT@88..89
+          NAME@88..89
+            LNAME@88..89 "a"
+        COLON@89..90 ":"
+        WHITESPACE@90..91 " "
+        RECORD_TYPE@91..114
+          L_CURLY@91..92 "{"
+          RECORD_FIELD@92..101
+            LNAME@92..93 "x"
+            COLON@93..94 ":"
+            WHITESPACE@94..95 " "
+            NAMED_TYPE@95..101
+              QUAL_NAME@95..101
+                CNAME@95..101 "Number"
+          COMMA@101..102 ","
+          WHITESPACE@102..103 " "
+          RECORD_FIELD@103..112
+            LNAME@103..104 "y"
+            COLON@104..105 ":"
+            WHITESPACE@105..106 " "
+            NAMED_TYPE@106..112
+              QUAL_NAME@106..112
+                CNAME@106..112 "Number"
+          COMMA@112..113 ","
+          R_CURLY@113..114 "}"
+    NEWLINE@114..115 "\n"
+    LET_DECL@115..154
+      LET_KW@115..118 "let"
+      WHITESPACE@118..119 " "
+      TYPED_PAT@119..154
+        BIND_PAT@119..120
+          NAME@119..120
+            LNAME@119..120 "b"
+        COLON@120..121 ":"
+        WHITESPACE@121..122 " "
+        RECORD_TYPE@122..154
+          L_CURLY@122..123 "{"
+          RECORD_FIELD@123..135
+            LNAME@123..127 "type"
+            COLON@127..128 ":"
+            WHITESPACE@128..129 " "
+            NAMED_TYPE@129..135
+              QUAL_NAME@129..135
+                CNAME@129..135 "String"
+          COMMA@135..136 ","
+          WHITESPACE@136..137 " "
+          RECORD_FIELD@137..153
+            STRING@137..147 "\"some key\""
+            COLON@147..148 ":"
+            WHITESPACE@148..149 " "
+            NAMED_TYPE@149..153
+              QUAL_NAME@149..153
+                CNAME@149..153 "Bool"
+          R_CURLY@153..154 "}"
+    NEWLINE@154..155 "\n"
+    LET_DECL@155..180
+      LET_KW@155..158 "let"
+      WHITESPACE@158..159 " "
+      TYPED_PAT@159..180
+        BIND_PAT@159..160
+          NAME@159..160
+            LNAME@159..160 "c"
+        COLON@160..161 ":"
+        WHITESPACE@161..162 " "
+        MAP_TYPE@162..180
+          L_CURLY@162..163 "{"
+          L_BRACK@163..164 "["
+          NAMED_TYPE@164..170
+            QUAL_NAME@164..170
+              CNAME@164..170 "String"
+          R_BRACK@170..171 "]"
+          COLON@171..172 ":"
+          WHITESPACE@172..173 " "
+          NAMED_TYPE@173..179
+            QUAL_NAME@173..179
+              CNAME@173..179 "Number"
+          R_CURLY@179..180 "}"
+    NEWLINE@180..181 "\n"
+    LET_DECL@181..195
+      LET_KW@181..184 "let"
+      WHITESPACE@184..185 " "
+      TYPED_PAT@185..195
+        BIND_PAT@185..186
+          NAME@185..186
+            LNAME@185..186 "d"
+        COLON@186..187 ":"
+        WHITESPACE@187..188 " "
+        ARRAY_TYPE@188..195
+          L_BRACK@188..189 "["
+          NAMED_TYPE@189..194
+            QUAL_NAME@189..194
+              CNAME@189..194 "Point"
+          R_BRACK@194..195 "]"
+    NEWLINE@195..196 "\n"
+    LET_DECL@196..213
+      LET_KW@196..199 "let"
+      WHITESPACE@199..200 " "
+      TYPED_PAT@200..213
+        BIND_PAT@200..201
+          NAME@200..201
+            LNAME@200..201 "e"
+        COLON@201..202 ":"
+        WHITESPACE@202..203 " "
+        ARRAY_TYPE@203..213
+          L_BRACK@203..204 "["
+          ARRAY_TYPE@204..212
+            L_BRACK@204..205 "["
+            NAMED_TYPE@205..211
+              QUAL_NAME@205..211
+                CNAME@205..211 "Number"
+            R_BRACK@211..212 "]"
+          R_BRACK@212..213 "]"
+    NEWLINE@213..214 "\n"
+  EOF@214..214 ""

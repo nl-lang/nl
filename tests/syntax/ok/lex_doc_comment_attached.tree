@@ -1,0 +1,99 @@
+SOURCE_FILE@0..289
+  BLOCK@0..289
+    COMMENT@0..57 "# A doc comment of `##` lines attaches to the declaration"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..128 "# on the line directly after it (fn, struct field, enum variant, let)."
+    NEWLINE@128..129 "\n"
+    FN_DECL@129..190
+      DOC_COMMENT@129..149 "## Adds two numbers."
+      NEWLINE@149..150 "\n"
+      DOC_COMMENT@150..165 "## Second line."
+      NEWLINE@165..166 "\n"
+      FN_KW@166..168 "fn"
+      WHITESPACE@168..169 " "
+      NAME@169..172
+        LNAME@169..172 "add"
+      PARAM_LIST@172..178
+        L_PAREN@172..173 "("
+        PARAM@173..174
+          BIND_PAT@173..174
+            NAME@173..174
+              LNAME@173..174 "a"
+        COMMA@174..175 ","
+        WHITESPACE@175..176 " "
+        PARAM@176..177
+          BIND_PAT@176..177
+            NAME@176..177
+              LNAME@176..177 "b"
+        R_PAREN@177..178 ")"
+      BLOCK@178..187
+        NEWLINE@178..179 "\n"
+        WHITESPACE@179..181 "  "
+        EXPR_STMT@181..186
+          BIN_EXPR@181..186
+            NAME_REF@181..182
+              LNAME@181..182 "a"
+            WHITESPACE@182..183 " "
+            PLUS@183..184 "+"
+            WHITESPACE@184..185 " "
+            NAME_REF@185..186
+              LNAME@185..186 "b"
+        NEWLINE@186..187 "\n"
+      END_KW@187..190 "end"
+    NEWLINE@190..191 "\n"
+    NEWLINE@191..192 "\n"
+    STRUCT_DECL@192..230
+      STRUCT_KW@192..198 "struct"
+      WHITESPACE@198..199 " "
+      NAME@199..200
+        CNAME@199..200 "S"
+      NEWLINE@200..201 "\n"
+      WHITESPACE@201..203 "  "
+      FIELD_DECL@203..226
+        DOC_COMMENT@203..213 "## The id."
+        NEWLINE@213..214 "\n"
+        WHITESPACE@214..216 "  "
+        NAME@216..218
+          LNAME@216..218 "id"
+        COLON@218..219 ":"
+        WHITESPACE@219..220 " "
+        NAMED_TYPE@220..226
+          QUAL_NAME@220..226
+            CNAME@220..226 "Number"
+      NEWLINE@226..227 "\n"
+      END_KW@227..230 "end"
+    NEWLINE@230..231 "\n"
+    NEWLINE@231..232 "\n"
+    ENUM_DECL@232..262
+      ENUM_KW@232..236 "enum"
+      WHITESPACE@236..237 " "
+      NAME@237..238
+        CNAME@237..238 "E"
+      NEWLINE@238..239 "\n"
+      WHITESPACE@239..241 "  "
+      VARIANT@241..258
+        DOC_COMMENT@241..254 "## The first."
+        NEWLINE@254..255 "\n"
+        WHITESPACE@255..257 "  "
+        NAME@257..258
+          CNAME@257..258 "A"
+      NEWLINE@258..259 "\n"
+      END_KW@259..262 "end"
+    NEWLINE@262..263 "\n"
+    NEWLINE@263..264 "\n"
+    LET_DECL@264..288
+      DOC_COMMENT@264..278 "## A variable."
+      NEWLINE@278..279 "\n"
+      LET_KW@279..282 "let"
+      WHITESPACE@282..283 " "
+      BIND_PAT@283..284
+        NAME@283..284
+          LNAME@283..284 "v"
+      WHITESPACE@284..285 " "
+      EQ@285..286 "="
+      WHITESPACE@286..287 " "
+      EXPR_LIST@287..288
+        LITERAL@287..288
+          NUMBER@287..288 "1"
+    NEWLINE@288..289 "\n"
+  EOF@289..289 ""

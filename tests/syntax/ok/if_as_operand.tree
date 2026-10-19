@@ -1,0 +1,65 @@
+SOURCE_FILE@0..166
+  BLOCK@0..166
+    COMMENT@0..47 "# `if` begins an expression where an operand is"
+    NEWLINE@47..48 "\n"
+    COMMENT@48..109 "# expected: after `=`, inside parentheses, after an operator."
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..143
+      NAME_REF@110..115
+        LNAME@110..115 "label"
+      WHITESPACE@115..116 " "
+      EQ@116..117 "="
+      WHITESPACE@117..118 " "
+      IF_EXPR@118..143
+        IF_KW@118..120 "if"
+        WHITESPACE@120..121 " "
+        NAME_REF@121..122
+          LNAME@121..122 "a"
+        BLOCK@122..129
+          NEWLINE@122..123 "\n"
+          WHITESPACE@123..125 "  "
+          EXPR_STMT@125..128
+            LITERAL@125..128
+              STRING@125..128 "\"a\""
+          NEWLINE@128..129 "\n"
+        ELSE_CLAUSE@129..140
+          ELSE_KW@129..133 "else"
+          BLOCK@133..140
+            NEWLINE@133..134 "\n"
+            WHITESPACE@134..136 "  "
+            EXPR_STMT@136..139
+              LITERAL@136..139
+                STRING@136..139 "\"b\""
+            NEWLINE@139..140 "\n"
+        END_KW@140..143 "end"
+    NEWLINE@143..144 "\n"
+    EXPR_STMT@144..165
+      CALL_EXPR@144..165
+        NAME_REF@144..145
+          LNAME@144..145 "f"
+        ARG_LIST@145..165
+          L_PAREN@145..146 "("
+          IF_EXPR@146..164
+            IF_KW@146..148 "if"
+            WHITESPACE@148..149 " "
+            NAME_REF@149..150
+              LNAME@149..150 "a"
+            SEMI@150..151 ";"
+            BLOCK@151..154
+              WHITESPACE@151..152 " "
+              EXPR_STMT@152..153
+                LITERAL@152..153
+                  NUMBER@152..153 "1"
+              WHITESPACE@153..154 " "
+            ELSE_CLAUSE@154..161
+              ELSE_KW@154..158 "else"
+              BLOCK@158..161
+                WHITESPACE@158..159 " "
+                EXPR_STMT@159..160
+                  LITERAL@159..160
+                    NUMBER@159..160 "2"
+                WHITESPACE@160..161 " "
+            END_KW@161..164 "end"
+          R_PAREN@164..165 ")"
+    NEWLINE@165..166 "\n"
+  EOF@166..166 ""

@@ -1,0 +1,47 @@
+SOURCE_FILE@0..152
+  BLOCK@0..152
+    COMMENT@0..61 "# `-5.abs` is `-(5.abs)` and `-2 ** 2` is `-(2 ** 2)`; at the"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..121 "# start of a statement `-5.abs` is an expression statement."
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..132
+      NAME_REF@122..123
+        LNAME@122..123 "x"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      PREFIX_EXPR@126..132
+        MINUS@126..127 "-"
+        FIELD_EXPR@127..132
+          LITERAL@127..128
+            NUMBER@127..128 "5"
+          DOT@128..129 "."
+          LNAME@129..132 "abs"
+    NEWLINE@132..133 "\n"
+    ASSIGN_STMT@133..144
+      NAME_REF@133..134
+        LNAME@133..134 "y"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      PREFIX_EXPR@137..144
+        MINUS@137..138 "-"
+        BIN_EXPR@138..144
+          LITERAL@138..139
+            NUMBER@138..139 "2"
+          WHITESPACE@139..140 " "
+          STAR2@140..142 "**"
+          WHITESPACE@142..143 " "
+          LITERAL@143..144
+            NUMBER@143..144 "2"
+    NEWLINE@144..145 "\n"
+    EXPR_STMT@145..151
+      PREFIX_EXPR@145..151
+        MINUS@145..146 "-"
+        FIELD_EXPR@146..151
+          LITERAL@146..147
+            NUMBER@146..147 "5"
+          DOT@147..148 "."
+          LNAME@148..151 "abs"
+    NEWLINE@151..152 "\n"
+  EOF@152..152 ""

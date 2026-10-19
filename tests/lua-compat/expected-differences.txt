@@ -1,0 +1,48 @@
+# Results that differ between the fork and stock LuaJIT, and exactly how.
+# One per line, tab-separated:
+#   suite   RUNTIME  test name (as test.lua prints it)  SPEC  reason
+#   corpus  RUNTIME  corpus file                        SPEC  reason
+# RUNTIME is fake, real or any (the runtime the fork was built with: see
+# build.sh). SPEC says exactly what differs; anything else fails:
+#   added: A B ...       the fork fails the check with got/expected lists
+#                        that differ only by these added items (stock passes)
+#   first-error-added: A B ...   the same, for the first error of a file run
+#                        without the runner (it stops at its first failure)
+#   suite                the output is a whole run of test.lua: compared test
+#                        by test with the suite entries
+#   extra-lines: PATTERN the fork prints the same lines as stock, plus lines
+#                        matching the Lua pattern (at least one)
+#   fork-fails: PATTERN  the fork fails, its first line matching the pattern
+#                        (the exit status may differ); for a suite entry,
+#                        stock passes the test and the fork's result matches
+# A suite entry must occur (so that the list stays exact); a corpus entry is
+# checked when its file differs.
+suite	fake	lib/contents.lua --- base	added: event include typeof raise add_path load_nl __fake_rt	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude; __fake_rt is the fake runtime's test hook.
+suite	real	lib/contents.lua --- base	added: event include typeof raise add_path load_nl String keyed worker	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude (typeof, raise, add_path, load_nl, String, keyed, and worker, the worker library).
+suite	any	lib/contents.lua --- package.loaders	added: 5	the runtime adds a package searcher for .nl files, after Lua's four.
+suite	fake	lib/contents.lua --- package.loaded	added: event	the event library registers itself in package.loaded, as the stock libraries do.
+suite	real	lib/contents.lua --- package.loaded	added: event worker	the event and worker libraries register themselves in package.loaded, as the stock libraries do.
+suite	real	lib/contents.lua --- math	added: chr	math.chr (for n.chr) is one of the additions the compatibility contract names.
+corpus	fake	test/lib/contents.lua	first-error-added: event include typeof raise add_path load_nl __fake_rt	as the suite entry lib/contents.lua --- base: run without the runner, the file stops at that first failure.
+corpus	real	test/lib/contents.lua	first-error-added: event include typeof raise add_path load_nl String keyed worker	as the suite entry lib/contents.lua --- base: run without the runner, the file stops at that first failure.
+corpus	any	test/test.lua	suite	the whole upstream suite as one bytecode file: the suite entries apply.
+corpus	fake	test/lib/ffi/ffi_convert.lua	extra-lines: ^%s+no NL file for '	requires a C test library that is not built; the "module not found" message lists the .nl searcher's attempt too.
+corpus	real	test/lib/ffi/ffi_convert.lua	extra-lines: ^%s+no NL file '	requires a C test library that is not built; the "module not found" message lists the .nl searcher's attempt too.
+corpus	fake	test/lib/ffi/ffi_jit_conv.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/lib/ffi/ffi_jit_conv.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	fake	test/misc/api_call.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/misc/api_call.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	fake	test/misc/catch_wrap.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/misc/catch_wrap.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	fake	test/misc/hook_active.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/misc/hook_active.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	fake	test/misc/lightud.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/misc/lightud.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	fake	test/sysdep/catch_cpp.lua	extra-lines: ^%s+no NL file for '	as test/lib/ffi/ffi_convert.lua.
+corpus	real	test/sysdep/catch_cpp.lua	extra-lines: ^%s+no NL file '	as test/lib/ffi/ffi_convert.lua.
+corpus	any	test/misc/gc_trace.lua	fork-fails: gc_trace[.%w]*:%d+: assertion failed!	counts on traces being collected at particular GC cycles; the opened runtime makes the starting heap larger, which moves them (JIT modes only). Stock LuaJIT fails the same way when a few KB are allocated before the test.
+corpus	real	test/lib/base/getsetmetatable.lua	fork-fails: getsetmetatable[.%w]*:%d+: assertion failed!	getmetatable(1) is the number metatable, not nil: one of the additions the compatibility contract names.
+suite	any	lang/meta/len.lua --- table	fork-fails: len[.%w]*:%d+: assertion failed!	the fork honors __len on tables, as Lua 5.2 does; the test asserts Lua 5.1's behavior.
+suite	any	lang/meta/comp_jit.lua --- Mixed metamethods for ordered comparisons.	fork-fails: comp_jit[.%w]*:%d+: assertion failed!	the fork lets __lt and __le compare operands of different types and with different handlers, as Lua 5.2 does; the test asserts Lua 5.1's errors.
+corpus	any	test/lang/meta/len.lua	fork-fails: len[.%w]*:%d+: assertion failed!	as the suite entry lang/meta/len.lua --- table.
+corpus	any	test/lang/meta/comp_jit.lua	fork-fails: comp_jit[.%w]*:%d+: assertion failed!	as the suite entry lang/meta/comp_jit.lua --- Mixed metamethods for ordered comparisons.

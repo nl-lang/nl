@@ -1,0 +1,63 @@
+SOURCE_FILE@0..201
+  BLOCK@0..201
+    COMMENT@0..44 "# A `.` is a decimal point only when a digit"
+    NEWLINE@44..45 "\n"
+    COMMENT@45..119 "# follows it. `6.is_cool` is a member, `2.5.floor` a member of 2.5, `1.e5`"
+    NEWLINE@119..120 "\n"
+    COMMENT@120..138 "# the member `e5`."
+    NEWLINE@138..139 "\n"
+    ASSIGN_STMT@139..152
+      NAME_REF@139..140
+        LNAME@139..140 "a"
+      WHITESPACE@140..141 " "
+      EQ@141..142 "="
+      WHITESPACE@142..143 " "
+      FIELD_EXPR@143..152
+        LITERAL@143..144
+          NUMBER@143..144 "6"
+        DOT@144..145 "."
+        LNAME@145..152 "is_cool"
+    NEWLINE@152..153 "\n"
+    ASSIGN_STMT@153..166
+      NAME_REF@153..154
+        LNAME@153..154 "b"
+      WHITESPACE@154..155 " "
+      EQ@155..156 "="
+      WHITESPACE@156..157 " "
+      FIELD_EXPR@157..166
+        LITERAL@157..160
+          NUMBER@157..160 "2.5"
+        DOT@160..161 "."
+        LNAME@161..166 "floor"
+    NEWLINE@166..167 "\n"
+    ASSIGN_STMT@167..175
+      NAME_REF@167..168
+        LNAME@167..168 "c"
+      WHITESPACE@168..169 " "
+      EQ@169..170 "="
+      WHITESPACE@170..171 " "
+      FIELD_EXPR@171..175
+        LITERAL@171..172
+          NUMBER@171..172 "1"
+        DOT@172..173 "."
+        LNAME@173..175 "e5"
+    NEWLINE@175..176 "\n"
+    ASSIGN_STMT@176..200
+      NAME_REF@176..177
+        LNAME@176..177 "d"
+      WHITESPACE@177..178 " "
+      EQ@178..179 "="
+      WHITESPACE@179..180 " "
+      CALL_EXPR@180..200
+        FIELD_EXPR@180..196
+          LITERAL@180..183
+            NUMBER@180..183 "100"
+          DOT@183..184 "."
+          LNAME@184..196 "divisible_by"
+        ARG_LIST@196..200
+          L_PAREN@196..197 "("
+          LITERAL@197..199
+            NUMBER@197..199 "10"
+          R_PAREN@199..200 ")"
+    NEWLINE@200..201 "\n"
+  EOF@201..201 ""

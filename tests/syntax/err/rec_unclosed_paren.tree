@@ -1,0 +1,34 @@
+SOURCE_FILE@0..89
+  BLOCK@0..89
+    COMMENT@0..71 "# Recovery: an unclosed `(`; the next line parses as its own statement."
+    NEWLINE@71..72 "\n"
+    ASSIGN_STMT@72..82
+      NAME_REF@72..73
+        LNAME@72..73 "x"
+      WHITESPACE@73..74 " "
+      EQ@74..75 "="
+      WHITESPACE@75..76 " "
+      CALL_EXPR@76..82
+        NAME_REF@76..77
+          LNAME@76..77 "f"
+        ARG_LIST@77..82
+          L_PAREN@77..78 "("
+          LITERAL@78..79
+            NUMBER@78..79 "1"
+          COMMA@79..80 ","
+          WHITESPACE@80..81 " "
+          LITERAL@81..82
+            NUMBER@81..82 "2"
+    NEWLINE@82..83 "\n"
+    ASSIGN_STMT@83..88
+      NAME_REF@83..84
+        LNAME@83..84 "y"
+      WHITESPACE@84..85 " "
+      EQ@85..86 "="
+      WHITESPACE@86..87 " "
+      LITERAL@87..88
+        NUMBER@87..88 "3"
+    NEWLINE@88..89 "\n"
+  EOF@89..89 ""
+---
+error@83..84 3:1: expected `)` to close this `(`, found `y`

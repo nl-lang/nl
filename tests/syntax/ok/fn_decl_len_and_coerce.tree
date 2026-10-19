@@ -1,0 +1,43 @@
+SOURCE_FILE@0..129
+  BLOCK@0..129
+    COMMENT@0..62 "# `len` and `coerce` are ordinary words; `fn Foo.len` declares"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..85 "# the length operator."
+    NEWLINE@85..86 "\n"
+    FN_DECL@86..104
+      FN_KW@86..88 "fn"
+      WHITESPACE@88..89 " "
+      QUAL_NAME@89..92
+        CNAME@89..92 "Foo"
+      DOT@92..93 "."
+      NAME@93..96
+        LNAME@93..96 "len"
+      BLOCK@96..101
+        NEWLINE@96..97 "\n"
+        WHITESPACE@97..99 "  "
+        EXPR_STMT@99..100
+          LITERAL@99..100
+            NUMBER@99..100 "1"
+        NEWLINE@100..101 "\n"
+      END_KW@101..104 "end"
+    NEWLINE@104..105 "\n"
+    FN_DECL@105..128
+      FN_KW@105..107 "fn"
+      WHITESPACE@107..108 " "
+      QUAL_NAME@108..111
+        CNAME@108..111 "Foo"
+      DOT@111..112 "."
+      NAME@112..118
+        LNAME@112..118 "coerce"
+      PARAM_LIST@118..124
+        L_PAREN@118..119 "("
+        PARAM@119..123
+          BIND_PAT@119..123
+            NAME@119..123
+              LNAME@119..123 "left"
+        R_PAREN@123..124 ")"
+      BLOCK@124..125
+        NEWLINE@124..125 "\n"
+      END_KW@125..128 "end"
+    NEWLINE@128..129 "\n"
+  EOF@129..129 ""

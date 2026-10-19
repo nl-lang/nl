@@ -1,0 +1,14 @@
+SOURCE_FILE@0..73
+  BLOCK@0..73
+    COMMENT@0..60 "# A closer on the line after the opener is the empty string."
+    NEWLINE@60..61 "\n"
+    ASSIGN_STMT@61..72
+      NAME_REF@61..62
+        LNAME@61..62 "s"
+      WHITESPACE@62..63 " "
+      EQ@63..64 "="
+      WHITESPACE@64..65 " "
+      LITERAL@65..72
+        STRING@65..72 "\"\"\"\n\"\"\""
+    NEWLINE@72..73 "\n"
+  EOF@73..73 ""

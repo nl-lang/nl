@@ -1,0 +1,124 @@
+SOURCE_FILE@0..228
+  BLOCK@0..228
+    COMMENT@0..55 "# `Name { field: value }`; a qualified name and `Self`;"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..93 "# a trailing comma; an empty literal."
+    NEWLINE@93..94 "\n"
+    ASSIGN_STMT@94..128
+      NAME_REF@94..95
+        LNAME@94..95 "m"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      STRUCT_LIT@98..128
+        NAME_REF@98..105
+          CNAME@98..105 "Monster"
+        WHITESPACE@105..106 " "
+        L_CURLY@106..107 "{"
+        WHITESPACE@107..108 " "
+        FIELD_INIT@108..113
+          LNAME@108..110 "id"
+          COLON@110..111 ":"
+          WHITESPACE@111..112 " "
+          LITERAL@112..113
+            NUMBER@112..113 "1"
+        COMMA@113..114 ","
+        WHITESPACE@114..115 " "
+        FIELD_INIT@115..126
+          LNAME@115..119 "name"
+          COLON@119..120 ":"
+          WHITESPACE@120..121 " "
+          LITERAL@121..126
+            STRING@121..126 "\"bat\""
+        WHITESPACE@126..127 " "
+        R_CURLY@127..128 "}"
+    NEWLINE@128..129 "\n"
+    ASSIGN_STMT@129..156
+      NAME_REF@129..130
+        LNAME@129..130 "c"
+      WHITESPACE@130..131 " "
+      EQ@131..132 "="
+      WHITESPACE@132..133 " "
+      STRUCT_LIT@133..156
+        FIELD_EXPR@133..146
+          NAME_REF@133..139
+            CNAME@133..139 "Shapes"
+          DOT@139..140 "."
+          CNAME@140..146 "Circle"
+        WHITESPACE@146..147 " "
+        L_CURLY@147..148 "{"
+        WHITESPACE@148..149 " "
+        FIELD_INIT@149..153
+          LNAME@149..150 "r"
+          COLON@150..151 ":"
+          WHITESPACE@151..152 " "
+          LITERAL@152..153
+            NUMBER@152..153 "1"
+        COMMA@153..154 ","
+        WHITESPACE@154..155 " "
+        R_CURLY@155..156 "}"
+    NEWLINE@156..157 "\n"
+    ASSIGN_STMT@157..180
+      NAME_REF@157..158
+        LNAME@157..158 "s"
+      WHITESPACE@158..159 " "
+      EQ@159..160 "="
+      WHITESPACE@160..161 " "
+      STRUCT_LIT@161..180
+        SELF_EXPR@161..165
+          SELF_TYPE_KW@161..165 "Self"
+        WHITESPACE@165..166 " "
+        L_CURLY@166..167 "{"
+        WHITESPACE@167..168 " "
+        FIELD_INIT@168..172
+          LNAME@168..169 "x"
+          COLON@169..170 ":"
+          WHITESPACE@170..171 " "
+          LITERAL@171..172
+            NUMBER@171..172 "0"
+        COMMA@172..173 ","
+        WHITESPACE@173..174 " "
+        FIELD_INIT@174..178
+          LNAME@174..175 "y"
+          COLON@175..176 ":"
+          WHITESPACE@176..177 " "
+          LITERAL@177..178
+            NUMBER@177..178 "0"
+        WHITESPACE@178..179 " "
+        R_CURLY@179..180 "}"
+    NEWLINE@180..181 "\n"
+    ASSIGN_STMT@181..193
+      NAME_REF@181..182
+        LNAME@181..182 "e"
+      WHITESPACE@182..183 " "
+      EQ@183..184 "="
+      WHITESPACE@184..185 " "
+      STRUCT_LIT@185..193
+        NAME_REF@185..190
+          CNAME@185..190 "Empty"
+        WHITESPACE@190..191 " "
+        L_CURLY@191..192 "{"
+        R_CURLY@192..193 "}"
+    NEWLINE@193..194 "\n"
+    EXPR_STMT@194..227
+      COMMAND_CALL@194..227
+        NAME_REF@194..199
+          LNAME@194..199 "raise"
+        WHITESPACE@199..200 " "
+        COMMAND_ARGS@200..227
+          STRUCT_LIT@200..227
+            NAME_REF@200..211
+              CNAME@200..211 "MyException"
+            WHITESPACE@211..212 " "
+            L_CURLY@212..213 "{"
+            WHITESPACE@213..214 " "
+            FIELD_INIT@214..225
+              LNAME@214..220 "reason"
+              COLON@220..221 ":"
+              WHITESPACE@221..222 " "
+              LITERAL@222..225
+                STRING@222..225 "\"x\""
+            WHITESPACE@225..226 " "
+            R_CURLY@226..227 "}"
+    NEWLINE@227..228 "\n"
+  EOF@228..228 ""

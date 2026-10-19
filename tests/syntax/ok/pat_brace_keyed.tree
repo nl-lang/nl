@@ -1,0 +1,145 @@
+SOURCE_FILE@0..243
+  BLOCK@0..243
+    COMMENT@0..63 "# Keyed brace patterns: shorthand, key and value, keyword keys,"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..99 "# number keys, string keys, nested."
+    NEWLINE@99..100 "\n"
+    LET_DECL@100..121
+      LET_KW@100..103 "let"
+      WHITESPACE@103..104 " "
+      BRACE_PAT@104..117
+        L_CURLY@104..105 "{"
+        PAT_FIELD@105..109
+          NAME@105..109
+            LNAME@105..109 "name"
+        COMMA@109..110 ","
+        WHITESPACE@110..111 " "
+        PAT_FIELD@111..116
+          NAME@111..116
+            LNAME@111..116 "level"
+        R_CURLY@116..117 "}"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      EXPR_LIST@120..121
+        NAME_REF@120..121
+          LNAME@120..121 "m"
+    NEWLINE@121..122 "\n"
+    LET_DECL@122..140
+      LET_KW@122..125 "let"
+      WHITESPACE@125..126 " "
+      BRACE_PAT@126..136
+        L_CURLY@126..127 "{"
+        PAT_FIELD@127..135
+          LNAME@127..128 "a"
+          COLON@128..129 ":"
+          WHITESPACE@129..130 " "
+          BIND_PAT@130..135
+            NAME@130..135
+              LNAME@130..135 "value"
+        R_CURLY@135..136 "}"
+      WHITESPACE@136..137 " "
+      EQ@137..138 "="
+      WHITESPACE@138..139 " "
+      EXPR_LIST@139..140
+        NAME_REF@139..140
+          LNAME@139..140 "t"
+    NEWLINE@140..141 "\n"
+    LET_DECL@141..161
+      LET_KW@141..144 "let"
+      WHITESPACE@144..145 " "
+      BRACE_PAT@145..154
+        L_CURLY@145..146 "{"
+        PAT_FIELD@146..153
+          LNAME@146..150 "type"
+          COLON@150..151 ":"
+          WHITESPACE@151..152 " "
+          BIND_PAT@152..153
+            NAME@152..153
+              LNAME@152..153 "t"
+        R_CURLY@153..154 "}"
+      WHITESPACE@154..155 " "
+      EQ@155..156 "="
+      WHITESPACE@156..157 " "
+      EXPR_LIST@157..161
+        NAME_REF@157..161
+          LNAME@157..161 "node"
+    NEWLINE@161..162 "\n"
+    LET_DECL@162..194
+      LET_KW@162..165 "let"
+      WHITESPACE@165..166 " "
+      BRACE_PAT@166..187
+        L_CURLY@166..167 "{"
+        PAT_FIELD@167..175
+          NUMBER@167..168 "1"
+          COLON@168..169 ":"
+          WHITESPACE@169..170 " "
+          BIND_PAT@170..175
+            NAME@170..175
+              LNAME@170..175 "first"
+        COMMA@175..176 ","
+        WHITESPACE@176..177 " "
+        PAT_FIELD@177..186
+          NUMBER@177..178 "2"
+          COLON@178..179 ":"
+          WHITESPACE@179..180 " "
+          BIND_PAT@180..186
+            NAME@180..186
+              LNAME@180..186 "second"
+        R_CURLY@186..187 "}"
+      WHITESPACE@187..188 " "
+      EQ@188..189 "="
+      WHITESPACE@189..190 " "
+      EXPR_LIST@190..194
+        NAME_REF@190..194
+          LNAME@190..194 "pair"
+    NEWLINE@194..195 "\n"
+    LET_DECL@195..217
+      LET_KW@195..198 "let"
+      WHITESPACE@198..199 " "
+      BRACE_PAT@199..213
+        L_CURLY@199..200 "{"
+        PAT_FIELD@200..212
+          STRING@200..209 "\"someKey\""
+          COLON@209..210 ":"
+          WHITESPACE@210..211 " "
+          BIND_PAT@211..212
+            NAME@211..212
+              LNAME@211..212 "v"
+        R_CURLY@212..213 "}"
+      WHITESPACE@213..214 " "
+      EQ@214..215 "="
+      WHITESPACE@215..216 " "
+      EXPR_LIST@216..217
+        NAME_REF@216..217
+          LNAME@216..217 "t"
+    NEWLINE@217..218 "\n"
+    LET_DECL@218..242
+      LET_KW@218..221 "let"
+      WHITESPACE@221..222 " "
+      BRACE_PAT@222..235
+        L_CURLY@222..223 "{"
+        PAT_FIELD@223..234
+          LNAME@223..226 "pos"
+          COLON@226..227 ":"
+          WHITESPACE@227..228 " "
+          BRACE_PAT@228..234
+            L_CURLY@228..229 "{"
+            PAT_FIELD@229..230
+              NAME@229..230
+                LNAME@229..230 "x"
+            COMMA@230..231 ","
+            WHITESPACE@231..232 " "
+            PAT_FIELD@232..233
+              NAME@232..233
+                LNAME@232..233 "y"
+            R_CURLY@233..234 "}"
+        R_CURLY@234..235 "}"
+      WHITESPACE@235..236 " "
+      EQ@236..237 "="
+      WHITESPACE@237..238 " "
+      EXPR_LIST@238..242
+        NAME_REF@238..242
+          LNAME@238..242 "unit"
+    NEWLINE@242..243 "\n"
+  EOF@243..243 ""

@@ -1,0 +1,32 @@
+36
+18
+9
+12
+18
+198
+46
+141
+arg a
+arg b
+arg key
+call k
+block 2
+4
+arg a
+arg b
+arg key
+call k
+block 3
+6
+204
+27
+36
+2,1,4,2
+false
+false
+2
+3
+1:1
+1:2
+2:1
+2:2

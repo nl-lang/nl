@@ -1,0 +1,27 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..54 "# A raw string does not continue on the next line; the"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..116 "# backslash stands for itself and the string is unterminated."
+    NEWLINE@116..117 "\n"
+    ASSIGN_STMT@117..126
+      NAME_REF@117..118
+        LNAME@117..118 "a"
+      WHITESPACE@118..119 " "
+      EQ@119..120 "="
+      WHITESPACE@120..121 " "
+      LITERAL@121..126
+        STRING@121..126 "'abc\\"
+    NEWLINE@126..127 "\n"
+    ASSIGN_STMT@127..132
+      NAME_REF@127..128
+        LNAME@127..128 "b"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      LITERAL@131..132
+        NUMBER@131..132 "1"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""
+---
+error@121..126 3:5: unterminated string: a `'…'` string must close on the line where it starts; for raw text on several lines use a heredoc `"""=`

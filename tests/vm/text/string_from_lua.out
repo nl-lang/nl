@@ -1,0 +1,7 @@
+5
+HÉLLO
+HéLLO
+false
+false EncodingError: String.length: the string is not valid UTF-8 (byte 1)
+a,é
+x-3

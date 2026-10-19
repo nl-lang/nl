@@ -1,0 +1,49 @@
+SOURCE_FILE@0..82
+  BLOCK@0..82
+    COMMENT@0..50 "# `do` after a literal, an index or a postfix `!`."
+    NEWLINE@50..51 "\n"
+    EXPR_STMT@51..59
+      LITERAL@51..52
+        NUMBER@51..52 "5"
+      WHITESPACE@52..53 " "
+      ERROR_NODE@53..59
+        TRAILING_BLOCK@53..59
+          DO_KW@53..55 "do"
+          BLOCK@55..56
+            WHITESPACE@55..56 " "
+          END_KW@56..59 "end"
+    NEWLINE@59..60 "\n"
+    EXPR_STMT@60..71
+      INDEX_EXPR@60..64
+        NAME_REF@60..61
+          LNAME@60..61 "t"
+        L_BRACK@61..62 "["
+        LITERAL@62..63
+          NUMBER@62..63 "1"
+        R_BRACK@63..64 "]"
+      WHITESPACE@64..65 " "
+      ERROR_NODE@65..71
+        TRAILING_BLOCK@65..71
+          DO_KW@65..67 "do"
+          BLOCK@67..68
+            WHITESPACE@67..68 " "
+          END_KW@68..71 "end"
+    NEWLINE@71..72 "\n"
+    EXPR_STMT@72..81
+      BANG_EXPR@72..74
+        NAME_REF@72..73
+          LNAME@72..73 "f"
+        BANG_POSTFIX@73..74 "!"
+      WHITESPACE@74..75 " "
+      ERROR_NODE@75..81
+        TRAILING_BLOCK@75..81
+          DO_KW@75..77 "do"
+          BLOCK@77..78
+            WHITESPACE@77..78 " "
+          END_KW@78..81 "end"
+    NEWLINE@81..82 "\n"
+  EOF@82..82 ""
+---
+error@53..55 2:3: a `do … end` block passed to a call follows the call or the function name on the same line, as in `items.each do |x| … end`; it cannot follow this expression
+error@65..67 3:6: a `do … end` block passed to a call follows the call or the function name on the same line, as in `items.each do |x| … end`; it cannot follow this expression
+error@75..77 4:4: `f!` is the function itself: nothing that calls may follow it, not even a block

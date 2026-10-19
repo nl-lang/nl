@@ -1,0 +1,23 @@
+A
+A.B
+A.B.clash
+Inner
+Inner.m
+Inner.show
+M
+M.Inner
+M.Inner.m
+M.N
+M.N.Deep
+M.N.f
+M.Sub
+M.Sub.g
+M.f
+M.f
+N
+N.f
+Show
+String.registry_shout
+f
+SendError: cannot send an instance of struct Local, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)
+nested:3:9: `helper` is declared in a nested block, not at file level or directly in a module body, so a worker cannot look it up by name

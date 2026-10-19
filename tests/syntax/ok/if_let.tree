@@ -1,0 +1,77 @@
+SOURCE_FILE@0..150
+  BLOCK@0..150
+    COMMENT@0..43 "# `if let pattern = expr` and `elseif let`."
+    NEWLINE@43..44 "\n"
+    EXPR_STMT@44..149
+      IF_EXPR@44..149
+        IF_KW@44..46 "if"
+        WHITESPACE@46..47 " "
+        LET_CONDITION@47..77
+          LET_KW@47..50 "let"
+          WHITESPACE@50..51 " "
+          BIND_PAT@51..57
+            NAME@51..57
+              LNAME@51..57 "player"
+          WHITESPACE@57..58 " "
+          EQ@58..59 "="
+          WHITESPACE@59..60 " "
+          CALL_EXPR@60..77
+            NAME_REF@60..71
+              LNAME@60..71 "find_player"
+            ARG_LIST@71..77
+              L_PAREN@71..72 "("
+              NAME_REF@72..76
+                LNAME@72..76 "name"
+              R_PAREN@76..77 ")"
+        BLOCK@77..93
+          NEWLINE@77..78 "\n"
+          WHITESPACE@78..80 "  "
+          EXPR_STMT@80..92
+            COMMAND_CALL@80..92
+              NAME_REF@80..85
+                LNAME@80..85 "greet"
+              WHITESPACE@85..86 " "
+              COMMAND_ARGS@86..92
+                NAME_REF@86..92
+                  LNAME@86..92 "player"
+          NEWLINE@92..93 "\n"
+        ELSEIF_CLAUSE@93..146
+          ELSEIF_KW@93..99 "elseif"
+          WHITESPACE@99..100 " "
+          LET_CONDITION@100..132
+            LET_KW@100..103 "let"
+            WHITESPACE@103..104 " "
+            BRACE_PAT@104..125
+              L_CURLY@104..105 "{"
+              PAT_FIELD@105..118
+                LNAME@105..109 "role"
+                COLON@109..110 ":"
+                WHITESPACE@110..111 " "
+                LITERAL_PAT@111..118
+                  STRING@111..118 "\"admin\""
+              COMMA@118..119 ","
+              WHITESPACE@119..120 " "
+              PAT_FIELD@120..124
+                NAME@120..124
+                  LNAME@120..124 "name"
+              R_CURLY@124..125 "}"
+            WHITESPACE@125..126 " "
+            EQ@126..127 "="
+            WHITESPACE@127..128 " "
+            NAME_REF@128..132
+              LNAME@128..132 "user"
+          BLOCK@132..146
+            NEWLINE@132..133 "\n"
+            WHITESPACE@133..135 "  "
+            EXPR_STMT@135..145
+              COMMAND_CALL@135..145
+                NAME_REF@135..140
+                  LNAME@135..140 "admin"
+                WHITESPACE@140..141 " "
+                COMMAND_ARGS@141..145
+                  NAME_REF@141..145
+                    LNAME@141..145 "name"
+            NEWLINE@145..146 "\n"
+        END_KW@146..149 "end"
+    NEWLINE@149..150 "\n"
+  EOF@150..150 ""

@@ -1,0 +1,85 @@
+SOURCE_FILE@0..143
+  BLOCK@0..143
+    COMMENT@0..72 "# A `spawn` callee cannot be nil-safe; one error, and the chain is read."
+    NEWLINE@72..73 "\n"
+    LET_DECL@73..99
+      LET_KW@73..76 "let"
+      WHITESPACE@76..77 " "
+      BIND_PAT@77..78
+        NAME@77..78
+          LNAME@77..78 "t"
+      WHITESPACE@78..79 " "
+      EQ@79..80 "="
+      WHITESPACE@80..81 " "
+      EXPR_LIST@81..99
+        SPAWN_EXPR@81..99
+          SPAWN_KW@81..86 "spawn"
+          WHITESPACE@86..87 " "
+          CALL_EXPR@87..99
+            FIELD_EXPR@87..94
+              NAME_REF@87..91
+                LNAME@87..91 "none"
+              QUESTION_DOT@91..93 "?."
+              LNAME@93..94 "m"
+            ARG_LIST@94..99
+              L_PAREN@94..95 "("
+              CALL_EXPR@95..98
+                NAME_REF@95..96
+                  LNAME@95..96 "f"
+                ARG_LIST@96..98
+                  L_PAREN@96..97 "("
+                  R_PAREN@97..98 ")"
+              R_PAREN@98..99 ")"
+    NEWLINE@99..100 "\n"
+    LET_DECL@100..122
+      LET_KW@100..103 "let"
+      WHITESPACE@103..104 " "
+      BIND_PAT@104..105
+        NAME@104..105
+          LNAME@104..105 "u"
+      WHITESPACE@105..106 " "
+      EQ@106..107 "="
+      WHITESPACE@107..108 " "
+      EXPR_LIST@108..122
+        SPAWN_EXPR@108..122
+          SPAWN_KW@108..113 "spawn"
+          WHITESPACE@113..114 " "
+          CALL_EXPR@114..122
+            FIELD_EXPR@114..117
+              NAME_REF@114..115
+                LNAME@114..115 "a"
+              DOT@115..116 "."
+              LNAME@116..117 "b"
+            QUESTION_DOT@117..119 "?."
+            ARG_LIST@119..122
+              L_PAREN@119..120 "("
+              LITERAL@120..121
+                NUMBER@120..121 "1"
+              R_PAREN@121..122 ")"
+    NEWLINE@122..123 "\n"
+    LET_DECL@123..142
+      LET_KW@123..126 "let"
+      WHITESPACE@126..127 " "
+      BIND_PAT@127..128
+        NAME@127..128
+          LNAME@127..128 "v"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      EXPR_LIST@131..142
+        SPAWN_EXPR@131..142
+          SPAWN_KW@131..136 "spawn"
+          WHITESPACE@136..137 " "
+          CALL_EXPR@137..142
+            NAME_REF@137..139
+              LNAME@137..139 "ok"
+            ARG_LIST@139..142
+              L_PAREN@139..140 "("
+              LITERAL@140..141
+                NUMBER@140..141 "1"
+              R_PAREN@141..142 ")"
+    NEWLINE@142..143 "\n"
+  EOF@143..143 ""
+---
+error@91..93 2:19: a `spawn` callee cannot be nil-safe: `spawn` sends a call of a named function to a worker. Test the value first, then write `spawn x.m(…)`
+error@117..119 3:18: a `spawn` callee cannot be nil-safe: `spawn` sends a call of a named function to a worker. Test the value first, then write `spawn x.m(…)`

@@ -1,0 +1,23 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..53 "# There is no destructuring assignment without `let`."
+    NEWLINE@53..54 "\n"
+    ASSIGN_STMT@54..64
+      LIST_EXPR@54..60
+        L_BRACK@54..55 "["
+        NAME_REF@55..56
+          LNAME@55..56 "a"
+        COMMA@56..57 ","
+        WHITESPACE@57..58 " "
+        NAME_REF@58..59
+          LNAME@58..59 "b"
+        R_BRACK@59..60 "]"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      NAME_REF@63..64
+        LNAME@63..64 "t"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""
+---
+error@54..60 2:1: there is no destructuring assignment: declare new names with `let {a, b} = t`, or assign each target

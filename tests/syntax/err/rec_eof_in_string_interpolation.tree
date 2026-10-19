@@ -1,0 +1,23 @@
+SOURCE_FILE@0..75
+  BLOCK@0..75
+    COMMENT@0..57 "# Recovery: the file ends inside a heredoc interpolation."
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..75
+      NAME_REF@58..59
+        LNAME@58..59 "s"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      INTERP_STRING@62..75
+        STR_BEGIN@62..70 "\"\"\"\n  #{"
+        WHITESPACE@70..71 " "
+        BIN_EXPR@71..74
+          NAME_REF@71..72
+            LNAME@71..72 "x"
+          WHITESPACE@72..73 " "
+          PLUS@73..74 "+"
+        NEWLINE@74..75 "\n"
+        STR_END@75..75 ""
+  EOF@75..75 ""
+---
+error@68..70 3:3: this interpolation is not closed: the file ends before its `}`

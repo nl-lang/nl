@@ -1,0 +1,14 @@
+member of nil	error_positions.nl:16: attempt to read member 'foo' of nil
+call member of nil	error_positions.nl:20: attempt to read member 'foo' of nil
+missing member	error_positions.nl:24: attempt to call member 'zzz' of Table (a nil value)
+len of number	error_positions.nl:27: attempt to get the length of a Number value
+len of nil	error_positions.nl:29: attempt to get the length of a nil value
+idiv	error_positions.nl:31: attempt to perform '//' on String and Number
+band	error_positions.nl:33: attempt to perform '&' on String and Number
+bnot	error_positions.nl:35: attempt to perform '~' on String
+compare	error_positions.nl:36: attempt to compare Table with Number ('<')
+greater	error_positions.nl:37: attempt to compare Number with Table ('<')
+string index	a string is indexed by a number or a range, not Table
+index nil	error_positions.nl:40: attempt to index a nil value with 1
+Table.concat	error_positions.nl:43: bad argument #1 to 'table_concat' (table expected, got nil)
+s.rep	error_positions.nl:47: bad argument #1 to 'rep' (string expected, got nil)

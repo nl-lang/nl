@@ -1,0 +1,78 @@
+SOURCE_FILE@0..163
+  BLOCK@0..163
+    COMMENT@0..64 "# Lua's numeric `for`; one error that shows the NL form, and the"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..98 "# body still belongs to the loop."
+    NEWLINE@98..99 "\n"
+    FOR_STMT@99..130
+      FOR_KW@99..102 "for"
+      WHITESPACE@102..103 " "
+      BIND_PAT@103..104
+        NAME@103..104
+          LNAME@103..104 "i"
+      WHITESPACE@104..105 " "
+      ERROR_NODE@105..115
+        EQ@105..106 "="
+        WHITESPACE@106..107 " "
+        LITERAL@107..108
+          NUMBER@107..108 "1"
+        COMMA@108..109 ","
+        WHITESPACE@109..110 " "
+        LITERAL@110..112
+          NUMBER@110..112 "10"
+        WHITESPACE@112..113 " "
+        DO_KW@113..115 "do"
+      BLOCK@115..127
+        NEWLINE@115..116 "\n"
+        WHITESPACE@116..118 "  "
+        EXPR_STMT@118..126
+          CALL_EXPR@118..126
+            NAME_REF@118..123
+              LNAME@118..123 "print"
+            ARG_LIST@123..126
+              L_PAREN@123..124 "("
+              NAME_REF@124..125
+                LNAME@124..125 "i"
+              R_PAREN@125..126 ")"
+        NEWLINE@126..127 "\n"
+      END_KW@127..130 "end"
+    NEWLINE@130..131 "\n"
+    FOR_STMT@131..162
+      FOR_KW@131..134 "for"
+      WHITESPACE@134..135 " "
+      BIND_PAT@135..136
+        NAME@135..136
+          LNAME@135..136 "j"
+      WHITESPACE@136..137 " "
+      ERROR_NODE@137..147
+        EQ@137..138 "="
+        WHITESPACE@138..139 " "
+        LITERAL@139..140
+          NUMBER@139..140 "1"
+        COMMA@140..141 ","
+        WHITESPACE@141..142 " "
+        LITERAL@142..144
+          NUMBER@142..144 "10"
+        COMMA@144..145 ","
+        WHITESPACE@145..146 " "
+        LITERAL@146..147
+          NUMBER@146..147 "2"
+      BLOCK@147..159
+        NEWLINE@147..148 "\n"
+        WHITESPACE@148..150 "  "
+        EXPR_STMT@150..158
+          CALL_EXPR@150..158
+            NAME_REF@150..155
+              LNAME@150..155 "print"
+            ARG_LIST@155..158
+              L_PAREN@155..156 "("
+              NAME_REF@156..157
+                LNAME@156..157 "j"
+              R_PAREN@157..158 ")"
+        NEWLINE@158..159 "\n"
+      END_KW@159..162 "end"
+    NEWLINE@162..163 "\n"
+  EOF@163..163 ""
+---
+error@105..106 3:7: NL's `for` has no `=` form: write `for i in 1..10` (a range includes its end), without `do`
+error@137..138 6:7: NL's `for` has no `=` form: write `for j in 1..10 step 2` (a range includes its end)

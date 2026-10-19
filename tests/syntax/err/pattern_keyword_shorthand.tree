@@ -1,0 +1,22 @@
+SOURCE_FILE@0..74
+  BLOCK@0..74
+    COMMENT@0..58 "# A shorthand must be an LNAME; a keyword cannot be bound."
+    NEWLINE@58..59 "\n"
+    LET_DECL@59..73
+      LET_KW@59..62 "let"
+      WHITESPACE@62..63 " "
+      BRACE_PAT@63..69
+        L_CURLY@63..64 "{"
+        ERROR_NODE@64..68
+          LNAME@64..68 "type"
+        R_CURLY@68..69 "}"
+      WHITESPACE@69..70 " "
+      EQ@70..71 "="
+      WHITESPACE@71..72 " "
+      EXPR_LIST@72..73
+        NAME_REF@72..73
+          LNAME@72..73 "t"
+    NEWLINE@73..74 "\n"
+  EOF@74..74 ""
+---
+error@64..68 2:6: `type` is a keyword and cannot be bound: write `{type: name}`

@@ -1,0 +1,47 @@
+SOURCE_FILE@0..89
+  BLOCK@0..89
+    COMMENT@0..34 "# A struct body holds fields only."
+    NEWLINE@34..35 "\n"
+    STRUCT_DECL@35..88
+      STRUCT_KW@35..41 "struct"
+      WHITESPACE@41..42 " "
+      NAME@42..45
+        CNAME@42..45 "Foo"
+      NEWLINE@45..46 "\n"
+      WHITESPACE@46..48 "  "
+      FIELD_DECL@48..57
+        NAME@48..49
+          LNAME@48..49 "x"
+        COLON@49..50 ":"
+        WHITESPACE@50..51 " "
+        NAMED_TYPE@51..57
+          QUAL_NAME@51..57
+            CNAME@51..57 "Number"
+      NEWLINE@57..58 "\n"
+      WHITESPACE@58..60 "  "
+      ERROR_NODE@60..72
+        FN_DECL@60..72
+          FN_KW@60..62 "fn"
+          WHITESPACE@62..63 " "
+          NAME@63..66
+            LNAME@63..66 "bar"
+          BLOCK@66..69
+            NEWLINE@66..67 "\n"
+            WHITESPACE@67..69 "  "
+          END_KW@69..72 "end"
+      NEWLINE@72..73 "\n"
+      WHITESPACE@73..75 "  "
+      FIELD_DECL@75..84
+        NAME@75..76
+          LNAME@75..76 "y"
+        COLON@76..77 ":"
+        WHITESPACE@77..78 " "
+        NAMED_TYPE@78..84
+          QUAL_NAME@78..84
+            CNAME@78..84 "Number"
+      NEWLINE@84..85 "\n"
+      END_KW@85..88 "end"
+    NEWLINE@88..89 "\n"
+  EOF@89..89 ""
+---
+error@60..62 4:3: a struct body holds fields only: declare methods after the struct, as `fn Name.method … end`

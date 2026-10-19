@@ -1,0 +1,36 @@
+SOURCE_FILE@0..114
+  BLOCK@0..114
+    COMMENT@0..48 "# Inside a block body nested in an argument, the"
+    NEWLINE@48..49 "\n"
+    COMMENT@49..84 "# block goes to the call before it."
+    NEWLINE@84..85 "\n"
+    EXPR_STMT@85..113
+      COMMAND_CALL@85..113
+        NAME_REF@85..86
+          LNAME@85..86 "a"
+        WHITESPACE@86..87 " "
+        COMMAND_ARGS@87..113
+          FN_EXPR@87..113
+            FN_KW@87..89 "fn"
+            PARAM_LIST@89..91
+              L_PAREN@89..90 "("
+              R_PAREN@90..91 ")"
+            BLOCK@91..110
+              WHITESPACE@91..92 " "
+              EXPR_STMT@92..109
+                CALL_EXPR@92..109
+                  FIELD_EXPR@92..102
+                    NAME_REF@92..97
+                      LNAME@92..97 "items"
+                    DOT@97..98 "."
+                    LNAME@98..102 "each"
+                  WHITESPACE@102..103 " "
+                  TRAILING_BLOCK@103..109
+                    DO_KW@103..105 "do"
+                    BLOCK@105..106
+                      NEWLINE@105..106 "\n"
+                    END_KW@106..109 "end"
+              WHITESPACE@109..110 " "
+            END_KW@110..113 "end"
+    NEWLINE@113..114 "\n"
+  EOF@114..114 ""

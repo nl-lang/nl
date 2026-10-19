@@ -1,0 +1,10 @@
+real is S: true
+real param: ok taken
+real union param: ok taken
+real let: ok stored
+real field: ok Box
+spoof is S: false
+spoof param: TypeError: parameter 's' of take expects S, got Table
+spoof union param: TypeError: parameter 's' of take_opt expects S | Number, got Table
+spoof let: TypeError: variable 't' expects S, got Table
+spoof field: TypeError: field 's' of Box expects S?, got Table

@@ -1,0 +1,37 @@
+SOURCE_FILE@0..92
+  BLOCK@0..92
+    COMMENT@0..40 "# `async fn` declares an async function."
+    NEWLINE@40..41 "\n"
+    FN_DECL@41..91
+      ASYNC_KW@41..46 "async"
+      WHITESPACE@46..47 " "
+      FN_KW@47..49 "fn"
+      WHITESPACE@49..50 " "
+      NAME@50..62
+        LNAME@50..62 "load_profile"
+      PARAM_LIST@62..66
+        L_PAREN@62..63 "("
+        PARAM@63..65
+          BIND_PAT@63..65
+            NAME@63..65
+              LNAME@63..65 "id"
+        R_PAREN@65..66 ")"
+      BLOCK@66..88
+        NEWLINE@66..67 "\n"
+        WHITESPACE@67..69 "  "
+        EXPR_STMT@69..87
+          FIELD_EXPR@69..87
+            CALL_EXPR@69..81
+              NAME_REF@69..77
+                LNAME@69..77 "http_get"
+              ARG_LIST@77..81
+                L_PAREN@77..78 "("
+                NAME_REF@78..80
+                  LNAME@78..80 "id"
+                R_PAREN@80..81 ")"
+            DOT@81..82 "."
+            LNAME@82..87 "await"
+        NEWLINE@87..88 "\n"
+      END_KW@88..91 "end"
+    NEWLINE@91..92 "\n"
+  EOF@92..92 ""

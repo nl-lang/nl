@@ -1,0 +1,47 @@
+SOURCE_FILE@0..246
+  BLOCK@0..246
+    COMMENT@0..56 "# In a `\"…\"` string a backslash directly before a line"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..131 "# break continues the string on the next line and writes a line break; the"
+    NEWLINE@131..132 "\n"
+    COMMENT@132..183 "# string is one token, also after an interpolation."
+    NEWLINE@183..184 "\n"
+    LET_DECL@184..211
+      LET_KW@184..187 "let"
+      WHITESPACE@187..188 " "
+      BIND_PAT@188..191
+        NAME@188..191
+          LNAME@188..191 "foo"
+      WHITESPACE@191..192 " "
+      EQ@192..193 "="
+      WHITESPACE@193..194 " "
+      EXPR_LIST@194..211
+        LITERAL@194..211
+          STRING@194..211 "\"aaa \\\nbbb \\\nccc\""
+    NEWLINE@211..212 "\n"
+    LET_DECL@212..235
+      LET_KW@212..215 "let"
+      WHITESPACE@215..216 " "
+      BIND_PAT@216..219
+        NAME@216..219
+          LNAME@216..219 "bar"
+      WHITESPACE@219..220 " "
+      EQ@220..221 "="
+      WHITESPACE@221..222 " "
+      EXPR_LIST@222..235
+        INTERP_STRING@222..235
+          STR_BEGIN@222..226 "\"a#{"
+          NAME_REF@226..227
+            LNAME@226..227 "x"
+          STR_END@227..235 "} \\\n  b\""
+    NEWLINE@235..236 "\n"
+    EXPR_STMT@236..245
+      COMMAND_CALL@236..245
+        NAME_REF@236..241
+          LNAME@236..241 "print"
+        WHITESPACE@241..242 " "
+        COMMAND_ARGS@242..245
+          NAME_REF@242..245
+            LNAME@242..245 "foo"
+    NEWLINE@245..246 "\n"
+  EOF@246..246 ""

@@ -1,0 +1,67 @@
+SOURCE_FILE@0..162
+  BLOCK@0..162
+    COMMENT@0..56 "# After an fn header a `:` that has no whitespace before"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..116 "# it, or has whitespace after it, is the return-type colon."
+    NEWLINE@116..117 "\n"
+    FN_DECL@117..130
+      FN_KW@117..119 "fn"
+      WHITESPACE@119..120 " "
+      NAME@120..121
+        LNAME@120..121 "f"
+      PARAM_LIST@121..123
+        L_PAREN@121..122 "("
+        R_PAREN@122..123 ")"
+      RETURN_TYPE@123..126
+        COLON@123..124 ":"
+        WHITESPACE@124..125 " "
+        NAMED_TYPE@125..126
+          QUAL_NAME@125..126
+            CNAME@125..126 "T"
+      BLOCK@126..127
+        NEWLINE@126..127 "\n"
+      END_KW@127..130 "end"
+    NEWLINE@130..131 "\n"
+    FN_DECL@131..145
+      FN_KW@131..133 "fn"
+      WHITESPACE@133..134 " "
+      NAME@134..135
+        LNAME@134..135 "g"
+      PARAM_LIST@135..137
+        L_PAREN@135..136 "("
+        R_PAREN@136..137 ")"
+      WHITESPACE@137..138 " "
+      RETURN_TYPE@138..141
+        COLON@138..139 ":"
+        WHITESPACE@139..140 " "
+        NAMED_TYPE@140..141
+          QUAL_NAME@140..141
+            CNAME@140..141 "T"
+      BLOCK@141..142
+        NEWLINE@141..142 "\n"
+      END_KW@142..145 "end"
+    NEWLINE@145..146 "\n"
+    FN_DECL@146..161
+      FN_KW@146..148 "fn"
+      WHITESPACE@148..149 " "
+      NAME@149..150
+        LNAME@149..150 "h"
+      PARAM_LIST@150..153
+        L_PAREN@150..151 "("
+        PARAM@151..152
+          BIND_PAT@151..152
+            NAME@151..152
+              LNAME@151..152 "x"
+        R_PAREN@152..153 ")"
+      WHITESPACE@153..154 " "
+      RETURN_TYPE@154..157
+        COLON@154..155 ":"
+        WHITESPACE@155..156 " "
+        NAMED_TYPE@156..157
+          QUAL_NAME@156..157
+            CNAME@156..157 "T"
+      BLOCK@157..158
+        NEWLINE@157..158 "\n"
+      END_KW@158..161 "end"
+    NEWLINE@161..162 "\n"
+  EOF@162..162 ""

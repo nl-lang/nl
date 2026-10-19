@@ -1,0 +1,88 @@
+SOURCE_FILE@0..160
+  BLOCK@0..160
+    COMMENT@0..62 "# A call, a method call, a literal, `self`, `Self`, `x!` and a"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..105 "# Lua path without a step are not targets."
+    NEWLINE@105..106 "\n"
+    ASSIGN_STMT@106..113
+      CALL_EXPR@106..109
+        NAME_REF@106..107
+          LNAME@106..107 "f"
+        ARG_LIST@107..109
+          L_PAREN@107..108 "("
+          R_PAREN@108..109 ")"
+      WHITESPACE@109..110 " "
+      EQ@110..111 "="
+      WHITESPACE@111..112 " "
+      LITERAL@112..113
+        NUMBER@112..113 "1"
+    NEWLINE@113..114 "\n"
+    ASSIGN_STMT@114..121
+      METHOD_CALL@114..117
+        NAME_REF@114..115
+          LNAME@114..115 "x"
+        COLON@115..116 ":"
+        LNAME@116..117 "m"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      LITERAL@120..121
+        NUMBER@120..121 "1"
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..127
+      LITERAL@122..123
+        NUMBER@122..123 "1"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      LITERAL@126..127
+        NUMBER@126..127 "2"
+    NEWLINE@127..128 "\n"
+    ASSIGN_STMT@128..136
+      SELF_EXPR@128..132
+        SELF_KW@128..132 "self"
+      WHITESPACE@132..133 " "
+      EQ@133..134 "="
+      WHITESPACE@134..135 " "
+      LITERAL@135..136
+        NUMBER@135..136 "1"
+    NEWLINE@136..137 "\n"
+    ASSIGN_STMT@137..145
+      SELF_EXPR@137..141
+        SELF_TYPE_KW@137..141 "Self"
+      WHITESPACE@141..142 " "
+      EQ@142..143 "="
+      WHITESPACE@143..144 " "
+      LITERAL@144..145
+        NUMBER@144..145 "1"
+    NEWLINE@145..146 "\n"
+    ASSIGN_STMT@146..152
+      BANG_EXPR@146..148
+        NAME_REF@146..147
+          LNAME@146..147 "a"
+        BANG_POSTFIX@147..148 "!"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      NAME_REF@151..152
+        LNAME@151..152 "b"
+    NEWLINE@152..153 "\n"
+    ASSIGN_STMT@153..159
+      LUA_PATH@153..155
+        COLON@153..154 ":"
+        LNAME@154..155 "x"
+      WHITESPACE@155..156 " "
+      EQ@156..157 "="
+      WHITESPACE@157..158 " "
+      LITERAL@158..159
+        NUMBER@158..159 "1"
+    NEWLINE@159..160 "\n"
+  EOF@160..160 ""
+---
+error@106..109 3:1: a call cannot be assigned to
+error@114..117 4:1: a call cannot be assigned to
+error@122..123 5:1: a literal cannot be assigned to
+error@128..132 6:1: `self` and `Self` cannot be assigned to; to set a field, write `@name = value`
+error@137..141 7:1: `self` and `Self` cannot be assigned to; to set a field, write `@name = value`
+error@146..148 8:1: `a!` is the function value itself and cannot be assigned to; assign to `a`
+error@153..155 9:1: a Lua path without a step cannot be assigned to: to set a Lua global, write `:_G.name = value`

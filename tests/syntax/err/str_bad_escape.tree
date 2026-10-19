@@ -1,0 +1,36 @@
+SOURCE_FILE@0..79
+  BLOCK@0..79
+    COMMENT@0..52 "# Any escape other than the listed ones is an error."
+    NEWLINE@52..53 "\n"
+    ASSIGN_STMT@53..61
+      NAME_REF@53..54
+        LNAME@53..54 "a"
+      WHITESPACE@54..55 " "
+      EQ@55..56 "="
+      WHITESPACE@56..57 " "
+      LITERAL@57..61
+        STRING@57..61 "\"\\q\""
+    NEWLINE@61..62 "\n"
+    ASSIGN_STMT@62..72
+      NAME_REF@62..63
+        LNAME@62..63 "b"
+      WHITESPACE@63..64 " "
+      EQ@64..65 "="
+      WHITESPACE@65..66 " "
+      LITERAL@66..72
+        STRING@66..72 "\"\\z\\c\""
+    NEWLINE@72..73 "\n"
+    ASSIGN_STMT@73..78
+      NAME_REF@73..74
+        LNAME@73..74 "c"
+      WHITESPACE@74..75 " "
+      EQ@75..76 "="
+      WHITESPACE@76..77 " "
+      LITERAL@77..78
+        NUMBER@77..78 "1"
+    NEWLINE@78..79 "\n"
+  EOF@79..79 ""
+---
+error@58..60 2:6: unknown escape `\q`. Write `\\` for a backslash; for a pattern such as a regex, a raw string `'…'` keeps every backslash as written
+error@67..69 3:6: unknown escape `\z`. Write `\\` for a backslash; for a pattern such as a regex, a raw string `'…'` keeps every backslash as written
+error@69..71 3:8: unknown escape `\c`. Write `\\` for a backslash; for a pattern such as a regex, a raw string `'…'` keeps every backslash as written

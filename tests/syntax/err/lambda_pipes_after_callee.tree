@@ -1,0 +1,40 @@
+SOURCE_FILE@0..134
+  BLOCK@0..134
+    COMMENT@0..55 "# After a callee `|` and `||` are operators, so a short"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..112 "# function with pipes does not start a command argument."
+    NEWLINE@112..113 "\n"
+    EXPR_STMT@113..123
+      BIN_EXPR@113..123
+        BIN_EXPR@113..117
+          NAME_REF@113..114
+            LNAME@113..114 "f"
+          WHITESPACE@114..115 " "
+          PIPE@115..116 "|"
+          NAME_REF@116..117
+            LNAME@116..117 "a"
+        PIPE@117..118 "|"
+        WHITESPACE@118..119 " "
+        ERROR_NODE@119..121
+          ARROW@119..121 "->"
+        WHITESPACE@121..122 " "
+        NAME_REF@122..123
+          LNAME@122..123 "a"
+    NEWLINE@123..124 "\n"
+    EXPR_STMT@124..133
+      BIN_EXPR@124..133
+        NAME_REF@124..125
+          LNAME@124..125 "f"
+        WHITESPACE@125..126 " "
+        PIPE2@126..128 "||"
+        WHITESPACE@128..129 " "
+        ERROR_NODE@129..131
+          ARROW@129..131 "->"
+        WHITESPACE@131..132 " "
+        LITERAL@132..133
+          NUMBER@132..133 "1"
+    NEWLINE@133..134 "\n"
+  EOF@134..134 ""
+---
+error@119..121 3:7: after a value, `|` is bitwise or and `||` logical or, so a short function written with pipes cannot start a command argument: pass it in parentheses, `f(|a| -> …)`
+error@129..131 4:6: after a value, `|` is bitwise or and `||` logical or, so a short function written with pipes cannot start a command argument: pass it in parentheses, `f(|a| -> …)`

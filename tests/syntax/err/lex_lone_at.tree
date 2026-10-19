@@ -1,0 +1,30 @@
+SOURCE_FILE@0..58
+  BLOCK@0..58
+    COMMENT@0..41 "# `@` not followed by a word is an error."
+    NEWLINE@41..42 "\n"
+    ASSIGN_STMT@42..51
+      NAME_REF@42..43
+        LNAME@42..43 "x"
+      WHITESPACE@43..44 " "
+      EQ@44..45 "="
+      WHITESPACE@45..46 " "
+      ERROR@46..47 "@"
+      WHITESPACE@47..48 " "
+      ERROR_NODE@48..49
+        PLUS@48..49 "+"
+      WHITESPACE@49..50 " "
+      LITERAL@50..51
+        NUMBER@50..51 "1"
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..57
+      NAME_REF@52..53
+        LNAME@52..53 "y"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      LITERAL@56..57
+        NUMBER@56..57 "2"
+    NEWLINE@57..58 "\n"
+  EOF@58..58 ""
+---
+error@46..47 2:5: `@` must be directly followed by a field name, as in `@health`

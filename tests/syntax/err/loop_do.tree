@@ -1,0 +1,34 @@
+SOURCE_FILE@0..97
+  BLOCK@0..97
+    COMMENT@0..69 "# Ruby's `loop do … end`; one error, and the `end` closes the loop."
+    NEWLINE@69..70 "\n"
+    LOOP_STMT@70..90
+      LOOP_KW@70..74 "loop"
+      WHITESPACE@74..75 " "
+      ERROR_NODE@75..77
+        DO_KW@75..77 "do"
+      BLOCK@77..87
+        NEWLINE@77..78 "\n"
+        WHITESPACE@78..80 "  "
+        EXPR_STMT@80..86
+          CALL_EXPR@80..86
+            NAME_REF@80..84
+              LNAME@80..84 "step"
+            ARG_LIST@84..86
+              L_PAREN@84..85 "("
+              R_PAREN@85..86 ")"
+        NEWLINE@86..87 "\n"
+      END_KW@87..90 "end"
+    NEWLINE@90..91 "\n"
+    ASSIGN_STMT@91..96
+      NAME_REF@91..92
+        LNAME@91..92 "x"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      LITERAL@95..96
+        NUMBER@95..96 "1"
+    NEWLINE@96..97 "\n"
+  EOF@97..97 ""
+---
+error@75..77 2:6: NL's `loop` takes no `do`: write `loop`, the body on the next lines, then `end`

@@ -1,0 +1,58 @@
+SOURCE_FILE@0..138
+  BLOCK@0..138
+    COMMENT@0..61 "# A capitalized name, a call with parentheses, an index and a"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..99 "# capitalized member are not callees."
+    NEWLINE@99..100 "\n"
+    EXPR_STMT@100..103
+      NAME_REF@100..103
+        CNAME@100..103 "Foo"
+    WHITESPACE@103..104 " "
+    EXPR_STMT@104..105
+      NAME_REF@104..105
+        LNAME@104..105 "x"
+    NEWLINE@105..106 "\n"
+    EXPR_STMT@106..110
+      CALL_EXPR@106..110
+        NAME_REF@106..107
+          LNAME@106..107 "f"
+        ARG_LIST@107..110
+          L_PAREN@107..108 "("
+          NAME_REF@108..109
+            LNAME@108..109 "a"
+          R_PAREN@109..110 ")"
+    WHITESPACE@110..111 " "
+    EXPR_STMT@111..112
+      NAME_REF@111..112
+        LNAME@111..112 "b"
+    NEWLINE@112..113 "\n"
+    EXPR_STMT@113..117
+      INDEX_EXPR@113..117
+        NAME_REF@113..114
+          LNAME@113..114 "t"
+        L_BRACK@114..115 "["
+        LITERAL@115..116
+          NUMBER@115..116 "1"
+        R_BRACK@116..117 "]"
+    WHITESPACE@117..118 " "
+    EXPR_STMT@118..119
+      NAME_REF@118..119
+        LNAME@118..119 "x"
+    NEWLINE@119..120 "\n"
+    EXPR_STMT@120..135
+      FIELD_EXPR@120..135
+        NAME_REF@120..129
+          CNAME@120..129 "Direction"
+        DOT@129..130 "."
+        CNAME@130..135 "North"
+    WHITESPACE@135..136 " "
+    EXPR_STMT@136..137
+      NAME_REF@136..137
+        LNAME@136..137 "x"
+    NEWLINE@137..138 "\n"
+  EOF@138..138 ""
+---
+error@104..105 3:5: a capitalized name is not called without parentheses: write `Foo(…)`
+error@111..112 4:6: this call already has its arguments in parentheses; to pass more, put them inside the parentheses
+error@118..119 5:6: unexpected `x` after the end of a statement: statements are separated by line breaks or `;`
+error@136..137 6:17: a capitalized name is not called without parentheses: write `Direction.North(…)`

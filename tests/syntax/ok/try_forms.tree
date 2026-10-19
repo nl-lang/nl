@@ -1,0 +1,114 @@
+SOURCE_FILE@0..206
+  BLOCK@0..206
+    COMMENT@0..62 "# `catch name: Type`, `catch name`, a bare `catch`, a union in"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..85 "# the type, `finally`."
+    NEWLINE@85..86 "\n"
+    EXPR_STMT@86..205
+      TRY_EXPR@86..205
+        TRY_KW@86..89 "try"
+        BLOCK@89..100
+          NEWLINE@89..90 "\n"
+          WHITESPACE@90..92 "  "
+          EXPR_STMT@92..99
+            CALL_EXPR@92..99
+              NAME_REF@92..97
+                LNAME@92..97 "risky"
+              ARG_LIST@97..99
+                L_PAREN@97..98 "("
+                R_PAREN@98..99 ")"
+          NEWLINE@99..100 "\n"
+        CATCH_CLAUSE@100..126
+          CATCH_KW@100..105 "catch"
+          WHITESPACE@105..106 " "
+          NAME@106..109
+            LNAME@106..109 "err"
+          COLON@109..110 ":"
+          WHITESPACE@110..111 " "
+          NAMED_TYPE@111..119
+            QUAL_NAME@111..119
+              CNAME@111..119 "NotFound"
+          BLOCK@119..126
+            NEWLINE@119..120 "\n"
+            WHITESPACE@120..122 "  "
+            EXPR_STMT@122..125
+              CALL_EXPR@122..125
+                NAME_REF@122..123
+                  LNAME@122..123 "a"
+                ARG_LIST@123..125
+                  L_PAREN@123..124 "("
+                  R_PAREN@124..125 ")"
+            NEWLINE@125..126 "\n"
+        CATCH_CLAUSE@126..160
+          CATCH_KW@126..131 "catch"
+          WHITESPACE@131..132 " "
+          NAME@132..133
+            LNAME@132..133 "e"
+          COLON@133..134 ":"
+          WHITESPACE@134..135 " "
+          UNION_TYPE@135..153
+            NAMED_TYPE@135..143
+              QUAL_NAME@135..143
+                CNAME@135..143 "NotFound"
+            WHITESPACE@143..144 " "
+            PIPE@144..145 "|"
+            WHITESPACE@145..146 " "
+            NAMED_TYPE@146..153
+              QUAL_NAME@146..153
+                CNAME@146..153 "Timeout"
+          BLOCK@153..160
+            NEWLINE@153..154 "\n"
+            WHITESPACE@154..156 "  "
+            EXPR_STMT@156..159
+              CALL_EXPR@156..159
+                NAME_REF@156..157
+                  LNAME@156..157 "b"
+                ARG_LIST@157..159
+                  L_PAREN@157..158 "("
+                  R_PAREN@158..159 ")"
+            NEWLINE@159..160 "\n"
+        CATCH_CLAUSE@160..176
+          CATCH_KW@160..165 "catch"
+          WHITESPACE@165..166 " "
+          NAME@166..169
+            LNAME@166..169 "err"
+          BLOCK@169..176
+            NEWLINE@169..170 "\n"
+            WHITESPACE@170..172 "  "
+            EXPR_STMT@172..175
+              CALL_EXPR@172..175
+                NAME_REF@172..173
+                  LNAME@172..173 "c"
+                ARG_LIST@173..175
+                  L_PAREN@173..174 "("
+                  R_PAREN@174..175 ")"
+            NEWLINE@175..176 "\n"
+        CATCH_CLAUSE@176..188
+          CATCH_KW@176..181 "catch"
+          BLOCK@181..188
+            NEWLINE@181..182 "\n"
+            WHITESPACE@182..184 "  "
+            EXPR_STMT@184..187
+              CALL_EXPR@184..187
+                NAME_REF@184..185
+                  LNAME@184..185 "d"
+                ARG_LIST@185..187
+                  L_PAREN@185..186 "("
+                  R_PAREN@186..187 ")"
+            NEWLINE@187..188 "\n"
+        FINALLY_CLAUSE@188..202
+          FINALLY_KW@188..195 "finally"
+          BLOCK@195..202
+            NEWLINE@195..196 "\n"
+            WHITESPACE@196..198 "  "
+            EXPR_STMT@198..201
+              CALL_EXPR@198..201
+                NAME_REF@198..199
+                  LNAME@198..199 "e"
+                ARG_LIST@199..201
+                  L_PAREN@199..200 "("
+                  R_PAREN@200..201 ")"
+            NEWLINE@201..202 "\n"
+        END_KW@202..205 "end"
+    NEWLINE@205..206 "\n"
+  EOF@206..206 ""

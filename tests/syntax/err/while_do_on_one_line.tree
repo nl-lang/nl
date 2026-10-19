@@ -1,0 +1,36 @@
+SOURCE_FILE@0..130
+  BLOCK@0..130
+    COMMENT@0..58 "# `while x do y end` passes a block to `x`, so the `while`"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..106 "# has no `end`: one targeted error at the `do`."
+    NEWLINE@106..107 "\n"
+    WHILE_STMT@107..124
+      WHILE_KW@107..112 "while"
+      WHITESPACE@112..113 " "
+      CALL_EXPR@113..123
+        NAME_REF@113..114
+          LNAME@113..114 "x"
+        WHITESPACE@114..115 " "
+        TRAILING_BLOCK@115..123
+          DO_KW@115..117 "do"
+          BLOCK@117..120
+            WHITESPACE@117..118 " "
+            EXPR_STMT@118..119
+              NAME_REF@118..119
+                LNAME@118..119 "y"
+            WHITESPACE@119..120 " "
+          END_KW@120..123 "end"
+      BLOCK@123..124
+        NEWLINE@123..124 "\n"
+    ASSIGN_STMT@124..129
+      NAME_REF@124..125
+        LNAME@124..125 "z"
+      WHITESPACE@125..126 " "
+      EQ@126..127 "="
+      WHITESPACE@127..128 " "
+      LITERAL@128..129
+        NUMBER@128..129 "1"
+    NEWLINE@129..130 "\n"
+  EOF@130..130 ""
+---
+error@115..117 3:9: NL has no `do` after a loop or condition header: in the `while` on line 3, `do … end` is a block passed to the call before it, so the `while` itself has no body and no `end`. Write the header alone on its line, the body below it, then `end`

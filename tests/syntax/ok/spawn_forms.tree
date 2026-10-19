@@ -1,0 +1,209 @@
+SOURCE_FILE@0..336
+  BLOCK@0..336
+    COMMENT@0..58 "# The call form with a call_path callee, postfix after the"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..100 "# call, the command form, the block form."
+    NEWLINE@100..101 "\n"
+    ASSIGN_STMT@101..130
+      NAME_REF@101..102
+        LNAME@101..102 "t"
+      WHITESPACE@102..103 " "
+      EQ@103..104 "="
+      WHITESPACE@104..105 " "
+      SPAWN_EXPR@105..130
+        SPAWN_KW@105..110 "spawn"
+        WHITESPACE@110..111 " "
+        CALL_EXPR@111..130
+          NAME_REF@111..120
+            LNAME@111..120 "find_path"
+          ARG_LIST@120..130
+            L_PAREN@120..121 "("
+            NAME_REF@121..125
+              LNAME@121..125 "from"
+            COMMA@125..126 ","
+            WHITESPACE@126..127 " "
+            NAME_REF@127..129
+              LNAME@127..129 "to"
+            R_PAREN@129..130 ")"
+    NEWLINE@130..131 "\n"
+    ASSIGN_STMT@131..153
+      NAME_REF@131..132
+        LNAME@131..132 "t"
+      WHITESPACE@132..133 " "
+      EQ@133..134 "="
+      WHITESPACE@134..135 " "
+      SPAWN_EXPR@135..153
+        SPAWN_KW@135..140 "spawn"
+        WHITESPACE@140..141 " "
+        CALL_EXPR@141..153
+          FIELD_EXPR@141..151
+            NAME_REF@141..146
+              LNAME@141..146 "shape"
+            DOT@146..147 "."
+            LNAME@147..151 "area"
+          ARG_LIST@151..153
+            L_PAREN@151..152 "("
+            R_PAREN@152..153 ")"
+    NEWLINE@153..154 "\n"
+    ASSIGN_STMT@154..178
+      NAME_REF@154..155
+        LNAME@154..155 "t"
+      WHITESPACE@155..156 " "
+      EQ@156..157 "="
+      WHITESPACE@157..158 " "
+      SPAWN_EXPR@158..178
+        SPAWN_KW@158..163 "spawn"
+        WHITESPACE@163..164 " "
+        CALL_EXPR@164..178
+          FIELD_EXPR@164..172
+            NAME_REF@164..167
+              CNAME@164..167 "Nav"
+            DOT@167..168 "."
+            LNAME@168..172 "find"
+          ARG_LIST@172..178
+            L_PAREN@172..173 "("
+            NAME_REF@173..174
+              LNAME@173..174 "a"
+            COMMA@174..175 ","
+            WHITESPACE@175..176 " "
+            NAME_REF@176..177
+              LNAME@176..177 "b"
+            R_PAREN@177..178 ")"
+    NEWLINE@178..179 "\n"
+    ASSIGN_STMT@179..201
+      NAME_REF@179..180
+        LNAME@179..180 "t"
+      WHITESPACE@180..181 " "
+      EQ@181..182 "="
+      WHITESPACE@182..183 " "
+      SPAWN_EXPR@183..201
+        SPAWN_KW@183..188 "spawn"
+        WHITESPACE@188..189 " "
+        CALL_EXPR@189..201
+          FIELD_EXPR@189..198
+            SELF_EXPR@189..193
+              SELF_KW@189..193 "self"
+            DOT@193..194 "."
+            LNAME@194..198 "step"
+          ARG_LIST@198..201
+            L_PAREN@198..199 "("
+            NAME_REF@199..200
+              LNAME@199..200 "x"
+            R_PAREN@200..201 ")"
+    NEWLINE@201..202 "\n"
+    ASSIGN_STMT@202..222
+      NAME_REF@202..203
+        LNAME@202..203 "t"
+      WHITESPACE@203..204 " "
+      EQ@204..205 "="
+      WHITESPACE@205..206 " "
+      SPAWN_EXPR@206..222
+        SPAWN_KW@206..211 "spawn"
+        WHITESPACE@211..212 " "
+        CALL_EXPR@212..222
+          AT_EXPR@212..219
+            AT_NAME@212..219 "@worker"
+          ARG_LIST@219..222
+            L_PAREN@219..220 "("
+            LITERAL@220..221
+              NUMBER@220..221 "1"
+            R_PAREN@221..222 ")"
+    NEWLINE@222..223 "\n"
+    ASSIGN_STMT@223..258
+      NAME_REF@223..224
+        LNAME@223..224 "r"
+      WHITESPACE@224..225 " "
+      EQ@225..226 "="
+      WHITESPACE@226..227 " "
+      FIELD_EXPR@227..258
+        SPAWN_EXPR@227..252
+          SPAWN_KW@227..232 "spawn"
+          WHITESPACE@232..233 " "
+          CALL_EXPR@233..252
+            NAME_REF@233..242
+              LNAME@233..242 "find_path"
+            ARG_LIST@242..252
+              L_PAREN@242..243 "("
+              NAME_REF@243..247
+                LNAME@243..247 "from"
+              COMMA@247..248 ","
+              WHITESPACE@248..249 " "
+              NAME_REF@249..251
+                LNAME@249..251 "to"
+              R_PAREN@251..252 ")"
+        DOT@252..253 "."
+        LNAME@253..258 "await"
+    NEWLINE@258..259 "\n"
+    EXPR_STMT@259..271
+      SPAWN_EXPR@259..271
+        SPAWN_KW@259..264 "spawn"
+        WHITESPACE@264..265 " "
+        COMMAND_CALL@265..271
+          NAME_REF@265..266
+            LNAME@265..266 "f"
+          WHITESPACE@266..267 " "
+          COMMAND_ARGS@267..271
+            NAME_REF@267..268
+              LNAME@267..268 "a"
+            COMMA@268..269 ","
+            WHITESPACE@269..270 " "
+            NAME_REF@270..271
+              LNAME@270..271 "b"
+    NEWLINE@271..272 "\n"
+    ASSIGN_STMT@272..305
+      NAME_REF@272..273
+        LNAME@272..273 "t"
+      WHITESPACE@273..274 " "
+      EQ@274..275 "="
+      WHITESPACE@275..276 " "
+      SPAWN_EXPR@276..305
+        SPAWN_KW@276..281 "spawn"
+        WHITESPACE@281..282 " "
+        DO_KW@282..284 "do"
+        BLOCK@284..302
+          WHITESPACE@284..285 " "
+          EXPR_STMT@285..301
+            CALL_EXPR@285..301
+              FIELD_EXPR@285..295
+                NAME_REF@285..291
+                  CNAME@285..291 "String"
+                DOT@291..292 "."
+                LNAME@292..295 "rep"
+              ARG_LIST@295..301
+                L_PAREN@295..296 "("
+                NAME_REF@296..297
+                  LNAME@296..297 "s"
+                COMMA@297..298 ","
+                WHITESPACE@298..299 " "
+                NAME_REF@299..300
+                  LNAME@299..300 "n"
+                R_PAREN@300..301 ")"
+          WHITESPACE@301..302 " "
+        END_KW@302..305 "end"
+    NEWLINE@305..306 "\n"
+    ASSIGN_STMT@306..335
+      NAME_REF@306..307
+        LNAME@306..307 "r"
+      WHITESPACE@307..308 " "
+      EQ@308..309 "="
+      WHITESPACE@309..310 " "
+      FIELD_EXPR@310..335
+        SPAWN_EXPR@310..329
+          SPAWN_KW@310..315 "spawn"
+          WHITESPACE@315..316 " "
+          DO_KW@316..318 "do"
+          BLOCK@318..326
+            WHITESPACE@318..319 " "
+            EXPR_STMT@319..325
+              CALL_EXPR@319..325
+                NAME_REF@319..323
+                  LNAME@319..323 "work"
+                ARG_LIST@323..325
+                  L_PAREN@323..324 "("
+                  R_PAREN@324..325 ")"
+            WHITESPACE@325..326 " "
+          END_KW@326..329 "end"
+        DOT@329..330 "."
+        LNAME@330..335 "await"
+    NEWLINE@335..336 "\n"
+  EOF@336..336 ""

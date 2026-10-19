@@ -1,0 +1,178 @@
+SOURCE_FILE@0..409
+  BLOCK@0..409
+    COMMENT@0..48 "# Where a word can only be a field name, `true`,"
+    NEWLINE@48..49 "\n"
+    COMMENT@49..121 "# `false` and `nil` are plain names: struct and interface fields, struct"
+    NEWLINE@121..122 "\n"
+    COMMENT@122..200 "# literal fields, struct pattern fields, record type fields, `.name`, `@name`."
+    NEWLINE@200..201 "\n"
+    STRUCT_DECL@201..240
+      STRUCT_KW@201..207 "struct"
+      WHITESPACE@207..208 " "
+      NAME@208..213
+        CNAME@208..213 "Flags"
+      NEWLINE@213..214 "\n"
+      WHITESPACE@214..216 "  "
+      FIELD_DECL@216..226
+        NAME@216..220
+          LNAME@216..220 "true"
+        COLON@220..221 ":"
+        WHITESPACE@221..222 " "
+        NAMED_TYPE@222..226
+          QUAL_NAME@222..226
+            CNAME@222..226 "Bool"
+      NEWLINE@226..227 "\n"
+      WHITESPACE@227..229 "  "
+      FIELD_DECL@229..236
+        NAME@229..232
+          LNAME@229..232 "nil"
+        WHITESPACE@232..233 " "
+        EQ@233..234 "="
+        WHITESPACE@234..235 " "
+        LITERAL@235..236
+          NUMBER@235..236 "0"
+      NEWLINE@236..237 "\n"
+      END_KW@237..240 "end"
+    NEWLINE@240..241 "\n"
+    INTERFACE_DECL@241..277
+      INTERFACE_KW@241..250 "interface"
+      WHITESPACE@250..251 " "
+      NAME@251..259
+        CNAME@251..259 "HasFalse"
+      NEWLINE@259..260 "\n"
+      WHITESPACE@260..262 "  "
+      IFACE_FIELD@262..273
+        NAME@262..267
+          LNAME@262..267 "false"
+        COLON@267..268 ":"
+        WHITESPACE@268..269 " "
+        NAMED_TYPE@269..273
+          QUAL_NAME@269..273
+            CNAME@269..273 "Bool"
+      NEWLINE@273..274 "\n"
+      END_KW@274..277 "end"
+    NEWLINE@277..278 "\n"
+    ASSIGN_STMT@278..307
+      NAME_REF@278..279
+        LNAME@278..279 "f"
+      WHITESPACE@279..280 " "
+      EQ@280..281 "="
+      WHITESPACE@281..282 " "
+      STRUCT_LIT@282..307
+        NAME_REF@282..287
+          CNAME@282..287 "Flags"
+        WHITESPACE@287..288 " "
+        L_CURLY@288..289 "{"
+        WHITESPACE@289..290 " "
+        FIELD_INIT@290..297
+          LNAME@290..294 "true"
+          COLON@294..295 ":"
+          WHITESPACE@295..296 " "
+          LITERAL@296..297
+            NUMBER@296..297 "1"
+        COMMA@297..298 ","
+        WHITESPACE@298..299 " "
+        FIELD_INIT@299..305
+          LNAME@299..302 "nil"
+          COLON@302..303 ":"
+          WHITESPACE@303..304 " "
+          LITERAL@304..305
+            NUMBER@304..305 "2"
+        WHITESPACE@305..306 " "
+        R_CURLY@306..307 "}"
+    NEWLINE@307..308 "\n"
+    LET_DECL@308..341
+      LET_KW@308..311 "let"
+      WHITESPACE@311..312 " "
+      STRUCT_PAT@312..337
+        QUAL_NAME@312..317
+          CNAME@312..317 "Flags"
+        WHITESPACE@317..318 " "
+        L_CURLY@318..319 "{"
+        PAT_FIELD@319..326
+          LNAME@319..323 "true"
+          COLON@323..324 ":"
+          WHITESPACE@324..325 " "
+          BIND_PAT@325..326
+            NAME@325..326
+              LNAME@325..326 "t"
+        COMMA@326..327 ","
+        WHITESPACE@327..328 " "
+        PAT_FIELD@328..336
+          LNAME@328..333 "false"
+          COLON@333..334 ":"
+          WHITESPACE@334..335 " "
+          BIND_PAT@335..336
+            NAME@335..336
+              LNAME@335..336 "u"
+        R_CURLY@336..337 "}"
+      WHITESPACE@337..338 " "
+      EQ@338..339 "="
+      WHITESPACE@339..340 " "
+      EXPR_LIST@340..341
+        NAME_REF@340..341
+          LNAME@340..341 "f"
+    NEWLINE@341..342 "\n"
+    LET_DECL@342..380
+      LET_KW@342..345 "let"
+      WHITESPACE@345..346 " "
+      TYPED_PAT@346..376
+        BIND_PAT@346..347
+          NAME@346..347
+            LNAME@346..347 "r"
+        COLON@347..348 ":"
+        WHITESPACE@348..349 " "
+        RECORD_TYPE@349..376
+          L_CURLY@349..350 "{"
+          RECORD_FIELD@350..362
+            LNAME@350..354 "true"
+            COLON@354..355 ":"
+            WHITESPACE@355..356 " "
+            NAMED_TYPE@356..362
+              QUAL_NAME@356..362
+                CNAME@356..362 "Number"
+          COMMA@362..363 ","
+          WHITESPACE@363..364 " "
+          RECORD_FIELD@364..375
+            LNAME@364..367 "nil"
+            COLON@367..368 ":"
+            WHITESPACE@368..369 " "
+            NAMED_TYPE@369..375
+              QUAL_NAME@369..375
+                CNAME@369..375 "String"
+          R_CURLY@375..376 "}"
+      WHITESPACE@376..377 " "
+      EQ@377..378 "="
+      WHITESPACE@378..379 " "
+      EXPR_LIST@379..380
+        NAME_REF@379..380
+          LNAME@379..380 "v"
+    NEWLINE@380..381 "\n"
+    ASSIGN_STMT@381..408
+      NAME_REF@381..382
+        LNAME@381..382 "x"
+      WHITESPACE@382..383 " "
+      EQ@383..384 "="
+      WHITESPACE@384..385 " "
+      BIN_EXPR@385..408
+        BIN_EXPR@385..399
+          FIELD_EXPR@385..390
+            NAME_REF@385..386
+              LNAME@385..386 "f"
+            DOT@386..387 "."
+            LNAME@387..390 "nil"
+          WHITESPACE@390..391 " "
+          PLUS@391..392 "+"
+          WHITESPACE@392..393 " "
+          FIELD_EXPR@393..399
+            NAME_REF@393..394
+              LNAME@393..394 "f"
+            DOT@394..395 "."
+            LNAME@395..399 "true"
+        WHITESPACE@399..400 " "
+        PLUS@400..401 "+"
+        WHITESPACE@401..402 " "
+        AT_EXPR@402..408
+          AT_NAME@402..408 "@false"
+    NEWLINE@408..409 "\n"
+  EOF@409..409 ""

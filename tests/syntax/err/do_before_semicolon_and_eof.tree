@@ -1,0 +1,42 @@
+SOURCE_FILE@0..106
+  BLOCK@0..106
+    COMMENT@0..62 "# A `do` followed by `;` or by the end of the file is also the"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..74 "# Lua `do`."
+    NEWLINE@74..75 "\n"
+    WHILE_STMT@75..94
+      WHILE_KW@75..80 "while"
+      WHITESPACE@80..81 " "
+      NAME_REF@81..82
+        LNAME@81..82 "x"
+      WHITESPACE@82..83 " "
+      ERROR_NODE@83..85
+        DO_KW@83..85 "do"
+      SEMI@85..86 ";"
+      BLOCK@86..91
+        WHITESPACE@86..87 " "
+        EXPR_STMT@87..90
+          CALL_EXPR@87..90
+            NAME_REF@87..88
+              LNAME@87..88 "y"
+            ARG_LIST@88..90
+              L_PAREN@88..89 "("
+              R_PAREN@89..90 ")"
+        WHITESPACE@90..91 " "
+      END_KW@91..94 "end"
+    NEWLINE@94..95 "\n"
+    WHILE_STMT@95..106
+      WHILE_KW@95..100 "while"
+      WHITESPACE@100..101 " "
+      NAME_REF@101..102
+        LNAME@101..102 "x"
+      WHITESPACE@102..103 " "
+      ERROR_NODE@103..105
+        DO_KW@103..105 "do"
+      BLOCK@105..106
+        NEWLINE@105..106 "\n"
+  EOF@106..106 ""
+---
+error@83..85 3:9: unexpected `do`: the header of `while` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@103..105 4:9: unexpected `do`: the header of `while` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@106..106 5:1: the `while` on line 4 has no `end`: the file ends first

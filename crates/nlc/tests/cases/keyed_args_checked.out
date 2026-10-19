@@ -1,0 +1,8 @@
+presence=true
+presence=nil
+parameter 'opts' of typed expects {inclusion: Table?, presence: Bool?}, got Table
+plain 1 2
+plain takes no keyed arguments, got k
+plain 1 2
+with_rest takes no keyed arguments, got j, k
+anonymous function takes no keyed arguments, got k

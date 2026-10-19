@@ -1,0 +1,26 @@
+SOURCE_FILE@0..121
+  BLOCK@0..121
+    COMMENT@0..50 "# The expression of an interpolation is in bracket"
+    NEWLINE@50..51 "\n"
+    COMMENT@51..93 "# context; in a heredoc it may span lines."
+    NEWLINE@93..94 "\n"
+    ASSIGN_STMT@94..120
+      NAME_REF@94..95
+        LNAME@94..95 "s"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      INTERP_STRING@98..120
+        STR_BEGIN@98..106 "\"\"\"\n  #{"
+        BIN_EXPR@106..115
+          NAME_REF@106..107
+            LNAME@106..107 "a"
+          NEWLINE@107..108 "\n"
+          WHITESPACE@108..112 "    "
+          MINUS@112..113 "-"
+          WHITESPACE@113..114 " "
+          NAME_REF@114..115
+            LNAME@114..115 "b"
+        STR_END@115..120 "}\n\"\"\""
+    NEWLINE@120..121 "\n"
+  EOF@121..121 ""

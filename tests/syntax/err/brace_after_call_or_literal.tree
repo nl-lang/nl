@@ -1,0 +1,51 @@
+SOURCE_FILE@0..89
+  BLOCK@0..89
+    COMMENT@0..63 "# After `f(x)` or a literal a `{` on the same line is an error."
+    NEWLINE@63..64 "\n"
+    EXPR_STMT@64..75
+      CALL_EXPR@64..68
+        NAME_REF@64..65
+          LNAME@64..65 "f"
+        ARG_LIST@65..68
+          L_PAREN@65..66 "("
+          NAME_REF@66..67
+            LNAME@66..67 "x"
+          R_PAREN@67..68 ")"
+      WHITESPACE@68..69 " "
+      ERROR_NODE@69..75
+        TABLE_EXPR@69..75
+          L_CURLY@69..70 "{"
+          TABLE_PAIR@70..74
+            TABLE_KEY@70..71
+              LNAME@70..71 "a"
+            COLON@71..72 ":"
+            WHITESPACE@72..73 " "
+            LITERAL@73..74
+              NUMBER@73..74 "1"
+          R_CURLY@74..75 "}"
+    NEWLINE@75..76 "\n"
+    ASSIGN_STMT@76..88
+      NAME_REF@76..77
+        LNAME@76..77 "y"
+      WHITESPACE@77..78 " "
+      EQ@78..79 "="
+      WHITESPACE@79..80 " "
+      LITERAL@80..81
+        NUMBER@80..81 "5"
+      WHITESPACE@81..82 " "
+      ERROR_NODE@82..88
+        TABLE_EXPR@82..88
+          L_CURLY@82..83 "{"
+          TABLE_PAIR@83..87
+            TABLE_KEY@83..84
+              LNAME@83..84 "a"
+            COLON@84..85 ":"
+            WHITESPACE@85..86 " "
+            LITERAL@86..87
+              NUMBER@86..87 "1"
+          R_CURLY@87..88 "}"
+    NEWLINE@88..89 "\n"
+  EOF@89..89 ""
+---
+error@69..70 2:6: `{` cannot follow this expression on the same line: a struct literal needs a capitalized name (`Point { x: 1 }`), and a table passed as an argument needs a function name (`f {a: 1}`) or parentheses (`f(x, {a: 1})`)
+error@82..83 3:7: `{` cannot follow this expression on the same line: a struct literal needs a capitalized name (`Point { x: 1 }`), and a table passed as an argument needs a function name (`f {a: 1}`) or parentheses (`f(x, {a: 1})`)

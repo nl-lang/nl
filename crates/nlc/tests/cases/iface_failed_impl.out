@@ -1,0 +1,4 @@
+include failed: cannot redefine Number.label: it is already defined by iface_failed_impl.nl
+false
+label from the main file
+nil

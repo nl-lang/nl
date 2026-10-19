@@ -1,0 +1,15 @@
+SOURCE_FILE@0..81
+  BLOCK@0..81
+    COMMENT@0..57 "# A heredoc without a closer runs to the end of the file."
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..81
+      NAME_REF@58..59
+        LNAME@58..59 "a"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      LITERAL@62..81
+        STRING@62..81 "\"\"\"\n  never closed\n"
+  EOF@81..81 ""
+---
+error@62..65 2:5: unterminated heredoc: no line starting with `"""` closes it

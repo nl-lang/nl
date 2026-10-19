@@ -1,0 +1,30 @@
+SOURCE_FILE@0..64
+  BLOCK@0..64
+    COMMENT@0..43 "# Inside an interpolation `{` and `}` nest."
+    NEWLINE@43..44 "\n"
+    ASSIGN_STMT@44..63
+      NAME_REF@44..45
+        LNAME@44..45 "s"
+      WHITESPACE@45..46 " "
+      EQ@46..47 "="
+      WHITESPACE@47..48 " "
+      INTERP_STRING@48..63
+        STR_BEGIN@48..51 "\"#{"
+        WHITESPACE@51..52 " "
+        FIELD_EXPR@52..60
+          TABLE_EXPR@52..58
+            L_CURLY@52..53 "{"
+            TABLE_PAIR@53..57
+              TABLE_KEY@53..54
+                LNAME@53..54 "a"
+              COLON@54..55 ":"
+              WHITESPACE@55..56 " "
+              LITERAL@56..57
+                NUMBER@56..57 "1"
+            R_CURLY@57..58 "}"
+          DOT@58..59 "."
+          LNAME@59..60 "a"
+        WHITESPACE@60..61 " "
+        STR_END@61..63 "}\""
+    NEWLINE@63..64 "\n"
+  EOF@64..64 ""

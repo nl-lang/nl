@@ -1,0 +1,24 @@
+SOURCE_FILE@0..64
+  BLOCK@0..64
+    COMMENT@0..50 "# `-` at the start of a line is never subtraction."
+    NEWLINE@50..51 "\n"
+    LET_DECL@51..60
+      LET_KW@51..54 "let"
+      WHITESPACE@54..55 " "
+      BIND_PAT@55..56
+        NAME@55..56
+          LNAME@55..56 "x"
+      WHITESPACE@56..57 " "
+      EQ@57..58 "="
+      WHITESPACE@58..59 " "
+      EXPR_LIST@59..60
+        NAME_REF@59..60
+          LNAME@59..60 "a"
+    NEWLINE@60..61 "\n"
+    EXPR_STMT@61..63
+      PREFIX_EXPR@61..63
+        MINUS@61..62 "-"
+        NAME_REF@62..63
+          LNAME@62..63 "b"
+    NEWLINE@63..64 "\n"
+  EOF@64..64 ""

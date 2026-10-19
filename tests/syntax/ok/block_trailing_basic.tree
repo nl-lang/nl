@@ -1,0 +1,73 @@
+SOURCE_FILE@0..121
+  BLOCK@0..121
+    COMMENT@0..61 "# A trailing block after a callee or a call with parentheses."
+    NEWLINE@61..62 "\n"
+    EXPR_STMT@62..93
+      CALL_EXPR@62..93
+        FIELD_EXPR@62..72
+          NAME_REF@62..67
+            LNAME@62..67 "items"
+          DOT@67..68 "."
+          LNAME@68..72 "each"
+        WHITESPACE@72..73 " "
+        TRAILING_BLOCK@73..93
+          DO_KW@73..75 "do"
+          WHITESPACE@75..76 " "
+          BLOCK_PARAMS@76..79
+            PIPE@76..77 "|"
+            PARAM@77..78
+              BIND_PAT@77..78
+                NAME@77..78
+                  LNAME@77..78 "x"
+            PIPE@78..79 "|"
+          BLOCK@79..90
+            NEWLINE@79..80 "\n"
+            WHITESPACE@80..82 "  "
+            EXPR_STMT@82..89
+              COMMAND_CALL@82..89
+                NAME_REF@82..87
+                  LNAME@82..87 "print"
+                WHITESPACE@87..88 " "
+                COMMAND_ARGS@88..89
+                  NAME_REF@88..89
+                    LNAME@88..89 "x"
+            NEWLINE@89..90 "\n"
+          END_KW@90..93 "end"
+    NEWLINE@93..94 "\n"
+    EXPR_STMT@94..111
+      CALL_EXPR@94..111
+        NAME_REF@94..95
+          LNAME@94..95 "f"
+        ARG_LIST@95..98
+          L_PAREN@95..96 "("
+          NAME_REF@96..97
+            LNAME@96..97 "a"
+          R_PAREN@97..98 ")"
+        WHITESPACE@98..99 " "
+        TRAILING_BLOCK@99..111
+          DO_KW@99..101 "do"
+          BLOCK@101..108
+            NEWLINE@101..102 "\n"
+            WHITESPACE@102..104 "  "
+            EXPR_STMT@104..107
+              CALL_EXPR@104..107
+                NAME_REF@104..105
+                  LNAME@104..105 "g"
+                ARG_LIST@105..107
+                  L_PAREN@105..106 "("
+                  R_PAREN@106..107 ")"
+            NEWLINE@107..108 "\n"
+          END_KW@108..111 "end"
+    NEWLINE@111..112 "\n"
+    EXPR_STMT@112..120
+      CALL_EXPR@112..120
+        NAME_REF@112..113
+          LNAME@112..113 "f"
+        WHITESPACE@113..114 " "
+        TRAILING_BLOCK@114..120
+          DO_KW@114..116 "do"
+          BLOCK@116..117
+            NEWLINE@116..117 "\n"
+          END_KW@117..120 "end"
+    NEWLINE@120..121 "\n"
+  EOF@121..121 ""

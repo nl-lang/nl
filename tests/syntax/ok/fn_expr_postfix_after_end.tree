@@ -1,0 +1,64 @@
+SOURCE_FILE@0..113
+  BLOCK@0..113
+    COMMENT@0..51 "# Postfix operators may follow the `end` of a block"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..65 "# expression."
+    NEWLINE@65..66 "\n"
+    ASSIGN_STMT@66..82
+      NAME_REF@66..67
+        LNAME@66..67 "x"
+      WHITESPACE@67..68 " "
+      EQ@68..69 "="
+      WHITESPACE@69..70 " "
+      CALL_EXPR@70..82
+        FN_EXPR@70..80
+          FN_KW@70..72 "fn"
+          PARAM_LIST@72..74
+            L_PAREN@72..73 "("
+            R_PAREN@73..74 ")"
+          BLOCK@74..77
+            WHITESPACE@74..75 " "
+            EXPR_STMT@75..76
+              LITERAL@75..76
+                NUMBER@75..76 "1"
+            WHITESPACE@76..77 " "
+          END_KW@77..80 "end"
+        ARG_LIST@80..82
+          L_PAREN@80..81 "("
+          R_PAREN@81..82 ")"
+    NEWLINE@82..83 "\n"
+    ASSIGN_STMT@83..112
+      NAME_REF@83..84
+        LNAME@83..84 "y"
+      WHITESPACE@84..85 " "
+      EQ@85..86 "="
+      WHITESPACE@86..87 " "
+      FIELD_EXPR@87..112
+        PAREN_EXPR@87..107
+          L_PAREN@87..88 "("
+          IF_EXPR@88..106
+            IF_KW@88..90 "if"
+            WHITESPACE@90..91 " "
+            NAME_REF@91..92
+              LNAME@91..92 "a"
+            SEMI@92..93 ";"
+            BLOCK@93..96
+              WHITESPACE@93..94 " "
+              EXPR_STMT@94..95
+                NAME_REF@94..95
+                  LNAME@94..95 "b"
+              WHITESPACE@95..96 " "
+            ELSE_CLAUSE@96..103
+              ELSE_KW@96..100 "else"
+              BLOCK@100..103
+                WHITESPACE@100..101 " "
+                EXPR_STMT@101..102
+                  NAME_REF@101..102
+                    LNAME@101..102 "c"
+                WHITESPACE@102..103 " "
+            END_KW@103..106 "end"
+          R_PAREN@106..107 ")"
+        DOT@107..108 "."
+        LNAME@108..112 "name"
+    NEWLINE@112..113 "\n"
+  EOF@113..113 ""

@@ -1,0 +1,55 @@
+SOURCE_FILE@0..69
+  BLOCK@0..69
+    COMMENT@0..39 "# Recovery: a closer of the wrong kind."
+    NEWLINE@39..40 "\n"
+    ASSIGN_STMT@40..51
+      NAME_REF@40..41
+        LNAME@40..41 "x"
+      WHITESPACE@41..42 " "
+      EQ@42..43 "="
+      WHITESPACE@43..44 " "
+      CALL_EXPR@44..51
+        NAME_REF@44..45
+          LNAME@44..45 "f"
+        ARG_LIST@45..51
+          L_PAREN@45..46 "("
+          LITERAL@46..47
+            NUMBER@46..47 "1"
+          COMMA@47..48 ","
+          WHITESPACE@48..49 " "
+          LITERAL@49..50
+            NUMBER@49..50 "2"
+          ERROR_NODE@50..51
+            R_BRACK@50..51 "]"
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..62
+      NAME_REF@52..53
+        LNAME@52..53 "y"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      TABLE_EXPR@56..62
+        L_CURLY@56..57 "{"
+        TABLE_PAIR@57..61
+          TABLE_KEY@57..58
+            LNAME@57..58 "a"
+          COLON@58..59 ":"
+          WHITESPACE@59..60 " "
+          LITERAL@60..61
+            NUMBER@60..61 "1"
+        ERROR_NODE@61..62
+          R_BRACK@61..62 "]"
+    NEWLINE@62..63 "\n"
+    ASSIGN_STMT@63..68
+      NAME_REF@63..64
+        LNAME@63..64 "z"
+      WHITESPACE@64..65 " "
+      EQ@65..66 "="
+      WHITESPACE@66..67 " "
+      LITERAL@67..68
+        NUMBER@67..68 "3"
+    NEWLINE@68..69 "\n"
+  EOF@69..69 ""
+---
+error@50..51 2:11: expected `)` to close this `(`, found `]`
+error@61..62 3:10: expected `}` to close this `{`, found `]`

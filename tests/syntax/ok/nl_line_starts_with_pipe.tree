@@ -1,0 +1,21 @@
+SOURCE_FILE@0..136
+  BLOCK@0..136
+    COMMENT@0..50 "# A line that starts with `|>` continues the pipe."
+    NEWLINE@50..51 "\n"
+    EXPR_STMT@51..135
+      PIPE_EXPR@51..135
+        PIPE_EXPR@51..88
+          NAME_REF@51..52
+            LNAME@51..52 "a"
+          NEWLINE@52..53 "\n"
+          PIPE_GT@53..55 "|>"
+          WHITESPACE@55..56 " "
+          NAME_REF@56..88
+            LNAME@56..88 "some_func_that_returns_something"
+        NEWLINE@88..89 "\n"
+        PIPE_GT@89..91 "|>"
+        WHITESPACE@91..92 " "
+        NAME_REF@92..135
+          LNAME@92..135 "func_that_takes_previous_funcs_return_value"
+    NEWLINE@135..136 "\n"
+  EOF@136..136 ""

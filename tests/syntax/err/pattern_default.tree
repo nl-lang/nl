@@ -1,0 +1,55 @@
+SOURCE_FILE@0..85
+  BLOCK@0..85
+    COMMENT@0..50 "# Defaults inside patterns are not part of NL yet."
+    NEWLINE@50..51 "\n"
+    LET_DECL@51..66
+      LET_KW@51..54 "let"
+      WHITESPACE@54..55 " "
+      BRACE_PAT@55..62
+        L_CURLY@55..56 "{"
+        PAT_FIELD@56..61
+          NAME@56..57
+            LNAME@56..57 "a"
+          WHITESPACE@57..58 " "
+          ERROR_NODE@58..61
+            EQ@58..59 "="
+            WHITESPACE@59..60 " "
+            LITERAL@60..61
+              NUMBER@60..61 "1"
+        R_CURLY@61..62 "}"
+      WHITESPACE@62..63 " "
+      EQ@63..64 "="
+      WHITESPACE@64..65 " "
+      EXPR_LIST@65..66
+        NAME_REF@65..66
+          LNAME@65..66 "t"
+    NEWLINE@66..67 "\n"
+    FN_DECL@67..84
+      FN_KW@67..69 "fn"
+      WHITESPACE@69..70 " "
+      NAME@70..71
+        LNAME@70..71 "f"
+      PARAM_LIST@71..80
+        L_PAREN@71..72 "("
+        PARAM@72..79
+          BRACE_PAT@72..79
+            L_CURLY@72..73 "{"
+            PAT_FIELD@73..78
+              NAME@73..74
+                LNAME@73..74 "b"
+              WHITESPACE@74..75 " "
+              ERROR_NODE@75..78
+                EQ@75..76 "="
+                WHITESPACE@76..77 " "
+                LITERAL@77..78
+                  NUMBER@77..78 "2"
+            R_CURLY@78..79 "}"
+        R_PAREN@79..80 ")"
+      BLOCK@80..81
+        NEWLINE@80..81 "\n"
+      END_KW@81..84 "end"
+    NEWLINE@84..85 "\n"
+  EOF@85..85 ""
+---
+error@58..59 2:8: defaults inside patterns are not part of NL yet
+error@75..76 3:9: defaults inside patterns are not part of NL yet

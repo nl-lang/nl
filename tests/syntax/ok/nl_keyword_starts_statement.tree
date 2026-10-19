@@ -1,0 +1,35 @@
+SOURCE_FILE@0..152
+  BLOCK@0..152
+    COMMENT@0..59 "# A keyword that begins a statement or an expression (`if`,"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..130 "# `fn`) at the start of a line begins a new statement, not a modifier."
+    NEWLINE@130..131 "\n"
+    ASSIGN_STMT@131..136
+      NAME_REF@131..132
+        LNAME@131..132 "x"
+      WHITESPACE@132..133 " "
+      EQ@133..134 "="
+      WHITESPACE@134..135 " "
+      NAME_REF@135..136
+        LNAME@135..136 "a"
+    NEWLINE@136..137 "\n"
+    EXPR_STMT@137..151
+      IF_EXPR@137..151
+        IF_KW@137..139 "if"
+        WHITESPACE@139..140 " "
+        NAME_REF@140..141
+          LNAME@140..141 "b"
+        BLOCK@141..148
+          NEWLINE@141..142 "\n"
+          WHITESPACE@142..144 "  "
+          EXPR_STMT@144..147
+            CALL_EXPR@144..147
+              NAME_REF@144..145
+                LNAME@144..145 "c"
+              ARG_LIST@145..147
+                L_PAREN@145..146 "("
+                R_PAREN@146..147 ")"
+          NEWLINE@147..148 "\n"
+        END_KW@148..151 "end"
+    NEWLINE@151..152 "\n"
+  EOF@152..152 ""

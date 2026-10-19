@@ -1,0 +1,49 @@
+SOURCE_FILE@0..123
+  BLOCK@0..123
+    COMMENT@0..51 "# `global` with an initializer, a type, or neither."
+    NEWLINE@51..52 "\n"
+    GLOBAL_DECL@52..68
+      GLOBAL_KW@52..58 "global"
+      WHITESPACE@58..59 " "
+      NAME@59..64
+        CNAME@59..64 "Score"
+      WHITESPACE@64..65 " "
+      EQ@65..66 "="
+      WHITESPACE@66..67 " "
+      LITERAL@67..68
+        NUMBER@67..68 "0"
+    NEWLINE@68..69 "\n"
+    GLOBAL_DECL@69..77
+      GLOBAL_KW@69..75 "global"
+      WHITESPACE@75..76 " "
+      NAME@76..77
+        CNAME@76..77 "C"
+    NEWLINE@77..78 "\n"
+    GLOBAL_DECL@78..102
+      GLOBAL_KW@78..84 "global"
+      WHITESPACE@84..85 " "
+      NAME@85..90
+        CNAME@85..90 "Count"
+      COLON@90..91 ":"
+      WHITESPACE@91..92 " "
+      NAMED_TYPE@92..98
+        QUAL_NAME@92..98
+          CNAME@92..98 "Number"
+      WHITESPACE@98..99 " "
+      EQ@99..100 "="
+      WHITESPACE@100..101 " "
+      LITERAL@101..102
+        NUMBER@101..102 "1"
+    NEWLINE@102..103 "\n"
+    GLOBAL_DECL@103..122
+      GLOBAL_KW@103..109 "global"
+      WHITESPACE@109..110 " "
+      NAME@110..114
+        CNAME@110..114 "Name"
+      COLON@114..115 ":"
+      WHITESPACE@115..116 " "
+      NAMED_TYPE@116..122
+        QUAL_NAME@116..122
+          CNAME@116..122 "String"
+    NEWLINE@122..123 "\n"
+  EOF@123..123 ""

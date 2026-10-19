@@ -1,0 +1,24 @@
+SOURCE_FILE@0..46
+  BLOCK@0..46
+    COMMENT@0..31 "# Horizontal tab is whitespace."
+    NEWLINE@31..32 "\n"
+    EXPR_STMT@32..45
+      IF_EXPR@32..45
+        IF_KW@32..34 "if"
+        WHITESPACE@34..35 "\t"
+        NAME_REF@35..36
+          LNAME@35..36 "x"
+        BLOCK@36..42
+          NEWLINE@36..37 "\n"
+          WHITESPACE@37..38 "\t"
+          EXPR_STMT@38..41
+            CALL_EXPR@38..41
+              NAME_REF@38..39
+                LNAME@38..39 "y"
+              ARG_LIST@39..41
+                L_PAREN@39..40 "("
+                R_PAREN@40..41 ")"
+          NEWLINE@41..42 "\n"
+        END_KW@42..45 "end"
+    NEWLINE@45..46 "\n"
+  EOF@46..46 ""

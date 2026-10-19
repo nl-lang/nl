@@ -1,0 +1,163 @@
+SOURCE_FILE@0..312
+  BLOCK@0..312
+    COMMENT@0..57 "# `on` with a qualified event name, `as 'name'`, `async`,"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..95 "# block parameters and a return type."
+    NEWLINE@95..96 "\n"
+    EXPR_STMT@96..135
+      ON_EXPR@96..135
+        ON_KW@96..98 "on"
+        WHITESPACE@98..99 " "
+        QUAL_NAME@99..111
+          CNAME@99..111 "PlayerJoined"
+        WHITESPACE@111..112 " "
+        DO_KW@112..114 "do"
+        WHITESPACE@114..115 " "
+        BLOCK_PARAMS@115..131
+          PIPE@115..116 "|"
+          PARAM@116..130
+            TYPED_PAT@116..130
+              BIND_PAT@116..122
+                NAME@116..122
+                  LNAME@116..122 "player"
+              COLON@122..123 ":"
+              WHITESPACE@123..124 " "
+              NAMED_TYPE@124..130
+                QUAL_NAME@124..130
+                  CNAME@124..130 "Player"
+          PIPE@130..131 "|"
+        BLOCK@131..132
+          NEWLINE@131..132 "\n"
+        END_KW@132..135 "end"
+    NEWLINE@135..136 "\n"
+    EXPR_STMT@136..183
+      ON_EXPR@136..183
+        ON_KW@136..138 "on"
+        WHITESPACE@138..139 " "
+        QUAL_NAME@139..148
+          CNAME@139..148 "PlayerHit"
+        WHITESPACE@148..149 " "
+        AS_KW@149..151 "as"
+        WHITESPACE@151..152 " "
+        STRING@152..159 "'armor'"
+        WHITESPACE@159..160 " "
+        DO_KW@160..162 "do"
+        WHITESPACE@162..163 " "
+        BLOCK_PARAMS@163..179
+          PIPE@163..164 "|"
+          PARAM@164..170
+            BIND_PAT@164..170
+              NAME@164..170
+                LNAME@164..170 "target"
+          COMMA@170..171 ","
+          WHITESPACE@171..172 " "
+          PARAM@172..178
+            BIND_PAT@172..178
+              NAME@172..178
+                LNAME@172..178 "amount"
+          PIPE@178..179 "|"
+        BLOCK@179..180
+          NEWLINE@179..180 "\n"
+        END_KW@180..183 "end"
+    NEWLINE@183..184 "\n"
+    EXPR_STMT@184..235
+      ON_EXPR@184..235
+        ON_KW@184..186 "on"
+        WHITESPACE@186..187 " "
+        QUAL_NAME@187..199
+          CNAME@187..199 "PlayerJoined"
+        WHITESPACE@199..200 " "
+        AS_KW@200..202 "as"
+        WHITESPACE@202..203 " "
+        STRING@203..213 "'reminder'"
+        WHITESPACE@213..214 " "
+        ASYNC_KW@214..219 "async"
+        WHITESPACE@219..220 " "
+        DO_KW@220..222 "do"
+        WHITESPACE@222..223 " "
+        BLOCK_PARAMS@223..231
+          PIPE@223..224 "|"
+          PARAM@224..230
+            BIND_PAT@224..230
+              NAME@224..230
+                LNAME@224..230 "player"
+          PIPE@230..231 "|"
+        BLOCK@231..232
+          NEWLINE@231..232 "\n"
+        END_KW@232..235 "end"
+    NEWLINE@235..236 "\n"
+    EXPR_STMT@236..255
+      ON_EXPR@236..255
+        ON_KW@236..238 "on"
+        WHITESPACE@238..239 " "
+        QUAL_NAME@239..248
+          CNAME@239..243 "Game"
+          DOT@243..244 "."
+          CNAME@244..248 "Tick"
+        WHITESPACE@248..249 " "
+        DO_KW@249..251 "do"
+        BLOCK@251..252
+          NEWLINE@251..252 "\n"
+        END_KW@252..255 "end"
+    NEWLINE@255..256 "\n"
+    EXPR_STMT@256..295
+      ON_EXPR@256..295
+        ON_KW@256..258 "on"
+        WHITESPACE@258..259 " "
+        QUAL_NAME@259..260
+          CNAME@259..260 "E"
+        WHITESPACE@260..261 " "
+        DO_KW@261..263 "do"
+        WHITESPACE@263..264 " "
+        BLOCK_PARAMS@264..286
+          PIPE@264..265 "|"
+          PARAM@265..274
+            TYPED_PAT@265..274
+              BIND_PAT@265..266
+                NAME@265..266
+                  LNAME@265..266 "a"
+              COLON@266..267 ":"
+              WHITESPACE@267..268 " "
+              NAMED_TYPE@268..274
+                QUAL_NAME@268..274
+                  CNAME@268..274 "Number"
+          COMMA@274..275 ","
+          WHITESPACE@275..276 " "
+          PARAM@276..285
+            TYPED_PAT@276..285
+              BIND_PAT@276..277
+                NAME@276..277
+                  LNAME@276..277 "b"
+              COLON@277..278 ":"
+              WHITESPACE@278..279 " "
+              NAMED_TYPE@279..285
+                QUAL_NAME@279..285
+                  CNAME@279..285 "String"
+          PIPE@285..286 "|"
+        RETURN_TYPE@286..291
+          COLON@286..287 ":"
+          WHITESPACE@287..288 " "
+          NAMED_TYPE@288..291
+            NIL_KW@288..291 "nil"
+        BLOCK@291..292
+          NEWLINE@291..292 "\n"
+        END_KW@292..295 "end"
+    NEWLINE@295..296 "\n"
+    ASSIGN_STMT@296..311
+      NAME_REF@296..297
+        LNAME@296..297 "h"
+      WHITESPACE@297..298 " "
+      EQ@298..299 "="
+      WHITESPACE@299..300 " "
+      ON_EXPR@300..311
+        ON_KW@300..302 "on"
+        WHITESPACE@302..303 " "
+        QUAL_NAME@303..304
+          CNAME@303..304 "E"
+        WHITESPACE@304..305 " "
+        DO_KW@305..307 "do"
+        BLOCK@307..308
+          WHITESPACE@307..308 " "
+        END_KW@308..311 "end"
+    NEWLINE@311..312 "\n"
+  EOF@312..312 ""

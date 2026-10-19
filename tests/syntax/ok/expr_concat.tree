@@ -1,0 +1,68 @@
+SOURCE_FILE@0..101
+  BLOCK@0..101
+    COMMENT@0..53 "# `<>` is right-associative, below `+`, above shifts."
+    NEWLINE@53..54 "\n"
+    ASSIGN_STMT@54..69
+      NAME_REF@54..55
+        LNAME@54..55 "x"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      BIN_EXPR@58..69
+        NAME_REF@58..59
+          LNAME@58..59 "a"
+        WHITESPACE@59..60 " "
+        CONCAT@60..62 "<>"
+        WHITESPACE@62..63 " "
+        BIN_EXPR@63..69
+          NAME_REF@63..64
+            LNAME@63..64 "b"
+          WHITESPACE@64..65 " "
+          CONCAT@65..67 "<>"
+          WHITESPACE@67..68 " "
+          NAME_REF@68..69
+            LNAME@68..69 "c"
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..84
+      NAME_REF@70..71
+        LNAME@70..71 "x"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      BIN_EXPR@74..84
+        NAME_REF@74..75
+          LNAME@74..75 "a"
+        WHITESPACE@75..76 " "
+        CONCAT@76..78 "<>"
+        WHITESPACE@78..79 " "
+        BIN_EXPR@79..84
+          NAME_REF@79..80
+            LNAME@79..80 "b"
+          WHITESPACE@80..81 " "
+          PLUS@81..82 "+"
+          WHITESPACE@82..83 " "
+          NAME_REF@83..84
+            LNAME@83..84 "c"
+    NEWLINE@84..85 "\n"
+    ASSIGN_STMT@85..100
+      NAME_REF@85..86
+        LNAME@85..86 "x"
+      WHITESPACE@86..87 " "
+      EQ@87..88 "="
+      WHITESPACE@88..89 " "
+      BIN_EXPR@89..100
+        NAME_REF@89..90
+          LNAME@89..90 "a"
+        WHITESPACE@90..91 " "
+        SHL@91..93 "<<"
+        WHITESPACE@93..94 " "
+        BIN_EXPR@94..100
+          NAME_REF@94..95
+            LNAME@94..95 "b"
+          WHITESPACE@95..96 " "
+          CONCAT@96..98 "<>"
+          WHITESPACE@98..99 " "
+          NAME_REF@99..100
+            LNAME@99..100 "c"
+    NEWLINE@100..101 "\n"
+  EOF@101..101 ""

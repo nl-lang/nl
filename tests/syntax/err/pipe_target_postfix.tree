@@ -1,0 +1,31 @@
+SOURCE_FILE@0..56
+  BLOCK@0..56
+    COMMENT@0..35 "# Nothing may follow a pipe target."
+    NEWLINE@35..36 "\n"
+    ASSIGN_STMT@36..55
+      NAME_REF@36..37
+        LNAME@36..37 "x"
+      WHITESPACE@37..38 " "
+      EQ@38..39 "="
+      WHITESPACE@39..40 " "
+      PIPE_EXPR@40..55
+        NAME_REF@40..41
+          LNAME@40..41 "a"
+        WHITESPACE@41..42 " "
+        PIPE_GT@42..44 "|>"
+        WHITESPACE@44..45 " "
+        FIELD_EXPR@45..55
+          CALL_EXPR@45..49
+            NAME_REF@45..46
+              LNAME@45..46 "f"
+            ARG_LIST@46..49
+              L_PAREN@46..47 "("
+              NAME_REF@47..48
+                LNAME@47..48 "b"
+              R_PAREN@48..49 ")"
+          DOT@49..50 "."
+          LNAME@50..55 "await"
+    NEWLINE@55..56 "\n"
+  EOF@56..56 ""
+---
+error@49..50 2:14: nothing may follow a pipe target: to apply `.await` to the result, write `(a |> f(b)).await`

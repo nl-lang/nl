@@ -1,0 +1,21 @@
+# Every operator method name.
+fn V.+(o) end
+fn V.-(o) end
+fn V.*(o) end
+fn V./(o) end
+fn V.%(o) end
+fn V.**(o) end
+fn V.//(o) end
+fn V.<>(o) end
+fn V.|(o) end
+fn V.&(o) end
+fn V.^(o) end
+fn V.<<(o) end
+fn V.>>(o) end
+fn V.>>>(o) end
+fn V.==(o) end
+fn V.<(o) end
+fn V.<=(o) end
+fn V.>(o) end
+fn V.>=(o) end
+fn V.~ end

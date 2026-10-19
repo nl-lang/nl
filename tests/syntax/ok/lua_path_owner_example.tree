@@ -1,0 +1,34 @@
+SOURCE_FILE@0..167
+  BLOCK@0..167
+    COMMENT@0..49 "# Parentheses end a Lua path. `LocalPlayer()` and"
+    NEWLINE@49..50 "\n"
+    COMMENT@50..121 "# `getHealth()` are Lua calls; `.divisible_by 10` is an NL member call."
+    NEWLINE@121..122 "\n"
+    EXPR_STMT@122..166
+      COMMAND_CALL@122..166
+        FIELD_EXPR@122..163
+          PAREN_EXPR@122..150
+            L_PAREN@122..123 "("
+            LUA_PATH@123..149
+              COLON@123..124 ":"
+              CNAME@124..135 "LocalPlayer"
+              LUA_CALL@135..137
+                ARG_LIST@135..137
+                  L_PAREN@135..136 "("
+                  R_PAREN@136..137 ")"
+              LUA_FIELD@137..147
+                DOT@137..138 "."
+                ONAME@138..147 "getHealth"
+              LUA_CALL@147..149
+                ARG_LIST@147..149
+                  L_PAREN@147..148 "("
+                  R_PAREN@148..149 ")"
+            R_PAREN@149..150 ")"
+          DOT@150..151 "."
+          LNAME@151..163 "divisible_by"
+        WHITESPACE@163..164 " "
+        COMMAND_ARGS@164..166
+          LITERAL@164..166
+            NUMBER@164..166 "10"
+    NEWLINE@166..167 "\n"
+  EOF@167..167 ""

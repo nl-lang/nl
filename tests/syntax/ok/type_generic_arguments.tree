@@ -1,0 +1,72 @@
+SOURCE_FILE@0..142
+  BLOCK@0..142
+    COMMENT@0..61 "# `<` after a qualified name opens type arguments; a trailing"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..81 "# comma is allowed."
+    NEWLINE@81..82 "\n"
+    LET_DECL@82..95
+      LET_KW@82..85 "let"
+      WHITESPACE@85..86 " "
+      TYPED_PAT@86..95
+        BIND_PAT@86..87
+          NAME@86..87
+            LNAME@86..87 "a"
+        COLON@87..88 ":"
+        WHITESPACE@88..89 " "
+        NAMED_TYPE@89..95
+          QUAL_NAME@89..92
+            CNAME@89..92 "Box"
+          TYPE_ARGS@92..95
+            LT@92..93 "<"
+            NAMED_TYPE@93..94
+              QUAL_NAME@93..94
+                CNAME@93..94 "T"
+            GT@94..95 ">"
+    NEWLINE@95..96 "\n"
+    LET_DECL@96..123
+      LET_KW@96..99 "let"
+      WHITESPACE@99..100 " "
+      TYPED_PAT@100..123
+        BIND_PAT@100..101
+          NAME@100..101
+            LNAME@100..101 "b"
+        COLON@101..102 ":"
+        WHITESPACE@102..103 " "
+        NAMED_TYPE@103..123
+          QUAL_NAME@103..106
+            CNAME@103..106 "Map"
+          TYPE_ARGS@106..123
+            LT@106..107 "<"
+            NAMED_TYPE@107..113
+              QUAL_NAME@107..113
+                CNAME@107..113 "String"
+            COMMA@113..114 ","
+            WHITESPACE@114..115 " "
+            NAMED_TYPE@115..121
+              QUAL_NAME@115..121
+                CNAME@115..121 "Number"
+            COMMA@121..122 ","
+            GT@122..123 ">"
+    NEWLINE@123..124 "\n"
+    LET_DECL@124..141
+      LET_KW@124..127 "let"
+      WHITESPACE@127..128 " "
+      TYPED_PAT@128..141
+        BIND_PAT@128..129
+          NAME@128..129
+            LNAME@128..129 "c"
+        COLON@129..130 ":"
+        WHITESPACE@130..131 " "
+        NAMED_TYPE@131..141
+          QUAL_NAME@131..138
+            CNAME@131..134 "Lib"
+            DOT@134..135 "."
+            CNAME@135..138 "Box"
+          TYPE_ARGS@138..141
+            LT@138..139 "<"
+            NAMED_TYPE@139..140
+              QUAL_NAME@139..140
+                CNAME@139..140 "T"
+            GT@140..141 ">"
+    NEWLINE@141..142 "\n"
+  EOF@142..142 ""

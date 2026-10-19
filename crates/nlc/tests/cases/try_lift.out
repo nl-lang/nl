@@ -1,0 +1,12 @@
+30	25
+1,2,3	30
+2
+100	200	300
+found 3 after 3
+not found after 2
+1	11
+inner caught 9 with 4
+5	6
+12
+inner finally
+outer: deep

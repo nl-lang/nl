@@ -1,0 +1,39 @@
+SOURCE_FILE@0..116
+  BLOCK@0..116
+    COMMENT@0..62 "# `a, b = …` is a multiple assignment; `f a, b` is a command"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..96 "# call whose commas belong to it."
+    NEWLINE@96..97 "\n"
+    MULTI_ASSIGN_STMT@97..108
+      TARGET_LIST@97..101
+        NAME_REF@97..98
+          LNAME@97..98 "a"
+        COMMA@98..99 ","
+        WHITESPACE@99..100 " "
+        NAME_REF@100..101
+          LNAME@100..101 "b"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      EXPR_LIST@104..108
+        LITERAL@104..105
+          NUMBER@104..105 "1"
+        COMMA@105..106 ","
+        WHITESPACE@106..107 " "
+        LITERAL@107..108
+          NUMBER@107..108 "2"
+    NEWLINE@108..109 "\n"
+    EXPR_STMT@109..115
+      COMMAND_CALL@109..115
+        NAME_REF@109..110
+          LNAME@109..110 "f"
+        WHITESPACE@110..111 " "
+        COMMAND_ARGS@111..115
+          NAME_REF@111..112
+            LNAME@111..112 "a"
+          COMMA@112..113 ","
+          WHITESPACE@113..114 " "
+          NAME_REF@114..115
+            LNAME@114..115 "b"
+    NEWLINE@115..116 "\n"
+  EOF@116..116 ""

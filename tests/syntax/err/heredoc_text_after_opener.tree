@@ -1,0 +1,28 @@
+SOURCE_FILE@0..138
+  BLOCK@0..138
+    COMMENT@0..64 "# Only spaces and tabs may follow the opener; a comment there is"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..90 "# text, so also an error."
+    NEWLINE@90..91 "\n"
+    ASSIGN_STMT@91..111
+      NAME_REF@91..92
+        LNAME@91..92 "a"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      LITERAL@95..111
+        STRING@95..111 "\"\"\" text\n  x\n\"\"\""
+    NEWLINE@111..112 "\n"
+    ASSIGN_STMT@112..137
+      NAME_REF@112..113
+        LNAME@112..113 "b"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      LITERAL@116..137
+        STRING@116..137 "\"\"\" # comment\n  y\n\"\"\""
+    NEWLINE@137..138 "\n"
+  EOF@138..138 ""
+---
+error@99..103 3:9: nothing may follow `"""` on its line: the heredoc's text starts on the next line
+error@120..129 6:9: a comment cannot follow a heredoc opener: `#` there is text of the string. Put the comment on another line

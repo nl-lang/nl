@@ -1,0 +1,10 @@
+exact length: matched
+too long: MatchError
+rest: matched
+literal: MatchError
+not a table: MatchError
+range: matched
+at least one: MatchError
+missing key is nil: matched
+3
+parameter: MatchError

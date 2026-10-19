@@ -1,0 +1,29 @@
+SOURCE_FILE@0..70
+  BLOCK@0..70
+    COMMENT@0..55 "# Anything else on the line after a complete statement."
+    NEWLINE@55..56 "\n"
+    ASSIGN_STMT@56..61
+      NAME_REF@56..57
+        LNAME@56..57 "x"
+      WHITESPACE@57..58 " "
+      EQ@58..59 "="
+      WHITESPACE@59..60 " "
+      LITERAL@60..61
+        NUMBER@60..61 "1"
+    WHITESPACE@61..62 " "
+    EXPR_STMT@62..63
+      LITERAL@62..63
+        NUMBER@62..63 "2"
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..69
+      NAME_REF@64..65
+        LNAME@64..65 "y"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      LITERAL@68..69
+        NUMBER@68..69 "3"
+    NEWLINE@69..70 "\n"
+  EOF@70..70 ""
+---
+error@62..63 2:7: unexpected `2` after the end of a statement: statements are separated by line breaks or `;`

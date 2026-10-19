@@ -1,0 +1,31 @@
+SOURCE_FILE@0..106
+  BLOCK@0..106
+    COMMENT@0..57 "# `[` at the start of an item opens a computed key, which"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..92 "# must be followed by `]` and `:`."
+    NEWLINE@92..93 "\n"
+    ASSIGN_STMT@93..105
+      NAME_REF@93..94
+        LNAME@93..94 "t"
+      WHITESPACE@94..95 " "
+      EQ@95..96 "="
+      WHITESPACE@96..97 " "
+      TABLE_EXPR@97..105
+        L_CURLY@97..98 "{"
+        TABLE_ITEM@98..101
+          LIST_EXPR@98..101
+            L_BRACK@98..99 "["
+            LITERAL@99..100
+              NUMBER@99..100 "1"
+            R_BRACK@100..101 "]"
+        COMMA@101..102 ","
+        WHITESPACE@102..103 " "
+        TABLE_ITEM@103..104
+          LITERAL@103..104
+            NUMBER@103..104 "2"
+        R_CURLY@104..105 "}"
+    NEWLINE@105..106 "\n"
+  EOF@106..106 ""
+---
+error@98..101 3:6: a brace table holds `key: value` pairs; a list is written with brackets: `[[1]]`
+error@103..104 3:11: a brace table holds `key: value` pairs; a list is written with brackets: `[2]`

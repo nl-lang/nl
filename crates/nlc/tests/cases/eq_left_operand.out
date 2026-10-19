@@ -1,0 +1,22 @@
+A.== with B
+true
+A.== with C
+true
+A.== with Table
+true
+A.== with Table
+true
+A.== with C
+true
+false
+false
+B.== with A
+false
+false
+true
+false
+true
+A.== with Table
+case: matched
+true
+false

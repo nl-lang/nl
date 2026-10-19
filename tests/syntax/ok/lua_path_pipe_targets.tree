@@ -1,0 +1,75 @@
+SOURCE_FILE@0..158
+  BLOCK@0..158
+    COMMENT@0..48 "# A pipe target path has names only, an optional"
+    NEWLINE@48..49 "\n"
+    COMMENT@49..100 "# `:name`, then one argument list, all in the path."
+    NEWLINE@100..101 "\n"
+    ASSIGN_STMT@101..123
+      NAME_REF@101..102
+        LNAME@101..102 "a"
+      WHITESPACE@102..103 " "
+      EQ@103..104 "="
+      WHITESPACE@104..105 " "
+      PIPE_EXPR@105..123
+        NAME_REF@105..106
+          LNAME@105..106 "b"
+        WHITESPACE@106..107 " "
+        PIPE_GT@107..109 "|>"
+        WHITESPACE@109..110 " "
+        LUA_PATH@110..123
+          COLON@110..111 ":"
+          LNAME@111..117 "string"
+          LUA_FIELD@117..123
+            DOT@117..118 "."
+            LNAME@118..123 "upper"
+    NEWLINE@123..124 "\n"
+    ASSIGN_STMT@124..140
+      NAME_REF@124..125
+        LNAME@124..125 "c"
+      WHITESPACE@125..126 " "
+      EQ@126..127 "="
+      WHITESPACE@127..128 " "
+      PIPE_EXPR@128..140
+        NAME_REF@128..129
+          LNAME@128..129 "d"
+        WHITESPACE@129..130 " "
+        PIPE_GT@130..132 "|>"
+        WHITESPACE@132..133 " "
+        LUA_PATH@133..140
+          COLON@133..134 ":"
+          LNAME@134..135 "t"
+          LUA_FIELD@135..137
+            DOT@135..136 "."
+            LNAME@136..137 "f"
+          LUA_CALL@137..140
+            ARG_LIST@137..140
+              L_PAREN@137..138 "("
+              LITERAL@138..139
+                NUMBER@138..139 "1"
+              R_PAREN@139..140 ")"
+    NEWLINE@140..141 "\n"
+    ASSIGN_STMT@141..157
+      NAME_REF@141..142
+        LNAME@141..142 "e"
+      WHITESPACE@142..143 " "
+      EQ@143..144 "="
+      WHITESPACE@144..145 " "
+      PIPE_EXPR@145..157
+        NAME_REF@145..146
+          LNAME@145..146 "f"
+        WHITESPACE@146..147 " "
+        PIPE_GT@147..149 "|>"
+        WHITESPACE@149..150 " "
+        LUA_PATH@150..157
+          COLON@150..151 ":"
+          LNAME@151..152 "t"
+          LUA_METHOD@152..157
+            COLON@152..153 ":"
+            LNAME@153..154 "m"
+            ARG_LIST@154..157
+              L_PAREN@154..155 "("
+              LITERAL@155..156
+                NUMBER@155..156 "2"
+              R_PAREN@156..157 ")"
+    NEWLINE@157..158 "\n"
+  EOF@158..158 ""

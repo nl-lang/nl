@@ -1,0 +1,45 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..47 "# `from` and `step` are ordinary LNAMEs outside"
+    NEWLINE@47..48 "\n"
+    COMMENT@48..78 "# `import` and a `for` header."
+    NEWLINE@78..79 "\n"
+    ASSIGN_STMT@79..87
+      NAME_REF@79..83
+        LNAME@79..83 "from"
+      WHITESPACE@83..84 " "
+      EQ@84..85 "="
+      WHITESPACE@85..86 " "
+      LITERAL@86..87
+        NUMBER@86..87 "1"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..103
+      NAME_REF@88..92
+        LNAME@88..92 "step"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      BIN_EXPR@95..103
+        NAME_REF@95..99
+          LNAME@95..99 "from"
+        WHITESPACE@99..100 " "
+        PLUS@100..101 "+"
+        WHITESPACE@101..102 " "
+        LITERAL@102..103
+          NUMBER@102..103 "2"
+    NEWLINE@103..104 "\n"
+    EXPR_STMT@104..121
+      CALL_EXPR@104..110
+        NAME_REF@104..108
+          LNAME@104..108 "step"
+        ARG_LIST@108..110
+          L_PAREN@108..109 "("
+          R_PAREN@109..110 ")"
+      WHITESPACE@110..111 " "
+      MODIFIER@111..121
+        WHILE_KW@111..116 "while"
+        WHITESPACE@116..117 " "
+        NAME_REF@117..121
+          LNAME@117..121 "busy"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""

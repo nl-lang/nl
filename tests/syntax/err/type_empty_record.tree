@@ -1,0 +1,26 @@
+SOURCE_FILE@0..50
+  BLOCK@0..50
+    COMMENT@0..35 "# An empty record `{}` is an error."
+    NEWLINE@35..36 "\n"
+    LET_DECL@36..49
+      LET_KW@36..39 "let"
+      WHITESPACE@39..40 " "
+      TYPED_PAT@40..45
+        BIND_PAT@40..41
+          NAME@40..41
+            LNAME@40..41 "a"
+        COLON@41..42 ":"
+        WHITESPACE@42..43 " "
+        RECORD_TYPE@43..45
+          L_CURLY@43..44 "{"
+          R_CURLY@44..45 "}"
+      WHITESPACE@45..46 " "
+      EQ@46..47 "="
+      WHITESPACE@47..48 " "
+      EXPR_LIST@48..49
+        NAME_REF@48..49
+          LNAME@48..49 "t"
+    NEWLINE@49..50 "\n"
+  EOF@50..50 ""
+---
+error@44..45 2:9: a record type needs at least one field: `{name: Type}`

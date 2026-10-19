@@ -1,0 +1,48 @@
+SOURCE_FILE@0..93
+  BLOCK@0..93
+    COMMENT@0..48 "# `spawn do` takes no parameters and no `async`."
+    NEWLINE@48..49 "\n"
+    ASSIGN_STMT@49..69
+      NAME_REF@49..50
+        LNAME@49..50 "a"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      SPAWN_EXPR@53..69
+        SPAWN_KW@53..58 "spawn"
+        WHITESPACE@58..59 " "
+        DO_KW@59..61 "do"
+        WHITESPACE@61..62 " "
+        ERROR_NODE@62..65
+          BLOCK_PARAMS@62..65
+            PIPE@62..63 "|"
+            PARAM@63..64
+              BIND_PAT@63..64
+                NAME@63..64
+                  LNAME@63..64 "x"
+            PIPE@64..65 "|"
+        BLOCK@65..66
+          WHITESPACE@65..66 " "
+        END_KW@66..69 "end"
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..92
+      NAME_REF@70..71
+        LNAME@70..71 "b"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      SPAWN_EXPR@74..92
+        SPAWN_KW@74..79 "spawn"
+        WHITESPACE@79..80 " "
+        ERROR_NODE@80..85
+          ASYNC_KW@80..85 "async"
+        WHITESPACE@85..86 " "
+        DO_KW@86..88 "do"
+        BLOCK@88..89
+          WHITESPACE@88..89 " "
+        END_KW@89..92 "end"
+    NEWLINE@92..93 "\n"
+  EOF@93..93 ""
+---
+error@62..63 2:14: `spawn do` takes no parameters: the block runs on a worker with no arguments
+error@80..85 3:11: `spawn` takes no `async`: write `spawn do … end`

@@ -1,0 +1,17 @@
+SOURCE_FILE@0..70
+  BLOCK@0..70
+    COMMENT@0..55 "# `#{}` with nothing inside is an error, reported once."
+    NEWLINE@55..56 "\n"
+    ASSIGN_STMT@56..69
+      NAME_REF@56..57
+        LNAME@56..57 "a"
+      WHITESPACE@57..58 " "
+      EQ@58..59 "="
+      WHITESPACE@59..60 " "
+      INTERP_STRING@60..69
+        STR_BEGIN@60..65 "\"x #{"
+        STR_END@65..69 "} y\""
+    NEWLINE@69..70 "\n"
+  EOF@70..70 ""
+---
+error@63..66 2:8: empty interpolation: put an expression between `#{` and `}`, or write `\#{` for a literal `#{`

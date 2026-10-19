@@ -1,0 +1,38 @@
+[package]
+name = "nl_capi"
+description = "The NL compiler library: the compile entry point, and its C ABI (libnlc)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+# rlib for Rust hosts and `nlc`; staticlib for the VM.
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+nl_syntax = { path = "../nl_syntax" }
+nl_sema = { path = "../nl_sema" }
+nl_ir = { path = "../nl_ir" }
+nl_luagen = { path = "../nl_luagen" }
+nl_codegen = { path = "../nl_codegen" }
+# The regex and text libraries: their C ABI symbols
+# (nlregex.h, nltext.h) are exported through this staticlib; src/lib.rs
+# references the crates so that they are linked.
+nl_regex = { path = "../nl_regex" }
+nl_text = { path = "../nl_text" }
+# Validation of literal patterns passed to Regex.new.
+regex-syntax = "0.8"
+
+# The workspace lints, except that unsafe code is denied instead of forbidden,
+# so that the C ABI (src/capi.rs) alone can allow it. Keep the rest in step
+# with [workspace.lints] in the root Cargo.toml.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"

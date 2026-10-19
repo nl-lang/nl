@@ -1,0 +1,38 @@
+SOURCE_FILE@0..158
+  BLOCK@0..158
+    COMMENT@0..77 "# Recovery: a run of `async` not followed by `fn` or `do` is one mistake: one"
+    NEWLINE@77..78 "\n"
+    COMMENT@78..129 "# error, and the operand after it is read as usual."
+    NEWLINE@129..130 "\n"
+    ASSIGN_STMT@130..151
+      NAME_REF@130..131
+        LNAME@130..131 "x"
+      WHITESPACE@131..132 " "
+      EQ@132..133 "="
+      WHITESPACE@133..134 " "
+      ERROR_NODE@134..145
+        ASYNC_KW@134..139 "async"
+        WHITESPACE@139..140 " "
+        ASYNC_KW@140..145 "async"
+      WHITESPACE@145..146 " "
+      BIN_EXPR@146..151
+        NAME_REF@146..147
+          LNAME@146..147 "y"
+        WHITESPACE@147..148 " "
+        PLUS@148..149 "+"
+        WHITESPACE@149..150 " "
+        LITERAL@150..151
+          NUMBER@150..151 "1"
+    NEWLINE@151..152 "\n"
+    ASSIGN_STMT@152..157
+      NAME_REF@152..153
+        LNAME@152..153 "z"
+      WHITESPACE@153..154 " "
+      EQ@154..155 "="
+      WHITESPACE@155..156 " "
+      LITERAL@156..157
+        NUMBER@156..157 "2"
+    NEWLINE@157..158 "\n"
+  EOF@158..158 ""
+---
+error@134..139 3:5: `async` must be followed by `fn` or `do`

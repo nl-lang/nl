@@ -1,0 +1,19 @@
+[package]
+name = "nl_fuzz"
+description = "Differential and robustness fuzzing of nlc: generated NL programs through every backend and option"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# No dependencies: the generator has its own SplitMix64 (src/rng.rs), and
+# the runner drives the `nlc` binary as a process.
+[dependencies]
+
+[[bin]]
+name = "nl-fuzz"
+path = "src/main.rs"
+
+[lints]
+workspace = true

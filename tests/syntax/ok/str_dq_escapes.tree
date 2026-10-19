@@ -1,0 +1,23 @@
+SOURCE_FILE@0..99
+  BLOCK@0..99
+    COMMENT@0..35 "# Every escape of a `\"…\"` string."
+    NEWLINE@35..36 "\n"
+    ASSIGN_STMT@36..64
+      NAME_REF@36..37
+        LNAME@36..37 "a"
+      WHITESPACE@37..38 " "
+      EQ@38..39 "="
+      WHITESPACE@39..40 " "
+      LITERAL@40..64
+        STRING@40..64 "\"\\a\\b\\f\\n\\r\\t\\v\\\\\\\"\\'\\#\""
+    NEWLINE@64..65 "\n"
+    ASSIGN_STMT@65..98
+      NAME_REF@65..66
+        LNAME@65..66 "b"
+      WHITESPACE@66..67 " "
+      EQ@67..68 "="
+      WHITESPACE@68..69 " "
+      LITERAL@69..98
+        STRING@69..98 "\"\\x41\\65\\255\\u{48}\\u{10FFFF}\""
+    NEWLINE@98..99 "\n"
+  EOF@99..99 ""

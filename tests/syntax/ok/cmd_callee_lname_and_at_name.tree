@@ -1,0 +1,23 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..43 "# The callee may be an LNAME or an AT_NAME."
+    NEWLINE@43..44 "\n"
+    EXPR_STMT@44..54
+      COMMAND_CALL@44..54
+        NAME_REF@44..49
+          LNAME@44..49 "greet"
+        WHITESPACE@49..50 " "
+        COMMAND_ARGS@50..54
+          NAME_REF@50..54
+            LNAME@50..54 "name"
+    NEWLINE@54..55 "\n"
+    EXPR_STMT@55..64
+      COMMAND_CALL@55..64
+        AT_EXPR@55..62
+          AT_NAME@55..62 "@on_hit"
+        WHITESPACE@62..63 " "
+        COMMAND_ARGS@63..64
+          NAME_REF@63..64
+            LNAME@63..64 "x"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""

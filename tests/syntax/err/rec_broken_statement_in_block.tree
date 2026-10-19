@@ -1,0 +1,49 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..70 "# Recovery: a broken statement inside a block; the block and its other"
+    NEWLINE@70..71 "\n"
+    COMMENT@71..90 "# statements parse."
+    NEWLINE@90..91 "\n"
+    FN_DECL@91..121
+      FN_KW@91..93 "fn"
+      WHITESPACE@93..94 " "
+      NAME@94..95
+        LNAME@94..95 "f"
+      BLOCK@95..118
+        NEWLINE@95..96 "\n"
+        WHITESPACE@96..98 "  "
+        EXPR_STMT@98..101
+          CALL_EXPR@98..101
+            NAME_REF@98..99
+              LNAME@98..99 "a"
+            ARG_LIST@99..101
+              L_PAREN@99..100 "("
+              R_PAREN@100..101 ")"
+        NEWLINE@101..102 "\n"
+        WHITESPACE@102..104 "  "
+        ASSIGN_STMT@104..111
+          NAME_REF@104..105
+            LNAME@104..105 "x"
+          WHITESPACE@105..106 " "
+          EQ@106..107 "="
+          WHITESPACE@107..108 " "
+          ERROR_NODE@108..109
+            EQ@108..109 "="
+          WHITESPACE@109..110 " "
+          LITERAL@110..111
+            NUMBER@110..111 "2"
+        NEWLINE@111..112 "\n"
+        WHITESPACE@112..114 "  "
+        EXPR_STMT@114..117
+          CALL_EXPR@114..117
+            NAME_REF@114..115
+              LNAME@114..115 "b"
+            ARG_LIST@115..117
+              L_PAREN@115..116 "("
+              R_PAREN@116..117 ")"
+        NEWLINE@117..118 "\n"
+      END_KW@118..121 "end"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""
+---
+error@108..109 5:7: expected an expression, found `=`

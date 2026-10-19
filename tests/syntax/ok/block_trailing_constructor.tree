@@ -1,0 +1,48 @@
+SOURCE_FILE@0..117
+  BLOCK@0..117
+    COMMENT@0..66 "# A block after a callee: `Task.new do |resolve, reject| … end`."
+    NEWLINE@66..67 "\n"
+    ASSIGN_STMT@67..116
+      NAME_REF@67..68
+        LNAME@67..68 "t"
+      WHITESPACE@68..69 " "
+      EQ@69..70 "="
+      WHITESPACE@70..71 " "
+      CALL_EXPR@71..116
+        FIELD_EXPR@71..79
+          NAME_REF@71..75
+            CNAME@71..75 "Task"
+          DOT@75..76 "."
+          LNAME@76..79 "new"
+        WHITESPACE@79..80 " "
+        TRAILING_BLOCK@80..116
+          DO_KW@80..82 "do"
+          WHITESPACE@82..83 " "
+          BLOCK_PARAMS@83..100
+            PIPE@83..84 "|"
+            PARAM@84..91
+              BIND_PAT@84..91
+                NAME@84..91
+                  LNAME@84..91 "resolve"
+            COMMA@91..92 ","
+            WHITESPACE@92..93 " "
+            PARAM@93..99
+              BIND_PAT@93..99
+                NAME@93..99
+                  LNAME@93..99 "reject"
+            PIPE@99..100 "|"
+          BLOCK@100..113
+            NEWLINE@100..101 "\n"
+            WHITESPACE@101..103 "  "
+            EXPR_STMT@103..112
+              COMMAND_CALL@103..112
+                NAME_REF@103..110
+                  LNAME@103..110 "resolve"
+                WHITESPACE@110..111 " "
+                COMMAND_ARGS@111..112
+                  LITERAL@111..112
+                    NUMBER@111..112 "1"
+            NEWLINE@112..113 "\n"
+          END_KW@113..116 "end"
+    NEWLINE@116..117 "\n"
+  EOF@117..117 ""

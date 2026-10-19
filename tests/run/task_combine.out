@@ -1,0 +1,4 @@
+after b
+all: a b
+race: d
+end

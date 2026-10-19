@@ -1,0 +1,30 @@
+SOURCE_FILE@0..156
+  BLOCK@0..156
+    COMMENT@0..58 "# `fn` and a capitalized name followed by `(` is read as a"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..137 "# declaration with a misnamed function, not as a function whose body calls it."
+    NEWLINE@137..138 "\n"
+    FN_DECL@138..155
+      FN_KW@138..140 "fn"
+      WHITESPACE@140..141 " "
+      NAME@141..144
+        CNAME@141..144 "Foo"
+      PARAM_LIST@144..147
+        L_PAREN@144..145 "("
+        PARAM@145..146
+          BIND_PAT@145..146
+            NAME@145..146
+              LNAME@145..146 "x"
+        R_PAREN@146..147 ")"
+      BLOCK@147..152
+        NEWLINE@147..148 "\n"
+        WHITESPACE@148..150 "  "
+        EXPR_STMT@150..151
+          NAME_REF@150..151
+            LNAME@150..151 "x"
+        NEWLINE@151..152 "\n"
+      END_KW@152..155 "end"
+    NEWLINE@155..156 "\n"
+  EOF@156..156 ""
+---
+error@141..144 3:4: a function name is lowercase (snake_case): write `foo`

@@ -1,0 +1,40 @@
+SOURCE_FILE@0..129
+  BLOCK@0..129
+    COMMENT@0..60 "# A hexadecimal or binary number has no fraction; `0xff.abs`"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..88 "# is still a member access."
+    NEWLINE@88..89 "\n"
+    ASSIGN_STMT@89..105
+      NAME_REF@89..90
+        LNAME@89..90 "a"
+      WHITESPACE@90..91 " "
+      EQ@91..92 "="
+      WHITESPACE@92..93 " "
+      LITERAL@93..105
+        NUMBER@93..105 "0xdeadbeef.5"
+    NEWLINE@105..106 "\n"
+    ASSIGN_STMT@106..115
+      NAME_REF@106..107
+        LNAME@106..107 "b"
+      WHITESPACE@107..108 " "
+      EQ@108..109 "="
+      WHITESPACE@109..110 " "
+      LITERAL@110..115
+        NUMBER@110..115 "0b1.1"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..128
+      NAME_REF@116..117
+        LNAME@116..117 "c"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      FIELD_EXPR@120..128
+        LITERAL@120..124
+          NUMBER@120..124 "0xff"
+        DOT@124..125 "."
+        LNAME@125..128 "abs"
+    NEWLINE@128..129 "\n"
+  EOF@129..129 ""
+---
+error@93..105 3:5: `0xdeadbeef.5` is not a number: a hexadecimal number has no fraction
+error@110..115 4:5: `0b1.1` is not a number: a binary number has no fraction

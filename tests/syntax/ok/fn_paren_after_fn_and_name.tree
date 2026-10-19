@@ -1,0 +1,85 @@
+SOURCE_FILE@0..219
+  BLOCK@0..219
+    COMMENT@0..61 "# After `fn` and after a declared name a `(` on the same line"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..137 "# opens the parameter list, with or without whitespace; on the next line it"
+    NEWLINE@137..138 "\n"
+    COMMENT@138..156 "# starts the body."
+    NEWLINE@156..157 "\n"
+    ASSIGN_STMT@157..173
+      NAME_REF@157..158
+        LNAME@157..158 "a"
+      WHITESPACE@158..159 " "
+      EQ@159..160 "="
+      WHITESPACE@160..161 " "
+      FN_EXPR@161..173
+        FN_KW@161..163 "fn"
+        WHITESPACE@163..164 " "
+        PARAM_LIST@164..167
+          L_PAREN@164..165 "("
+          PARAM@165..166
+            BIND_PAT@165..166
+              NAME@165..166
+                LNAME@165..166 "x"
+          R_PAREN@166..167 ")"
+        BLOCK@167..170
+          WHITESPACE@167..168 " "
+          EXPR_STMT@168..169
+            NAME_REF@168..169
+              LNAME@168..169 "x"
+          WHITESPACE@169..170 " "
+        END_KW@170..173 "end"
+    NEWLINE@173..174 "\n"
+    ASSIGN_STMT@174..188
+      NAME_REF@174..175
+        LNAME@174..175 "b"
+      WHITESPACE@175..176 " "
+      EQ@176..177 "="
+      WHITESPACE@177..178 " "
+      FN_EXPR@178..188
+        FN_KW@178..180 "fn"
+        BLOCK@180..185
+          NEWLINE@180..181 "\n"
+          EXPR_STMT@181..184
+            PAREN_EXPR@181..184
+              L_PAREN@181..182 "("
+              NAME_REF@182..183
+                LNAME@182..183 "x"
+              R_PAREN@183..184 ")"
+          NEWLINE@184..185 "\n"
+        END_KW@185..188 "end"
+    NEWLINE@188..189 "\n"
+    FN_DECL@189..203
+      FN_KW@189..191 "fn"
+      WHITESPACE@191..192 " "
+      NAME@192..195
+        LNAME@192..195 "foo"
+      WHITESPACE@195..196 " "
+      PARAM_LIST@196..199
+        L_PAREN@196..197 "("
+        PARAM@197..198
+          BIND_PAT@197..198
+            NAME@197..198
+              LNAME@197..198 "x"
+        R_PAREN@198..199 ")"
+      BLOCK@199..200
+        NEWLINE@199..200 "\n"
+      END_KW@200..203 "end"
+    NEWLINE@203..204 "\n"
+    FN_DECL@204..218
+      FN_KW@204..206 "fn"
+      WHITESPACE@206..207 " "
+      NAME@207..210
+        LNAME@207..210 "bar"
+      BLOCK@210..215
+        NEWLINE@210..211 "\n"
+        EXPR_STMT@211..214
+          PAREN_EXPR@211..214
+            L_PAREN@211..212 "("
+            NAME_REF@212..213
+              LNAME@212..213 "x"
+            R_PAREN@213..214 ")"
+        NEWLINE@214..215 "\n"
+      END_KW@215..218 "end"
+    NEWLINE@218..219 "\n"
+  EOF@219..219 ""

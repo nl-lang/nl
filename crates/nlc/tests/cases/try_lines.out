@@ -1,0 +1,5 @@
+1
+try_lines.nl:6: attempt to perform arithmetic on upvalue 't' (a table value)
+try_lines.nl:13: attempt to perform '//' on String and Number
+finally
+try_lines.nl:20: attempt to read member 'y' of nil

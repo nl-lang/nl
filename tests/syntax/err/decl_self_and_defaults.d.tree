@@ -1,0 +1,119 @@
+SOURCE_FILE@0..246
+  COMMENT@0..97 "# `self` only first, no defaults, a host type takes no lua_root, a member names its key with `as`"
+  NEWLINE@97..98 "\n"
+  DECL_TYPE@98..245
+    DECLARE_KW@98..105 "declare"
+    WHITESPACE@105..106 " "
+    TYPE_KW@106..110 "type"
+    WHITESPACE@110..111 " "
+    NAME@111..117
+      CNAME@111..117 "Player"
+    WHITESPACE@117..118 " "
+    ERROR_NODE@118..127
+      LUA_ROOT@118..127
+        EQ@118..119 "="
+        WHITESPACE@119..120 " "
+        LUA_PATH@120..127
+          COLON@120..121 ":"
+          LNAME@121..127 "player"
+    NEWLINE@127..128 "\n"
+    WHITESPACE@128..130 "  "
+    DECL_FN@130..161
+      FN_KW@130..132 "fn"
+      WHITESPACE@132..133 " "
+      NAME@133..136
+        LNAME@133..136 "pos"
+      PARAM_LIST@136..153
+        L_PAREN@136..137 "("
+        PARAM@137..146
+          TYPED_PAT@137..146
+            BIND_PAT@137..138
+              NAME@137..138
+                LNAME@137..138 "x"
+            COLON@138..139 ":"
+            WHITESPACE@139..140 " "
+            NAMED_TYPE@140..146
+              QUAL_NAME@140..146
+                CNAME@140..146 "Number"
+        COMMA@146..147 ","
+        WHITESPACE@147..148 " "
+        SELF_PARAM@148..152
+          SELF_KW@148..152 "self"
+        R_PAREN@152..153 ")"
+      RETURN_TYPE@153..161
+        COLON@153..154 ":"
+        WHITESPACE@154..155 " "
+        NAMED_TYPE@155..161
+          QUAL_NAME@155..161
+            CNAME@155..161 "Vector"
+    NEWLINE@161..162 "\n"
+    WHITESPACE@162..164 "  "
+    DECL_FN@164..210
+      FN_KW@164..166 "fn"
+      WHITESPACE@166..167 " "
+      NAME@167..171
+        LNAME@167..171 "name"
+      PARAM_LIST@171..202
+        L_PAREN@171..172 "("
+        SELF_PARAM@172..176
+          SELF_KW@172..176 "self"
+        COMMA@176..177 ","
+        WHITESPACE@177..178 " "
+        PARAM@178..201
+          TYPED_PAT@178..201
+            BIND_PAT@178..186
+              NAME@178..186
+                LNAME@178..186 "greeting"
+            COLON@186..187 ":"
+            WHITESPACE@187..188 " "
+            NAMED_TYPE@188..194
+              QUAL_NAME@188..194
+                CNAME@188..194 "String"
+            WHITESPACE@194..195 " "
+            ERROR_NODE@195..201
+              EQ@195..196 "="
+              WHITESPACE@196..197 " "
+              LITERAL@197..201
+                STRING@197..201 "\"hi\""
+        R_PAREN@201..202 ")"
+      RETURN_TYPE@202..210
+        COLON@202..203 ":"
+        WHITESPACE@203..204 " "
+        NAMED_TYPE@204..210
+          QUAL_NAME@204..210
+            CNAME@204..210 "String"
+    NEWLINE@210..211 "\n"
+    WHITESPACE@211..213 "  "
+    DECL_FN@213..241
+      FN_KW@213..215 "fn"
+      WHITESPACE@215..216 " "
+      NAME@216..218
+        LNAME@216..218 "hp"
+      PARAM_LIST@218..224
+        L_PAREN@218..219 "("
+        SELF_PARAM@219..223
+          SELF_KW@219..223 "self"
+        R_PAREN@223..224 ")"
+      RETURN_TYPE@224..232
+        COLON@224..225 ":"
+        WHITESPACE@225..226 " "
+        NAMED_TYPE@226..232
+          QUAL_NAME@226..232
+            CNAME@226..232 "Number"
+      WHITESPACE@232..233 " "
+      ERROR_NODE@233..241
+        LUA_ROOT@233..241
+          EQ@233..234 "="
+          WHITESPACE@234..235 " "
+          LUA_PATH@235..241
+            COLON@235..236 ":"
+            ONAME@236..241 "getHp"
+    NEWLINE@241..242 "\n"
+    END_KW@242..245 "end"
+  NEWLINE@245..246 "\n"
+  EOF@246..246 ""
+---
+error@118..119 2:21: a host type is found by its registered name and takes no `= :path`
+error@148..152 3:21: `self` can only be the first parameter
+error@195..196 4:34: a declaration holds no expression, so a parameter has no default; an optional parameter is typed `T?`
+error@233..234 5:23: a member names its Lua key with `as 'luaName'`, not `= :path`

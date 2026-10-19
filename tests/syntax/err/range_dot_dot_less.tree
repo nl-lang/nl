@@ -1,0 +1,56 @@
+SOURCE_FILE@0..185
+  BLOCK@0..185
+    COMMENT@0..57 "# `..<` is not an operator; the range that leaves out its"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..135 "# end is `a...b`. Reported in an expression and in a pattern, and parsed as a"
+    NEWLINE@135..136 "\n"
+    COMMENT@136..144 "# range."
+    NEWLINE@144..145 "\n"
+    FOR_STMT@145..164
+      FOR_KW@145..148 "for"
+      WHITESPACE@148..149 " "
+      BIND_PAT@149..150
+        NAME@149..150
+          LNAME@149..150 "i"
+      WHITESPACE@150..151 " "
+      IN_KW@151..153 "in"
+      WHITESPACE@153..154 " "
+      BIN_EXPR@154..160
+        LITERAL@154..155
+          NUMBER@154..155 "1"
+        DOT2_LT@155..158 "..<"
+        LITERAL@158..160
+          NUMBER@158..160 "10"
+      BLOCK@160..161
+        NEWLINE@160..161 "\n"
+      END_KW@161..164 "end"
+    NEWLINE@164..165 "\n"
+    LET_DECL@165..178
+      LET_KW@165..168 "let"
+      WHITESPACE@168..169 " "
+      RANGE_PAT@169..174
+        LITERAL_PAT@169..170
+          NUMBER@169..170 "1"
+        DOT2_LT@170..173 "..<"
+        LITERAL_PAT@173..174
+          NUMBER@173..174 "5"
+      WHITESPACE@174..175 " "
+      EQ@175..176 "="
+      WHITESPACE@176..177 " "
+      EXPR_LIST@177..178
+        NAME_REF@177..178
+          LNAME@177..178 "q"
+    NEWLINE@178..179 "\n"
+    ASSIGN_STMT@179..184
+      NAME_REF@179..180
+        LNAME@179..180 "x"
+      WHITESPACE@180..181 " "
+      EQ@181..182 "="
+      WHITESPACE@182..183 " "
+      LITERAL@183..184
+        NUMBER@183..184 "1"
+    NEWLINE@184..185 "\n"
+  EOF@185..185 ""
+---
+error@155..158 4:11: NL has no `..<`: a range that leaves out its end is written `a...b`
+error@170..173 6:6: NL has no `..<`: a range that leaves out its end is written `a...b`

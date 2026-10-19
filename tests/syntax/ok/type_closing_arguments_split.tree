@@ -1,0 +1,127 @@
+SOURCE_FILE@0..145
+  BLOCK@0..145
+    COMMENT@0..60 "# `>>`, `>>>`, `>=`, `>>=` closing type arguments are split."
+    NEWLINE@60..61 "\n"
+    LET_DECL@61..83
+      LET_KW@61..64 "let"
+      WHITESPACE@64..65 " "
+      TYPED_PAT@65..79
+        BIND_PAT@65..66
+          NAME@65..66
+            LNAME@65..66 "a"
+        COLON@66..67 ":"
+        WHITESPACE@67..68 " "
+        NAMED_TYPE@68..79
+          QUAL_NAME@68..71
+            CNAME@68..71 "Box"
+          TYPE_ARGS@71..79
+            LT@71..72 "<"
+            NAMED_TYPE@72..78
+              QUAL_NAME@72..75
+                CNAME@72..75 "Box"
+              TYPE_ARGS@75..78
+                LT@75..76 "<"
+                NAMED_TYPE@76..77
+                  QUAL_NAME@76..77
+                    CNAME@76..77 "T"
+                GT@77..78 ">"
+            GT@78..79 ">"
+      WHITESPACE@79..80 " "
+      EQ@80..81 "="
+      WHITESPACE@81..82 " "
+      EXPR_LIST@82..83
+        NAME_REF@82..83
+          LNAME@82..83 "x"
+    NEWLINE@83..84 "\n"
+    LET_DECL@84..105
+      LET_KW@84..87 "let"
+      WHITESPACE@87..88 " "
+      TYPED_PAT@88..101
+        BIND_PAT@88..89
+          NAME@88..89
+            LNAME@88..89 "b"
+        COLON@89..90 ":"
+        WHITESPACE@90..91 " "
+        NAMED_TYPE@91..101
+          QUAL_NAME@91..92
+            CNAME@91..92 "A"
+          TYPE_ARGS@92..101
+            LT@92..93 "<"
+            NAMED_TYPE@93..100
+              QUAL_NAME@93..94
+                CNAME@93..94 "B"
+              TYPE_ARGS@94..100
+                LT@94..95 "<"
+                NAMED_TYPE@95..99
+                  QUAL_NAME@95..96
+                    CNAME@95..96 "C"
+                  TYPE_ARGS@96..99
+                    LT@96..97 "<"
+                    NAMED_TYPE@97..98
+                      QUAL_NAME@97..98
+                        CNAME@97..98 "D"
+                    GT@98..99 ">"
+                GT@99..100 ">"
+            GT@100..101 ">"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      EXPR_LIST@104..105
+        NAME_REF@104..105
+          LNAME@104..105 "x"
+    NEWLINE@105..106 "\n"
+    LET_DECL@106..122
+      LET_KW@106..109 "let"
+      WHITESPACE@109..110 " "
+      TYPED_PAT@110..119
+        BIND_PAT@110..111
+          NAME@110..111
+            LNAME@110..111 "c"
+        COLON@111..112 ":"
+        WHITESPACE@112..113 " "
+        NAMED_TYPE@113..119
+          QUAL_NAME@113..116
+            CNAME@113..116 "Box"
+          TYPE_ARGS@116..119
+            LT@116..117 "<"
+            NAMED_TYPE@117..118
+              QUAL_NAME@117..118
+                CNAME@117..118 "T"
+            GT@118..119 ">"
+      EQ@119..120 "="
+      WHITESPACE@120..121 " "
+      EXPR_LIST@121..122
+        NAME_REF@121..122
+          LNAME@121..122 "x"
+    NEWLINE@122..123 "\n"
+    LET_DECL@123..144
+      LET_KW@123..126 "let"
+      WHITESPACE@126..127 " "
+      TYPED_PAT@127..141
+        BIND_PAT@127..128
+          NAME@127..128
+            LNAME@127..128 "d"
+        COLON@128..129 ":"
+        WHITESPACE@129..130 " "
+        NAMED_TYPE@130..141
+          QUAL_NAME@130..133
+            CNAME@130..133 "Box"
+          TYPE_ARGS@133..141
+            LT@133..134 "<"
+            NAMED_TYPE@134..140
+              QUAL_NAME@134..137
+                CNAME@134..137 "Box"
+              TYPE_ARGS@137..140
+                LT@137..138 "<"
+                NAMED_TYPE@138..139
+                  QUAL_NAME@138..139
+                    CNAME@138..139 "T"
+                GT@139..140 ">"
+            GT@140..141 ">"
+      EQ@141..142 "="
+      WHITESPACE@142..143 " "
+      EXPR_LIST@143..144
+        NAME_REF@143..144
+          LNAME@143..144 "x"
+    NEWLINE@144..145 "\n"
+  EOF@145..145 ""

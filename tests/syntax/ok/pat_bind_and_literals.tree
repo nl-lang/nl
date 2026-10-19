@@ -1,0 +1,115 @@
+SOURCE_FILE@0..220
+  BLOCK@0..220
+    COMMENT@0..61 "# A binding, literal patterns (with a negative number), range"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..112 "# patterns; must-match contexts accept every form."
+    NEWLINE@112..113 "\n"
+    LET_DECL@113..122
+      LET_KW@113..116 "let"
+      WHITESPACE@116..117 " "
+      BIND_PAT@117..118
+        NAME@117..118
+          LNAME@117..118 "x"
+      WHITESPACE@118..119 " "
+      EQ@119..120 "="
+      WHITESPACE@120..121 " "
+      EXPR_LIST@121..122
+        NAME_REF@121..122
+          LNAME@121..122 "v"
+    NEWLINE@122..123 "\n"
+    LET_DECL@123..134
+      LET_KW@123..126 "let"
+      WHITESPACE@126..127 " "
+      LITERAL_PAT@127..128
+        NUMBER@127..128 "1"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      EXPR_LIST@131..134
+        NAME_REF@131..134
+          LNAME@131..134 "one"
+    NEWLINE@134..135 "\n"
+    LET_DECL@135..153
+      LET_KW@135..138 "let"
+      WHITESPACE@138..139 " "
+      LITERAL_PAT@139..141
+        MINUS@139..140 "-"
+        NUMBER@140..141 "1"
+      WHITESPACE@141..142 " "
+      EQ@142..143 "="
+      WHITESPACE@143..144 " "
+      EXPR_LIST@144..153
+        NAME_REF@144..153
+          LNAME@144..153 "minus_one"
+    NEWLINE@153..154 "\n"
+    LET_DECL@154..165
+      LET_KW@154..157 "let"
+      WHITESPACE@157..158 " "
+      LITERAL_PAT@158..161
+        STRING@158..161 "\"s\""
+      WHITESPACE@161..162 " "
+      EQ@162..163 "="
+      WHITESPACE@163..164 " "
+      EXPR_LIST@164..165
+        NAME_REF@164..165
+          LNAME@164..165 "s"
+    NEWLINE@165..166 "\n"
+    LET_DECL@166..178
+      LET_KW@166..169 "let"
+      WHITESPACE@169..170 " "
+      LITERAL_PAT@170..174
+        TRUE_KW@170..174 "true"
+      WHITESPACE@174..175 " "
+      EQ@175..176 "="
+      WHITESPACE@176..177 " "
+      EXPR_LIST@177..178
+        NAME_REF@177..178
+          LNAME@177..178 "t"
+    NEWLINE@178..179 "\n"
+    LET_DECL@179..190
+      LET_KW@179..182 "let"
+      WHITESPACE@182..183 " "
+      LITERAL_PAT@183..186
+        NIL_KW@183..186 "nil"
+      WHITESPACE@186..187 " "
+      EQ@187..188 "="
+      WHITESPACE@188..189 " "
+      EXPR_LIST@189..190
+        NAME_REF@189..190
+          LNAME@189..190 "n"
+    NEWLINE@190..191 "\n"
+    LET_DECL@191..203
+      LET_KW@191..194 "let"
+      WHITESPACE@194..195 " "
+      RANGE_PAT@195..199
+        LITERAL_PAT@195..196
+          NUMBER@195..196 "1"
+        DOT2@196..198 ".."
+        LITERAL_PAT@198..199
+          NUMBER@198..199 "5"
+      WHITESPACE@199..200 " "
+      EQ@200..201 "="
+      WHITESPACE@201..202 " "
+      EXPR_LIST@202..203
+        NAME_REF@202..203
+          LNAME@202..203 "r"
+    NEWLINE@203..204 "\n"
+    LET_DECL@204..219
+      LET_KW@204..207 "let"
+      WHITESPACE@207..208 " "
+      RANGE_PAT@208..215
+        LITERAL_PAT@208..210
+          MINUS@208..209 "-"
+          NUMBER@209..210 "3"
+        DOT3@210..213 "..."
+        LITERAL_PAT@213..215
+          MINUS@213..214 "-"
+          NUMBER@214..215 "1"
+      WHITESPACE@215..216 " "
+      EQ@216..217 "="
+      WHITESPACE@217..218 " "
+      EXPR_LIST@218..219
+        NAME_REF@218..219
+          LNAME@218..219 "q"
+    NEWLINE@219..220 "\n"
+  EOF@220..220 ""

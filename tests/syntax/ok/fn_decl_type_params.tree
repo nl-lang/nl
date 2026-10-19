@@ -1,0 +1,101 @@
+SOURCE_FILE@0..129
+  BLOCK@0..129
+    COMMENT@0..54 "# A `<` after the declared name opens type parameters."
+    NEWLINE@54..55 "\n"
+    FN_DECL@55..101
+      FN_KW@55..57 "fn"
+      WHITESPACE@57..58 " "
+      NAME@58..67
+        LNAME@58..67 "some_func"
+      TYPE_PARAMS@67..75
+        LT@67..68 "<"
+        TYPE_PARAM@68..70
+          NAME@68..70
+            CNAME@68..70 "T1"
+        COMMA@70..71 ","
+        WHITESPACE@71..72 " "
+        TYPE_PARAM@72..74
+          NAME@72..74
+            CNAME@72..74 "T2"
+        GT@74..75 ">"
+      PARAM_LIST@75..89
+        L_PAREN@75..76 "("
+        PARAM@76..81
+          TYPED_PAT@76..81
+            BIND_PAT@76..77
+              NAME@76..77
+                LNAME@76..77 "a"
+            COLON@77..78 ":"
+            WHITESPACE@78..79 " "
+            NAMED_TYPE@79..81
+              QUAL_NAME@79..81
+                CNAME@79..81 "T1"
+        COMMA@81..82 ","
+        WHITESPACE@82..83 " "
+        PARAM@83..88
+          TYPED_PAT@83..88
+            BIND_PAT@83..84
+              NAME@83..84
+                LNAME@83..84 "b"
+            COLON@84..85 ":"
+            WHITESPACE@85..86 " "
+            NAMED_TYPE@86..88
+              QUAL_NAME@86..88
+                CNAME@86..88 "T2"
+        R_PAREN@88..89 ")"
+      RETURN_TYPE@89..93
+        COLON@89..90 ":"
+        WHITESPACE@90..91 " "
+        NAMED_TYPE@91..93
+          QUAL_NAME@91..93
+            CNAME@91..93 "T1"
+      BLOCK@93..98
+        NEWLINE@93..94 "\n"
+        WHITESPACE@94..96 "  "
+        EXPR_STMT@96..97
+          NAME_REF@96..97
+            LNAME@96..97 "a"
+        NEWLINE@97..98 "\n"
+      END_KW@98..101 "end"
+    NEWLINE@101..102 "\n"
+    FN_DECL@102..128
+      FN_KW@102..104 "fn"
+      WHITESPACE@104..105 " "
+      NAME@105..107
+        LNAME@105..107 "id"
+      TYPE_PARAMS@107..111
+        LT@107..108 "<"
+        TYPE_PARAM@108..109
+          NAME@108..109
+            CNAME@108..109 "T"
+        COMMA@109..110 ","
+        GT@110..111 ">"
+      PARAM_LIST@111..117
+        L_PAREN@111..112 "("
+        PARAM@112..116
+          TYPED_PAT@112..116
+            BIND_PAT@112..113
+              NAME@112..113
+                LNAME@112..113 "x"
+            COLON@113..114 ":"
+            WHITESPACE@114..115 " "
+            NAMED_TYPE@115..116
+              QUAL_NAME@115..116
+                CNAME@115..116 "T"
+        R_PAREN@116..117 ")"
+      RETURN_TYPE@117..120
+        COLON@117..118 ":"
+        WHITESPACE@118..119 " "
+        NAMED_TYPE@119..120
+          QUAL_NAME@119..120
+            CNAME@119..120 "T"
+      BLOCK@120..125
+        NEWLINE@120..121 "\n"
+        WHITESPACE@121..123 "  "
+        EXPR_STMT@123..124
+          NAME_REF@123..124
+            LNAME@123..124 "x"
+        NEWLINE@124..125 "\n"
+      END_KW@125..128 "end"
+    NEWLINE@128..129 "\n"
+  EOF@129..129 ""

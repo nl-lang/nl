@@ -1,0 +1,134 @@
+SOURCE_FILE@0..206
+  BLOCK@0..206
+    COMMENT@0..59 "# `let` with and without a type and an initializer, several"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..83 "# names, destructuring."
+    NEWLINE@83..84 "\n"
+    LET_DECL@84..89
+      LET_KW@84..87 "let"
+      WHITESPACE@87..88 " "
+      BIND_PAT@88..89
+        NAME@88..89
+          LNAME@88..89 "a"
+    NEWLINE@89..90 "\n"
+    LET_DECL@90..107
+      LET_KW@90..93 "let"
+      WHITESPACE@93..94 " "
+      TYPED_PAT@94..103
+        BIND_PAT@94..95
+          NAME@94..95
+            LNAME@94..95 "b"
+        COLON@95..96 ":"
+        WHITESPACE@96..97 " "
+        NAMED_TYPE@97..103
+          QUAL_NAME@97..103
+            CNAME@97..103 "Number"
+      WHITESPACE@103..104 " "
+      EQ@104..105 "="
+      WHITESPACE@105..106 " "
+      EXPR_LIST@106..107
+        LITERAL@106..107
+          NUMBER@106..107 "1"
+    NEWLINE@107..108 "\n"
+    LET_DECL@108..116
+      LET_KW@108..111 "let"
+      WHITESPACE@111..112 " "
+      BIND_PAT@112..113
+        NAME@112..113
+          LNAME@112..113 "c"
+      COMMA@113..114 ","
+      WHITESPACE@114..115 " "
+      BIND_PAT@115..116
+        NAME@115..116
+          LNAME@115..116 "d"
+    NEWLINE@116..117 "\n"
+    LET_DECL@117..141
+      LET_KW@117..120 "let"
+      WHITESPACE@120..121 " "
+      TYPED_PAT@121..130
+        BIND_PAT@121..122
+          NAME@121..122
+            LNAME@121..122 "e"
+        COLON@122..123 ":"
+        WHITESPACE@123..124 " "
+        NAMED_TYPE@124..130
+          QUAL_NAME@124..130
+            CNAME@124..130 "Number"
+      COMMA@130..131 ","
+      WHITESPACE@131..132 " "
+      TYPED_PAT@132..141
+        BIND_PAT@132..133
+          NAME@132..133
+            LNAME@132..133 "f"
+        COLON@133..134 ":"
+        WHITESPACE@134..135 " "
+        NAMED_TYPE@135..141
+          QUAL_NAME@135..141
+            CNAME@135..141 "String"
+    NEWLINE@141..142 "\n"
+    LET_DECL@142..158
+      LET_KW@142..145 "let"
+      WHITESPACE@145..146 " "
+      BIND_PAT@146..147
+        NAME@146..147
+          LNAME@146..147 "x"
+      COMMA@147..148 ","
+      WHITESPACE@148..149 " "
+      BIND_PAT@149..150
+        NAME@149..150
+          LNAME@149..150 "y"
+      WHITESPACE@150..151 " "
+      EQ@151..152 "="
+      WHITESPACE@152..153 " "
+      EXPR_LIST@153..158
+        CALL_EXPR@153..158
+          NAME_REF@153..156
+            LNAME@153..156 "pos"
+          ARG_LIST@156..158
+            L_PAREN@156..157 "("
+            R_PAREN@157..158 ")"
+    NEWLINE@158..159 "\n"
+    LET_DECL@159..180
+      LET_KW@159..162 "let"
+      WHITESPACE@162..163 " "
+      BRACE_PAT@163..173
+        L_CURLY@163..164 "{"
+        PAT_FIELD@164..168
+          NAME@164..168
+            LNAME@164..168 "name"
+        COMMA@168..169 ","
+        WHITESPACE@169..170 " "
+        PAT_FIELD@170..172
+          NAME@170..172
+            LNAME@170..172 "hp"
+        R_CURLY@172..173 "}"
+      WHITESPACE@173..174 " "
+      EQ@174..175 "="
+      WHITESPACE@175..176 " "
+      EXPR_LIST@176..180
+        NAME_REF@176..180
+          LNAME@176..180 "unit"
+    NEWLINE@180..181 "\n"
+    LET_DECL@181..205
+      LET_KW@181..184 "let"
+      WHITESPACE@184..185 " "
+      BRACKET_PAT@185..198
+        L_BRACK@185..186 "["
+        BIND_PAT@186..190
+          NAME@186..190
+            LNAME@186..190 "head"
+        COMMA@190..191 ","
+        WHITESPACE@191..192 " "
+        REST_PAT@192..197
+          STAR@192..193 "*"
+          NAME@193..197
+            LNAME@193..197 "tail"
+        R_BRACK@197..198 "]"
+      WHITESPACE@198..199 " "
+      EQ@199..200 "="
+      WHITESPACE@200..201 " "
+      EXPR_LIST@201..205
+        NAME_REF@201..205
+          LNAME@201..205 "list"
+    NEWLINE@205..206 "\n"
+  EOF@206..206 ""

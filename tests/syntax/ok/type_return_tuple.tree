@@ -1,0 +1,234 @@
+SOURCE_FILE@0..453
+  BLOCK@0..453
+    COMMENT@0..57 "# `(A, B)` after the colon lists several return values; a"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..131 "# `(T)` with one type still groups. Allowed on fn declarations, anonymous"
+    NEWLINE@131..132 "\n"
+    COMMENT@132..195 "# functions, blocks, Function signatures and interface members."
+    NEWLINE@195..196 "\n"
+    FN_DECL@196..236
+      FN_KW@196..198 "fn"
+      WHITESPACE@198..199 " "
+      NAME@199..203
+        LNAME@199..203 "pair"
+      PARAM_LIST@203..205
+        L_PAREN@203..204 "("
+        R_PAREN@204..205 ")"
+      RETURN_TYPE@205..223
+        COLON@205..206 ":"
+        WHITESPACE@206..207 " "
+        TUPLE_TYPE@207..223
+          L_PAREN@207..208 "("
+          NAMED_TYPE@208..214
+            QUAL_NAME@208..214
+              CNAME@208..214 "Number"
+          COMMA@214..215 ","
+          WHITESPACE@215..216 " "
+          NAMED_TYPE@216..222
+            QUAL_NAME@216..222
+              CNAME@216..222 "String"
+          R_PAREN@222..223 ")"
+      BLOCK@223..233
+        NEWLINE@223..224 "\n"
+        WHITESPACE@224..226 "  "
+        EXPR_STMT@226..232
+          EXPR_LIST@226..232
+            LITERAL@226..227
+              NUMBER@226..227 "1"
+            COMMA@227..228 ","
+            WHITESPACE@228..229 " "
+            LITERAL@229..232
+              STRING@229..232 "\"a\""
+        NEWLINE@232..233 "\n"
+      END_KW@233..236 "end"
+    NEWLINE@236..237 "\n"
+    FN_DECL@237..263
+      FN_KW@237..239 "fn"
+      WHITESPACE@239..240 " "
+      NAME@240..243
+        LNAME@240..243 "one"
+      PARAM_LIST@243..245
+        L_PAREN@243..244 "("
+        R_PAREN@244..245 ")"
+      RETURN_TYPE@245..255
+        COLON@245..246 ":"
+        WHITESPACE@246..247 " "
+        PAREN_TYPE@247..255
+          L_PAREN@247..248 "("
+          NAMED_TYPE@248..254
+            QUAL_NAME@248..254
+              CNAME@248..254 "Number"
+          R_PAREN@254..255 ")"
+      BLOCK@255..260
+        NEWLINE@255..256 "\n"
+        WHITESPACE@256..258 "  "
+        EXPR_STMT@258..259
+          LITERAL@258..259
+            NUMBER@258..259 "1"
+        NEWLINE@259..260 "\n"
+      END_KW@260..263 "end"
+    NEWLINE@263..264 "\n"
+    LET_DECL@264..305
+      LET_KW@264..267 "let"
+      WHITESPACE@267..268 " "
+      BIND_PAT@268..269
+        NAME@268..269
+          LNAME@268..269 "f"
+      WHITESPACE@269..270 " "
+      EQ@270..271 "="
+      WHITESPACE@271..272 " "
+      EXPR_LIST@272..305
+        FN_EXPR@272..305
+          FN_KW@272..274 "fn"
+          PARAM_LIST@274..276
+            L_PAREN@274..275 "("
+            R_PAREN@275..276 ")"
+          RETURN_TYPE@276..294
+            COLON@276..277 ":"
+            WHITESPACE@277..278 " "
+            TUPLE_TYPE@278..294
+              L_PAREN@278..279 "("
+              NAMED_TYPE@279..285
+                QUAL_NAME@279..285
+                  CNAME@279..285 "Number"
+              COMMA@285..286 ","
+              WHITESPACE@286..287 " "
+              NAMED_TYPE@287..293
+                QUAL_NAME@287..293
+                  CNAME@287..293 "String"
+              R_PAREN@293..294 ")"
+          BLOCK@294..302
+            WHITESPACE@294..295 " "
+            EXPR_STMT@295..301
+              EXPR_LIST@295..301
+                LITERAL@295..296
+                  NUMBER@295..296 "1"
+                COMMA@296..297 ","
+                WHITESPACE@297..298 " "
+                LITERAL@298..301
+                  STRING@298..301 "\"a\""
+            WHITESPACE@301..302 " "
+          END_KW@302..305 "end"
+    NEWLINE@305..306 "\n"
+    EXPR_STMT@306..344
+      CALL_EXPR@306..344
+        NAME_REF@306..310
+          LNAME@306..310 "each"
+        WHITESPACE@310..311 " "
+        TRAILING_BLOCK@311..344
+          DO_KW@311..313 "do"
+          WHITESPACE@313..314 " "
+          BLOCK_PARAMS@314..317
+            PIPE@314..315 "|"
+            PARAM@315..316
+              BIND_PAT@315..316
+                NAME@315..316
+                  LNAME@315..316 "x"
+            PIPE@316..317 "|"
+          RETURN_TYPE@317..335
+            COLON@317..318 ":"
+            WHITESPACE@318..319 " "
+            TUPLE_TYPE@319..335
+              L_PAREN@319..320 "("
+              NAMED_TYPE@320..326
+                QUAL_NAME@320..326
+                  CNAME@320..326 "Number"
+              COMMA@326..327 ","
+              WHITESPACE@327..328 " "
+              NAMED_TYPE@328..334
+                QUAL_NAME@328..334
+                  CNAME@328..334 "Number"
+              R_PAREN@334..335 ")"
+          BLOCK@335..341
+            WHITESPACE@335..336 " "
+            EXPR_STMT@336..340
+              EXPR_LIST@336..340
+                NAME_REF@336..337
+                  LNAME@336..337 "x"
+                COMMA@337..338 ","
+                WHITESPACE@338..339 " "
+                NAME_REF@339..340
+                  LNAME@339..340 "x"
+            WHITESPACE@340..341 " "
+          END_KW@341..344 "end"
+    NEWLINE@344..345 "\n"
+    LET_DECL@345..389
+      LET_KW@345..348 "let"
+      WHITESPACE@348..349 " "
+      TYPED_PAT@349..389
+        BIND_PAT@349..350
+          NAME@349..350
+            LNAME@349..350 "g"
+        COLON@350..351 ":"
+        WHITESPACE@351..352 " "
+        FN_TYPE@352..389
+          CNAME@352..360 "Function"
+          FN_TYPE_PARAMS@360..371
+            L_PAREN@360..361 "("
+            FN_TYPE_PARAM@361..370
+              NAME@361..362
+                LNAME@361..362 "a"
+              COLON@362..363 ":"
+              WHITESPACE@363..364 " "
+              NAMED_TYPE@364..370
+                QUAL_NAME@364..370
+                  CNAME@364..370 "Number"
+            R_PAREN@370..371 ")"
+          RETURN_TYPE@371..389
+            COLON@371..372 ":"
+            WHITESPACE@372..373 " "
+            TUPLE_TYPE@373..389
+              L_PAREN@373..374 "("
+              NAMED_TYPE@374..380
+                QUAL_NAME@374..380
+                  CNAME@374..380 "Number"
+              COMMA@380..381 ","
+              WHITESPACE@381..382 " "
+              NAMED_TYPE@382..388
+                QUAL_NAME@382..388
+                  CNAME@382..388 "String"
+              R_PAREN@388..389 ")"
+    NEWLINE@389..390 "\n"
+    INTERFACE_DECL@390..452
+      INTERFACE_KW@390..399 "interface"
+      WHITESPACE@399..400 " "
+      NAME@400..408
+        CNAME@400..408 "Splitter"
+      NEWLINE@408..409 "\n"
+      WHITESPACE@409..411 "  "
+      IFACE_METHOD@411..448
+        FN_KW@411..413 "fn"
+        WHITESPACE@413..414 " "
+        NAME@414..419
+          LNAME@414..419 "split"
+        PARAM_LIST@419..430
+          L_PAREN@419..420 "("
+          PARAM@420..429
+            TYPED_PAT@420..429
+              BIND_PAT@420..421
+                NAME@420..421
+                  LNAME@420..421 "s"
+              COLON@421..422 ":"
+              WHITESPACE@422..423 " "
+              NAMED_TYPE@423..429
+                QUAL_NAME@423..429
+                  CNAME@423..429 "String"
+          R_PAREN@429..430 ")"
+        RETURN_TYPE@430..448
+          COLON@430..431 ":"
+          WHITESPACE@431..432 " "
+          TUPLE_TYPE@432..448
+            L_PAREN@432..433 "("
+            NAMED_TYPE@433..439
+              QUAL_NAME@433..439
+                CNAME@433..439 "String"
+            COMMA@439..440 ","
+            WHITESPACE@440..441 " "
+            NAMED_TYPE@441..447
+              QUAL_NAME@441..447
+                CNAME@441..447 "String"
+            R_PAREN@447..448 ")"
+      NEWLINE@448..449 "\n"
+      END_KW@449..452 "end"
+    NEWLINE@452..453 "\n"
+  EOF@453..453 ""

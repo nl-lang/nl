@@ -1,0 +1,27 @@
+SOURCE_FILE@0..142
+  BLOCK@0..142
+    COMMENT@0..63 "# `struct Foo end` on one line is an empty struct; so is a body"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..94 "# of blank lines and comments."
+    NEWLINE@94..95 "\n"
+    STRUCT_DECL@95..109
+      STRUCT_KW@95..101 "struct"
+      WHITESPACE@101..102 " "
+      NAME@102..105
+        CNAME@102..105 "Foo"
+      WHITESPACE@105..106 " "
+      END_KW@106..109 "end"
+    NEWLINE@109..110 "\n"
+    STRUCT_DECL@110..141
+      STRUCT_KW@110..116 "struct"
+      WHITESPACE@116..117 " "
+      NAME@117..120
+        CNAME@117..120 "Bar"
+      NEWLINE@120..121 "\n"
+      WHITESPACE@121..123 "  "
+      COMMENT@123..136 "# nothing yet"
+      NEWLINE@136..137 "\n"
+      NEWLINE@137..138 "\n"
+      END_KW@138..141 "end"
+    NEWLINE@141..142 "\n"
+  EOF@142..142 ""

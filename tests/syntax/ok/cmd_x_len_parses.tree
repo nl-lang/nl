@@ -1,0 +1,19 @@
+SOURCE_FILE@0..91
+  BLOCK@0..91
+    COMMENT@0..55 "# `x.len a` has the shape of a command call and parses;"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..82 "# the resolver rejects it."
+    NEWLINE@82..83 "\n"
+    EXPR_STMT@83..90
+      COMMAND_CALL@83..90
+        FIELD_EXPR@83..88
+          NAME_REF@83..84
+            LNAME@83..84 "x"
+          DOT@84..85 "."
+          LNAME@85..88 "len"
+        WHITESPACE@88..89 " "
+        COMMAND_ARGS@89..90
+          NAME_REF@89..90
+            LNAME@89..90 "a"
+    NEWLINE@90..91 "\n"
+  EOF@91..91 ""

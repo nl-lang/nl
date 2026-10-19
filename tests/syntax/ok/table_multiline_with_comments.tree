@@ -1,0 +1,40 @@
+SOURCE_FILE@0..100
+  BLOCK@0..100
+    COMMENT@0..54 "# Line breaks and comments inside a table are ignored."
+    NEWLINE@54..55 "\n"
+    ASSIGN_STMT@55..99
+      NAME_REF@55..56
+        LNAME@55..56 "t"
+      WHITESPACE@56..57 " "
+      EQ@57..58 "="
+      WHITESPACE@58..59 " "
+      TABLE_EXPR@59..99
+        L_CURLY@59..60 "{"
+        NEWLINE@60..61 "\n"
+        WHITESPACE@61..63 "  "
+        COMMENT@63..70 "# first"
+        NEWLINE@70..71 "\n"
+        WHITESPACE@71..73 "  "
+        TABLE_PAIR@73..77
+          TABLE_KEY@73..74
+            LNAME@73..74 "a"
+          COLON@74..75 ":"
+          WHITESPACE@75..76 " "
+          LITERAL@76..77
+            NUMBER@76..77 "1"
+        COMMA@77..78 ","
+        WHITESPACE@78..80 "  "
+        COMMENT@80..90 "# trailing"
+        NEWLINE@90..91 "\n"
+        WHITESPACE@91..93 "  "
+        TABLE_PAIR@93..97
+          TABLE_KEY@93..94
+            LNAME@93..94 "b"
+          COLON@94..95 ":"
+          WHITESPACE@95..96 " "
+          LITERAL@96..97
+            NUMBER@96..97 "2"
+        NEWLINE@97..98 "\n"
+        R_CURLY@98..99 "}"
+    NEWLINE@99..100 "\n"
+  EOF@100..100 ""

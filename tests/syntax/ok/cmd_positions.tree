@@ -1,0 +1,169 @@
+SOURCE_FILE@0..178
+  BLOCK@0..178
+    COMMENT@0..32 "# The positions of a `cmd_expr`."
+    NEWLINE@32..33 "\n"
+    ASSIGN_STMT@33..40
+      NAME_REF@33..34
+        LNAME@33..34 "x"
+      WHITESPACE@34..35 " "
+      EQ@35..36 "="
+      WHITESPACE@36..37 " "
+      COMMAND_CALL@37..40
+        NAME_REF@37..38
+          LNAME@37..38 "f"
+        WHITESPACE@38..39 " "
+        COMMAND_ARGS@39..40
+          NAME_REF@39..40
+            LNAME@39..40 "a"
+    NEWLINE@40..41 "\n"
+    COMPOUND_ASSIGN_STMT@41..49
+      NAME_REF@41..42
+        LNAME@41..42 "x"
+      WHITESPACE@42..43 " "
+      PLUS_EQ@43..45 "+="
+      WHITESPACE@45..46 " "
+      COMMAND_CALL@46..49
+        NAME_REF@46..47
+          LNAME@46..47 "f"
+        WHITESPACE@47..48 " "
+        COMMAND_ARGS@48..49
+          NAME_REF@48..49
+            LNAME@48..49 "a"
+    NEWLINE@49..50 "\n"
+    LET_DECL@50..72
+      LET_KW@50..53 "let"
+      WHITESPACE@53..54 " "
+      BIND_PAT@54..55
+        NAME@54..55
+          LNAME@54..55 "m"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      EXPR_LIST@58..72
+        COMMAND_CALL@58..72
+          FIELD_EXPR@58..66
+            NAME_REF@58..60
+              LNAME@58..60 "re"
+            DOT@60..61 "."
+            LNAME@61..66 "match"
+          WHITESPACE@66..67 " "
+          COMMAND_ARGS@67..72
+            LITERAL@67..72
+              STRING@67..72 "\"uwu\""
+    NEWLINE@72..73 "\n"
+    CONST_DECL@73..86
+      CONST_KW@73..78 "const"
+      WHITESPACE@78..79 " "
+      BIND_PAT@79..80
+        NAME@79..80
+          LNAME@79..80 "c"
+      WHITESPACE@80..81 " "
+      EQ@81..82 "="
+      WHITESPACE@82..83 " "
+      EXPR_LIST@83..86
+        COMMAND_CALL@83..86
+          NAME_REF@83..84
+            LNAME@83..84 "f"
+          WHITESPACE@84..85 " "
+          COMMAND_ARGS@85..86
+            NAME_REF@85..86
+              LNAME@85..86 "a"
+    NEWLINE@86..87 "\n"
+    GLOBAL_DECL@87..101
+      GLOBAL_KW@87..93 "global"
+      WHITESPACE@93..94 " "
+      NAME@94..95
+        CNAME@94..95 "G"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      COMMAND_CALL@98..101
+        NAME_REF@98..99
+          LNAME@98..99 "f"
+        WHITESPACE@99..100 " "
+        COMMAND_ARGS@100..101
+          NAME_REF@100..101
+            LNAME@100..101 "a"
+    NEWLINE@101..102 "\n"
+    LET_DECL@102..122
+      LET_KW@102..105 "let"
+      WHITESPACE@105..106 " "
+      BIND_PAT@106..107
+        NAME@106..107
+          LNAME@106..107 "a"
+      COMMA@107..108 ","
+      WHITESPACE@108..109 " "
+      BIND_PAT@109..110
+        NAME@109..110
+          LNAME@109..110 "b"
+      WHITESPACE@110..111 " "
+      EQ@111..112 "="
+      WHITESPACE@112..113 " "
+      EXPR_LIST@113..122
+        LITERAL@113..114
+          NUMBER@113..114 "1"
+        COMMA@114..115 ","
+        WHITESPACE@115..116 " "
+        COMMAND_CALL@116..122
+          NAME_REF@116..117
+            LNAME@116..117 "f"
+          WHITESPACE@117..118 " "
+          COMMAND_ARGS@118..122
+            NAME_REF@118..119
+              LNAME@118..119 "x"
+            COMMA@119..120 ","
+            WHITESPACE@120..121 " "
+            NAME_REF@121..122
+              LNAME@121..122 "y"
+    NEWLINE@122..123 "\n"
+    FOR_STMT@123..177
+      FOR_KW@123..126 "for"
+      WHITESPACE@126..127 " "
+      BIND_PAT@127..128
+        NAME@127..128
+          LNAME@127..128 "m"
+      WHITESPACE@128..129 " "
+      IN_KW@129..131 "in"
+      WHITESPACE@131..132 " "
+      COMMAND_CALL@132..146
+        FIELD_EXPR@132..141
+          NAME_REF@132..136
+            LNAME@132..136 "date"
+          DOT@136..137 "."
+          LNAME@137..141 "scan"
+        WHITESPACE@141..142 " "
+        COMMAND_ARGS@142..146
+          NAME_REF@142..146
+            LNAME@142..146 "text"
+      BLOCK@146..174
+        NEWLINE@146..147 "\n"
+        WHITESPACE@147..149 "  "
+        EXPR_STMT@149..173
+          IF_EXPR@149..173
+            IF_KW@149..151 "if"
+            WHITESPACE@151..152 " "
+            COMMAND_CALL@152..156
+              NAME_REF@152..154
+                LNAME@152..154 "ok"
+              WHITESPACE@154..155 " "
+              COMMAND_ARGS@155..156
+                NAME_REF@155..156
+                  LNAME@155..156 "m"
+            BLOCK@156..170
+              NEWLINE@156..157 "\n"
+              WHITESPACE@157..161 "    "
+              EXPR_STMT@161..167
+                COMMAND_CALL@161..167
+                  NAME_REF@161..165
+                    LNAME@161..165 "save"
+                  WHITESPACE@165..166 " "
+                  COMMAND_ARGS@166..167
+                    NAME_REF@166..167
+                      LNAME@166..167 "m"
+              NEWLINE@167..168 "\n"
+              WHITESPACE@168..170 "  "
+            END_KW@170..173 "end"
+        NEWLINE@173..174 "\n"
+      END_KW@174..177 "end"
+    NEWLINE@177..178 "\n"
+  EOF@178..178 ""

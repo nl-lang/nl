@@ -1,0 +1,15 @@
+[package]
+name = "nl_sema"
+description = "Name resolution and binding kinds of the NL language"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+nl_syntax = { path = "../nl_syntax" }
+rowan.workspace = true
+
+[lints]
+workspace = true

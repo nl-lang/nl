@@ -1,0 +1,116 @@
+SOURCE_FILE@0..170
+  BLOCK@0..170
+    COMMENT@0..57 "# A `:` touching the word after it is a Lua path wherever"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..81 "# an operand may start."
+    NEWLINE@81..82 "\n"
+    EXPR_STMT@82..89
+      CALL_EXPR@82..89
+        NAME_REF@82..83
+          LNAME@82..83 "f"
+        ARG_LIST@83..89
+          L_PAREN@83..84 "("
+          LUA_PATH@84..88
+            COLON@84..85 ":"
+            LNAME@85..86 "a"
+            LUA_FIELD@86..88
+              DOT@86..87 "."
+              LNAME@87..88 "b"
+          R_PAREN@88..89 ")"
+    NEWLINE@89..90 "\n"
+    ASSIGN_STMT@90..99
+      NAME_REF@90..91
+        LNAME@90..91 "x"
+      WHITESPACE@91..92 " "
+      EQ@92..93 "="
+      WHITESPACE@93..94 " "
+      PREFIX_EXPR@94..99
+        MINUS@94..95 "-"
+        LUA_PATH@95..99
+          COLON@95..96 ":"
+          LNAME@96..97 "a"
+          LUA_FIELD@97..99
+            DOT@97..98 "."
+            LNAME@98..99 "b"
+    NEWLINE@99..100 "\n"
+    ASSIGN_STMT@100..112
+      NAME_REF@100..101
+        LNAME@100..101 "x"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      PREFIX_EXPR@104..112
+        BANG@104..105 "!"
+        LUA_PATH@105..112
+          COLON@105..106 ":"
+          LNAME@106..109 "cfg"
+          LUA_FIELD@109..112
+            DOT@109..110 "."
+            LNAME@110..112 "on"
+    NEWLINE@112..113 "\n"
+    ASSIGN_STMT@113..122
+      NAME_REF@113..114
+        LNAME@113..114 "x"
+      WHITESPACE@114..115 " "
+      EQ@115..116 "="
+      WHITESPACE@116..117 " "
+      BIN_EXPR@117..122
+        LITERAL@117..118
+          NUMBER@117..118 "1"
+        DOT2@118..120 ".."
+        LUA_PATH@120..122
+          COLON@120..121 ":"
+          LNAME@121..122 "n"
+    NEWLINE@122..123 "\n"
+    ASSIGN_STMT@123..134
+      NAME_REF@123..124
+        LNAME@123..124 "x"
+      WHITESPACE@124..125 " "
+      EQ@125..126 "="
+      WHITESPACE@126..127 " "
+      TABLE_EXPR@127..134
+        L_CURLY@127..128 "{"
+        TABLE_PAIR@128..133
+          TABLE_KEY@128..129
+            LNAME@128..129 "f"
+          COLON@129..130 ":"
+          WHITESPACE@130..131 " "
+          LUA_PATH@131..133
+            COLON@131..132 ":"
+            LNAME@132..133 "x"
+        R_CURLY@133..134 "}"
+    NEWLINE@134..135 "\n"
+    ASSIGN_STMT@135..145
+      NAME_REF@135..136
+        LNAME@135..136 "x"
+      WHITESPACE@136..137 " "
+      EQ@137..138 "="
+      WHITESPACE@138..139 " "
+      BIN_EXPR@139..145
+        NAME_REF@139..140
+          LNAME@139..140 "a"
+        WHITESPACE@140..141 " "
+        PLUS@141..142 "+"
+        WHITESPACE@142..143 " "
+        LUA_PATH@143..145
+          COLON@143..144 ":"
+          LNAME@144..145 "b"
+    NEWLINE@145..146 "\n"
+    ASSIGN_STMT@146..169
+      NAME_REF@146..158
+        LNAME@146..158 "return_value"
+      WHITESPACE@158..159 " "
+      EQ@159..160 "="
+      WHITESPACE@160..161 " "
+      LUA_PATH@161..163
+        COLON@161..162 ":"
+        LNAME@162..163 "x"
+      WHITESPACE@163..164 " "
+      MODIFIER@164..169
+        IF_KW@164..166 "if"
+        WHITESPACE@166..167 " "
+        LUA_PATH@167..169
+          COLON@167..168 ":"
+          LNAME@168..169 "y"
+    NEWLINE@169..170 "\n"
+  EOF@170..170 ""

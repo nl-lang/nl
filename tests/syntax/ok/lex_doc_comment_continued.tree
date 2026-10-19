@@ -1,0 +1,50 @@
+SOURCE_FILE@0..238
+  BLOCK@0..238
+    COMMENT@0..56 "# The `#` lines directly after a `##` line belong to the"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..135 "# doc comment; a `#` line before the first `##` stays outside the declaration."
+    NEWLINE@135..136 "\n"
+    COMMENT@136..143 "# plain"
+    NEWLINE@143..144 "\n"
+    FN_DECL@144..174
+      DOC_COMMENT@144..150 "## aaa"
+      NEWLINE@150..151 "\n"
+      COMMENT@151..156 "# bbb"
+      NEWLINE@156..157 "\n"
+      COMMENT@157..162 "# ccc"
+      NEWLINE@162..163 "\n"
+      FN_KW@163..165 "fn"
+      WHITESPACE@165..166 " "
+      NAME@166..169
+        LNAME@166..169 "foo"
+      BLOCK@169..171
+        SEMI@169..170 ";"
+        WHITESPACE@170..171 " "
+      END_KW@171..174 "end"
+    NEWLINE@174..175 "\n"
+    NEWLINE@175..176 "\n"
+    STRUCT_DECL@176..237
+      STRUCT_KW@176..182 "struct"
+      WHITESPACE@182..183 " "
+      NAME@183..184
+        CNAME@183..184 "S"
+      NEWLINE@184..185 "\n"
+      WHITESPACE@185..187 "  "
+      FIELD_DECL@187..233
+        DOC_COMMENT@187..197 "## The id."
+        NEWLINE@197..198 "\n"
+        WHITESPACE@198..200 "  "
+        COMMENT@200..220 "# More about the id."
+        NEWLINE@220..221 "\n"
+        WHITESPACE@221..223 "  "
+        NAME@223..225
+          LNAME@223..225 "id"
+        COLON@225..226 ":"
+        WHITESPACE@226..227 " "
+        NAMED_TYPE@227..233
+          QUAL_NAME@227..233
+            CNAME@227..233 "Number"
+      NEWLINE@233..234 "\n"
+      END_KW@234..237 "end"
+    NEWLINE@237..238 "\n"
+  EOF@238..238 ""

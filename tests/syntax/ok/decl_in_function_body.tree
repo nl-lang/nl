@@ -1,0 +1,80 @@
+SOURCE_FILE@0..172
+  BLOCK@0..172
+    COMMENT@0..63 "# Declarations may appear in any block, not only at file level."
+    NEWLINE@63..64 "\n"
+    FN_DECL@64..171
+      FN_KW@64..66 "fn"
+      WHITESPACE@66..67 " "
+      NAME@67..72
+        LNAME@67..72 "outer"
+      BLOCK@72..168
+        NEWLINE@72..73 "\n"
+        WHITESPACE@73..75 "  "
+        STRUCT_DECL@75..107
+          STRUCT_KW@75..81 "struct"
+          WHITESPACE@81..82 " "
+          NAME@82..87
+            CNAME@82..87 "Local"
+          NEWLINE@87..88 "\n"
+          WHITESPACE@88..92 "    "
+          FIELD_DECL@92..101
+            NAME@92..93
+              LNAME@92..93 "x"
+            COLON@93..94 ":"
+            WHITESPACE@94..95 " "
+            NAMED_TYPE@95..101
+              QUAL_NAME@95..101
+                CNAME@95..101 "Number"
+          NEWLINE@101..102 "\n"
+          WHITESPACE@102..104 "  "
+          END_KW@104..107 "end"
+        NEWLINE@107..108 "\n"
+        WHITESPACE@108..110 "  "
+        FN_DECL@110..122
+          FN_KW@110..112 "fn"
+          WHITESPACE@112..113 " "
+          NAME@113..118
+            LNAME@113..118 "inner"
+          BLOCK@118..119
+            WHITESPACE@118..119 " "
+          END_KW@119..122 "end"
+        NEWLINE@122..123 "\n"
+        WHITESPACE@123..125 "  "
+        CONST_DECL@125..136
+          CONST_KW@125..130 "const"
+          WHITESPACE@130..131 " "
+          BIND_PAT@131..132
+            NAME@131..132
+              LNAME@131..132 "k"
+          WHITESPACE@132..133 " "
+          EQ@133..134 "="
+          WHITESPACE@134..135 " "
+          EXPR_LIST@135..136
+            LITERAL@135..136
+              NUMBER@135..136 "1"
+        NEWLINE@136..137 "\n"
+        WHITESPACE@137..139 "  "
+        ENUM_DECL@139..149
+          ENUM_KW@139..143 "enum"
+          WHITESPACE@143..144 " "
+          NAME@144..145
+            CNAME@144..145 "E"
+          WHITESPACE@145..146 " "
+          END_KW@146..149 "end"
+        NEWLINE@149..150 "\n"
+        WHITESPACE@150..152 "  "
+        TYPE_DECL@152..167
+          TYPE_KW@152..156 "type"
+          WHITESPACE@156..157 " "
+          NAME@157..158
+            CNAME@157..158 "T"
+          WHITESPACE@158..159 " "
+          EQ@159..160 "="
+          WHITESPACE@160..161 " "
+          NAMED_TYPE@161..167
+            QUAL_NAME@161..167
+              CNAME@161..167 "Number"
+        NEWLINE@167..168 "\n"
+      END_KW@168..171 "end"
+    NEWLINE@171..172 "\n"
+  EOF@172..172 ""

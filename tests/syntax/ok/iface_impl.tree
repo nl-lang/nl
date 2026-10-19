@@ -1,0 +1,73 @@
+SOURCE_FILE@0..152
+  BLOCK@0..152
+    COMMENT@0..53 "# `interface Name for Type` holds method definitions."
+    NEWLINE@53..54 "\n"
+    INTERFACE_IMPL@54..151
+      INTERFACE_KW@54..63 "interface"
+      WHITESPACE@63..64 " "
+      NAMED_TYPE@64..69
+        QUAL_NAME@64..69
+          CNAME@64..69 "Shape"
+      WHITESPACE@69..70 " "
+      FOR_KW@70..73 "for"
+      WHITESPACE@73..74 " "
+      NAMED_TYPE@74..80
+        QUAL_NAME@74..80
+          CNAME@74..80 "Circle"
+      NEWLINE@80..81 "\n"
+      WHITESPACE@81..83 "  "
+      FN_DECL@83..123
+        FN_KW@83..85 "fn"
+        WHITESPACE@85..86 " "
+        NAME@86..90
+          LNAME@86..90 "area"
+        RETURN_TYPE@90..98
+          COLON@90..91 ":"
+          WHITESPACE@91..92 " "
+          NAMED_TYPE@92..98
+            QUAL_NAME@92..98
+              CNAME@92..98 "Number"
+        BLOCK@98..120
+          NEWLINE@98..99 "\n"
+          WHITESPACE@99..103 "    "
+          EXPR_STMT@103..117
+            BIN_EXPR@103..117
+              LITERAL@103..107
+                NUMBER@103..107 "3.14"
+              WHITESPACE@107..108 " "
+              STAR@108..109 "*"
+              WHITESPACE@109..110 " "
+              BIN_EXPR@110..117
+                AT_EXPR@110..112
+                  AT_NAME@110..112 "@r"
+                WHITESPACE@112..113 " "
+                STAR2@113..115 "**"
+                WHITESPACE@115..116 " "
+                LITERAL@116..117
+                  NUMBER@116..117 "2"
+          NEWLINE@117..118 "\n"
+          WHITESPACE@118..120 "  "
+        END_KW@120..123 "end"
+      NEWLINE@123..124 "\n"
+      WHITESPACE@124..126 "  "
+      FN_DECL@126..147
+        ASYNC_KW@126..131 "async"
+        WHITESPACE@131..132 " "
+        FN_KW@132..134 "fn"
+        WHITESPACE@134..135 " "
+        NAME@135..139
+          LNAME@135..139 "load"
+        PARAM_LIST@139..143
+          L_PAREN@139..140 "("
+          PARAM@140..142
+            BIND_PAT@140..142
+              NAME@140..142
+                LNAME@140..142 "id"
+          R_PAREN@142..143 ")"
+        BLOCK@143..144
+          WHITESPACE@143..144 " "
+        END_KW@144..147 "end"
+      NEWLINE@147..148 "\n"
+      END_KW@148..151 "end"
+    NEWLINE@151..152 "\n"
+  EOF@152..152 ""

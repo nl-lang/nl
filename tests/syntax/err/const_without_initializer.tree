@@ -1,0 +1,28 @@
+SOURCE_FILE@0..66
+  BLOCK@0..66
+    COMMENT@0..41 "# The initializer of `const` is required."
+    NEWLINE@41..42 "\n"
+    CONST_DECL@42..49
+      CONST_KW@42..47 "const"
+      WHITESPACE@47..48 " "
+      BIND_PAT@48..49
+        NAME@48..49
+          LNAME@48..49 "a"
+    NEWLINE@49..50 "\n"
+    CONST_DECL@50..65
+      CONST_KW@50..55 "const"
+      WHITESPACE@55..56 " "
+      TYPED_PAT@56..65
+        BIND_PAT@56..57
+          NAME@56..57
+            CNAME@56..57 "B"
+        COLON@57..58 ":"
+        WHITESPACE@58..59 " "
+        NAMED_TYPE@59..65
+          QUAL_NAME@59..65
+            CNAME@59..65 "Number"
+    NEWLINE@65..66 "\n"
+  EOF@66..66 ""
+---
+error@48..49 2:7: a `const` needs a value: write `= value` after the name
+error@56..65 3:7: a `const` needs a value: write `= value` after the name

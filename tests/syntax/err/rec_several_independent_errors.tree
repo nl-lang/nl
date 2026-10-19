@@ -1,0 +1,120 @@
+SOURCE_FILE@0..173
+  BLOCK@0..173
+    COMMENT@0..71 "# Recovery: several independent errors in one file, each reported once."
+    NEWLINE@71..72 "\n"
+    LET_DECL@72..86
+      LET_KW@72..75 "let"
+      WHITESPACE@75..76 " "
+      BIND_PAT@76..77
+        NAME@76..77
+          LNAME@76..77 "a"
+      WHITESPACE@77..78 " "
+      EQ@78..79 "="
+      WHITESPACE@79..80 " "
+      EXPR_LIST@80..86
+        PAREN_EXPR@80..86
+          L_PAREN@80..81 "("
+          BIN_EXPR@81..84
+            LITERAL@81..82
+              NUMBER@81..82 "1"
+            WHITESPACE@82..83 " "
+            PLUS@83..84 "+"
+          WHITESPACE@84..85 " "
+          R_PAREN@85..86 ")"
+    NEWLINE@86..87 "\n"
+    FN_DECL@87..107
+      FN_KW@87..89 "fn"
+      WHITESPACE@89..90 " "
+      NAME@90..91
+        LNAME@90..91 "f"
+      PARAM_LIST@91..93
+        L_PAREN@91..92 "("
+        R_PAREN@92..93 ")"
+      BLOCK@93..104
+        NEWLINE@93..94 "\n"
+        WHITESPACE@94..96 "  "
+        ASSIGN_STMT@96..103
+          NAME_REF@96..97
+            LNAME@96..97 "x"
+          WHITESPACE@97..98 " "
+          EQ@98..99 "="
+          WHITESPACE@99..100 " "
+          ERROR_NODE@100..101
+            EQ@100..101 "="
+          WHITESPACE@101..102 " "
+          LITERAL@102..103
+            NUMBER@102..103 "2"
+        NEWLINE@103..104 "\n"
+      END_KW@104..107 "end"
+    NEWLINE@107..108 "\n"
+    EXPR_STMT@108..123
+      COMMAND_CALL@108..123
+        NAME_REF@108..113
+          LNAME@108..113 "print"
+        WHITESPACE@113..114 " "
+        COMMAND_ARGS@114..123
+          NAME_REF@114..123
+            ONAME@114..123 "getHealth"
+    NEWLINE@123..124 "\n"
+    LET_DECL@124..133
+      LET_KW@124..127 "let"
+      WHITESPACE@127..128 " "
+      BIND_PAT@128..129
+        NAME@128..129
+          LNAME@128..129 "b"
+      WHITESPACE@129..130 " "
+      EQ@130..131 "="
+      WHITESPACE@131..132 " "
+      EXPR_LIST@132..133
+        LITERAL@132..133
+          NUMBER@132..133 "3"
+    NEWLINE@133..134 "\n"
+    WHILE_STMT@134..154
+      WHILE_KW@134..139 "while"
+      WHITESPACE@139..140 " "
+      ERROR_NODE@140..144
+        COND_KW@140..144 "cond"
+      BLOCK@144..151
+        NEWLINE@144..145 "\n"
+        WHITESPACE@145..147 "  "
+        EXPR_STMT@147..150
+          CALL_EXPR@147..150
+            NAME_REF@147..148
+              LNAME@147..148 "y"
+            ARG_LIST@148..150
+              L_PAREN@148..149 "("
+              R_PAREN@149..150 ")"
+        NEWLINE@150..151 "\n"
+      END_KW@151..154 "end"
+    NEWLINE@154..155 "\n"
+    ASSIGN_STMT@155..162
+      NAME_REF@155..156
+        LNAME@155..156 "c"
+      WHITESPACE@156..157 " "
+      EQ@157..158 "="
+      WHITESPACE@158..159 " "
+      LIST_EXPR@159..162
+        L_BRACK@159..160 "["
+        LITERAL@160..161
+          NUMBER@160..161 "1"
+        R_BRACK@161..162 "]"
+    NEWLINE@162..163 "\n"
+    LET_DECL@163..172
+      LET_KW@163..166 "let"
+      WHITESPACE@166..167 " "
+      BIND_PAT@167..168
+        NAME@167..168
+          LNAME@167..168 "d"
+      WHITESPACE@168..169 " "
+      EQ@169..170 "="
+      WHITESPACE@170..171 " "
+      EXPR_LIST@171..172
+        LITERAL@171..172
+          NUMBER@171..172 "4"
+    NEWLINE@172..173 "\n"
+  EOF@173..173 ""
+---
+error@85..86 2:14: expected an expression, found `)`
+error@100..101 4:7: expected an expression, found `=`
+error@114..123 6:7: `getHealth` is not an NL name: NL names are snake_case (`get_health`), PascalCase or SCREAMING_SNAKE_CASE. A name in this style is a Lua name, allowed only in a Lua path (`:obj.getHealth()`) or as a method name after `:` (`obj:getHealth()`); a table key in this style is written as a string (`t["getHealth"]`)
+error@140..144 8:7: `cond` is a keyword: it starts a `cond … when … end` block. Use another name

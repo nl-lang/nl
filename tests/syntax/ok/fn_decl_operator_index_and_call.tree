@@ -1,0 +1,74 @@
+SOURCE_FILE@0..215
+  BLOCK@0..215
+    COMMENT@0..68 "# Operator names `[]`, `[]=` and `()`; the `()` of the call operator"
+    NEWLINE@68..69 "\n"
+    COMMENT@69..147 "# is part of the name, so `fn Foo.()(*args)` has the parameter list `(*args)`."
+    NEWLINE@147..148 "\n"
+    FN_DECL@148..166
+      FN_KW@148..150 "fn"
+      WHITESPACE@150..151 " "
+      QUAL_NAME@151..154
+        CNAME@151..154 "Foo"
+      DOT@154..155 "."
+      OP_NAME@155..157
+        L_BRACK@155..156 "["
+        R_BRACK@156..157 "]"
+      PARAM_LIST@157..162
+        L_PAREN@157..158 "("
+        PARAM@158..161
+          BIND_PAT@158..161
+            NAME@158..161
+              LNAME@158..161 "key"
+        R_PAREN@161..162 ")"
+      BLOCK@162..163
+        NEWLINE@162..163 "\n"
+      END_KW@163..166 "end"
+    NEWLINE@166..167 "\n"
+    FN_DECL@167..193
+      FN_KW@167..169 "fn"
+      WHITESPACE@169..170 " "
+      QUAL_NAME@170..173
+        CNAME@170..173 "Foo"
+      DOT@173..174 "."
+      OP_NAME@174..177
+        L_BRACK@174..175 "["
+        R_BRACK@175..176 "]"
+        EQ@176..177 "="
+      PARAM_LIST@177..189
+        L_PAREN@177..178 "("
+        PARAM@178..181
+          BIND_PAT@178..181
+            NAME@178..181
+              LNAME@178..181 "key"
+        COMMA@181..182 ","
+        WHITESPACE@182..183 " "
+        PARAM@183..188
+          BIND_PAT@183..188
+            NAME@183..188
+              LNAME@183..188 "value"
+        R_PAREN@188..189 ")"
+      BLOCK@189..190
+        NEWLINE@189..190 "\n"
+      END_KW@190..193 "end"
+    NEWLINE@193..194 "\n"
+    FN_DECL@194..214
+      FN_KW@194..196 "fn"
+      WHITESPACE@196..197 " "
+      QUAL_NAME@197..200
+        CNAME@197..200 "Foo"
+      DOT@200..201 "."
+      OP_NAME@201..203
+        L_PAREN@201..202 "("
+        R_PAREN@202..203 ")"
+      PARAM_LIST@203..210
+        L_PAREN@203..204 "("
+        REST_PARAM@204..209
+          STAR@204..205 "*"
+          NAME@205..209
+            LNAME@205..209 "args"
+        R_PAREN@209..210 ")"
+      BLOCK@210..211
+        NEWLINE@210..211 "\n"
+      END_KW@211..214 "end"
+    NEWLINE@214..215 "\n"
+  EOF@215..215 ""

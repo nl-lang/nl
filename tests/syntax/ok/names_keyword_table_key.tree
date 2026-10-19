@@ -1,0 +1,53 @@
+SOURCE_FILE@0..192
+  BLOCK@0..192
+    COMMENT@0..55 "# A keyword directly before `:` at the start of a table"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..117 "# item is a string key, except `true`, `false` and `nil` (see"
+    NEWLINE@117..118 "\n"
+    COMMENT@118..153 "# err/table_key_true_false_nil.nl)."
+    NEWLINE@153..154 "\n"
+    ASSIGN_STMT@154..191
+      NAME_REF@154..155
+        LNAME@154..155 "t"
+      WHITESPACE@155..156 " "
+      EQ@156..157 "="
+      WHITESPACE@157..158 " "
+      TABLE_EXPR@158..191
+        L_CURLY@158..159 "{"
+        TABLE_PAIR@159..166
+          TABLE_KEY@159..163
+            LNAME@159..163 "type"
+          COLON@163..164 ":"
+          WHITESPACE@164..165 " "
+          LITERAL@165..166
+            NUMBER@165..166 "1"
+        COMMA@166..167 ","
+        WHITESPACE@167..168 " "
+        TABLE_PAIR@168..174
+          TABLE_KEY@168..171
+            LNAME@168..171 "end"
+          COLON@171..172 ":"
+          WHITESPACE@172..173 " "
+          LITERAL@173..174
+            NUMBER@173..174 "2"
+        COMMA@174..175 ","
+        WHITESPACE@175..176 " "
+        TABLE_PAIR@176..181
+          TABLE_KEY@176..178
+            LNAME@176..178 "if"
+          COLON@178..179 ":"
+          WHITESPACE@179..180 " "
+          LITERAL@180..181
+            NUMBER@180..181 "3"
+        COMMA@181..182 ","
+        WHITESPACE@182..183 " "
+        TABLE_PAIR@183..190
+          TABLE_KEY@183..187
+            CNAME@183..187 "Self"
+          COLON@187..188 ":"
+          WHITESPACE@188..189 " "
+          LITERAL@189..190
+            NUMBER@189..190 "5"
+        R_CURLY@190..191 "}"
+    NEWLINE@191..192 "\n"
+  EOF@192..192 ""

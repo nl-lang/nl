@@ -1,0 +1,149 @@
+SOURCE_FILE@0..161
+  BLOCK@0..161
+    COMMENT@0..37 "# Every compound-assignment operator."
+    NEWLINE@37..38 "\n"
+    COMPOUND_ASSIGN_STMT@38..44
+      NAME_REF@38..39
+        LNAME@38..39 "x"
+      WHITESPACE@39..40 " "
+      PLUS_EQ@40..42 "+="
+      WHITESPACE@42..43 " "
+      LITERAL@43..44
+        NUMBER@43..44 "1"
+    NEWLINE@44..45 "\n"
+    COMPOUND_ASSIGN_STMT@45..51
+      NAME_REF@45..46
+        LNAME@45..46 "x"
+      WHITESPACE@46..47 " "
+      MINUS_EQ@47..49 "-="
+      WHITESPACE@49..50 " "
+      LITERAL@50..51
+        NUMBER@50..51 "1"
+    NEWLINE@51..52 "\n"
+    COMPOUND_ASSIGN_STMT@52..58
+      NAME_REF@52..53
+        LNAME@52..53 "x"
+      WHITESPACE@53..54 " "
+      STAR_EQ@54..56 "*="
+      WHITESPACE@56..57 " "
+      LITERAL@57..58
+        NUMBER@57..58 "1"
+    NEWLINE@58..59 "\n"
+    COMPOUND_ASSIGN_STMT@59..65
+      NAME_REF@59..60
+        LNAME@59..60 "x"
+      WHITESPACE@60..61 " "
+      SLASH_EQ@61..63 "/="
+      WHITESPACE@63..64 " "
+      LITERAL@64..65
+        NUMBER@64..65 "1"
+    NEWLINE@65..66 "\n"
+    COMPOUND_ASSIGN_STMT@66..73
+      NAME_REF@66..67
+        LNAME@66..67 "x"
+      WHITESPACE@67..68 " "
+      SLASH2_EQ@68..71 "//="
+      WHITESPACE@71..72 " "
+      LITERAL@72..73
+        NUMBER@72..73 "1"
+    NEWLINE@73..74 "\n"
+    COMPOUND_ASSIGN_STMT@74..80
+      NAME_REF@74..75
+        LNAME@74..75 "x"
+      WHITESPACE@75..76 " "
+      PERCENT_EQ@76..78 "%="
+      WHITESPACE@78..79 " "
+      LITERAL@79..80
+        NUMBER@79..80 "1"
+    NEWLINE@80..81 "\n"
+    COMPOUND_ASSIGN_STMT@81..88
+      NAME_REF@81..82
+        LNAME@81..82 "x"
+      WHITESPACE@82..83 " "
+      STAR2_EQ@83..86 "**="
+      WHITESPACE@86..87 " "
+      LITERAL@87..88
+        NUMBER@87..88 "1"
+    NEWLINE@88..89 "\n"
+    COMPOUND_ASSIGN_STMT@89..98
+      NAME_REF@89..90
+        LNAME@89..90 "x"
+      WHITESPACE@90..91 " "
+      CONCAT_EQ@91..94 "<>="
+      WHITESPACE@94..95 " "
+      LITERAL@95..98
+        STRING@95..98 "\"a\""
+    NEWLINE@98..99 "\n"
+    COMPOUND_ASSIGN_STMT@99..105
+      NAME_REF@99..100
+        LNAME@99..100 "x"
+      WHITESPACE@100..101 " "
+      PIPE_EQ@101..103 "|="
+      WHITESPACE@103..104 " "
+      LITERAL@104..105
+        NUMBER@104..105 "1"
+    NEWLINE@105..106 "\n"
+    COMPOUND_ASSIGN_STMT@106..112
+      NAME_REF@106..107
+        LNAME@106..107 "x"
+      WHITESPACE@107..108 " "
+      AMP_EQ@108..110 "&="
+      WHITESPACE@110..111 " "
+      LITERAL@111..112
+        NUMBER@111..112 "1"
+    NEWLINE@112..113 "\n"
+    COMPOUND_ASSIGN_STMT@113..119
+      NAME_REF@113..114
+        LNAME@113..114 "x"
+      WHITESPACE@114..115 " "
+      CARET_EQ@115..117 "^="
+      WHITESPACE@117..118 " "
+      LITERAL@118..119
+        NUMBER@118..119 "1"
+    NEWLINE@119..120 "\n"
+    COMPOUND_ASSIGN_STMT@120..127
+      NAME_REF@120..121
+        LNAME@120..121 "x"
+      WHITESPACE@121..122 " "
+      SHL_EQ@122..125 "<<="
+      WHITESPACE@125..126 " "
+      LITERAL@126..127
+        NUMBER@126..127 "1"
+    NEWLINE@127..128 "\n"
+    COMPOUND_ASSIGN_STMT@128..135
+      NAME_REF@128..129
+        LNAME@128..129 "x"
+      WHITESPACE@129..130 " "
+      SHR_EQ@130..133 ">>="
+      WHITESPACE@133..134 " "
+      LITERAL@134..135
+        NUMBER@134..135 "1"
+    NEWLINE@135..136 "\n"
+    COMPOUND_ASSIGN_STMT@136..144
+      NAME_REF@136..137
+        LNAME@136..137 "x"
+      WHITESPACE@137..138 " "
+      USHR_EQ@138..142 ">>>="
+      WHITESPACE@142..143 " "
+      LITERAL@143..144
+        NUMBER@143..144 "1"
+    NEWLINE@144..145 "\n"
+    COMPOUND_ASSIGN_STMT@145..152
+      NAME_REF@145..146
+        LNAME@145..146 "x"
+      WHITESPACE@146..147 " "
+      PIPE2_EQ@147..150 "||="
+      WHITESPACE@150..151 " "
+      LITERAL@151..152
+        NUMBER@151..152 "1"
+    NEWLINE@152..153 "\n"
+    COMPOUND_ASSIGN_STMT@153..160
+      NAME_REF@153..154
+        LNAME@153..154 "x"
+      WHITESPACE@154..155 " "
+      AMP2_EQ@155..158 "&&="
+      WHITESPACE@158..159 " "
+      LITERAL@159..160
+        NUMBER@159..160 "1"
+    NEWLINE@160..161 "\n"
+  EOF@161..161 ""

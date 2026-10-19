@@ -1,0 +1,32 @@
+SOURCE_FILE@0..107
+  BLOCK@0..107
+    COMMENT@0..59 "# A name, a literal, a string and `@name` at the start of a"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..89 "# line begin a new statement."
+    NEWLINE@89..90 "\n"
+    ASSIGN_STMT@90..95
+      NAME_REF@90..91
+        LNAME@90..91 "x"
+      WHITESPACE@91..92 " "
+      EQ@92..93 "="
+      WHITESPACE@93..94 " "
+      NAME_REF@94..95
+        LNAME@94..95 "a"
+    NEWLINE@95..96 "\n"
+    EXPR_STMT@96..97
+      NAME_REF@96..97
+        LNAME@96..97 "b"
+    NEWLINE@97..98 "\n"
+    EXPR_STMT@98..99
+      LITERAL@98..99
+        NUMBER@98..99 "1"
+    NEWLINE@99..100 "\n"
+    EXPR_STMT@100..103
+      LITERAL@100..103
+        STRING@100..103 "\"s\""
+    NEWLINE@103..104 "\n"
+    EXPR_STMT@104..106
+      AT_EXPR@104..106
+        AT_NAME@104..106 "@c"
+    NEWLINE@106..107 "\n"
+  EOF@107..107 ""

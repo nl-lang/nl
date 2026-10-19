@@ -1,0 +1,25 @@
+SOURCE_FILE@0..95
+  BLOCK@0..95
+    COMMENT@0..61 "# `f (a), b` is `f(a), b`, valid only as a target list, and a"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..85 "# call is not a target."
+    NEWLINE@85..86 "\n"
+    EXPR_STMT@86..94
+      EXPR_LIST@86..94
+        CALL_EXPR@86..91
+          NAME_REF@86..87
+            LNAME@86..87 "f"
+          WHITESPACE@87..88 " "
+          ARG_LIST@88..91
+            L_PAREN@88..89 "("
+            NAME_REF@89..90
+              LNAME@89..90 "a"
+            R_PAREN@90..91 ")"
+        COMMA@91..92 ","
+        WHITESPACE@92..93 " "
+        NAME_REF@93..94
+          LNAME@93..94 "b"
+    NEWLINE@94..95 "\n"
+  EOF@95..95 ""
+---
+error@86..94 3:1: `f (a), b` is the call `f(a)` followed by `, b`, not a call with two arguments; to pass several arguments, put them all inside the parentheses: `f((a), b)`

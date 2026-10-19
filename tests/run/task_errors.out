@@ -1,0 +1,4 @@
+caught across await: rejected
+guarded finished
+on_error: second
+await outside a task raised

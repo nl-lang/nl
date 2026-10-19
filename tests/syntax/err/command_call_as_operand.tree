@@ -1,0 +1,45 @@
+SOURCE_FILE@0..58
+  BLOCK@0..58
+    COMMENT@0..35 "# A command call is not an operand."
+    NEWLINE@35..36 "\n"
+    ASSIGN_STMT@36..47
+      NAME_REF@36..37
+        LNAME@36..37 "x"
+      WHITESPACE@37..38 " "
+      EQ@38..39 "="
+      WHITESPACE@39..40 " "
+      BIN_EXPR@40..47
+        LITERAL@40..41
+          NUMBER@40..41 "1"
+        WHITESPACE@41..42 " "
+        PLUS@42..43 "+"
+        WHITESPACE@43..44 " "
+        COMMAND_CALL@44..47
+          NAME_REF@44..45
+            LNAME@44..45 "f"
+          WHITESPACE@45..46 " "
+          COMMAND_ARGS@46..47
+            NAME_REF@46..47
+              LNAME@46..47 "y"
+    NEWLINE@47..48 "\n"
+    ASSIGN_STMT@48..57
+      NAME_REF@48..49
+        LNAME@48..49 "z"
+      WHITESPACE@49..50 " "
+      EQ@50..51 "="
+      WHITESPACE@51..52 " "
+      PAREN_EXPR@52..57
+        L_PAREN@52..53 "("
+        COMMAND_CALL@53..56
+          NAME_REF@53..54
+            LNAME@53..54 "f"
+          WHITESPACE@54..55 " "
+          COMMAND_ARGS@55..56
+            NAME_REF@55..56
+              LNAME@55..56 "y"
+        R_PAREN@56..57 ")"
+    NEWLINE@57..58 "\n"
+  EOF@58..58 ""
+---
+error@44..47 2:9: a call without parentheses is only allowed as a whole statement, the value of an assignment or declaration, or a header; write `f(y)`
+error@53..56 3:6: a call without parentheses is only allowed as a whole statement, the value of an assignment or declaration, or a header; write `f(y)`

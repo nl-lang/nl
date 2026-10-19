@@ -1,0 +1,24 @@
+SOURCE_FILE@0..42
+  BLOCK@0..42
+    COMMENT@0..29 "# Ranges are non-associative."
+    NEWLINE@29..30 "\n"
+    ASSIGN_STMT@30..41
+      NAME_REF@30..31
+        LNAME@30..31 "r"
+      WHITESPACE@31..32 " "
+      EQ@32..33 "="
+      WHITESPACE@33..34 " "
+      BIN_EXPR@34..41
+        BIN_EXPR@34..38
+          LITERAL@34..35
+            NUMBER@34..35 "1"
+          DOT2@35..37 ".."
+          LITERAL@37..38
+            NUMBER@37..38 "2"
+        DOT2@38..40 ".."
+        LITERAL@40..41
+          NUMBER@40..41 "3"
+    NEWLINE@41..42 "\n"
+  EOF@42..42 ""
+---
+error@38..40 2:9: ranges cannot be chained (`1..2..3`); a range's bounds are single values

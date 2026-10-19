@@ -1,0 +1,11 @@
+2
+true
+true
+true
+Rect
+String
+10
+25
+JobError bad input
+true
+TypeError from the worker

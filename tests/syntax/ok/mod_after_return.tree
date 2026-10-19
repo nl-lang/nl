@@ -1,0 +1,62 @@
+SOURCE_FILE@0..198
+  BLOCK@0..198
+    COMMENT@0..59 "# `return` directly followed by a modifier returns nothing;"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..117 "# `return value if cond` returns the value conditionally."
+    NEWLINE@117..118 "\n"
+    FN_DECL@118..197
+      FN_KW@118..120 "fn"
+      WHITESPACE@120..121 " "
+      NAME@121..122
+        LNAME@121..122 "f"
+      PARAM_LIST@122..138
+        L_PAREN@122..123 "("
+        PARAM@123..129
+          BIND_PAT@123..129
+            NAME@123..129
+              LNAME@123..129 "target"
+        COMMA@129..130 ","
+        WHITESPACE@130..131 " "
+        PARAM@131..137
+          BIND_PAT@131..137
+            NAME@131..137
+              LNAME@131..137 "amount"
+        R_PAREN@137..138 ")"
+      BLOCK@138..194
+        NEWLINE@138..139 "\n"
+        WHITESPACE@139..141 "  "
+        RETURN_STMT@141..155
+          RETURN_KW@141..147 "return"
+          WHITESPACE@147..148 " "
+          MODIFIER@148..155
+            IF_KW@148..150 "if"
+            WHITESPACE@150..151 " "
+            NAME_REF@151..155
+              LNAME@151..155 "done"
+        NEWLINE@155..156 "\n"
+        WHITESPACE@156..158 "  "
+        RETURN_STMT@158..193
+          RETURN_KW@158..164 "return"
+          WHITESPACE@164..165 " "
+          EXPR_LIST@165..175
+            BIN_EXPR@165..175
+              NAME_REF@165..171
+                LNAME@165..171 "amount"
+              WHITESPACE@171..172 " "
+              SLASH@172..173 "/"
+              WHITESPACE@173..174 " "
+              LITERAL@174..175
+                NUMBER@174..175 "2"
+          WHITESPACE@175..176 " "
+          MODIFIER@176..193
+            IF_KW@176..178 "if"
+            WHITESPACE@178..179 " "
+            FIELD_EXPR@179..193
+              NAME_REF@179..185
+                LNAME@179..185 "target"
+              DOT@185..186 "."
+              LNAME@186..193 "armored"
+        NEWLINE@193..194 "\n"
+      END_KW@194..197 "end"
+    NEWLINE@197..198 "\n"
+  EOF@198..198 ""

@@ -1,0 +1,63 @@
+SOURCE_FILE@0..156
+  BLOCK@0..156
+    COMMENT@0..62 "# `!` touching a name, `@name` or a keyword member is postfix;"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..111 "# after other keywords it is prefix (`if!done`)."
+    NEWLINE@111..112 "\n"
+    ASSIGN_STMT@112..118
+      NAME_REF@112..113
+        LNAME@112..113 "a"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      BANG_EXPR@116..118
+        NAME_REF@116..117
+          LNAME@116..117 "f"
+        BANG_POSTFIX@117..118 "!"
+    NEWLINE@118..119 "\n"
+    ASSIGN_STMT@119..129
+      NAME_REF@119..120
+        LNAME@119..120 "a"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      BANG_EXPR@123..129
+        FIELD_EXPR@123..128
+          NAME_REF@123..124
+            LNAME@123..124 "x"
+          DOT@124..125 "."
+          LNAME@125..128 "end"
+        BANG_POSTFIX@128..129 "!"
+    NEWLINE@129..130 "\n"
+    ASSIGN_STMT@130..137
+      NAME_REF@130..131
+        LNAME@130..131 "a"
+      WHITESPACE@131..132 " "
+      EQ@132..133 "="
+      WHITESPACE@133..134 " "
+      BANG_EXPR@134..137
+        AT_EXPR@134..136
+          AT_NAME@134..136 "@h"
+        BANG_POSTFIX@136..137 "!"
+    NEWLINE@137..138 "\n"
+    EXPR_STMT@138..155
+      IF_EXPR@138..155
+        IF_KW@138..140 "if"
+        PREFIX_EXPR@140..145
+          BANG@140..141 "!"
+          NAME_REF@141..145
+            LNAME@141..145 "done"
+        BLOCK@145..152
+          NEWLINE@145..146 "\n"
+          WHITESPACE@146..148 "  "
+          EXPR_STMT@148..151
+            CALL_EXPR@148..151
+              NAME_REF@148..149
+                LNAME@148..149 "g"
+              ARG_LIST@149..151
+                L_PAREN@149..150 "("
+                R_PAREN@150..151 ")"
+          NEWLINE@151..152 "\n"
+        END_KW@152..155 "end"
+    NEWLINE@155..156 "\n"
+  EOF@156..156 ""

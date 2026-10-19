@@ -1,0 +1,48 @@
+SOURCE_FILE@0..134
+  BLOCK@0..134
+    COMMENT@0..54 "# The `->` of a short function goes on the line of its"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..107 "# parameters; a `->` that starts a line is an error."
+    NEWLINE@107..108 "\n"
+    EXPR_STMT@108..109
+      NAME_REF@108..109
+        LNAME@108..109 "a"
+    NEWLINE@109..110 "\n"
+    EXPR_STMT@110..114
+      ERROR_NODE@110..112
+        ARROW@110..112 "->"
+      WHITESPACE@112..113 " "
+      NAME_REF@113..114
+        LNAME@113..114 "b"
+    NEWLINE@114..115 "\n"
+    LET_DECL@115..133
+      LET_KW@115..118 "let"
+      WHITESPACE@118..119 " "
+      BIND_PAT@119..120
+        NAME@119..120
+          LNAME@119..120 "h"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..133
+        LAMBDA_EXPR@123..133
+          BLOCK_PARAMS@123..126
+            PIPE@123..124 "|"
+            PARAM@124..125
+              BIND_PAT@124..125
+                NAME@124..125
+                  LNAME@124..125 "a"
+            PIPE@125..126 "|"
+          NEWLINE@126..127 "\n"
+          WHITESPACE@127..129 "  "
+          ARROW@129..131 "->"
+          WHITESPACE@131..132 " "
+          BLOCK@132..133
+            EXPR_STMT@132..133
+              NAME_REF@132..133
+                LNAME@132..133 "a"
+    NEWLINE@133..134 "\n"
+  EOF@134..134 ""
+---
+error@110..112 4:1: `->` cannot start a line: write it on the line of the short function's parameters, `x -> …` or `|a, b| -> …`
+error@129..131 6:3: the `->` of a short function goes on the line of its parameters: `|a| -> …`

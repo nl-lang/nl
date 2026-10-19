@@ -1,0 +1,19 @@
+SOURCE_FILE@0..158
+  BLOCK@0..158
+    COMMENT@0..58 "# A blank line between the doc comment and the declaration"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..130 "# makes it a plain comment, which stays trivia outside the declaration."
+    NEWLINE@130..131 "\n"
+    DOC_COMMENT@131..147 "## Not attached."
+    NEWLINE@147..148 "\n"
+    NEWLINE@148..149 "\n"
+    FN_DECL@149..157
+      FN_KW@149..151 "fn"
+      WHITESPACE@151..152 " "
+      NAME@152..153
+        LNAME@152..153 "g"
+      BLOCK@153..154
+        NEWLINE@153..154 "\n"
+      END_KW@154..157 "end"
+    NEWLINE@157..158 "\n"
+  EOF@158..158 ""

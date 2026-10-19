@@ -1,0 +1,16 @@
+trace_tail_intrinsic.nl:9: attempt to read member 'y' of nil
+stack traceback:
+	trace_tail_intrinsic.nl:9: in function 'getter'
+	trace_tail_intrinsic.nl:38: in function <trace_tail_intrinsic.nl:37>
+	trace_tail_intrinsic.nl:37: in main chunk
+trace_tail_intrinsic.nl:15:
+stack traceback:
+	trace_tail_intrinsic.nl:15: in function 'classify'
+	trace_tail_intrinsic.nl:47: in function <trace_tail_intrinsic.nl:46>
+	trace_tail_intrinsic.nl:46: in main chunk
+trace_tail_intrinsic.nl:26:
+stack traceback:
+	trace_tail_intrinsic.nl:26: in function 'kind'
+	trace_tail_intrinsic.nl:54: in function <trace_tail_intrinsic.nl:53>
+	trace_tail_intrinsic.nl:53: in main chunk
+1	2

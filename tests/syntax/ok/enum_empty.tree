@@ -1,0 +1,13 @@
+SOURCE_FILE@0..35
+  BLOCK@0..35
+    COMMENT@0..23 "# An enum may be empty."
+    NEWLINE@23..24 "\n"
+    ENUM_DECL@24..34
+      ENUM_KW@24..28 "enum"
+      WHITESPACE@28..29 " "
+      NAME@29..30
+        CNAME@29..30 "E"
+      WHITESPACE@30..31 " "
+      END_KW@31..34 "end"
+    NEWLINE@34..35 "\n"
+  EOF@35..35 ""

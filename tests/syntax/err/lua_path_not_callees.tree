@@ -1,0 +1,75 @@
+SOURCE_FILE@0..157
+  BLOCK@0..157
+    COMMENT@0..56 "# A Lua path that ends in a call, an index or a block is"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..120 "# not a command callee; a `{` after it is not a table argument."
+    NEWLINE@120..121 "\n"
+    EXPR_STMT@121..125
+      LUA_PATH@121..125
+        COLON@121..122 ":"
+        LNAME@122..123 "f"
+        LUA_CALL@123..125
+          ARG_LIST@123..125
+            L_PAREN@123..124 "("
+            R_PAREN@124..125 ")"
+    WHITESPACE@125..126 " "
+    EXPR_STMT@126..127
+      NAME_REF@126..127
+        LNAME@126..127 "a"
+    NEWLINE@127..128 "\n"
+    EXPR_STMT@128..133
+      LUA_PATH@128..133
+        COLON@128..129 ":"
+        LNAME@129..130 "t"
+        LUA_INDEX@130..133
+          L_BRACK@130..131 "["
+          LITERAL@131..132
+            NUMBER@131..132 "1"
+          R_BRACK@132..133 "]"
+    WHITESPACE@133..134 " "
+    EXPR_STMT@134..135
+      NAME_REF@134..135
+        LNAME@134..135 "b"
+    NEWLINE@135..136 "\n"
+    EXPR_STMT@136..142
+      LUA_PATH@136..142
+        COLON@136..137 ":"
+        LNAME@137..138 "t"
+        LUA_METHOD@138..142
+          COLON@138..139 ":"
+          LNAME@139..140 "m"
+          ARG_LIST@140..142
+            L_PAREN@140..141 "("
+            R_PAREN@141..142 ")"
+    WHITESPACE@142..143 " "
+    EXPR_STMT@143..144
+      NAME_REF@143..144
+        LNAME@143..144 "c"
+    NEWLINE@144..145 "\n"
+    EXPR_STMT@145..156
+      LUA_PATH@145..156
+        COLON@145..146 ":"
+        LNAME@146..147 "f"
+        LUA_CALL@147..149
+          ARG_LIST@147..149
+            L_PAREN@147..148 "("
+            R_PAREN@148..149 ")"
+        WHITESPACE@149..150 " "
+        ERROR_NODE@150..156
+          TABLE_EXPR@150..156
+            L_CURLY@150..151 "{"
+            TABLE_PAIR@151..155
+              TABLE_KEY@151..152
+                LNAME@151..152 "a"
+              COLON@152..153 ":"
+              WHITESPACE@153..154 " "
+              LITERAL@154..155
+                NUMBER@154..155 "1"
+            R_CURLY@155..156 "}"
+    NEWLINE@156..157 "\n"
+  EOF@157..157 ""
+---
+error@126..127 3:6: this call already has its arguments in parentheses; to pass more, put them inside the parentheses
+error@134..135 4:7: unexpected `b` after the end of a statement: statements are separated by line breaks or `;`
+error@143..144 5:8: this call already has its arguments in parentheses; to pass more, put them inside the parentheses
+error@150..151 6:6: `{` cannot follow this Lua path on the same line: a table is passed as an argument after a path that names a function (`:f {a: 1}`) or in parentheses (`:f(x, {a: 1})`); a Lua path never starts a struct literal

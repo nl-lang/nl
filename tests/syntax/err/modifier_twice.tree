@@ -1,0 +1,28 @@
+SOURCE_FILE@0..44
+  BLOCK@0..44
+    COMMENT@0..29 "# One modifier per statement."
+    NEWLINE@29..30 "\n"
+    EXPR_STMT@30..43
+      CALL_EXPR@30..33
+        NAME_REF@30..31
+          LNAME@30..31 "a"
+        ARG_LIST@31..33
+          L_PAREN@31..32 "("
+          R_PAREN@32..33 ")"
+      WHITESPACE@33..34 " "
+      MODIFIER@34..38
+        IF_KW@34..36 "if"
+        WHITESPACE@36..37 " "
+        NAME_REF@37..38
+          LNAME@37..38 "b"
+      WHITESPACE@38..39 " "
+      ERROR_NODE@39..43
+        MODIFIER@39..43
+          IF_KW@39..41 "if"
+          WHITESPACE@41..42 " "
+          NAME_REF@42..43
+            LNAME@42..43 "c"
+    NEWLINE@43..44 "\n"
+  EOF@44..44 ""
+---
+error@39..41 2:10: a statement takes one modifier only: combine the conditions with `and` or `or`, or use a block

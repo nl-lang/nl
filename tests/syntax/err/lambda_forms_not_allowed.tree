@@ -1,0 +1,63 @@
+SOURCE_FILE@0..123
+  BLOCK@0..123
+    COMMENT@0..49 "# A short function is not async, and its one bare"
+    NEWLINE@49..50 "\n"
+    COMMENT@50..82 "# parameter is a lowercase name."
+    NEWLINE@82..83 "\n"
+    LET_DECL@83..105
+      LET_KW@83..86 "let"
+      WHITESPACE@86..87 " "
+      BIND_PAT@87..88
+        NAME@87..88
+          LNAME@87..88 "n"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      EXPR_LIST@91..105
+        ERROR_NODE@91..96
+          ASYNC_KW@91..96 "async"
+        WHITESPACE@96..97 " "
+        LAMBDA_EXPR@97..105
+          BLOCK_PARAMS@97..100
+            PIPE@97..98 "|"
+            PARAM@98..99
+              BIND_PAT@98..99
+                NAME@98..99
+                  LNAME@98..99 "a"
+            PIPE@99..100 "|"
+          WHITESPACE@100..101 " "
+          ARROW@101..103 "->"
+          WHITESPACE@103..104 " "
+          BLOCK@104..105
+            EXPR_STMT@104..105
+              NAME_REF@104..105
+                LNAME@104..105 "a"
+    NEWLINE@105..106 "\n"
+    LET_DECL@106..122
+      LET_KW@106..109 "let"
+      WHITESPACE@109..110 " "
+      BIND_PAT@110..111
+        NAME@110..111
+          LNAME@110..111 "m"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      EXPR_LIST@114..122
+        LAMBDA_EXPR@114..122
+          BLOCK_PARAMS@114..117
+            PARAM@114..117
+              BIND_PAT@114..117
+                NAME@114..117
+                  CNAME@114..117 "Foo"
+          WHITESPACE@117..118 " "
+          ARROW@118..120 "->"
+          WHITESPACE@120..121 " "
+          BLOCK@121..122
+            EXPR_STMT@121..122
+              LITERAL@121..122
+                NUMBER@121..122 "1"
+    NEWLINE@122..123 "\n"
+  EOF@123..123 ""
+---
+error@91..96 3:9: a short function cannot be async: write `async fn(a) … end`
+error@114..117 4:9: the parameter of a short function is lowercase (snake_case): write `foo`

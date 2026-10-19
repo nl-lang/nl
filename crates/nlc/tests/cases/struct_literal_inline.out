@@ -1,0 +1,58 @@
+tick id 1
+tick base.stamp 2
+1:L:2	Base	true
+tick level 3
+tick base.stamp 4
+tick child.note 5
+7:base:4	Child	true	true	3	nil	5
+tick base.stamp 6
+4:base:6
+extra=4,id=1,label=x,level=3,note=5,stamp=2
+tick base.stamp 7
+id=1,label=base,stamp=7
+tick child.note 8
+id=1,label=base,level=1,note=8,stamp=9
+Red	Child
+no id: TypeError: field 'id' of Base expects Number, got nil
+id str: TypeError: field 'id' of Base expects Number, got String
+id nil: TypeError: field 'id' of Base expects Number, got nil
+tick base.stamp 9
+label nil: ok base
+label num: TypeError: field 'label' of Base expects String, got Number
+tick base.stamp 10
+stamp nil: ok 10
+tick id2 11
+stamp str: TypeError: field 'stamp' of Base expects Number, got String
+tick base.stamp 12
+extra str: TypeError: field 'extra' of Child expects Number?, got String
+tick base.stamp 13
+tick child.note 14
+extra nil: ok nil
+tick base.stamp 15
+level bad: TypeError: field 'level' of Child expects Number, got Bool
+color bad: TypeError: field 'c' of Pixel expects Color, got String
+color ok: ok Green
+p bad: TypeError: field 'p' of Pixel expects Base?, got Number
+p child: ok Child
+make bad: TypeError: parameter 'n' of Base.make expects Number, got String
+both bad: TypeError: field 'id' of Base expects Number, got String
+15
+box: ok 3
+box default: ok 0
+box bad: TypeError: parameter 'b' of takes_box expects Box, got Number
+box field bad: TypeError: field 'v' of Box expects Number, got String
+mode: ok Hard
+mode bad: TypeError: parameter 'm' of takes_mode expects Mode, got String
+Inner	6	true	Outer
+inner bad: TypeError: parameter 'x' of check_inner expects Inner, got Outer
+inner field bad: TypeError: field 'o' of Inner expects Outer?, got Number
+6
+Inner	7	true	Outer
+inner bad: TypeError: parameter 'x' of check_inner expects Inner, got Outer
+inner field bad: TypeError: field 'o' of Inner expects Outer?, got Number
+7
+16	9
+sq bad: TypeError: parameter 's' of Sq.make expects Number, got String
+sq lit bad: TypeError: field 'side' of Sq expects Number, got String
+9 3 Pt
+7

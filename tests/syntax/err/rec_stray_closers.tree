@@ -1,0 +1,51 @@
+SOURCE_FILE@0..77
+  BLOCK@0..77
+    COMMENT@0..49 "# Recovery: closers with no opener at file level."
+    NEWLINE@49..50 "\n"
+    ASSIGN_STMT@50..55
+      NAME_REF@50..51
+        LNAME@50..51 "x"
+      WHITESPACE@51..52 " "
+      EQ@52..53 "="
+      WHITESPACE@53..54 " "
+      LITERAL@54..55
+        NUMBER@54..55 "1"
+    ERROR_NODE@55..56
+      R_PAREN@55..56 ")"
+    NEWLINE@56..57 "\n"
+    ASSIGN_STMT@57..62
+      NAME_REF@57..58
+        LNAME@57..58 "y"
+      WHITESPACE@58..59 " "
+      EQ@59..60 "="
+      WHITESPACE@60..61 " "
+      LITERAL@61..62
+        NUMBER@61..62 "2"
+    ERROR_NODE@62..63
+      R_BRACK@62..63 "]"
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..69
+      NAME_REF@64..65
+        LNAME@64..65 "z"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      LITERAL@68..69
+        NUMBER@68..69 "3"
+    ERROR_NODE@69..70
+      R_CURLY@69..70 "}"
+    NEWLINE@70..71 "\n"
+    ASSIGN_STMT@71..76
+      NAME_REF@71..72
+        LNAME@71..72 "w"
+      WHITESPACE@72..73 " "
+      EQ@73..74 "="
+      WHITESPACE@74..75 " "
+      LITERAL@75..76
+        NUMBER@75..76 "4"
+    NEWLINE@76..77 "\n"
+  EOF@77..77 ""
+---
+error@55..56 2:6: unexpected `)` after the end of a statement: statements are separated by line breaks or `;`
+error@62..63 3:6: unexpected `]` after the end of a statement: statements are separated by line breaks or `;`
+error@69..70 4:6: unexpected `}` after the end of a statement: statements are separated by line breaks or `;`

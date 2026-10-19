@@ -1,0 +1,27 @@
+[package]
+name = "nl_regex"
+description = "NL's regex engine: the Rust regex engine behind a C ABI, exported through nl_capi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The engine under `regex::bytes::Regex` (the `regex` crate is a thin layer
+# over its meta regex), used directly because it reports the memory a
+# compiled pattern takes (the VM charges it to the
+# collector) and takes a search start offset without copying.
+regex-automata = "0.4"
+
+# The workspace lints, except that unsafe code is denied instead of forbidden,
+# so that the C ABI (src/abi.rs) alone can allow it. Keep the rest in step
+# with [workspace.lints] in the root Cargo.toml.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"

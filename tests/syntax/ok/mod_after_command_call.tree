@@ -1,0 +1,30 @@
+SOURCE_FILE@0..85
+  BLOCK@0..85
+    COMMENT@0..58 "# A modifier keyword ends the arguments of a command call."
+    NEWLINE@58..59 "\n"
+    EXPR_STMT@59..77
+      COMMAND_CALL@59..69
+        NAME_REF@59..64
+          LNAME@59..64 "print"
+        WHITESPACE@64..65 " "
+        COMMAND_ARGS@65..69
+          LITERAL@65..69
+            STRING@65..69 "\"hi\""
+      WHITESPACE@69..70 " "
+      MODIFIER@70..77
+        IF_KW@70..72 "if"
+        WHITESPACE@72..73 " "
+        NAME_REF@73..77
+          LNAME@73..77 "loud"
+    NEWLINE@77..78 "\n"
+    EXPR_STMT@78..84
+      NAME_REF@78..79
+        LNAME@78..79 "f"
+      WHITESPACE@79..80 " "
+      MODIFIER@80..84
+        IF_KW@80..82 "if"
+        WHITESPACE@82..83 " "
+        NAME_REF@83..84
+          LNAME@83..84 "x"
+    NEWLINE@84..85 "\n"
+  EOF@85..85 ""

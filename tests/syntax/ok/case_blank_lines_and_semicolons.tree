@@ -1,0 +1,47 @@
+SOURCE_FILE@0..91
+  BLOCK@0..91
+    COMMENT@0..54 "# Separators between the subject and the first `when`."
+    NEWLINE@54..55 "\n"
+    EXPR_STMT@55..90
+      CASE_EXPR@55..90
+        CASE_KW@55..59 "case"
+        WHITESPACE@59..60 " "
+        NAME_REF@60..61
+          LNAME@60..61 "x"
+        NEWLINE@61..62 "\n"
+        NEWLINE@62..63 "\n"
+        WHEN_CLAUSE@63..75
+          WHEN_KW@63..67 "when"
+          WHITESPACE@67..68 " "
+          LITERAL@68..69
+            NUMBER@68..69 "1"
+          SEMI@69..70 ";"
+          BLOCK@70..75
+            WHITESPACE@70..71 " "
+            EXPR_STMT@71..74
+              CALL_EXPR@71..74
+                NAME_REF@71..72
+                  LNAME@71..72 "a"
+                ARG_LIST@72..74
+                  L_PAREN@72..73 "("
+                  R_PAREN@73..74 ")"
+            NEWLINE@74..75 "\n"
+        WHEN_CLAUSE@75..87
+          WHEN_KW@75..79 "when"
+          WHITESPACE@79..80 " "
+          LITERAL@80..81
+            NUMBER@80..81 "2"
+          SEMI@81..82 ";"
+          BLOCK@82..87
+            WHITESPACE@82..83 " "
+            EXPR_STMT@83..86
+              CALL_EXPR@83..86
+                NAME_REF@83..84
+                  LNAME@83..84 "b"
+                ARG_LIST@84..86
+                  L_PAREN@84..85 "("
+                  R_PAREN@85..86 ")"
+            NEWLINE@86..87 "\n"
+        END_KW@87..90 "end"
+    NEWLINE@90..91 "\n"
+  EOF@91..91 ""

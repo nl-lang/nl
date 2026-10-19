@@ -1,0 +1,65 @@
+SOURCE_FILE@0..76
+  BLOCK@0..76
+    COMMENT@0..35 "# The pipe target names a function."
+    NEWLINE@35..36 "\n"
+    ASSIGN_STMT@36..48
+      NAME_REF@36..37
+        LNAME@36..37 "x"
+      WHITESPACE@37..38 " "
+      EQ@38..39 "="
+      WHITESPACE@39..40 " "
+      PIPE_EXPR@40..48
+        NAME_REF@40..41
+          LNAME@40..41 "a"
+        WHITESPACE@41..42 " "
+        PIPE_GT@42..44 "|>"
+        WHITESPACE@44..45 " "
+        NAME_REF@45..48
+          CNAME@45..48 "Foo"
+    NEWLINE@48..49 "\n"
+    ASSIGN_STMT@49..57
+      NAME_REF@49..50
+        LNAME@49..50 "y"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      PIPE_EXPR@53..57
+        NAME_REF@53..54
+          LNAME@53..54 "a"
+        WHITESPACE@54..55 " "
+        PIPE_GT@55..57 "|>"
+    WHITESPACE@57..58 " "
+    EXPR_STMT@58..59
+      LITERAL@58..59
+        NUMBER@58..59 "1"
+    NEWLINE@59..60 "\n"
+    ASSIGN_STMT@60..75
+      NAME_REF@60..61
+        LNAME@60..61 "z"
+      WHITESPACE@61..62 " "
+      EQ@62..63 "="
+      WHITESPACE@63..64 " "
+      PIPE_EXPR@64..75
+        NAME_REF@64..65
+          LNAME@64..65 "a"
+        WHITESPACE@65..66 " "
+        PIPE_GT@66..68 "|>"
+        WHITESPACE@68..69 " "
+        CALL_EXPR@69..75
+          CALL_EXPR@69..72
+            NAME_REF@69..70
+              LNAME@69..70 "f"
+            ARG_LIST@70..72
+              L_PAREN@70..71 "("
+              R_PAREN@71..72 ")"
+          ARG_LIST@72..75
+            L_PAREN@72..73 "("
+            LITERAL@73..74
+              NUMBER@73..74 "1"
+            R_PAREN@74..75 ")"
+    NEWLINE@75..76 "\n"
+  EOF@76..76 ""
+---
+error@45..48 2:10: the target of `|>` must name a function: a lowercase name, `@name`, a chain ending in `.name`, `x:m` or a Lua path
+error@58..59 3:10: expected the function to pipe into after `|>`, such as `|> f` or `|> f(b)`, found `1`
+error@72..73 4:13: nothing may follow a pipe target: to apply `(…)` to the result, write `(a |> f())(…)`

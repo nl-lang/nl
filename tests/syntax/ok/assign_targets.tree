@@ -1,0 +1,128 @@
+SOURCE_FILE@0..168
+  BLOCK@0..168
+    COMMENT@0..38 "# Every well-formed assignment target."
+    NEWLINE@38..39 "\n"
+    ASSIGN_STMT@39..44
+      NAME_REF@39..40
+        LNAME@39..40 "x"
+      WHITESPACE@40..41 " "
+      EQ@41..42 "="
+      WHITESPACE@42..43 " "
+      LITERAL@43..44
+        NUMBER@43..44 "1"
+    NEWLINE@44..45 "\n"
+    ASSIGN_STMT@45..54
+      NAME_REF@45..50
+        CNAME@45..50 "Score"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      LITERAL@53..54
+        NUMBER@53..54 "2"
+    NEWLINE@54..55 "\n"
+    ASSIGN_STMT@55..66
+      AT_EXPR@55..62
+        AT_NAME@55..62 "@health"
+      WHITESPACE@62..63 " "
+      EQ@63..64 "="
+      WHITESPACE@64..65 " "
+      LITERAL@65..66
+        NUMBER@65..66 "3"
+    NEWLINE@66..67 "\n"
+    ASSIGN_STMT@67..80
+      FIELD_EXPR@67..76
+        NAME_REF@67..70
+          LNAME@67..70 "obj"
+        DOT@70..71 "."
+        LNAME@71..76 "field"
+      WHITESPACE@76..77 " "
+      EQ@77..78 "="
+      WHITESPACE@78..79 " "
+      LITERAL@79..80
+        NUMBER@79..80 "4"
+    NEWLINE@80..81 "\n"
+    ASSIGN_STMT@81..92
+      FIELD_EXPR@81..88
+        NAME_REF@81..84
+          LNAME@81..84 "obj"
+        DOT@84..85 "."
+        LNAME@85..88 "end"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      LITERAL@91..92
+        NUMBER@91..92 "5"
+    NEWLINE@92..93 "\n"
+    ASSIGN_STMT@93..120
+      INDEX_EXPR@93..113
+        NAME_REF@93..98
+          LNAME@93..98 "slots"
+        L_BRACK@98..99 "["
+        BIN_EXPR@99..112
+          FIELD_EXPR@99..108
+            NAME_REF@99..104
+              LNAME@99..104 "slots"
+            DOT@104..105 "."
+            LNAME@105..108 "len"
+          WHITESPACE@108..109 " "
+          PLUS@109..110 "+"
+          WHITESPACE@110..111 " "
+          LITERAL@111..112
+            NUMBER@111..112 "1"
+        R_BRACK@112..113 "]"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      NAME_REF@116..120
+        LNAME@116..120 "item"
+    NEWLINE@120..121 "\n"
+    ASSIGN_STMT@121..143
+      LUA_PATH@121..139
+        COLON@121..122 ":"
+        LNAME@122..128 "config"
+        LUA_FIELD@128..139
+          DOT@128..129 "."
+          ONAME@129..139 "maxPlayers"
+      WHITESPACE@139..140 " "
+      EQ@140..141 "="
+      WHITESPACE@141..142 " "
+      LITERAL@142..143
+        NUMBER@142..143 "8"
+    NEWLINE@143..144 "\n"
+    ASSIGN_STMT@144..153
+      FIELD_EXPR@144..149
+        CALL_EXPR@144..147
+          NAME_REF@144..145
+            LNAME@144..145 "f"
+          ARG_LIST@145..147
+            L_PAREN@145..146 "("
+            R_PAREN@146..147 ")"
+        DOT@147..148 "."
+        LNAME@148..149 "x"
+      WHITESPACE@149..150 " "
+      EQ@150..151 "="
+      WHITESPACE@151..152 " "
+      LITERAL@152..153
+        NUMBER@152..153 "9"
+    NEWLINE@153..154 "\n"
+    ASSIGN_STMT@154..167
+      FIELD_EXPR@154..162
+        INDEX_EXPR@154..160
+          FIELD_EXPR@154..157
+            NAME_REF@154..155
+              LNAME@154..155 "a"
+            DOT@155..156 "."
+            LNAME@156..157 "b"
+          L_BRACK@157..158 "["
+          NAME_REF@158..159
+            LNAME@158..159 "c"
+          R_BRACK@159..160 "]"
+        DOT@160..161 "."
+        LNAME@161..162 "d"
+      WHITESPACE@162..163 " "
+      EQ@163..164 "="
+      WHITESPACE@164..165 " "
+      LITERAL@165..167
+        NUMBER@165..167 "10"
+    NEWLINE@167..168 "\n"
+  EOF@168..168 ""

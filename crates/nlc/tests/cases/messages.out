@@ -1,0 +1,5 @@
+parameter 1 of describe expects Monster, got Table
+field 'hp' of parameter 1 of hp expects Number, got String
+variable 'f' (initialized with `fn`) expects Function, got Number
+field 'x' of field 'pos' expects Number, got String
+variable 'b' (item 2) expects String, got Number

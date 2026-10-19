@@ -1,0 +1,22 @@
+block failed at 2
+stack traceback:
+	err_block_trace.nl:25: in function <err_block_trace.nl:24>
+	err_block_trace.nl:4: in function 'each'
+	err_block_trace.nl:24: in function <err_block_trace.nl:22>
+	err_block_trace.nl:22: in main chunk
+2
+helper failed at 2
+stack traceback:
+	err_block_trace.nl:14: in function 'failing'
+	err_block_trace.nl:36: in function <err_block_trace.nl:34>
+	err_block_trace.nl:34: in main chunk
+LuaError
+stack traceback:
+	err_block_trace.nl:50: in function <err_block_trace.nl:49>
+	err_block_trace.nl:4: in function 'each'
+	err_block_trace.nl:49: in function <err_block_trace.nl:46>
+	err_block_trace.nl:46: in main chunk
+parameter 'x' of checked expects Number, got String
+parameter 'v' of block expects String, got Number
+return value of block expects String, got Number
+return value of checked expects Number, got String

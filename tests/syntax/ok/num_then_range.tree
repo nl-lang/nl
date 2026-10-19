@@ -1,0 +1,31 @@
+SOURCE_FILE@0..80
+  BLOCK@0..80
+    COMMENT@0..58 "# `1..10` is `1` `..` `10` and `1...10` is `1` `...` `10`."
+    NEWLINE@58..59 "\n"
+    ASSIGN_STMT@59..68
+      NAME_REF@59..60
+        LNAME@59..60 "a"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      BIN_EXPR@63..68
+        LITERAL@63..64
+          NUMBER@63..64 "1"
+        DOT2@64..66 ".."
+        LITERAL@66..68
+          NUMBER@66..68 "10"
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..79
+      NAME_REF@69..70
+        LNAME@69..70 "b"
+      WHITESPACE@70..71 " "
+      EQ@71..72 "="
+      WHITESPACE@72..73 " "
+      BIN_EXPR@73..79
+        LITERAL@73..74
+          NUMBER@73..74 "1"
+        DOT3@74..77 "..."
+        LITERAL@77..79
+          NUMBER@77..79 "10"
+    NEWLINE@79..80 "\n"
+  EOF@80..80 ""

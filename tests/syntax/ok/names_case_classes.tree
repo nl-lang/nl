@@ -1,0 +1,97 @@
+SOURCE_FILE@0..247
+  BLOCK@0..247
+    COMMENT@0..54 "# LNAME (snake_case), CNAME (PascalCase, all capitals,"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..106 "# SCREAMING_SNAKE_CASE) by the letters of the word."
+    NEWLINE@106..107 "\n"
+    ASSIGN_STMT@107..142
+      NAME_REF@107..113
+        LNAME@107..113 "health"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      BIN_EXPR@116..142
+        BIN_EXPR@116..129
+          BIN_EXPR@116..122
+            NAME_REF@116..118
+              LNAME@116..118 "x1"
+            WHITESPACE@118..119 " "
+            PLUS@119..120 "+"
+            WHITESPACE@120..121 " "
+            NAME_REF@121..122
+              LNAME@121..122 "_"
+          WHITESPACE@122..123 " "
+          PLUS@123..124 "+"
+          WHITESPACE@124..125 " "
+          NAME_REF@125..129
+            LNAME@125..129 "_tmp"
+        WHITESPACE@129..130 " "
+        PLUS@130..131 "+"
+        WHITESPACE@131..132 " "
+        NAME_REF@132..142
+          LNAME@132..142 "build_mesh"
+    NEWLINE@142..143 "\n"
+    ASSIGN_STMT@143..157
+      NAME_REF@143..148
+        CNAME@143..148 "Score"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      NAME_REF@151..157
+        CNAME@151..157 "Player"
+    NEWLINE@157..158 "\n"
+    ASSIGN_STMT@158..176
+      NAME_REF@158..163
+        CNAME@158..163 "Score"
+      WHITESPACE@163..164 " "
+      EQ@164..165 "="
+      WHITESPACE@165..166 " "
+      NAME_REF@166..176
+        CNAME@166..176 "HTTPServer"
+    NEWLINE@176..177 "\n"
+    ASSIGN_STMT@177..189
+      NAME_REF@177..182
+        CNAME@177..182 "Score"
+      WHITESPACE@182..183 " "
+      EQ@183..184 "="
+      WHITESPACE@184..185 " "
+      NAME_REF@185..189
+        CNAME@185..189 "Vec2"
+    NEWLINE@189..190 "\n"
+    ASSIGN_STMT@190..200
+      NAME_REF@190..195
+        CNAME@190..195 "Score"
+      WHITESPACE@195..196 " "
+      EQ@196..197 "="
+      WHITESPACE@197..198 " "
+      NAME_REF@198..200
+        CNAME@198..200 "IO"
+    NEWLINE@200..201 "\n"
+    ASSIGN_STMT@201..211
+      NAME_REF@201..206
+        CNAME@201..206 "Score"
+      WHITESPACE@206..207 " "
+      EQ@207..208 "="
+      WHITESPACE@208..209 " "
+      NAME_REF@209..211
+        CNAME@209..211 "T1"
+    NEWLINE@211..212 "\n"
+    ASSIGN_STMT@212..226
+      NAME_REF@212..217
+        CNAME@212..217 "Score"
+      WHITESPACE@217..218 " "
+      EQ@218..219 "="
+      WHITESPACE@219..220 " "
+      NAME_REF@220..226
+        CNAME@220..226 "MAX_HP"
+    NEWLINE@226..227 "\n"
+    ASSIGN_STMT@227..246
+      NAME_REF@227..232
+        CNAME@227..232 "Score"
+      WHITESPACE@232..233 " "
+      EQ@233..234 "="
+      WHITESPACE@234..235 " "
+      NAME_REF@235..246
+        CNAME@235..246 "TILE_SIZE_2"
+    NEWLINE@246..247 "\n"
+  EOF@247..247 ""

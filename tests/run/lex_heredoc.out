@@ -1,0 +1,11 @@
+multi
+line A
+12
+first
+  indented
+last A
+23
+no #{a} and no \n escape
+kept #{a}
+as written
+end

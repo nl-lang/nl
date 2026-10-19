@@ -1,0 +1,43 @@
+SOURCE_FILE@0..128
+  BLOCK@0..128
+    COMMENT@0..58 "# Inside the braces `from` is a name; after them it is the"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..69 "# keyword."
+    NEWLINE@69..70 "\n"
+    IMPORT_DECL@70..96
+      IMPORT_KW@70..76 "import"
+      WHITESPACE@76..77 " "
+      IMPORT_LIST@77..85
+        L_CURLY@77..78 "{"
+        WHITESPACE@78..79 " "
+        NAME@79..83
+          LNAME@79..83 "from"
+        WHITESPACE@83..84 " "
+        R_CURLY@84..85 "}"
+      WHITESPACE@85..86 " "
+      FROM_KW@86..90 "from"
+      WHITESPACE@90..91 " "
+      STRING@91..96 "'lib'"
+    NEWLINE@96..97 "\n"
+    IMPORT_DECL@97..127
+      IMPORT_KW@97..103 "import"
+      WHITESPACE@103..104 " "
+      IMPORT_LIST@104..116
+        L_CURLY@104..105 "{"
+        NEWLINE@105..106 "\n"
+        WHITESPACE@106..108 "  "
+        NAME@108..109
+          LNAME@108..109 "a"
+        COMMA@109..110 ","
+        NEWLINE@110..111 "\n"
+        WHITESPACE@111..113 "  "
+        NAME@113..114
+          LNAME@113..114 "b"
+        NEWLINE@114..115 "\n"
+        R_CURLY@115..116 "}"
+      WHITESPACE@116..117 " "
+      FROM_KW@117..121 "from"
+      WHITESPACE@121..122 " "
+      STRING@122..127 "'lib'"
+    NEWLINE@127..128 "\n"
+  EOF@128..128 ""

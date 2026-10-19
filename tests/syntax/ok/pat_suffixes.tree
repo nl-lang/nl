@@ -1,0 +1,127 @@
+SOURCE_FILE@0..164
+  BLOCK@0..164
+    COMMENT@0..46 "# `P as name`, `P: T`, and both in that order."
+    NEWLINE@46..47 "\n"
+    LET_DECL@47..68
+      LET_KW@47..50 "let"
+      WHITESPACE@50..51 " "
+      AS_PAT@51..64
+        BRACE_PAT@51..57
+          L_CURLY@51..52 "{"
+          PAT_FIELD@52..53
+            NAME@52..53
+              LNAME@52..53 "a"
+          COMMA@53..54 ","
+          WHITESPACE@54..55 " "
+          PAT_FIELD@55..56
+            NAME@55..56
+              LNAME@55..56 "b"
+          R_CURLY@56..57 "}"
+        WHITESPACE@57..58 " "
+        AS_KW@58..60 "as"
+        WHITESPACE@60..61 " "
+        NAME@61..64
+          LNAME@61..64 "tbl"
+      WHITESPACE@64..65 " "
+      EQ@65..66 "="
+      WHITESPACE@66..67 " "
+      EXPR_LIST@67..68
+        NAME_REF@67..68
+          LNAME@67..68 "t"
+    NEWLINE@68..69 "\n"
+    LET_DECL@69..113
+      LET_KW@69..72 "let"
+      WHITESPACE@72..73 " "
+      TYPED_PAT@73..109
+        AS_PAT@73..102
+          BRACE_PAT@73..95
+            L_CURLY@73..74 "{"
+            PAT_FIELD@74..83
+              LNAME@74..75 "a"
+              COLON@75..76 ":"
+              WHITESPACE@76..77 " "
+              NAMED_TYPE@77..83
+                QUAL_NAME@77..83
+                  CNAME@77..83 "Number"
+            COMMA@83..84 ","
+            WHITESPACE@84..85 " "
+            PAT_FIELD@85..94
+              LNAME@85..86 "b"
+              COLON@86..87 ":"
+              WHITESPACE@87..88 " "
+              NAMED_TYPE@88..94
+                QUAL_NAME@88..94
+                  CNAME@88..94 "String"
+            R_CURLY@94..95 "}"
+          WHITESPACE@95..96 " "
+          AS_KW@96..98 "as"
+          WHITESPACE@98..99 " "
+          NAME@99..102
+            LNAME@99..102 "tbl"
+        COLON@102..103 ":"
+        WHITESPACE@103..104 " "
+        NAMED_TYPE@104..109
+          QUAL_NAME@104..109
+            CNAME@104..109 "Table"
+      WHITESPACE@109..110 " "
+      EQ@110..111 "="
+      WHITESPACE@111..112 " "
+      EXPR_LIST@112..113
+        NAME_REF@112..113
+          LNAME@112..113 "t"
+    NEWLINE@113..114 "\n"
+    LET_DECL@114..145
+      LET_KW@114..117 "let"
+      WHITESPACE@117..118 " "
+      TYPED_PAT@118..141
+        BRACE_PAT@118..136
+          L_CURLY@118..119 "{"
+          PAT_FIELD@119..126
+            LNAME@119..120 "a"
+            COLON@120..121 ":"
+            WHITESPACE@121..122 " "
+            BIND_PAT@122..126
+              NAME@122..126
+                LNAME@122..126 "var1"
+          COMMA@126..127 ","
+          WHITESPACE@127..128 " "
+          PAT_FIELD@128..135
+            LNAME@128..129 "b"
+            COLON@129..130 ":"
+            WHITESPACE@130..131 " "
+            BIND_PAT@131..135
+              NAME@131..135
+                LNAME@131..135 "var2"
+          R_CURLY@135..136 "}"
+        COLON@136..137 ":"
+        WHITESPACE@137..138 " "
+        NAMED_TYPE@138..141
+          QUAL_NAME@138..141
+            CNAME@138..141 "Foo"
+      WHITESPACE@141..142 " "
+      EQ@142..143 "="
+      WHITESPACE@143..144 " "
+      EXPR_LIST@144..145
+        NAME_REF@144..145
+          LNAME@144..145 "t"
+    NEWLINE@145..146 "\n"
+    LET_DECL@146..163
+      LET_KW@146..149 "let"
+      WHITESPACE@149..150 " "
+      TYPED_PAT@150..159
+        BIND_PAT@150..151
+          NAME@150..151
+            LNAME@150..151 "x"
+        COLON@151..152 ":"
+        WHITESPACE@152..153 " "
+        NAMED_TYPE@153..159
+          QUAL_NAME@153..159
+            CNAME@153..159 "Number"
+      WHITESPACE@159..160 " "
+      EQ@160..161 "="
+      WHITESPACE@161..162 " "
+      EXPR_LIST@162..163
+        LITERAL@162..163
+          NUMBER@162..163 "1"
+    NEWLINE@163..164 "\n"
+  EOF@164..164 ""

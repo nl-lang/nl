@@ -1,0 +1,36 @@
+SOURCE_FILE@0..127
+  BLOCK@0..127
+    WHITESPACE@0..3 "\u{feff}"
+    COMMENT@3..61 "# A byte-order mark is not a column of the first line, for"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..106 "# indentation and for positions in messages."
+    NEWLINE@106..107 "\n"
+    EXPR_STMT@107..116
+      IF_EXPR@107..116
+        IF_KW@107..109 "if"
+        WHITESPACE@109..110 " "
+        NAME_REF@110..111
+          LNAME@110..111 "x"
+        BLOCK@111..116
+          NEWLINE@111..112 "\n"
+          WHITESPACE@112..114 "  "
+          EXPR_STMT@114..115
+            NAME_REF@114..115
+              LNAME@114..115 "y"
+          NEWLINE@115..116 "\n"
+    FN_DECL@116..124
+      FN_KW@116..118 "fn"
+      WHITESPACE@118..119 " "
+      NAME@119..120
+        LNAME@119..120 "g"
+      BLOCK@120..121
+        NEWLINE@120..121 "\n"
+      END_KW@121..124 "end"
+    NEWLINE@124..125 "\n"
+    ERROR_NODE@125..126
+      R_PAREN@125..126 ")"
+    NEWLINE@126..127 "\n"
+  EOF@127..127 ""
+---
+error@116..118 5:1: the `if` on line 3 has no `end`: by its indentation, it ends before this line
+error@125..126 7:1: unexpected `)`: there is no open bracket for it to close

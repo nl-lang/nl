@@ -1,0 +1,23 @@
+SOURCE_FILE@0..50
+  BLOCK@0..50
+    COMMENT@0..38 "# `a.. <b` is `..` then `<`, an error."
+    NEWLINE@38..39 "\n"
+    ASSIGN_STMT@39..49
+      NAME_REF@39..40
+        LNAME@39..40 "x"
+      WHITESPACE@40..41 " "
+      EQ@41..42 "="
+      WHITESPACE@42..43 " "
+      BIN_EXPR@43..49
+        NAME_REF@43..44
+          LNAME@43..44 "a"
+        DOT2@44..46 ".."
+        WHITESPACE@46..47 " "
+        ERROR_NODE@47..48
+          LT@47..48 "<"
+        NAME_REF@48..49
+          LNAME@48..49 "b"
+    NEWLINE@49..50 "\n"
+  EOF@50..50 ""
+---
+error@47..48 2:9: expected an expression, found `<`

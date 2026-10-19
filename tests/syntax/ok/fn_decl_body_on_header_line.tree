@@ -1,0 +1,42 @@
+SOURCE_FILE@0..81
+  BLOCK@0..81
+    COMMENT@0..42 "# The body may start on the header's line."
+    NEWLINE@42..43 "\n"
+    FN_DECL@43..65
+      FN_KW@43..45 "fn"
+      WHITESPACE@45..46 " "
+      NAME@46..52
+        LNAME@46..52 "double"
+      PARAM_LIST@52..55
+        L_PAREN@52..53 "("
+        PARAM@53..54
+          BIND_PAT@53..54
+            NAME@53..54
+              LNAME@53..54 "x"
+        R_PAREN@54..55 ")"
+      BLOCK@55..62
+        WHITESPACE@55..56 " "
+        EXPR_STMT@56..61
+          BIN_EXPR@56..61
+            NAME_REF@56..57
+              LNAME@56..57 "x"
+            WHITESPACE@57..58 " "
+            STAR@58..59 "*"
+            WHITESPACE@59..60 " "
+            LITERAL@60..61
+              NUMBER@60..61 "2"
+        WHITESPACE@61..62 " "
+      END_KW@62..65 "end"
+    NEWLINE@65..66 "\n"
+    FN_DECL@66..80
+      PUB_KW@66..69 "pub"
+      WHITESPACE@69..70 " "
+      FN_KW@70..72 "fn"
+      WHITESPACE@72..73 " "
+      NAME@73..76
+        LNAME@73..76 "foo"
+      BLOCK@76..77
+        WHITESPACE@76..77 " "
+      END_KW@77..80 "end"
+    NEWLINE@80..81 "\n"
+  EOF@81..81 ""

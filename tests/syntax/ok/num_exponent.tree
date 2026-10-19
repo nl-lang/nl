@@ -1,0 +1,50 @@
+SOURCE_FILE@0..102
+  BLOCK@0..102
+    COMMENT@0..51 "# Exponents with and without a sign and a fraction."
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..61
+      NAME_REF@52..53
+        LNAME@52..53 "x"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      LITERAL@56..61
+        NUMBER@56..61 "5e+20"
+    NEWLINE@61..62 "\n"
+    ASSIGN_STMT@62..72
+      NAME_REF@62..63
+        LNAME@62..63 "x"
+      WHITESPACE@63..64 " "
+      EQ@64..65 "="
+      WHITESPACE@65..66 " "
+      LITERAL@66..72
+        NUMBER@66..72 "0.3e12"
+    NEWLINE@72..73 "\n"
+    ASSIGN_STMT@73..84
+      NAME_REF@73..74
+        LNAME@73..74 "x"
+      WHITESPACE@74..75 " "
+      EQ@75..76 "="
+      WHITESPACE@76..77 " "
+      LITERAL@77..84
+        NUMBER@77..84 "4.57e-3"
+    NEWLINE@84..85 "\n"
+    ASSIGN_STMT@85..92
+      NAME_REF@85..86
+        LNAME@85..86 "x"
+      WHITESPACE@86..87 " "
+      EQ@87..88 "="
+      WHITESPACE@88..89 " "
+      LITERAL@89..92
+        NUMBER@89..92 "1e5"
+    NEWLINE@92..93 "\n"
+    ASSIGN_STMT@93..101
+      NAME_REF@93..94
+        LNAME@93..94 "x"
+      WHITESPACE@94..95 " "
+      EQ@95..96 "="
+      WHITESPACE@96..97 " "
+      LITERAL@97..101
+        NUMBER@97..101 "2E10"
+    NEWLINE@101..102 "\n"
+  EOF@102..102 ""

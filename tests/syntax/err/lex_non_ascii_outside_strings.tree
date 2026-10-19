@@ -1,0 +1,35 @@
+SOURCE_FILE@0..119
+  BLOCK@0..119
+    COMMENT@0..58 "# A non-ASCII character outside comments and strings is an"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..99 "# error; the statements around it parse."
+    NEWLINE@99..100 "\n"
+    ASSIGN_STMT@100..105
+      NAME_REF@100..101
+        LNAME@100..101 "x"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      LITERAL@104..105
+        NUMBER@104..105 "1"
+    NEWLINE@105..106 "\n"
+    ASSIGN_STMT@106..109
+      NAME_REF@106..107
+        LNAME@106..107 "y"
+      WHITESPACE@107..108 " "
+      EQ@108..109 "="
+    WHITESPACE@109..110 " "
+    ERROR@110..112 "é"
+    NEWLINE@112..113 "\n"
+    ASSIGN_STMT@113..118
+      NAME_REF@113..114
+        LNAME@113..114 "z"
+      WHITESPACE@114..115 " "
+      EQ@115..116 "="
+      WHITESPACE@116..117 " "
+      LITERAL@117..118
+        NUMBER@117..118 "2"
+    NEWLINE@118..119 "\n"
+  EOF@119..119 ""
+---
+error@110..112 4:5: the character `é` (U+00E9) is not allowed outside strings and comments: NL names and operators are ASCII

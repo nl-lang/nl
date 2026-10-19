@@ -1,0 +1,54 @@
+SOURCE_FILE@0..135
+  BLOCK@0..135
+    COMMENT@0..61 "# A pipe target path has names only; a step after its call is"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..103 "# an error with the hint to parenthesize."
+    NEWLINE@103..104 "\n"
+    ASSIGN_STMT@104..119
+      NAME_REF@104..105
+        LNAME@104..105 "x"
+      WHITESPACE@105..106 " "
+      EQ@106..107 "="
+      WHITESPACE@107..108 " "
+      PIPE_EXPR@108..119
+        NAME_REF@108..109
+          LNAME@108..109 "a"
+        WHITESPACE@109..110 " "
+        PIPE_GT@110..112 "|>"
+        WHITESPACE@112..113 " "
+        FIELD_EXPR@113..119
+          LUA_PATH@113..117
+            COLON@113..114 ":"
+            LNAME@114..115 "f"
+            LUA_CALL@115..117
+              ARG_LIST@115..117
+                L_PAREN@115..116 "("
+                R_PAREN@116..117 ")"
+          DOT@117..118 "."
+          LNAME@118..119 "g"
+    NEWLINE@119..120 "\n"
+    ASSIGN_STMT@120..134
+      NAME_REF@120..121
+        LNAME@120..121 "y"
+      WHITESPACE@121..122 " "
+      EQ@122..123 "="
+      WHITESPACE@123..124 " "
+      PIPE_EXPR@124..134
+        NAME_REF@124..125
+          LNAME@124..125 "a"
+        WHITESPACE@125..126 " "
+        PIPE_GT@126..128 "|>"
+        WHITESPACE@128..129 " "
+        INDEX_EXPR@129..134
+          LUA_PATH@129..131
+            COLON@129..130 ":"
+            LNAME@130..131 "t"
+          L_BRACK@131..132 "["
+          LITERAL@132..133
+            NUMBER@132..133 "1"
+          R_BRACK@133..134 "]"
+    NEWLINE@134..135 "\n"
+  EOF@135..135 ""
+---
+error@117..118 3:14: nothing may follow a pipe target: to apply `.g` to the result, write `(a |> :f()).g`
+error@131..132 4:12: nothing may follow a pipe target: to apply `[…]` to the result, write `(a |> :t)[…]`

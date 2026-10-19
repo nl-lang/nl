@@ -1,0 +1,57 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..26 "# `is T` with a full type."
+    NEWLINE@26..27 "\n"
+    EXPR_STMT@27..67
+      CASE_EXPR@27..67
+        CASE_KW@27..31 "case"
+        WHITESPACE@31..32 " "
+        NAME_REF@32..33
+          LNAME@32..33 "v"
+        NEWLINE@33..34 "\n"
+        WHEN_CLAUSE@34..64
+          WHEN_KW@34..38 "when"
+          WHITESPACE@38..39 " "
+          IS_PAT@39..57
+            IS_KW@39..41 "is"
+            WHITESPACE@41..42 " "
+            UNION_TYPE@42..57
+              NAMED_TYPE@42..48
+                QUAL_NAME@42..48
+                  CNAME@42..48 "Number"
+              WHITESPACE@48..49 " "
+              PIPE@49..50 "|"
+              WHITESPACE@50..51 " "
+              NAMED_TYPE@51..57
+                QUAL_NAME@51..57
+                  CNAME@51..57 "String"
+          BLOCK@57..64
+            NEWLINE@57..58 "\n"
+            WHITESPACE@58..60 "  "
+            EXPR_STMT@60..63
+              CALL_EXPR@60..63
+                NAME_REF@60..61
+                  LNAME@60..61 "a"
+                ARG_LIST@61..63
+                  L_PAREN@61..62 "("
+                  R_PAREN@62..63 ")"
+            NEWLINE@63..64 "\n"
+        END_KW@64..67 "end"
+    NEWLINE@67..68 "\n"
+    LET_DECL@68..85
+      LET_KW@68..71 "let"
+      WHITESPACE@71..72 " "
+      IS_PAT@72..81
+        IS_KW@72..74 "is"
+        WHITESPACE@74..75 " "
+        NAMED_TYPE@75..81
+          QUAL_NAME@75..81
+            CNAME@75..81 "Number"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      EXPR_LIST@84..85
+        NAME_REF@84..85
+          LNAME@84..85 "n"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""

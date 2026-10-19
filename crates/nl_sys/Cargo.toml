@@ -1,0 +1,32 @@
+[package]
+name = "nl_sys"
+description = "Rust declarations of nl.h on the lua_State of mlua-sys"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The mlua-sys of the mlua that nlc uses (0.12): a graph holds one crate that
+# links "lua", so the two must agree. mlua-sys builds LuaJIT from the
+# `luajit-src` crate; a host links the fork by patching that crate.
+# This workspace does not: here nl_sys only has to compile.
+# Pinned with mlua (=0.12.2 in crates/nl/Cargo.toml, which says why) to
+# the mlua-sys that version takes.
+mlua-sys = { version = "=0.13.0", features = ["luajit", "vendored"] }
+# The compiler library: the VM's references to nl_compile resolve to it in a
+# Rust program.
+nl_capi = { path = "../nl_capi" }
+
+# The workspace lints, except that unsafe code is denied instead of forbidden,
+# so that the declarations alone can allow it. Keep the rest in step with
+# [workspace.lints] in the root Cargo.toml.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"

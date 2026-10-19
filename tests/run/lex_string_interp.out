@@ -1,0 +1,8 @@
+hello, world
+3 + 1 = 4
+values: true nil 1.5
+literal #{name}
+quote " and backslash \
+line1
+line2
+member v

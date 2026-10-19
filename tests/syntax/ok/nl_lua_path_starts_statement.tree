@@ -1,0 +1,27 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..56 "# A Lua path `:name` at the start of a line begins a new"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..69 "# statement."
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..75
+      NAME_REF@70..71
+        LNAME@70..71 "x"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      NAME_REF@74..75
+        LNAME@74..75 "a"
+    NEWLINE@75..76 "\n"
+    EXPR_STMT@76..85
+      LUA_PATH@76..85
+        COLON@76..77 ":"
+        LNAME@77..82 "print"
+        LUA_CALL@82..85
+          ARG_LIST@82..85
+            L_PAREN@82..83 "("
+            NAME_REF@83..84
+              LNAME@83..84 "b"
+            R_PAREN@84..85 ")"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""

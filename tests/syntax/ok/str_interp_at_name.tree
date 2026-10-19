@@ -1,0 +1,29 @@
+SOURCE_FILE@0..73
+  BLOCK@0..73
+    COMMENT@0..36 "# An interpolation holds any `expr`."
+    NEWLINE@36..37 "\n"
+    ASSIGN_STMT@37..72
+      NAME_REF@37..38
+        LNAME@37..38 "s"
+      WHITESPACE@38..39 " "
+      EQ@39..40 "="
+      WHITESPACE@40..41 " "
+      INTERP_STRING@41..72
+        STR_BEGIN@41..44 "\"#{"
+        AT_EXPR@44..49
+          AT_NAME@44..49 "@name"
+        STR_MID@49..61 "} died at #{"
+        BIN_EXPR@61..70
+          FIELD_EXPR@61..66
+            NAME_REF@61..64
+              LNAME@61..64 "pos"
+            DOT@64..65 "."
+            LNAME@65..66 "x"
+          WHITESPACE@66..67 " "
+          STAR@67..68 "*"
+          WHITESPACE@68..69 " "
+          LITERAL@69..70
+            NUMBER@69..70 "2"
+        STR_END@70..72 "}\""
+    NEWLINE@72..73 "\n"
+  EOF@73..73 ""

@@ -1,0 +1,33 @@
+SOURCE_FILE@0..44
+  BLOCK@0..44
+    COMMENT@0..23 "# `~=` gets \"use `!=`\"."
+    NEWLINE@23..24 "\n"
+    EXPR_STMT@24..43
+      IF_EXPR@24..43
+        IF_KW@24..26 "if"
+        WHITESPACE@26..27 " "
+        BIN_EXPR@27..33
+          NAME_REF@27..28
+            LNAME@27..28 "x"
+          WHITESPACE@28..29 " "
+          TILDE@29..30 "~"
+          EQ@30..31 "="
+          WHITESPACE@31..32 " "
+          NAME_REF@32..33
+            LNAME@32..33 "y"
+        BLOCK@33..40
+          NEWLINE@33..34 "\n"
+          WHITESPACE@34..36 "  "
+          EXPR_STMT@36..39
+            CALL_EXPR@36..39
+              NAME_REF@36..37
+                LNAME@36..37 "z"
+              ARG_LIST@37..39
+                L_PAREN@37..38 "("
+                R_PAREN@38..39 ")"
+          NEWLINE@39..40 "\n"
+        END_KW@40..43 "end"
+    NEWLINE@43..44 "\n"
+  EOF@44..44 ""
+---
+error@29..30 2:6: use `!=` for "not equal"; `~=` is Lua's spelling

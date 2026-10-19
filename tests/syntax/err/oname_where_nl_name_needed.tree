@@ -1,0 +1,42 @@
+SOURCE_FILE@0..141
+  BLOCK@0..141
+    COMMENT@0..59 "# A name in another style is a Lua name; the message points"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..90 "# at the forms that accept it."
+    NEWLINE@90..91 "\n"
+    EXPR_STMT@91..106
+      COMMAND_CALL@91..106
+        NAME_REF@91..96
+          LNAME@91..96 "print"
+        WHITESPACE@96..97 " "
+        COMMAND_ARGS@97..106
+          NAME_REF@97..106
+            ONAME@97..106 "getHealth"
+    NEWLINE@106..107 "\n"
+    LET_DECL@107..125
+      LET_KW@107..110 "let"
+      WHITESPACE@110..111 " "
+      BIND_PAT@111..121
+        NAME@111..121
+          ONAME@111..121 "maxPlayers"
+      WHITESPACE@121..122 " "
+      EQ@122..123 "="
+      WHITESPACE@123..124 " "
+      EXPR_LIST@124..125
+        LITERAL@124..125
+          NUMBER@124..125 "1"
+    NEWLINE@125..126 "\n"
+    FN_DECL@126..140
+      FN_KW@126..128 "fn"
+      WHITESPACE@128..129 " "
+      NAME@129..136
+        ONAME@129..136 "doThing"
+      BLOCK@136..137
+        NEWLINE@136..137 "\n"
+      END_KW@137..140 "end"
+    NEWLINE@140..141 "\n"
+  EOF@141..141 ""
+---
+error@97..106 3:7: `getHealth` is not an NL name: NL names are snake_case (`get_health`), PascalCase or SCREAMING_SNAKE_CASE. A name in this style is a Lua name, allowed only in a Lua path (`:obj.getHealth()`) or as a method name after `:` (`obj:getHealth()`); a table key in this style is written as a string (`t["getHealth"]`)
+error@111..121 4:5: `maxPlayers` is not an NL name: NL names are snake_case (`max_players`), PascalCase or SCREAMING_SNAKE_CASE. A name in this style is a Lua name, allowed only in a Lua path (`:obj.maxPlayers()`) or as a method name after `:` (`obj:maxPlayers()`); a table key in this style is written as a string (`t["maxPlayers"]`)
+error@129..136 5:4: `doThing` is not an NL name: NL names are snake_case (`do_thing`), PascalCase or SCREAMING_SNAKE_CASE. A name in this style is a Lua name, allowed only in a Lua path (`:obj.doThing()`) or as a method name after `:` (`obj:doThing()`); a table key in this style is written as a string (`t["doThing"]`)

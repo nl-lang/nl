@@ -1,0 +1,29 @@
+# Tests of the nl crate (crates/nl) against the VM fork,
+# outside the workspace: the workspace builds mlua with stock LuaJIT for nlc,
+# so the patch below cannot live there. The VM is built with the real
+# runtime (runtime/*.lua) and linked with the real compiler (crates/nl_capi,
+# through nl_sys). Run with tests/vm/nl_host/run.sh, which prepares the
+# patched luajit-src under target/nl_host first.
+[package]
+name = "nl_host"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+# The tests again with mlua's `send` feature (run.sh); there
+# NlExt::set_worker_init is unsafe (src/lib.rs, set_worker_init).
+send = ["nl/send"]
+
+[dependencies]
+nl = { path = "../../../crates/nl", features = ["async"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "macros", "sync"] }
+
+[patch.crates-io]
+# A copy of luajit-src-rs whose luajit2/ is the fork's working tree and whose
+# default runtime is runtime/*.lua (tests/vm/support/prepare_luajit_src.sh).
+luajit-src = { path = "../../../target/nl_host/luajit-src" }

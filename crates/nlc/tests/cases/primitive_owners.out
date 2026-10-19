@@ -1,0 +1,7 @@
+owner lib
+first chunk
+first +
+cannot redefine Number.owned_by: it is already defined by plugin
+cannot redefine Bool.+: it is already defined by plugin
+first chunk
+first +

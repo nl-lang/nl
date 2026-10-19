@@ -1,0 +1,21 @@
+2
+7
+4
+a,b,c
+4
+d
+written by IO.write
+written by a Lua method call
+written by a marked method
+Number
+2
+000000ff
+Function
+Table
+String
+Function
+Function
+ABC
+true 2
+true 10
+dead

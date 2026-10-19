@@ -1,0 +1,20 @@
+SOURCE_FILE@0..71
+  BLOCK@0..71
+    COMMENT@0..46 "# The condition of a modifier is a `cmd_expr`."
+    NEWLINE@46..47 "\n"
+    EXPR_STMT@47..70
+      NAME_REF@47..51
+        LNAME@47..51 "save"
+      WHITESPACE@51..52 " "
+      MODIFIER@52..70
+        IF_KW@52..54 "if"
+        WHITESPACE@54..55 " "
+        COMMAND_CALL@55..70
+          NAME_REF@55..62
+            LNAME@55..62 "confirm"
+          WHITESPACE@62..63 " "
+          COMMAND_ARGS@63..70
+            LITERAL@63..70
+              STRING@63..70 "\"save?\""
+    NEWLINE@70..71 "\n"
+  EOF@71..71 ""

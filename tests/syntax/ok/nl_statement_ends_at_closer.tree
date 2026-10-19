@@ -1,0 +1,81 @@
+SOURCE_FILE@0..134
+  BLOCK@0..134
+    COMMENT@0..65 "# A statement may end at a closing `end`, `else`, `)` on the same"
+    NEWLINE@65..66 "\n"
+    COMMENT@66..73 "# line."
+    NEWLINE@73..74 "\n"
+    EXPR_STMT@74..97
+      IF_EXPR@74..97
+        IF_KW@74..76 "if"
+        WHITESPACE@76..77 " "
+        NAME_REF@77..78
+          LNAME@77..78 "a"
+        BLOCK@78..85
+          NEWLINE@78..79 "\n"
+          WHITESPACE@79..81 "  "
+          EXPR_STMT@81..84
+            CALL_EXPR@81..84
+              NAME_REF@81..82
+                LNAME@81..82 "b"
+              ARG_LIST@82..84
+                L_PAREN@82..83 "("
+                R_PAREN@83..84 ")"
+          WHITESPACE@84..85 " "
+        ELSE_CLAUSE@85..94
+          ELSE_KW@85..89 "else"
+          BLOCK@89..94
+            WHITESPACE@89..90 " "
+            EXPR_STMT@90..93
+              CALL_EXPR@90..93
+                NAME_REF@90..91
+                  LNAME@90..91 "c"
+                ARG_LIST@91..93
+                  L_PAREN@91..92 "("
+                  R_PAREN@92..93 ")"
+            WHITESPACE@93..94 " "
+        END_KW@94..97 "end"
+    NEWLINE@97..98 "\n"
+    EXPR_STMT@98..111
+      CALL_EXPR@98..111
+        NAME_REF@98..99
+          LNAME@98..99 "f"
+        ARG_LIST@99..111
+          L_PAREN@99..100 "("
+          FN_EXPR@100..110
+            FN_KW@100..102 "fn"
+            PARAM_LIST@102..104
+              L_PAREN@102..103 "("
+              R_PAREN@103..104 ")"
+            BLOCK@104..107
+              WHITESPACE@104..105 " "
+              EXPR_STMT@105..106
+                NAME_REF@105..106
+                  LNAME@105..106 "x"
+              WHITESPACE@106..107 " "
+            END_KW@107..110 "end"
+          R_PAREN@110..111 ")"
+    NEWLINE@111..112 "\n"
+    EXPR_STMT@112..133
+      CALL_EXPR@112..133
+        NAME_REF@112..113
+          LNAME@112..113 "g"
+        ARG_LIST@113..133
+          L_PAREN@113..114 "("
+          FN_EXPR@114..129
+            FN_KW@114..116 "fn"
+            PARAM_LIST@116..118
+              L_PAREN@116..117 "("
+              R_PAREN@117..118 ")"
+            BLOCK@118..126
+              WHITESPACE@118..119 " "
+              RETURN_STMT@119..125
+                RETURN_KW@119..125 "return"
+              WHITESPACE@125..126 " "
+            END_KW@126..129 "end"
+          COMMA@129..130 ","
+          WHITESPACE@130..131 " "
+          LITERAL@131..132
+            NUMBER@131..132 "1"
+          R_PAREN@132..133 ")"
+    NEWLINE@133..134 "\n"
+  EOF@134..134 ""

@@ -1,0 +1,52 @@
+SOURCE_FILE@0..121
+  BLOCK@0..121
+    COMMENT@0..69 "# Recovery: garbage inside a struct body; the fields around it parse."
+    NEWLINE@69..70 "\n"
+    STRUCT_DECL@70..114
+      STRUCT_KW@70..76 "struct"
+      WHITESPACE@76..77 " "
+      NAME@77..78
+        CNAME@77..78 "S"
+      NEWLINE@78..79 "\n"
+      WHITESPACE@79..81 "  "
+      FIELD_DECL@81..90
+        NAME@81..82
+          LNAME@81..82 "a"
+        COLON@82..83 ":"
+        WHITESPACE@83..84 " "
+        NAMED_TYPE@84..90
+          QUAL_NAME@84..90
+            CNAME@84..90 "Number"
+      NEWLINE@90..91 "\n"
+      WHITESPACE@91..93 "  "
+      ERROR_NODE@93..98
+        R_PAREN@93..94 ")"
+        WHITESPACE@94..95 " "
+        PLUS@95..96 "+"
+        WHITESPACE@96..97 " "
+        QUESTION@97..98 "?"
+      NEWLINE@98..99 "\n"
+      WHITESPACE@99..101 "  "
+      FIELD_DECL@101..110
+        NAME@101..102
+          LNAME@101..102 "b"
+        COLON@102..103 ":"
+        WHITESPACE@103..104 " "
+        NAMED_TYPE@104..110
+          QUAL_NAME@104..110
+            CNAME@104..110 "String"
+      NEWLINE@110..111 "\n"
+      END_KW@111..114 "end"
+    NEWLINE@114..115 "\n"
+    ASSIGN_STMT@115..120
+      NAME_REF@115..116
+        LNAME@115..116 "x"
+      WHITESPACE@116..117 " "
+      EQ@117..118 "="
+      WHITESPACE@118..119 " "
+      LITERAL@119..120
+        NUMBER@119..120 "1"
+    NEWLINE@120..121 "\n"
+  EOF@121..121 ""
+---
+error@93..94 4:3: unexpected `)` in the body of `struct`

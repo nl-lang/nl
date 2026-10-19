@@ -1,0 +1,80 @@
+SOURCE_FILE@0..100
+  BLOCK@0..100
+    COMMENT@0..48 "# `+ -` below `* / // %`, both left-associative."
+    NEWLINE@48..49 "\n"
+    ASSIGN_STMT@49..62
+      NAME_REF@49..50
+        LNAME@49..50 "x"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      BIN_EXPR@53..62
+        BIN_EXPR@53..58
+          NAME_REF@53..54
+            LNAME@53..54 "a"
+          WHITESPACE@54..55 " "
+          MINUS@55..56 "-"
+          WHITESPACE@56..57 " "
+          NAME_REF@57..58
+            LNAME@57..58 "b"
+        WHITESPACE@58..59 " "
+        MINUS@59..60 "-"
+        WHITESPACE@60..61 " "
+        NAME_REF@61..62
+          LNAME@61..62 "c"
+    NEWLINE@62..63 "\n"
+    ASSIGN_STMT@63..84
+      NAME_REF@63..64
+        LNAME@63..64 "x"
+      WHITESPACE@64..65 " "
+      EQ@65..66 "="
+      WHITESPACE@66..67 " "
+      BIN_EXPR@67..84
+        BIN_EXPR@67..76
+          NAME_REF@67..68
+            LNAME@67..68 "a"
+          WHITESPACE@68..69 " "
+          PLUS@69..70 "+"
+          WHITESPACE@70..71 " "
+          BIN_EXPR@71..76
+            NAME_REF@71..72
+              LNAME@71..72 "b"
+            WHITESPACE@72..73 " "
+            STAR@73..74 "*"
+            WHITESPACE@74..75 " "
+            NAME_REF@75..76
+              LNAME@75..76 "c"
+        WHITESPACE@76..77 " "
+        MINUS@77..78 "-"
+        WHITESPACE@78..79 " "
+        BIN_EXPR@79..84
+          NAME_REF@79..80
+            LNAME@79..80 "d"
+          WHITESPACE@80..81 " "
+          SLASH@81..82 "/"
+          WHITESPACE@82..83 " "
+          NAME_REF@83..84
+            LNAME@83..84 "e"
+    NEWLINE@84..85 "\n"
+    ASSIGN_STMT@85..99
+      NAME_REF@85..86
+        LNAME@85..86 "x"
+      WHITESPACE@86..87 " "
+      EQ@87..88 "="
+      WHITESPACE@88..89 " "
+      BIN_EXPR@89..99
+        BIN_EXPR@89..95
+          NAME_REF@89..90
+            LNAME@89..90 "a"
+          WHITESPACE@90..91 " "
+          SLASH2@91..93 "//"
+          WHITESPACE@93..94 " "
+          NAME_REF@94..95
+            LNAME@94..95 "b"
+        WHITESPACE@95..96 " "
+        PERCENT@96..97 "%"
+        WHITESPACE@97..98 " "
+        NAME_REF@98..99
+          LNAME@98..99 "c"
+    NEWLINE@99..100 "\n"
+  EOF@100..100 ""

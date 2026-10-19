@@ -1,0 +1,10 @@
+SOURCE_FILE@0..69
+  BLOCK@0..69
+    COMMENT@0..64 "# Recovery: the file ends right after a keyword that needs more."
+    NEWLINE@64..65 "\n"
+    LET_DECL@65..68
+      LET_KW@65..68 "let"
+    NEWLINE@68..69 "\n"
+  EOF@69..69 ""
+---
+error@69..69 3:1: expected a pattern, found the end of the file

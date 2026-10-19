@@ -1,0 +1,31 @@
+SOURCE_FILE@0..198
+  BLOCK@0..198
+    COMMENT@0..17 "#!/usr/bin/env nl"
+    NEWLINE@17..18 "\n"
+    COMMENT@18..75 "# `#!` on the first line and `#` to the end of a line are"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..131 "# comments; they are trivia attached to the next token."
+    NEWLINE@131..132 "\n"
+    ASSIGN_STMT@132..137
+      NAME_REF@132..133
+        LNAME@132..133 "x"
+      WHITESPACE@133..134 " "
+      EQ@134..135 "="
+      WHITESPACE@135..136 " "
+      LITERAL@136..137
+        NUMBER@136..137 "1"
+    WHITESPACE@137..138 " "
+    COMMENT@138..158 "# a trailing comment"
+    NEWLINE@158..159 "\n"
+    COMMENT@159..191 "# a comment on a line of its own"
+    NEWLINE@191..192 "\n"
+    ASSIGN_STMT@192..197
+      NAME_REF@192..193
+        LNAME@192..193 "y"
+      WHITESPACE@193..194 " "
+      EQ@194..195 "="
+      WHITESPACE@195..196 " "
+      LITERAL@196..197
+        NUMBER@196..197 "2"
+    NEWLINE@197..198 "\n"
+  EOF@198..198 ""

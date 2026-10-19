@@ -1,0 +1,70 @@
+SOURCE_FILE@0..162
+  BLOCK@0..162
+    COMMENT@0..50 "# Type arguments in an implementation's interface."
+    NEWLINE@50..51 "\n"
+    INTERFACE_IMPL@51..124
+      INTERFACE_KW@51..60 "interface"
+      WHITESPACE@60..61 " "
+      NAMED_TYPE@61..71
+        QUAL_NAME@61..63
+          CNAME@61..63 "To"
+        TYPE_ARGS@63..71
+          LT@63..64 "<"
+          NAMED_TYPE@64..70
+            QUAL_NAME@64..70
+              CNAME@64..70 "String"
+          GT@70..71 ">"
+      WHITESPACE@71..72 " "
+      FOR_KW@72..75 "for"
+      WHITESPACE@75..76 " "
+      NAMED_TYPE@76..83
+        QUAL_NAME@76..83
+          CNAME@76..83 "Celsius"
+      NEWLINE@83..84 "\n"
+      WHITESPACE@84..86 "  "
+      FN_DECL@86..120
+        FN_KW@86..88 "fn"
+        WHITESPACE@88..89 " "
+        NAME@89..91
+          LNAME@89..91 "to"
+        RETURN_TYPE@91..99
+          COLON@91..92 ":"
+          WHITESPACE@92..93 " "
+          NAMED_TYPE@93..99
+            QUAL_NAME@93..99
+              CNAME@93..99 "String"
+        BLOCK@99..117
+          NEWLINE@99..100 "\n"
+          WHITESPACE@100..104 "    "
+          EXPR_STMT@104..114
+            INTERP_STRING@104..114
+              STR_BEGIN@104..107 "\"#{"
+              AT_EXPR@107..111
+                AT_NAME@107..111 "@deg"
+              STR_END@111..114 "}C\""
+          NEWLINE@114..115 "\n"
+          WHITESPACE@115..117 "  "
+        END_KW@117..120 "end"
+      NEWLINE@120..121 "\n"
+      END_KW@121..124 "end"
+    NEWLINE@124..125 "\n"
+    INTERFACE_IMPL@125..161
+      INTERFACE_KW@125..134 "interface"
+      WHITESPACE@134..135 " "
+      NAMED_TYPE@135..143
+        QUAL_NAME@135..143
+          CNAME@135..138 "Lib"
+          DOT@138..139 "."
+          CNAME@139..143 "Show"
+      WHITESPACE@143..144 " "
+      FOR_KW@144..147 "for"
+      WHITESPACE@147..148 " "
+      NAMED_TYPE@148..157
+        QUAL_NAME@148..157
+          CNAME@148..151 "Lib"
+          DOT@151..152 "."
+          CNAME@152..157 "Point"
+      NEWLINE@157..158 "\n"
+      END_KW@158..161 "end"
+    NEWLINE@161..162 "\n"
+  EOF@162..162 ""

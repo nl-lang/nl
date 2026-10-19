@@ -1,0 +1,37 @@
+SOURCE_FILE@0..66
+  BLOCK@0..66
+    COMMENT@0..26 "# `unless` with an `else`."
+    NEWLINE@26..27 "\n"
+    EXPR_STMT@27..65
+      UNLESS_EXPR@27..65
+        UNLESS_KW@27..33 "unless"
+        WHITESPACE@33..34 " "
+        NAME_REF@34..38
+          LNAME@34..38 "done"
+        BLOCK@38..48
+          NEWLINE@38..39 "\n"
+          WHITESPACE@39..41 "  "
+          EXPR_STMT@41..47
+            CALL_EXPR@41..47
+              NAME_REF@41..45
+                LNAME@41..45 "work"
+              ARG_LIST@45..47
+                L_PAREN@45..46 "("
+                R_PAREN@46..47 ")"
+          NEWLINE@47..48 "\n"
+        ELSE_CLAUSE@48..62
+          ELSE_KW@48..52 "else"
+          BLOCK@52..62
+            NEWLINE@52..53 "\n"
+            WHITESPACE@53..55 "  "
+            EXPR_STMT@55..61
+              CALL_EXPR@55..61
+                NAME_REF@55..59
+                  LNAME@55..59 "rest"
+                ARG_LIST@59..61
+                  L_PAREN@59..60 "("
+                  R_PAREN@60..61 ")"
+            NEWLINE@61..62 "\n"
+        END_KW@62..65 "end"
+    NEWLINE@65..66 "\n"
+  EOF@66..66 ""

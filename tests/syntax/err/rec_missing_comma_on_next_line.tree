@@ -1,0 +1,45 @@
+SOURCE_FILE@0..152
+  BLOCK@0..152
+    COMMENT@0..77 "# Recovery: in parentheses, an item on the next line with the `)` after it is"
+    NEWLINE@77..78 "\n"
+    COMMENT@78..131 "# a missing `,`; without the `)` it is a missing `)`."
+    NEWLINE@131..132 "\n"
+    EXPR_STMT@132..140
+      CALL_EXPR@132..140
+        NAME_REF@132..133
+          LNAME@132..133 "f"
+        ARG_LIST@133..140
+          L_PAREN@133..134 "("
+          NAME_REF@134..135
+            LNAME@134..135 "a"
+          NEWLINE@135..136 "\n"
+          WHITESPACE@136..138 "  "
+          NAME_REF@138..139
+            LNAME@138..139 "b"
+          R_PAREN@139..140 ")"
+    NEWLINE@140..141 "\n"
+    EXPR_STMT@141..147
+      CALL_EXPR@141..147
+        NAME_REF@141..142
+          LNAME@141..142 "g"
+        ARG_LIST@142..147
+          L_PAREN@142..143 "("
+          LITERAL@143..144
+            NUMBER@143..144 "1"
+          COMMA@144..145 ","
+          WHITESPACE@145..146 " "
+          LITERAL@146..147
+            NUMBER@146..147 "2"
+    NEWLINE@147..148 "\n"
+    EXPR_STMT@148..151
+      CALL_EXPR@148..151
+        NAME_REF@148..149
+          LNAME@148..149 "h"
+        ARG_LIST@149..151
+          L_PAREN@149..150 "("
+          R_PAREN@150..151 ")"
+    NEWLINE@151..152 "\n"
+  EOF@152..152 ""
+---
+error@138..139 4:3: expected `,` or `)`, found `b`
+error@148..149 6:1: expected `)` to close this `(`, found `h`

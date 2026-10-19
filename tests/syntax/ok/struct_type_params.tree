@@ -1,0 +1,55 @@
+SOURCE_FILE@0..77
+  BLOCK@0..77
+    COMMENT@0..18 "# `struct Box<T>`."
+    NEWLINE@18..19 "\n"
+    STRUCT_DECL@19..47
+      STRUCT_KW@19..25 "struct"
+      WHITESPACE@25..26 " "
+      NAME@26..29
+        CNAME@26..29 "Box"
+      TYPE_PARAMS@29..32
+        LT@29..30 "<"
+        TYPE_PARAM@30..31
+          NAME@30..31
+            CNAME@30..31 "T"
+        GT@31..32 ">"
+      NEWLINE@32..33 "\n"
+      WHITESPACE@33..35 "  "
+      FIELD_DECL@35..43
+        NAME@35..40
+          LNAME@35..40 "value"
+        COLON@40..41 ":"
+        WHITESPACE@41..42 " "
+        NAMED_TYPE@42..43
+          QUAL_NAME@42..43
+            CNAME@42..43 "T"
+      NEWLINE@43..44 "\n"
+      END_KW@44..47 "end"
+    NEWLINE@47..48 "\n"
+    STRUCT_DECL@48..76
+      STRUCT_KW@48..54 "struct"
+      WHITESPACE@54..55 " "
+      NAME@55..59
+        CNAME@55..59 "Pair"
+      TYPE_PARAMS@59..65
+        LT@59..60 "<"
+        TYPE_PARAM@60..61
+          NAME@60..61
+            CNAME@60..61 "A"
+        COMMA@61..62 ","
+        WHITESPACE@62..63 " "
+        TYPE_PARAM@63..64
+          NAME@63..64
+            CNAME@63..64 "B"
+        GT@64..65 ">"
+      WHITESPACE@65..66 " "
+      STRUCT_PARENT@66..72
+        COLON@66..67 ":"
+        WHITESPACE@67..68 " "
+        NAMED_TYPE@68..72
+          QUAL_NAME@68..72
+            CNAME@68..72 "Base"
+      NEWLINE@72..73 "\n"
+      END_KW@73..76 "end"
+    NEWLINE@76..77 "\n"
+  EOF@77..77 ""

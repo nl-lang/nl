@@ -1,0 +1,53 @@
+SOURCE_FILE@0..94
+  BLOCK@0..94
+    COMMENT@0..63 "# Recovery: garbage between table items; the other items parse."
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..87
+      NAME_REF@64..65
+        LNAME@64..65 "t"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      TABLE_EXPR@68..87
+        L_CURLY@68..69 "{"
+        TABLE_PAIR@69..73
+          TABLE_KEY@69..70
+            LNAME@69..70 "a"
+          COLON@70..71 ":"
+          WHITESPACE@71..72 " "
+          LITERAL@72..73
+            NUMBER@72..73 "1"
+        COMMA@73..74 ","
+        WHITESPACE@74..75 " "
+        TABLE_ITEM@75..76
+          LITERAL@75..76
+            NUMBER@75..76 "2"
+        WHITESPACE@76..77 " "
+        ERROR_NODE@77..80
+          QUESTION@77..78 "?"
+          WHITESPACE@78..79 " "
+          NUMBER@79..80 "3"
+        COMMA@80..81 ","
+        WHITESPACE@81..82 " "
+        TABLE_PAIR@82..86
+          TABLE_KEY@82..83
+            LNAME@82..83 "b"
+          COLON@83..84 ":"
+          WHITESPACE@84..85 " "
+          LITERAL@85..86
+            NUMBER@85..86 "2"
+        R_CURLY@86..87 "}"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..93
+      NAME_REF@88..89
+        LNAME@88..89 "y"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      LITERAL@92..93
+        NUMBER@92..93 "1"
+    NEWLINE@93..94 "\n"
+  EOF@94..94 ""
+---
+error@75..76 2:12: a brace table holds `key: value` pairs; a list is written with brackets: `[2]`
+error@77..78 2:14: expected `,` or `}`, found `?`

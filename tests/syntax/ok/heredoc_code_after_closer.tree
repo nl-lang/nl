@@ -1,0 +1,31 @@
+SOURCE_FILE@0..98
+  BLOCK@0..98
+    COMMENT@0..57 "# After the closer the line continues as ordinary source."
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..79
+      NAME_REF@58..59
+        LNAME@58..59 "a"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      FIELD_EXPR@62..79
+        LITERAL@62..73
+          STRING@62..73 "\"\"\"\n  x\n\"\"\""
+        DOT@73..74 "."
+        LNAME@74..79 "strip"
+    NEWLINE@79..80 "\n"
+    EXPR_STMT@80..97
+      CALL_EXPR@80..97
+        NAME_REF@80..81
+          LNAME@80..81 "f"
+        ARG_LIST@81..97
+          L_PAREN@81..82 "("
+          LITERAL@82..93
+            STRING@82..93 "\"\"\"\n  y\n\"\"\""
+          COMMA@93..94 ","
+          WHITESPACE@94..95 " "
+          NAME_REF@95..96
+            LNAME@95..96 "z"
+          R_PAREN@96..97 ")"
+    NEWLINE@97..98 "\n"
+  EOF@98..98 ""

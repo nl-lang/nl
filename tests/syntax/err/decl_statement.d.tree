@@ -1,0 +1,76 @@
+SOURCE_FILE@0..212
+  COMMENT@0..103 "# A declaration file holds `declare` items only; a statement and a body are errors, and parsing goes on"
+  NEWLINE@103..104 "\n"
+  ERROR_NODE@104..113
+    LET_KW@104..107 "let"
+    WHITESPACE@107..108 " "
+    LNAME@108..109 "x"
+    WHITESPACE@109..110 " "
+    EQ@110..111 "="
+    WHITESPACE@111..112 " "
+    NUMBER@112..113 "1"
+  NEWLINE@113..114 "\n"
+  DECL_FN@114..137
+    DECLARE_KW@114..121 "declare"
+    WHITESPACE@121..122 " "
+    FN_KW@122..124 "fn"
+    WHITESPACE@124..125 " "
+    NAME@125..127
+      LNAME@125..127 "ok"
+    PARAM_LIST@127..129
+      L_PAREN@127..128 "("
+      R_PAREN@128..129 ")"
+    RETURN_TYPE@129..137
+      COLON@129..130 ":"
+      WHITESPACE@130..131 " "
+      NAMED_TYPE@131..137
+        QUAL_NAME@131..137
+          CNAME@131..137 "Number"
+  NEWLINE@137..138 "\n"
+  DECL_MODULE@138..191
+    DECLARE_KW@138..145 "declare"
+    WHITESPACE@145..146 " "
+    MODULE_KW@146..152 "module"
+    WHITESPACE@152..153 " "
+    NAME@153..154
+      CNAME@153..154 "M"
+    NEWLINE@154..155 "\n"
+    WHITESPACE@155..157 "  "
+    DECL_FN@157..179
+      FN_KW@157..159 "fn"
+      WHITESPACE@159..160 " "
+      NAME@160..169
+        LNAME@160..169 "with_body"
+      PARAM_LIST@169..171
+        L_PAREN@169..170 "("
+        R_PAREN@170..171 ")"
+      RETURN_TYPE@171..179
+        COLON@171..172 ":"
+        WHITESPACE@172..173 " "
+        NAMED_TYPE@173..179
+          QUAL_NAME@173..179
+            CNAME@173..179 "Number"
+    NEWLINE@179..180 "\n"
+    WHITESPACE@180..184 "    "
+    ERROR_NODE@184..185
+      NUMBER@184..185 "1"
+    NEWLINE@185..186 "\n"
+    WHITESPACE@186..188 "  "
+    END_KW@188..191 "end"
+  NEWLINE@191..192 "\n"
+  WHITESPACE@192..194 "  "
+  ERROR_NODE@194..211
+    FN_KW@194..196 "fn"
+    WHITESPACE@196..197 " "
+    LNAME@197..204 "no_type"
+    L_PAREN@204..205 "("
+    LNAME@205..206 "a"
+    R_PAREN@206..207 ")"
+    NEWLINE@207..208 "\n"
+    END_KW@208..211 "end"
+  NEWLINE@211..212 "\n"
+  EOF@212..212 ""
+---
+error@104..107 2:1: expected `declare`, found a line break (then `let`): a declaration file holds `declare` items only, and no statements
+error@184..185 6:5: unexpected `1` in the body of `module`
+error@194..196 8:3: expected `declare`, found a line break (then `fn`): a declaration file holds `declare` items only, and no statements

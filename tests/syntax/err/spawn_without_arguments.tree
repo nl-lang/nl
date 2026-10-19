@@ -1,0 +1,19 @@
+SOURCE_FILE@0..48
+  BLOCK@0..48
+    COMMENT@0..35 "# `spawn f` needs an argument list."
+    NEWLINE@35..36 "\n"
+    ASSIGN_STMT@36..47
+      NAME_REF@36..37
+        LNAME@36..37 "t"
+      WHITESPACE@37..38 " "
+      EQ@38..39 "="
+      WHITESPACE@39..40 " "
+      SPAWN_EXPR@40..47
+        SPAWN_KW@40..45 "spawn"
+        WHITESPACE@45..46 " "
+        NAME_REF@46..47
+          LNAME@46..47 "f"
+    NEWLINE@47..48 "\n"
+  EOF@48..48 ""
+---
+error@40..47 2:5: `spawn` needs an argument list: `spawn f()`

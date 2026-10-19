@@ -1,0 +1,45 @@
+SOURCE_FILE@0..104
+  BLOCK@0..104
+    COMMENT@0..55 "# Assignment to a type-level name or a constant parses."
+    NEWLINE@55..56 "\n"
+    CONST_DECL@56..72
+      CONST_KW@56..61 "const"
+      WHITESPACE@61..62 " "
+      BIND_PAT@62..68
+        NAME@62..68
+          LNAME@62..68 "max_hp"
+      WHITESPACE@68..69 " "
+      EQ@69..70 "="
+      WHITESPACE@70..71 " "
+      EXPR_LIST@71..72
+        LITERAL@71..72
+          NUMBER@71..72 "1"
+    NEWLINE@72..73 "\n"
+    ASSIGN_STMT@73..80
+      NAME_REF@73..76
+        CNAME@73..76 "Foo"
+      WHITESPACE@76..77 " "
+      EQ@77..78 "="
+      WHITESPACE@78..79 " "
+      LITERAL@79..80
+        NUMBER@79..80 "1"
+    NEWLINE@80..81 "\n"
+    ASSIGN_STMT@81..91
+      NAME_REF@81..87
+        CNAME@81..87 "MAX_HP"
+      WHITESPACE@87..88 " "
+      EQ@88..89 "="
+      WHITESPACE@89..90 " "
+      LITERAL@90..91
+        NUMBER@90..91 "2"
+    NEWLINE@91..92 "\n"
+    COMPOUND_ASSIGN_STMT@92..103
+      NAME_REF@92..98
+        LNAME@92..98 "max_hp"
+      WHITESPACE@98..99 " "
+      PLUS_EQ@99..101 "+="
+      WHITESPACE@101..102 " "
+      LITERAL@102..103
+        NUMBER@102..103 "1"
+    NEWLINE@103..104 "\n"
+  EOF@104..104 ""

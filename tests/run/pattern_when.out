@@ -1,0 +1,23 @@
+literal number
+no match
+literal bool
+no match
+range
+no match
+is
+no match
+nested d
+no match
+shorthand kim
+no match
+typed 3
+no match
+renamed s
+no match
+two 1 2
+head 1 rest 2
+no match
+circle 4
+as e
+colon
+no match

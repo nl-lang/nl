@@ -1,0 +1,27 @@
+SOURCE_FILE@0..67
+  BLOCK@0..67
+    COMMENT@0..53 "# A number starts with a digit; `.5` is `.` then `5`."
+    NEWLINE@53..54 "\n"
+    ASSIGN_STMT@54..60
+      NAME_REF@54..55
+        LNAME@54..55 "a"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      ERROR_NODE@58..59
+        DOT@58..59 "."
+      LITERAL@59..60
+        NUMBER@59..60 "5"
+    NEWLINE@60..61 "\n"
+    ASSIGN_STMT@61..66
+      NAME_REF@61..62
+        LNAME@61..62 "b"
+      WHITESPACE@62..63 " "
+      EQ@63..64 "="
+      WHITESPACE@64..65 " "
+      LITERAL@65..66
+        NUMBER@65..66 "1"
+    NEWLINE@66..67 "\n"
+  EOF@67..67 ""
+---
+error@58..59 2:5: a number starts with a digit: write `0.5`

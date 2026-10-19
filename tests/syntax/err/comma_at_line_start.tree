@@ -1,0 +1,139 @@
+SOURCE_FILE@0..226
+  BLOCK@0..226
+    COMMENT@0..56 "# `,` is not a continuation token, so a line that starts"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..134 "# with `,` does not continue the list of the line before. One error per line."
+    NEWLINE@134..135 "\n"
+    RETURN_STMT@135..143
+      RETURN_KW@135..141 "return"
+      WHITESPACE@141..142 " "
+      EXPR_LIST@142..143
+        NAME_REF@142..143
+          LNAME@142..143 "a"
+    NEWLINE@143..144 "\n"
+    ERROR_NODE@144..145
+      COMMA@144..145 ","
+    WHITESPACE@145..146 " "
+    EXPR_STMT@146..147
+      NAME_REF@146..147
+        LNAME@146..147 "b"
+    NEWLINE@147..148 "\n"
+    EXPR_STMT@148..151
+      COMMAND_CALL@148..151
+        NAME_REF@148..149
+          LNAME@148..149 "f"
+        WHITESPACE@149..150 " "
+        COMMAND_ARGS@150..151
+          NAME_REF@150..151
+            LNAME@150..151 "a"
+    NEWLINE@151..152 "\n"
+    ERROR_NODE@152..153
+      COMMA@152..153 ","
+    WHITESPACE@153..154 " "
+    EXPR_STMT@154..155
+      NAME_REF@154..155
+        LNAME@154..155 "b"
+    NEWLINE@155..156 "\n"
+    EXPR_STMT@156..157
+      NAME_REF@156..157
+        LNAME@156..157 "x"
+    NEWLINE@157..158 "\n"
+    ERROR_NODE@158..159
+      COMMA@158..159 ","
+    WHITESPACE@159..160 " "
+    ASSIGN_STMT@160..165
+      NAME_REF@160..161
+        LNAME@160..161 "y"
+      WHITESPACE@161..162 " "
+      EQ@162..163 "="
+      WHITESPACE@163..164 " "
+      LITERAL@164..165
+        NUMBER@164..165 "1"
+    ERROR_NODE@165..166
+      COMMA@165..166 ","
+    WHITESPACE@166..167 " "
+    EXPR_STMT@167..168
+      LITERAL@167..168
+        NUMBER@167..168 "2"
+    NEWLINE@168..169 "\n"
+    LET_DECL@169..174
+      LET_KW@169..172 "let"
+      WHITESPACE@172..173 " "
+      BIND_PAT@173..174
+        NAME@173..174
+          LNAME@173..174 "c"
+    NEWLINE@174..175 "\n"
+    ERROR_NODE@175..176
+      COMMA@175..176 ","
+    WHITESPACE@176..177 " "
+    ASSIGN_STMT@177..182
+      NAME_REF@177..178
+        LNAME@177..178 "d"
+      WHITESPACE@178..179 " "
+      EQ@179..180 "="
+      WHITESPACE@180..181 " "
+      LITERAL@181..182
+        NUMBER@181..182 "1"
+    ERROR_NODE@182..183
+      COMMA@182..183 ","
+    WHITESPACE@183..184 " "
+    EXPR_STMT@184..185
+      LITERAL@184..185
+        NUMBER@184..185 "2"
+    NEWLINE@185..186 "\n"
+    LET_DECL@186..195
+      LET_KW@186..189 "let"
+      WHITESPACE@189..190 " "
+      BIND_PAT@190..191
+        NAME@190..191
+          LNAME@190..191 "e"
+      WHITESPACE@191..192 " "
+      EQ@192..193 "="
+      WHITESPACE@193..194 " "
+      EXPR_LIST@194..195
+        LITERAL@194..195
+          NUMBER@194..195 "1"
+    NEWLINE@195..196 "\n"
+    ERROR_NODE@196..197
+      COMMA@196..197 ","
+    WHITESPACE@197..198 " "
+    EXPR_STMT@198..199
+      LITERAL@198..199
+        NUMBER@198..199 "2"
+    NEWLINE@199..200 "\n"
+    EXPR_STMT@200..225
+      CASE_EXPR@200..225
+        CASE_KW@200..204 "case"
+        WHITESPACE@204..205 " "
+        NAME_REF@205..206
+          LNAME@205..206 "x"
+        NEWLINE@206..207 "\n"
+        WHEN_CLAUSE@207..222
+          WHEN_KW@207..211 "when"
+          WHITESPACE@211..212 " "
+          LITERAL@212..213
+            NUMBER@212..213 "1"
+          BLOCK@213..222
+            NEWLINE@213..214 "\n"
+            ERROR_NODE@214..215
+              COMMA@214..215 ","
+            WHITESPACE@215..216 " "
+            EXPR_STMT@216..217
+              LITERAL@216..217
+                NUMBER@216..217 "2"
+            NEWLINE@217..218 "\n"
+            WHITESPACE@218..220 "  "
+            EXPR_STMT@220..221
+              NAME_REF@220..221
+                LNAME@220..221 "y"
+            NEWLINE@221..222 "\n"
+        END_KW@222..225 "end"
+    NEWLINE@225..226 "\n"
+  EOF@226..226 ""
+---
+error@144..145 4:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before
+error@152..153 6:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before
+error@158..159 8:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before
+error@175..176 10:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before
+error@196..197 12:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before
+error@214..215 15:1: a line cannot start with `,`: a list continues on the next line only when the `,` ends the line before

@@ -1,0 +1,219 @@
+SOURCE_FILE@0..280
+  BLOCK@0..280
+    COMMENT@0..106 "# The nil-safe steps `?.name`, `?.[k]`, `?.(args)` and `?.:m(args)`; the `?.` sits in the step's own node."
+    NEWLINE@106..107 "\n"
+    ASSIGN_STMT@107..115
+      NAME_REF@107..108
+        LNAME@107..108 "x"
+      WHITESPACE@108..109 " "
+      EQ@109..110 "="
+      WHITESPACE@110..111 " "
+      FIELD_EXPR@111..115
+        NAME_REF@111..112
+          LNAME@111..112 "a"
+        QUESTION_DOT@112..114 "?."
+        LNAME@114..115 "b"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..126
+      NAME_REF@116..117
+        LNAME@116..117 "x"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      FIELD_EXPR@120..126
+        NAME_REF@120..121
+          LNAME@120..121 "a"
+        QUESTION_DOT@121..123 "?."
+        LNAME@123..126 "len"
+    NEWLINE@126..127 "\n"
+    ASSIGN_STMT@127..137
+      NAME_REF@127..128
+        LNAME@127..128 "x"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      FIELD_EXPR@131..137
+        NAME_REF@131..132
+          LNAME@131..132 "a"
+        QUESTION_DOT@132..134 "?."
+        LNAME@134..137 "end"
+    NEWLINE@137..138 "\n"
+    ASSIGN_STMT@138..148
+      NAME_REF@138..139
+        LNAME@138..139 "x"
+      WHITESPACE@139..140 " "
+      EQ@140..141 "="
+      WHITESPACE@141..142 " "
+      INDEX_EXPR@142..148
+        NAME_REF@142..143
+          LNAME@142..143 "a"
+        QUESTION_DOT@143..145 "?."
+        L_BRACK@145..146 "["
+        NAME_REF@146..147
+          LNAME@146..147 "k"
+        R_BRACK@147..148 "]"
+    NEWLINE@148..149 "\n"
+    ASSIGN_STMT@149..172
+      NAME_REF@149..150
+        LNAME@149..150 "x"
+      WHITESPACE@150..151 " "
+      EQ@151..152 "="
+      WHITESPACE@152..153 " "
+      CALL_EXPR@153..172
+        NAME_REF@153..154
+          LNAME@153..154 "f"
+        QUESTION_DOT@154..156 "?."
+        ARG_LIST@156..172
+          L_PAREN@156..157 "("
+          LITERAL@157..158
+            NUMBER@157..158 "1"
+          COMMA@158..159 ","
+          WHITESPACE@159..160 " "
+          SPREAD_ARG@160..165
+            STAR@160..161 "*"
+            NAME_REF@161..165
+              LNAME@161..165 "rest"
+          COMMA@165..166 ","
+          WHITESPACE@166..167 " "
+          KEYED_ARG@167..171
+            LNAME@167..168 "k"
+            COLON@168..169 ":"
+            WHITESPACE@169..170 " "
+            LITERAL@170..171
+              NUMBER@170..171 "2"
+          R_PAREN@171..172 ")"
+    NEWLINE@172..173 "\n"
+    ASSIGN_STMT@173..195
+      NAME_REF@173..174
+        LNAME@173..174 "x"
+      WHITESPACE@174..175 " "
+      EQ@175..176 "="
+      WHITESPACE@176..177 " "
+      CALL_EXPR@177..195
+        NAME_REF@177..178
+          LNAME@177..178 "f"
+        QUESTION_DOT@178..180 "?."
+        ARG_LIST@180..182
+          L_PAREN@180..181 "("
+          R_PAREN@181..182 ")"
+        WHITESPACE@182..183 " "
+        TRAILING_BLOCK@183..195
+          DO_KW@183..185 "do"
+          WHITESPACE@185..186 " "
+          BLOCK_PARAMS@186..189
+            PIPE@186..187 "|"
+            PARAM@187..188
+              BIND_PAT@187..188
+                NAME@187..188
+                  LNAME@187..188 "v"
+            PIPE@188..189 "|"
+          BLOCK@189..192
+            WHITESPACE@189..190 " "
+            EXPR_STMT@190..191
+              NAME_REF@190..191
+                LNAME@190..191 "v"
+            WHITESPACE@191..192 " "
+          END_KW@192..195 "end"
+    NEWLINE@195..196 "\n"
+    ASSIGN_STMT@196..208
+      NAME_REF@196..197
+        LNAME@196..197 "x"
+      WHITESPACE@197..198 " "
+      EQ@198..199 "="
+      WHITESPACE@199..200 " "
+      METHOD_CALL@200..208
+        NAME_REF@200..201
+          LNAME@200..201 "o"
+        QUESTION_DOT@201..203 "?."
+        COLON@203..204 ":"
+        LNAME@204..205 "m"
+        ARG_LIST@205..208
+          L_PAREN@205..206 "("
+          LITERAL@206..207
+            NUMBER@206..207 "1"
+          R_PAREN@207..208 ")"
+    NEWLINE@208..209 "\n"
+    ASSIGN_STMT@209..228
+      NAME_REF@209..210
+        LNAME@209..210 "x"
+      WHITESPACE@210..211 " "
+      EQ@211..212 "="
+      WHITESPACE@212..213 " "
+      METHOD_CALL@213..228
+        NAME_REF@213..214
+          LNAME@213..214 "o"
+        QUESTION_DOT@214..216 "?."
+        COLON@216..217 ":"
+        ONAME@217..228 "sendMessage"
+    NEWLINE@228..229 "\n"
+    ASSIGN_STMT@229..245
+      NAME_REF@229..230
+        LNAME@229..230 "x"
+      WHITESPACE@230..231 " "
+      EQ@231..232 "="
+      WHITESPACE@232..233 " "
+      FIELD_EXPR@233..245
+        CALL_EXPR@233..242
+          FIELD_EXPR@233..239
+            FIELD_EXPR@233..237
+              NAME_REF@233..234
+                LNAME@233..234 "a"
+              QUESTION_DOT@234..236 "?."
+              LNAME@236..237 "b"
+            DOT@237..238 "."
+            LNAME@238..239 "c"
+          ARG_LIST@239..242
+            L_PAREN@239..240 "("
+            NAME_REF@240..241
+              LNAME@240..241 "d"
+            R_PAREN@241..242 ")"
+        QUESTION_DOT@242..244 "?."
+        LNAME@244..245 "e"
+    NEWLINE@245..246 "\n"
+    ASSIGN_STMT@246..256
+      NAME_REF@246..247
+        LNAME@246..247 "x"
+      WHITESPACE@247..248 " "
+      EQ@248..249 "="
+      WHITESPACE@249..250 " "
+      FIELD_EXPR@250..256
+        NAME_REF@250..251
+          LNAME@250..251 "a"
+        WHITESPACE@251..252 " "
+        QUESTION_DOT@252..254 "?."
+        WHITESPACE@254..255 " "
+        LNAME@255..256 "b"
+    NEWLINE@256..257 "\n"
+    ASSIGN_STMT@257..266
+      NAME_REF@257..258
+        LNAME@257..258 "x"
+      WHITESPACE@258..259 " "
+      EQ@259..260 "="
+      WHITESPACE@260..261 " "
+      BANG_EXPR@261..266
+        FIELD_EXPR@261..265
+          NAME_REF@261..262
+            LNAME@261..262 "a"
+          QUESTION_DOT@262..264 "?."
+          LNAME@264..265 "f"
+        BANG_POSTFIX@265..266 "!"
+    NEWLINE@266..267 "\n"
+    ASSIGN_STMT@267..279
+      NAME_REF@267..268
+        LNAME@267..268 "x"
+      WHITESPACE@268..269 " "
+      EQ@269..270 "="
+      WHITESPACE@270..271 " "
+      FIELD_EXPR@271..279
+        PAREN_EXPR@271..277
+          L_PAREN@271..272 "("
+          FIELD_EXPR@272..276
+            NAME_REF@272..273
+              LNAME@272..273 "a"
+            QUESTION_DOT@273..275 "?."
+            LNAME@275..276 "b"
+          R_PAREN@276..277 ")"
+        DOT@277..278 "."
+        LNAME@278..279 "c"
+    NEWLINE@279..280 "\n"
+  EOF@280..280 ""

@@ -1,0 +1,62 @@
+SOURCE_FILE@0..152
+  BLOCK@0..152
+    COMMENT@0..52 "# A parameter with a default before one without, and"
+    NEWLINE@52..53 "\n"
+    COMMENT@53..109 "# partial annotations, parse; the resolver reports them."
+    NEWLINE@109..110 "\n"
+    FN_DECL@110..128
+      FN_KW@110..112 "fn"
+      WHITESPACE@112..113 " "
+      NAME@113..114
+        LNAME@113..114 "f"
+      PARAM_LIST@114..124
+        L_PAREN@114..115 "("
+        PARAM@115..120
+          BIND_PAT@115..116
+            NAME@115..116
+              LNAME@115..116 "a"
+          WHITESPACE@116..117 " "
+          EQ@117..118 "="
+          WHITESPACE@118..119 " "
+          LITERAL@119..120
+            NUMBER@119..120 "1"
+        COMMA@120..121 ","
+        WHITESPACE@121..122 " "
+        PARAM@122..123
+          BIND_PAT@122..123
+            NAME@122..123
+              LNAME@122..123 "b"
+        R_PAREN@123..124 ")"
+      BLOCK@124..125
+        NEWLINE@124..125 "\n"
+      END_KW@125..128 "end"
+    NEWLINE@128..129 "\n"
+    FN_DECL@129..151
+      FN_KW@129..131 "fn"
+      WHITESPACE@131..132 " "
+      NAME@132..133
+        LNAME@132..133 "g"
+      PARAM_LIST@133..147
+        L_PAREN@133..134 "("
+        PARAM@134..143
+          TYPED_PAT@134..143
+            BIND_PAT@134..135
+              NAME@134..135
+                LNAME@134..135 "a"
+            COLON@135..136 ":"
+            WHITESPACE@136..137 " "
+            NAMED_TYPE@137..143
+              QUAL_NAME@137..143
+                CNAME@137..143 "Number"
+        COMMA@143..144 ","
+        WHITESPACE@144..145 " "
+        PARAM@145..146
+          BIND_PAT@145..146
+            NAME@145..146
+              LNAME@145..146 "b"
+        R_PAREN@146..147 ")"
+      BLOCK@147..148
+        NEWLINE@147..148 "\n"
+      END_KW@148..151 "end"
+    NEWLINE@151..152 "\n"
+  EOF@152..152 ""

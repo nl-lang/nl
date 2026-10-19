@@ -1,0 +1,93 @@
+SOURCE_FILE@0..112
+  BLOCK@0..112
+    COMMENT@0..54 "# An index, with or without whitespace; a range index."
+    NEWLINE@54..55 "\n"
+    ASSIGN_STMT@55..63
+      NAME_REF@55..56
+        LNAME@55..56 "x"
+      WHITESPACE@56..57 " "
+      EQ@57..58 "="
+      WHITESPACE@58..59 " "
+      INDEX_EXPR@59..63
+        NAME_REF@59..60
+          LNAME@59..60 "t"
+        L_BRACK@60..61 "["
+        LITERAL@61..62
+          NUMBER@61..62 "1"
+        R_BRACK@62..63 "]"
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..73
+      NAME_REF@64..65
+        LNAME@64..65 "x"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      INDEX_EXPR@68..73
+        NAME_REF@68..69
+          LNAME@68..69 "t"
+        WHITESPACE@69..70 " "
+        L_BRACK@70..71 "["
+        LITERAL@71..72
+          NUMBER@71..72 "1"
+        R_BRACK@72..73 "]"
+    NEWLINE@73..74 "\n"
+    ASSIGN_STMT@74..85
+      NAME_REF@74..75
+        LNAME@74..75 "x"
+      WHITESPACE@75..76 " "
+      EQ@76..77 "="
+      WHITESPACE@77..78 " "
+      INDEX_EXPR@78..85
+        NAME_REF@78..79
+          LNAME@78..79 "s"
+        L_BRACK@79..80 "["
+        BIN_EXPR@80..84
+          LITERAL@80..81
+            NUMBER@80..81 "1"
+          DOT2@81..83 ".."
+          LITERAL@83..84
+            NUMBER@83..84 "2"
+        R_BRACK@84..85 "]"
+    NEWLINE@85..86 "\n"
+    ASSIGN_STMT@86..99
+      NAME_REF@86..87
+        LNAME@86..87 "x"
+      WHITESPACE@87..88 " "
+      EQ@88..89 "="
+      WHITESPACE@89..90 " "
+      INDEX_EXPR@90..99
+        NAME_REF@90..91
+          LNAME@90..91 "s"
+        L_BRACK@91..92 "["
+        BIN_EXPR@92..98
+          PREFIX_EXPR@92..94
+            MINUS@92..93 "-"
+            LITERAL@93..94
+              NUMBER@93..94 "3"
+          DOT2@94..96 ".."
+          PREFIX_EXPR@96..98
+            MINUS@96..97 "-"
+            LITERAL@97..98
+              NUMBER@97..98 "1"
+        R_BRACK@98..99 "]"
+    NEWLINE@99..100 "\n"
+    ASSIGN_STMT@100..111
+      NAME_REF@100..101
+        LNAME@100..101 "x"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      INDEX_EXPR@104..111
+        INDEX_EXPR@104..108
+          NAME_REF@104..105
+            LNAME@104..105 "m"
+          L_BRACK@105..106 "["
+          LITERAL@106..107
+            NUMBER@106..107 "0"
+          R_BRACK@107..108 "]"
+        L_BRACK@108..109 "["
+        NAME_REF@109..110
+          LNAME@109..110 "k"
+        R_BRACK@110..111 "]"
+    NEWLINE@111..112 "\n"
+  EOF@112..112 ""

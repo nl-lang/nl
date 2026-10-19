@@ -1,0 +1,27 @@
+SOURCE_FILE@0..83
+  BLOCK@0..83
+    COMMENT@0..62 "# `async` anywhere other than before `fn` or `do` is an error."
+    NEWLINE@62..63 "\n"
+    EXPR_STMT@63..70
+      ERROR_NODE@63..68
+        ASYNC_KW@63..68 "async"
+      WHITESPACE@68..69 " "
+      NAME_REF@69..70
+        LNAME@69..70 "x"
+    NEWLINE@70..71 "\n"
+    ASSIGN_STMT@71..82
+      NAME_REF@71..72
+        LNAME@71..72 "y"
+      WHITESPACE@72..73 " "
+      EQ@73..74 "="
+      WHITESPACE@74..75 " "
+      ERROR_NODE@75..80
+        ASYNC_KW@75..80 "async"
+      WHITESPACE@80..81 " "
+      LITERAL@81..82
+        NUMBER@81..82 "1"
+    NEWLINE@82..83 "\n"
+  EOF@83..83 ""
+---
+error@63..68 2:1: `async` must be followed by `fn` or `do`
+error@75..80 3:5: `async` must be followed by `fn` or `do`

@@ -1,0 +1,30 @@
+SOURCE_FILE@0..68
+  BLOCK@0..68
+    COMMENT@0..49 "# A number has no sign; `-5` is unary minus on 5."
+    NEWLINE@49..50 "\n"
+    ASSIGN_STMT@50..56
+      NAME_REF@50..51
+        LNAME@50..51 "x"
+      WHITESPACE@51..52 " "
+      EQ@52..53 "="
+      WHITESPACE@53..54 " "
+      PREFIX_EXPR@54..56
+        MINUS@54..55 "-"
+        LITERAL@55..56
+          NUMBER@55..56 "5"
+    NEWLINE@56..57 "\n"
+    ASSIGN_STMT@57..67
+      NAME_REF@57..58
+        LNAME@57..58 "y"
+      WHITESPACE@58..59 " "
+      EQ@59..60 "="
+      WHITESPACE@60..61 " "
+      PREFIX_EXPR@61..67
+        MINUS@61..62 "-"
+        FIELD_EXPR@62..67
+          LITERAL@62..63
+            NUMBER@62..63 "5"
+          DOT@63..64 "."
+          LNAME@64..67 "abs"
+    NEWLINE@67..68 "\n"
+  EOF@68..68 ""

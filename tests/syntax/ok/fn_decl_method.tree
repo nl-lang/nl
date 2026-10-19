@@ -1,0 +1,71 @@
+SOURCE_FILE@0..185
+  BLOCK@0..185
+    COMMENT@0..62 "# `fn Type.name` declares a method; the type may be qualified,"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..97 "# and the method name is any word."
+    NEWLINE@97..98 "\n"
+    FN_DECL@98..115
+      FN_KW@98..100 "fn"
+      WHITESPACE@100..101 " "
+      QUAL_NAME@101..104
+        CNAME@101..104 "Foo"
+      DOT@104..105 "."
+      NAME@105..111
+        LNAME@105..111 "method"
+      BLOCK@111..112
+        NEWLINE@111..112 "\n"
+      END_KW@112..115 "end"
+    NEWLINE@115..116 "\n"
+    FN_DECL@116..150
+      FN_KW@116..118 "fn"
+      WHITESPACE@118..119 " "
+      QUAL_NAME@119..136
+        CNAME@119..128 "Inventory"
+        DOT@128..129 "."
+        CNAME@129..136 "Filters"
+      DOT@136..137 "."
+      NAME@137..140
+        LNAME@137..140 "add"
+      PARAM_LIST@140..146
+        L_PAREN@140..141 "("
+        PARAM@141..145
+          BIND_PAT@141..145
+            NAME@141..145
+              LNAME@141..145 "item"
+        R_PAREN@145..146 ")"
+      BLOCK@146..147
+        NEWLINE@146..147 "\n"
+      END_KW@147..150 "end"
+    NEWLINE@150..151 "\n"
+    FN_DECL@151..166
+      FN_KW@151..153 "fn"
+      WHITESPACE@153..154 " "
+      QUAL_NAME@154..157
+        CNAME@154..157 "Foo"
+      DOT@157..158 "."
+      NAME@158..162
+        LNAME@158..162 "type"
+      BLOCK@162..163
+        NEWLINE@162..163 "\n"
+      END_KW@163..166 "end"
+    NEWLINE@166..167 "\n"
+    FN_DECL@167..184
+      FN_KW@167..169 "fn"
+      WHITESPACE@169..170 " "
+      QUAL_NAME@170..173
+        CNAME@170..173 "Foo"
+      DOT@173..174 "."
+      NAME@174..177
+        LNAME@174..177 "end"
+      PARAM_LIST@177..180
+        L_PAREN@177..178 "("
+        PARAM@178..179
+          BIND_PAT@178..179
+            NAME@178..179
+              LNAME@178..179 "x"
+        R_PAREN@179..180 ")"
+      BLOCK@180..181
+        NEWLINE@180..181 "\n"
+      END_KW@181..184 "end"
+    NEWLINE@184..185 "\n"
+  EOF@185..185 ""

@@ -1,0 +1,44 @@
+SOURCE_FILE@0..105
+  BLOCK@0..105
+    COMMENT@0..59 "# The values of `return` are present only on the same line."
+    NEWLINE@59..60 "\n"
+    FN_DECL@60..81
+      FN_KW@60..62 "fn"
+      WHITESPACE@62..63 " "
+      NAME@63..64
+        LNAME@63..64 "f"
+      BLOCK@64..78
+        NEWLINE@64..65 "\n"
+        WHITESPACE@65..67 "  "
+        RETURN_STMT@67..73
+          RETURN_KW@67..73 "return"
+        NEWLINE@73..74 "\n"
+        WHITESPACE@74..76 "  "
+        EXPR_STMT@76..77
+          NAME_REF@76..77
+            LNAME@76..77 "x"
+        NEWLINE@77..78 "\n"
+      END_KW@78..81 "end"
+    NEWLINE@81..82 "\n"
+    FN_DECL@82..104
+      FN_KW@82..84 "fn"
+      WHITESPACE@84..85 " "
+      NAME@85..86
+        LNAME@85..86 "g"
+      BLOCK@86..101
+        NEWLINE@86..87 "\n"
+        WHITESPACE@87..89 "  "
+        RETURN_STMT@89..100
+          RETURN_KW@89..95 "return"
+          WHITESPACE@95..96 " "
+          EXPR_LIST@96..100
+            NAME_REF@96..97
+              LNAME@96..97 "x"
+            COMMA@97..98 ","
+            WHITESPACE@98..99 " "
+            NAME_REF@99..100
+              LNAME@99..100 "y"
+        NEWLINE@100..101 "\n"
+      END_KW@101..104 "end"
+    NEWLINE@104..105 "\n"
+  EOF@105..105 ""

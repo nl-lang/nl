@@ -1,0 +1,43 @@
+SOURCE_FILE@0..121
+  BLOCK@0..121
+    COMMENT@0..73 "# Recovery: a `struct` lacks its `end`; the following declaration parses."
+    NEWLINE@73..74 "\n"
+    STRUCT_DECL@74..110
+      STRUCT_KW@74..80 "struct"
+      WHITESPACE@80..81 " "
+      NAME@81..86
+        CNAME@81..86 "Point"
+      NEWLINE@86..87 "\n"
+      WHITESPACE@87..89 "  "
+      FIELD_DECL@89..98
+        NAME@89..90
+          LNAME@89..90 "x"
+        COLON@90..91 ":"
+        WHITESPACE@91..92 " "
+        NAMED_TYPE@92..98
+          QUAL_NAME@92..98
+            CNAME@92..98 "Number"
+      NEWLINE@98..99 "\n"
+      WHITESPACE@99..101 "  "
+      FIELD_DECL@101..110
+        NAME@101..102
+          LNAME@101..102 "y"
+        COLON@102..103 ":"
+        WHITESPACE@103..104 " "
+        NAMED_TYPE@104..110
+          QUAL_NAME@104..110
+            CNAME@104..110 "Number"
+    NEWLINE@110..111 "\n"
+    NEWLINE@111..112 "\n"
+    FN_DECL@112..120
+      FN_KW@112..114 "fn"
+      WHITESPACE@114..115 " "
+      NAME@115..116
+        LNAME@115..116 "f"
+      BLOCK@116..117
+        NEWLINE@116..117 "\n"
+      END_KW@117..120 "end"
+    NEWLINE@120..121 "\n"
+  EOF@121..121 ""
+---
+error@112..114 6:1: the `struct` on line 2 has no `end`: by its indentation, it ends before this line

@@ -1,0 +1,44 @@
+SOURCE_FILE@0..132
+  BLOCK@0..132
+    COMMENT@0..55 "# An anonymous function as a statement that is not last"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..102 "# parses; the discarded-value rule rejects it."
+    NEWLINE@102..103 "\n"
+    FN_DECL@103..131
+      FN_KW@103..105 "fn"
+      WHITESPACE@105..106 " "
+      NAME@106..107
+        LNAME@106..107 "f"
+      BLOCK@107..128
+        NEWLINE@107..108 "\n"
+        WHITESPACE@108..110 "  "
+        EXPR_STMT@110..121
+          FN_EXPR@110..121
+            FN_KW@110..112 "fn"
+            PARAM_LIST@112..115
+              L_PAREN@112..113 "("
+              PARAM@113..114
+                BIND_PAT@113..114
+                  NAME@113..114
+                    LNAME@113..114 "x"
+              R_PAREN@114..115 ")"
+            BLOCK@115..118
+              WHITESPACE@115..116 " "
+              EXPR_STMT@116..117
+                NAME_REF@116..117
+                  LNAME@116..117 "x"
+              WHITESPACE@117..118 " "
+            END_KW@118..121 "end"
+        NEWLINE@121..122 "\n"
+        WHITESPACE@122..124 "  "
+        EXPR_STMT@124..127
+          CALL_EXPR@124..127
+            NAME_REF@124..125
+              LNAME@124..125 "g"
+            ARG_LIST@125..127
+              L_PAREN@125..126 "("
+              R_PAREN@126..127 ")"
+        NEWLINE@127..128 "\n"
+      END_KW@128..131 "end"
+    NEWLINE@131..132 "\n"
+  EOF@132..132 ""

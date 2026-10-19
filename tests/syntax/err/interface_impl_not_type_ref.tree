@@ -1,0 +1,34 @@
+SOURCE_FILE@0..97
+  BLOCK@0..97
+    COMMENT@0..54 "# An implementation names an interface and a type with"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..69 "# `type_ref`s."
+    NEWLINE@69..70 "\n"
+    INTERFACE_IMPL@70..96
+      INTERFACE_KW@70..79 "interface"
+      WHITESPACE@79..80 " "
+      UNION_TYPE@80..85
+        NAMED_TYPE@80..81
+          QUAL_NAME@80..81
+            CNAME@80..81 "A"
+        WHITESPACE@81..82 " "
+        PIPE@82..83 "|"
+        WHITESPACE@83..84 " "
+        NAMED_TYPE@84..85
+          QUAL_NAME@84..85
+            CNAME@84..85 "B"
+      WHITESPACE@85..86 " "
+      FOR_KW@86..89 "for"
+      WHITESPACE@89..90 " "
+      OPTIONAL_TYPE@90..92
+        NAMED_TYPE@90..91
+          QUAL_NAME@90..91
+            CNAME@90..91 "C"
+        QUESTION@91..92 "?"
+      NEWLINE@92..93 "\n"
+      END_KW@93..96 "end"
+    NEWLINE@96..97 "\n"
+  EOF@97..97 ""
+---
+error@80..85 3:11: the interface of an implementation is a type name such as `Foo` or `Box<T>`, not a union, an optional or another type expression
+error@90..92 3:21: the type of an implementation is a type name such as `Foo` or `Box<T>`, not a union, an optional or another type expression

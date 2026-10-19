@@ -1,0 +1,31 @@
+SOURCE_FILE@0..62
+  BLOCK@0..62
+    COMMENT@0..36 "# `return f a, b` returns `f(a, b)`."
+    NEWLINE@36..37 "\n"
+    FN_DECL@37..61
+      FN_KW@37..39 "fn"
+      WHITESPACE@39..40 " "
+      NAME@40..41
+        LNAME@40..41 "g"
+      BLOCK@41..58
+        NEWLINE@41..42 "\n"
+        WHITESPACE@42..44 "  "
+        RETURN_STMT@44..57
+          RETURN_KW@44..50 "return"
+          WHITESPACE@50..51 " "
+          EXPR_LIST@51..57
+            COMMAND_CALL@51..57
+              NAME_REF@51..52
+                LNAME@51..52 "f"
+              WHITESPACE@52..53 " "
+              COMMAND_ARGS@53..57
+                NAME_REF@53..54
+                  LNAME@53..54 "a"
+                COMMA@54..55 ","
+                WHITESPACE@55..56 " "
+                NAME_REF@56..57
+                  LNAME@56..57 "b"
+        NEWLINE@57..58 "\n"
+      END_KW@58..61 "end"
+    NEWLINE@61..62 "\n"
+  EOF@62..62 ""

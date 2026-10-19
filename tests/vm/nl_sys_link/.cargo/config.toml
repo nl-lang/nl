@@ -1,0 +1,3 @@
+# luajit-src runs make with -e, so these reach the fork's Makefile.
+[env]
+NL_RUNTIME_DIR = { value = "../fake_runtime", relative = true }

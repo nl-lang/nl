@@ -1,0 +1,6 @@
+my: i am not a clever fox
+other: other
+exception: plain
+outer caught OtherException
+true
+true

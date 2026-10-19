@@ -1,0 +1,121 @@
+SOURCE_FILE@0..228
+  BLOCK@0..228
+    COMMENT@0..61 "# Type aliases, with type parameters and a union continued on"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..79 "# the next lines."
+    NEWLINE@79..80 "\n"
+    TYPE_DECL@80..115
+      TYPE_KW@80..84 "type"
+      WHITESPACE@84..85 " "
+      NAME@85..90
+        CNAME@85..90 "Point"
+      WHITESPACE@90..91 " "
+      EQ@91..92 "="
+      WHITESPACE@92..93 " "
+      RECORD_TYPE@93..115
+        L_CURLY@93..94 "{"
+        RECORD_FIELD@94..103
+          LNAME@94..95 "x"
+          COLON@95..96 ":"
+          WHITESPACE@96..97 " "
+          NAMED_TYPE@97..103
+            QUAL_NAME@97..103
+              CNAME@97..103 "Number"
+        COMMA@103..104 ","
+        WHITESPACE@104..105 " "
+        RECORD_FIELD@105..114
+          LNAME@105..106 "y"
+          COLON@106..107 ":"
+          WHITESPACE@107..108 " "
+          NAMED_TYPE@108..114
+            QUAL_NAME@108..114
+              CNAME@108..114 "Number"
+        R_CURLY@114..115 "}"
+    NEWLINE@115..116 "\n"
+    TYPE_DECL@116..155
+      TYPE_KW@116..120 "type"
+      WHITESPACE@120..121 " "
+      NAME@121..125
+        CNAME@121..125 "Pair"
+      TYPE_PARAMS@125..131
+        LT@125..126 "<"
+        TYPE_PARAM@126..127
+          NAME@126..127
+            CNAME@126..127 "A"
+        COMMA@127..128 ","
+        WHITESPACE@128..129 " "
+        TYPE_PARAM@129..130
+          NAME@129..130
+            CNAME@129..130 "B"
+        GT@130..131 ">"
+      WHITESPACE@131..132 " "
+      EQ@132..133 "="
+      WHITESPACE@133..134 " "
+      RECORD_TYPE@134..155
+        L_CURLY@134..135 "{"
+        RECORD_FIELD@135..143
+          LNAME@135..140 "first"
+          COLON@140..141 ":"
+          WHITESPACE@141..142 " "
+          NAMED_TYPE@142..143
+            QUAL_NAME@142..143
+              CNAME@142..143 "A"
+        COMMA@143..144 ","
+        WHITESPACE@144..145 " "
+        RECORD_FIELD@145..154
+          LNAME@145..151 "second"
+          COLON@151..152 ":"
+          WHITESPACE@152..153 " "
+          NAMED_TYPE@153..154
+            QUAL_NAME@153..154
+              CNAME@153..154 "B"
+        R_CURLY@154..155 "}"
+    NEWLINE@155..156 "\n"
+    TYPE_DECL@156..192
+      TYPE_KW@156..160 "type"
+      WHITESPACE@160..161 " "
+      NAME@161..166
+        CNAME@161..166 "Shape"
+      WHITESPACE@166..167 " "
+      EQ@167..168 "="
+      WHITESPACE@168..169 " "
+      UNION_TYPE@169..192
+        NAMED_TYPE@169..175
+          QUAL_NAME@169..175
+            CNAME@169..175 "Circle"
+        NEWLINE@175..176 "\n"
+        WHITESPACE@176..178 "  "
+        PIPE@178..179 "|"
+        WHITESPACE@179..180 " "
+        NAMED_TYPE@180..184
+          QUAL_NAME@180..184
+            CNAME@180..184 "Rect"
+        NEWLINE@184..185 "\n"
+        WHITESPACE@185..187 "  "
+        PIPE@187..188 "|"
+        WHITESPACE@188..189 " "
+        NAMED_TYPE@189..192
+          QUAL_NAME@189..192
+            CNAME@189..192 "Tri"
+    NEWLINE@192..193 "\n"
+    TYPE_DECL@193..227
+      TYPE_KW@193..197 "type"
+      WHITESPACE@197..198 " "
+      NAME@198..207
+        CNAME@198..207 "Composite"
+      WHITESPACE@207..208 " "
+      EQ@208..209 "="
+      WHITESPACE@209..210 " "
+      UNION_TYPE@210..227
+        NAMED_TYPE@210..216
+          QUAL_NAME@210..216
+            CNAME@210..216 "Number"
+        WHITESPACE@216..217 " "
+        PIPE@217..218 "|"
+        NEWLINE@218..219 "\n"
+        WHITESPACE@219..221 "  "
+        NAMED_TYPE@221..227
+          QUAL_NAME@221..227
+            CNAME@221..227 "String"
+    NEWLINE@227..228 "\n"
+  EOF@228..228 ""

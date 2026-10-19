@@ -1,0 +1,37 @@
+SOURCE_FILE@0..76
+  BLOCK@0..76
+    COMMENT@0..49 "# A `when` item is an `expr`, not a command call."
+    NEWLINE@49..50 "\n"
+    EXPR_STMT@50..75
+      CASE_EXPR@50..75
+        CASE_KW@50..54 "case"
+        WHITESPACE@54..55 " "
+        NAME_REF@55..56
+          LNAME@55..56 "v"
+        NEWLINE@56..57 "\n"
+        WHEN_CLAUSE@57..72
+          WHEN_KW@57..61 "when"
+          WHITESPACE@61..62 " "
+          COMMAND_CALL@62..65
+            NAME_REF@62..63
+              LNAME@62..63 "f"
+            WHITESPACE@63..64 " "
+            COMMAND_ARGS@64..65
+              NAME_REF@64..65
+                LNAME@64..65 "x"
+          BLOCK@65..72
+            NEWLINE@65..66 "\n"
+            WHITESPACE@66..68 "  "
+            EXPR_STMT@68..71
+              CALL_EXPR@68..71
+                NAME_REF@68..69
+                  LNAME@68..69 "a"
+                ARG_LIST@69..71
+                  L_PAREN@69..70 "("
+                  R_PAREN@70..71 ")"
+            NEWLINE@71..72 "\n"
+        END_KW@72..75 "end"
+    NEWLINE@75..76 "\n"
+  EOF@76..76 ""
+---
+error@62..65 3:6: a call without parentheses is only allowed as a whole statement, the value of an assignment or declaration, or a header; write `f(x)`

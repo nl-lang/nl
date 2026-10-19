@@ -1,0 +1,8 @@
+Exception: .await outside a task: only code running in an async function or block can wait
+Exception: .await outside a task: only code running in an async function or block can wait
+Exception: .await outside a task: only code running in an async function or block can wait
+in a task: 9
+await across a C call: LuaError
+task done
+opened
+setunhandled(nil), then a report:	true

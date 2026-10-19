@@ -1,0 +1,87 @@
+SOURCE_FILE@0..140
+  BLOCK@0..140
+    COMMENT@0..56 "# A `>>` or `>>>` closing type arguments is split; so is"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..79 "# `>=` in `Box<T>= y`."
+    NEWLINE@79..80 "\n"
+    LET_DECL@80..98
+      LET_KW@80..83 "let"
+      WHITESPACE@83..84 " "
+      TYPED_PAT@84..98
+        BIND_PAT@84..85
+          NAME@84..85
+            LNAME@84..85 "a"
+        COLON@85..86 ":"
+        WHITESPACE@86..87 " "
+        NAMED_TYPE@87..98
+          QUAL_NAME@87..90
+            CNAME@87..90 "Box"
+          TYPE_ARGS@90..98
+            LT@90..91 "<"
+            NAMED_TYPE@91..97
+              QUAL_NAME@91..94
+                CNAME@91..94 "Box"
+              TYPE_ARGS@94..97
+                LT@94..95 "<"
+                NAMED_TYPE@95..96
+                  QUAL_NAME@95..96
+                    CNAME@95..96 "T"
+                GT@96..97 ">"
+            GT@97..98 ">"
+    NEWLINE@98..99 "\n"
+    LET_DECL@99..122
+      LET_KW@99..102 "let"
+      WHITESPACE@102..103 " "
+      TYPED_PAT@103..122
+        BIND_PAT@103..104
+          NAME@103..104
+            LNAME@103..104 "b"
+        COLON@104..105 ":"
+        WHITESPACE@105..106 " "
+        NAMED_TYPE@106..122
+          QUAL_NAME@106..109
+            CNAME@106..109 "Box"
+          TYPE_ARGS@109..122
+            LT@109..110 "<"
+            NAMED_TYPE@110..121
+              QUAL_NAME@110..113
+                CNAME@110..113 "Box"
+              TYPE_ARGS@113..121
+                LT@113..114 "<"
+                NAMED_TYPE@114..120
+                  QUAL_NAME@114..117
+                    CNAME@114..117 "Box"
+                  TYPE_ARGS@117..120
+                    LT@117..118 "<"
+                    NAMED_TYPE@118..119
+                      QUAL_NAME@118..119
+                        CNAME@118..119 "T"
+                    GT@119..120 ">"
+                GT@120..121 ">"
+            GT@121..122 ">"
+    NEWLINE@122..123 "\n"
+    LET_DECL@123..139
+      LET_KW@123..126 "let"
+      WHITESPACE@126..127 " "
+      TYPED_PAT@127..136
+        BIND_PAT@127..128
+          NAME@127..128
+            LNAME@127..128 "c"
+        COLON@128..129 ":"
+        WHITESPACE@129..130 " "
+        NAMED_TYPE@130..136
+          QUAL_NAME@130..133
+            CNAME@130..133 "Box"
+          TYPE_ARGS@133..136
+            LT@133..134 "<"
+            NAMED_TYPE@134..135
+              QUAL_NAME@134..135
+                CNAME@134..135 "T"
+            GT@135..136 ">"
+      EQ@136..137 "="
+      WHITESPACE@137..138 " "
+      EXPR_LIST@138..139
+        NAME_REF@138..139
+          LNAME@138..139 "y"
+    NEWLINE@139..140 "\n"
+  EOF@140..140 ""

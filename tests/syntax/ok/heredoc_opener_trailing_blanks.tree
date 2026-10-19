@@ -1,0 +1,14 @@
+SOURCE_FILE@0..78
+  BLOCK@0..78
+    COMMENT@0..57 "# Only spaces and tabs may follow the opener on its line."
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..77
+      NAME_REF@58..59
+        LNAME@58..59 "s"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      LITERAL@62..77
+        STRING@62..77 "\"\"\"-   \n  x\n\"\"\""
+    NEWLINE@77..78 "\n"
+  EOF@78..78 ""

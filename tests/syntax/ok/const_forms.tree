@@ -1,0 +1,95 @@
+SOURCE_FILE@0..209
+  BLOCK@0..209
+    COMMENT@0..57 "# `const` named by an LNAME or a SCREAMING CNAME, with an"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..107 "# optional type, several bindings, destructuring."
+    NEWLINE@107..108 "\n"
+    CONST_DECL@108..126
+      CONST_KW@108..113 "const"
+      WHITESPACE@113..114 " "
+      BIND_PAT@114..120
+        NAME@114..120
+          LNAME@114..120 "max_hp"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..126
+        LITERAL@123..126
+          NUMBER@123..126 "100"
+    NEWLINE@126..127 "\n"
+    CONST_DECL@127..145
+      CONST_KW@127..132 "const"
+      WHITESPACE@132..133 " "
+      BIND_PAT@133..139
+        NAME@133..139
+          CNAME@133..139 "MAX_HP"
+      WHITESPACE@139..140 " "
+      EQ@140..141 "="
+      WHITESPACE@141..142 " "
+      EXPR_LIST@142..145
+        LITERAL@142..145
+          NUMBER@142..145 "100"
+    NEWLINE@145..146 "\n"
+    CONST_DECL@146..170
+      CONST_KW@146..151 "const"
+      WHITESPACE@151..152 " "
+      TYPED_PAT@152..165
+        BIND_PAT@152..157
+          NAME@152..157
+            CNAME@152..157 "LIMIT"
+        COLON@157..158 ":"
+        WHITESPACE@158..159 " "
+        NAMED_TYPE@159..165
+          QUAL_NAME@159..165
+            CNAME@159..165 "Number"
+      WHITESPACE@165..166 " "
+      EQ@166..167 "="
+      WHITESPACE@167..168 " "
+      EXPR_LIST@168..170
+        LITERAL@168..170
+          NUMBER@168..170 "10"
+    NEWLINE@170..171 "\n"
+    CONST_DECL@171..188
+      CONST_KW@171..176 "const"
+      WHITESPACE@176..177 " "
+      BIND_PAT@177..178
+        NAME@177..178
+          CNAME@177..178 "A"
+      COMMA@178..179 ","
+      WHITESPACE@179..180 " "
+      BIND_PAT@180..181
+        NAME@180..181
+          LNAME@180..181 "b"
+      WHITESPACE@181..182 " "
+      EQ@182..183 "="
+      WHITESPACE@183..184 " "
+      EXPR_LIST@184..188
+        LITERAL@184..185
+          NUMBER@184..185 "1"
+        COMMA@185..186 ","
+        WHITESPACE@186..187 " "
+        LITERAL@187..188
+          NUMBER@187..188 "2"
+    NEWLINE@188..189 "\n"
+    CONST_DECL@189..208
+      CONST_KW@189..194 "const"
+      WHITESPACE@194..195 " "
+      BRACE_PAT@195..201
+        L_CURLY@195..196 "{"
+        PAT_FIELD@196..197
+          NAME@196..197
+            LNAME@196..197 "w"
+        COMMA@197..198 ","
+        WHITESPACE@198..199 " "
+        PAT_FIELD@199..200
+          NAME@199..200
+            LNAME@199..200 "h"
+        R_CURLY@200..201 "}"
+      WHITESPACE@201..202 " "
+      EQ@202..203 "="
+      WHITESPACE@203..204 " "
+      EXPR_LIST@204..208
+        NAME_REF@204..208
+          LNAME@204..208 "size"
+    NEWLINE@208..209 "\n"
+  EOF@209..209 ""

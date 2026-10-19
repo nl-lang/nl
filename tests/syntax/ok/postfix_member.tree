@@ -1,0 +1,63 @@
+SOURCE_FILE@0..124
+  BLOCK@0..124
+    COMMENT@0..57 "# A member is any word; a capitalized member is a member."
+    NEWLINE@57..58 "\n"
+    ASSIGN_STMT@58..67
+      NAME_REF@58..59
+        LNAME@58..59 "x"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      FIELD_EXPR@62..67
+        FIELD_EXPR@62..65
+          NAME_REF@62..63
+            LNAME@62..63 "a"
+          DOT@63..64 "."
+          LNAME@64..65 "b"
+        DOT@65..66 "."
+        LNAME@66..67 "c"
+    NEWLINE@67..68 "\n"
+    ASSIGN_STMT@68..87
+      NAME_REF@68..69
+        LNAME@68..69 "x"
+      WHITESPACE@69..70 " "
+      EQ@70..71 "="
+      WHITESPACE@71..72 " "
+      FIELD_EXPR@72..87
+        NAME_REF@72..81
+          CNAME@72..81 "Direction"
+        DOT@81..82 "."
+        CNAME@82..87 "North"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..113
+      NAME_REF@88..89
+        LNAME@88..89 "x"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      FIELD_EXPR@92..113
+        FIELD_EXPR@92..109
+          NAME_REF@92..101
+            CNAME@92..101 "Inventory"
+          DOT@101..102 "."
+          CNAME@102..109 "Filters"
+        DOT@109..110 "."
+        LNAME@110..113 "add"
+    NEWLINE@113..114 "\n"
+    ASSIGN_STMT@114..123
+      NAME_REF@114..115
+        LNAME@114..115 "x"
+      WHITESPACE@115..116 " "
+      EQ@116..117 "="
+      WHITESPACE@117..118 " "
+      FIELD_EXPR@118..123
+        CALL_EXPR@118..121
+          NAME_REF@118..119
+            LNAME@118..119 "f"
+          ARG_LIST@119..121
+            L_PAREN@119..120 "("
+            R_PAREN@120..121 ")"
+        DOT@121..122 "."
+        LNAME@122..123 "g"
+    NEWLINE@123..124 "\n"
+  EOF@124..124 ""

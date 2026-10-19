@@ -1,0 +1,170 @@
+SOURCE_FILE@0..285
+  BLOCK@0..285
+    COMMENT@0..63 "# A `when` item is a pattern when it starts with `{`, `[`, `is`"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..129 "# or a capitalized path followed by `{`; otherwise an expression."
+    NEWLINE@129..130 "\n"
+    EXPR_STMT@130..284
+      CASE_EXPR@130..284
+        CASE_KW@130..134 "case"
+        WHITESPACE@134..135 " "
+        NAME_REF@135..136
+          LNAME@135..136 "v"
+        NEWLINE@136..137 "\n"
+        WHEN_CLAUSE@137..150
+          WHEN_KW@137..141 "when"
+          WHITESPACE@141..142 " "
+          NAME_REF@142..143
+            LNAME@142..143 "x"
+          BLOCK@143..150
+            NEWLINE@143..144 "\n"
+            WHITESPACE@144..146 "  "
+            EXPR_STMT@146..149
+              CALL_EXPR@146..149
+                NAME_REF@146..147
+                  LNAME@146..147 "a"
+                ARG_LIST@147..149
+                  L_PAREN@147..148 "("
+                  R_PAREN@148..149 ")"
+            NEWLINE@149..150 "\n"
+        WHEN_CLAUSE@150..177
+          WHEN_KW@150..154 "when"
+          WHITESPACE@154..155 " "
+          FIELD_EXPR@155..170
+            NAME_REF@155..164
+              CNAME@155..164 "Direction"
+            DOT@164..165 "."
+            CNAME@165..170 "North"
+          BLOCK@170..177
+            NEWLINE@170..171 "\n"
+            WHITESPACE@171..173 "  "
+            EXPR_STMT@173..176
+              CALL_EXPR@173..176
+                NAME_REF@173..174
+                  LNAME@173..174 "b"
+                ARG_LIST@174..176
+                  L_PAREN@174..175 "("
+                  R_PAREN@175..176 ")"
+            NEWLINE@176..177 "\n"
+        WHEN_CLAUSE@177..195
+          WHEN_KW@177..181 "when"
+          WHITESPACE@181..182 " "
+          NAME_REF@182..188
+            CNAME@182..188 "Circle"
+          BLOCK@188..195
+            NEWLINE@188..189 "\n"
+            WHITESPACE@189..191 "  "
+            EXPR_STMT@191..194
+              CALL_EXPR@191..194
+                NAME_REF@191..192
+                  LNAME@191..192 "c"
+                ARG_LIST@192..194
+                  L_PAREN@192..193 "("
+                  R_PAREN@193..194 ")"
+            NEWLINE@194..195 "\n"
+        WHEN_CLAUSE@195..219
+          WHEN_KW@195..199 "when"
+          WHITESPACE@199..200 " "
+          BIN_EXPR@200..204
+            LITERAL@200..201
+              NUMBER@200..201 "3"
+            DOT2@201..203 ".."
+            LITERAL@203..204
+              NUMBER@203..204 "9"
+          COMMA@204..205 ","
+          WHITESPACE@205..206 " "
+          BIN_EXPR@206..212
+            NAME_REF@206..208
+              LNAME@206..208 "lo"
+            DOT2@208..210 ".."
+            NAME_REF@210..212
+              LNAME@210..212 "hi"
+          BLOCK@212..219
+            NEWLINE@212..213 "\n"
+            WHITESPACE@213..215 "  "
+            EXPR_STMT@215..218
+              CALL_EXPR@215..218
+                NAME_REF@215..216
+                  LNAME@215..216 "d"
+                ARG_LIST@216..218
+                  L_PAREN@216..217 "("
+                  R_PAREN@217..218 ")"
+            NEWLINE@218..219 "\n"
+        WHEN_CLAUSE@219..233
+          WHEN_KW@219..223 "when"
+          WHITESPACE@223..224 " "
+          NAME_REF@224..226
+            LNAME@224..226 "re"
+          BLOCK@226..233
+            NEWLINE@226..227 "\n"
+            WHITESPACE@227..229 "  "
+            EXPR_STMT@229..232
+              CALL_EXPR@229..232
+                NAME_REF@229..230
+                  LNAME@229..230 "e"
+                ARG_LIST@230..232
+                  L_PAREN@230..231 "("
+                  R_PAREN@231..232 ")"
+            NEWLINE@232..233 "\n"
+        WHEN_CLAUSE@233..255
+          WHEN_KW@233..237 "when"
+          WHITESPACE@237..238 " "
+          STRUCT_PAT@238..248
+            QUAL_NAME@238..244
+              CNAME@238..244 "Circle"
+            WHITESPACE@244..245 " "
+            L_CURLY@245..246 "{"
+            PAT_FIELD@246..247
+              NAME@246..247
+                LNAME@246..247 "r"
+            R_CURLY@247..248 "}"
+          BLOCK@248..255
+            NEWLINE@248..249 "\n"
+            WHITESPACE@249..251 "  "
+            EXPR_STMT@251..254
+              CALL_EXPR@251..254
+                NAME_REF@251..252
+                  LNAME@251..252 "f"
+                ARG_LIST@252..254
+                  L_PAREN@252..253 "("
+                  R_PAREN@253..254 ")"
+            NEWLINE@254..255 "\n"
+        WHEN_CLAUSE@255..281
+          WHEN_KW@255..259 "when"
+          WHITESPACE@259..260 " "
+          BRACE_PAT@260..263
+            L_CURLY@260..261 "{"
+            PAT_FIELD@261..262
+              NAME@261..262
+                LNAME@261..262 "a"
+            R_CURLY@262..263 "}"
+          COMMA@263..264 ","
+          WHITESPACE@264..265 " "
+          BRACKET_PAT@265..268
+            L_BRACK@265..266 "["
+            BIND_PAT@266..267
+              NAME@266..267
+                LNAME@266..267 "b"
+            R_BRACK@267..268 "]"
+          COMMA@268..269 ","
+          WHITESPACE@269..270 " "
+          IS_PAT@270..274
+            IS_KW@270..272 "is"
+            WHITESPACE@272..273 " "
+            NAMED_TYPE@273..274
+              QUAL_NAME@273..274
+                CNAME@273..274 "T"
+          BLOCK@274..281
+            NEWLINE@274..275 "\n"
+            WHITESPACE@275..277 "  "
+            EXPR_STMT@277..280
+              CALL_EXPR@277..280
+                NAME_REF@277..278
+                  LNAME@277..278 "g"
+                ARG_LIST@278..280
+                  L_PAREN@278..279 "("
+                  R_PAREN@279..280 ")"
+            NEWLINE@280..281 "\n"
+        END_KW@281..284 "end"
+    NEWLINE@284..285 "\n"
+  EOF@285..285 ""

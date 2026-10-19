@@ -1,0 +1,114 @@
+SOURCE_FILE@0..192
+  BLOCK@0..192
+    COMMENT@0..60 "# `for` with one, two and three patterns and a destructuring"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..71 "# pattern."
+    NEWLINE@71..72 "\n"
+    FOR_STMT@72..89
+      FOR_KW@72..75 "for"
+      WHITESPACE@75..76 " "
+      BIND_PAT@76..77
+        NAME@76..77
+          LNAME@76..77 "v"
+      WHITESPACE@77..78 " "
+      IN_KW@78..80 "in"
+      WHITESPACE@80..81 " "
+      NAME_REF@81..85
+        LNAME@81..85 "list"
+      BLOCK@85..86
+        NEWLINE@85..86 "\n"
+      END_KW@86..89 "end"
+    NEWLINE@89..90 "\n"
+    FOR_STMT@90..109
+      FOR_KW@90..93 "for"
+      WHITESPACE@93..94 " "
+      BIND_PAT@94..95
+        NAME@94..95
+          LNAME@94..95 "k"
+      COMMA@95..96 ","
+      WHITESPACE@96..97 " "
+      BIND_PAT@97..98
+        NAME@97..98
+          LNAME@97..98 "v"
+      WHITESPACE@98..99 " "
+      IN_KW@99..101 "in"
+      WHITESPACE@101..102 " "
+      NAME_REF@102..105
+        LNAME@102..105 "map"
+      BLOCK@105..106
+        NEWLINE@105..106 "\n"
+      END_KW@106..109 "end"
+    NEWLINE@109..110 "\n"
+    FOR_STMT@110..136
+      FOR_KW@110..113 "for"
+      WHITESPACE@113..114 " "
+      BIND_PAT@114..115
+        NAME@114..115
+          LNAME@114..115 "a"
+      COMMA@115..116 ","
+      WHITESPACE@116..117 " "
+      BIND_PAT@117..118
+        NAME@117..118
+          LNAME@117..118 "b"
+      COMMA@118..119 ","
+      WHITESPACE@119..120 " "
+      BIND_PAT@120..121
+        NAME@120..121
+          LNAME@120..121 "c"
+      WHITESPACE@121..122 " "
+      IN_KW@122..124 "in"
+      WHITESPACE@124..125 " "
+      CALL_EXPR@125..132
+        NAME_REF@125..129
+          LNAME@125..129 "iter"
+        ARG_LIST@129..132
+          L_PAREN@129..130 "("
+          NAME_REF@130..131
+            LNAME@130..131 "x"
+          R_PAREN@131..132 ")"
+      BLOCK@132..133
+        NEWLINE@132..133 "\n"
+      END_KW@133..136 "end"
+    NEWLINE@136..137 "\n"
+    FOR_STMT@137..164
+      FOR_KW@137..140 "for"
+      WHITESPACE@140..141 " "
+      BRACE_PAT@141..151
+        L_CURLY@141..142 "{"
+        PAT_FIELD@142..146
+          NAME@142..146
+            LNAME@142..146 "name"
+        COMMA@146..147 ","
+        WHITESPACE@147..148 " "
+        PAT_FIELD@148..150
+          NAME@148..150
+            LNAME@148..150 "hp"
+        R_CURLY@150..151 "}"
+      WHITESPACE@151..152 " "
+      IN_KW@152..154 "in"
+      WHITESPACE@154..155 " "
+      NAME_REF@155..160
+        LNAME@155..160 "units"
+      BLOCK@160..161
+        NEWLINE@160..161 "\n"
+      END_KW@161..164 "end"
+    NEWLINE@164..165 "\n"
+    FOR_STMT@165..191
+      FOR_KW@165..168 "for"
+      WHITESPACE@168..169 " "
+      BIND_PAT@169..173
+        NAME@169..173
+          LNAME@169..173 "byte"
+      WHITESPACE@173..174 " "
+      IN_KW@174..176 "in"
+      WHITESPACE@176..177 " "
+      FIELD_EXPR@177..187
+        NAME_REF@177..178
+          LNAME@177..178 "s"
+        DOT@178..179 "."
+        LNAME@179..187 "as_bytes"
+      BLOCK@187..188
+        NEWLINE@187..188 "\n"
+      END_KW@188..191 "end"
+    NEWLINE@191..192 "\n"
+  EOF@192..192 ""

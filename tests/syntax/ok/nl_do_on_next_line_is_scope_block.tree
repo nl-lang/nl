@@ -1,0 +1,26 @@
+SOURCE_FILE@0..117
+  BLOCK@0..117
+    COMMENT@0..57 "# A trailing `do` must be on the same line as the call; a"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..101 "# `do` that starts a line is a scope block."
+    NEWLINE@101..102 "\n"
+    EXPR_STMT@102..103
+      NAME_REF@102..103
+        LNAME@102..103 "f"
+    NEWLINE@103..104 "\n"
+    DO_BLOCK@104..116
+      DO_KW@104..106 "do"
+      BLOCK@106..113
+        NEWLINE@106..107 "\n"
+        WHITESPACE@107..109 "  "
+        EXPR_STMT@109..112
+          CALL_EXPR@109..112
+            NAME_REF@109..110
+              LNAME@109..110 "g"
+            ARG_LIST@110..112
+              L_PAREN@110..111 "("
+              R_PAREN@111..112 ")"
+        NEWLINE@112..113 "\n"
+      END_KW@113..116 "end"
+    NEWLINE@116..117 "\n"
+  EOF@117..117 ""

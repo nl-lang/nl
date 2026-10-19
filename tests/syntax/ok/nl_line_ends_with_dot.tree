@@ -1,0 +1,14 @@
+SOURCE_FILE@0..63
+  BLOCK@0..63
+    COMMENT@0..55 "# After `.` the member name is read from the next line."
+    NEWLINE@55..56 "\n"
+    EXPR_STMT@56..62
+      FIELD_EXPR@56..62
+        NAME_REF@56..57
+          LNAME@56..57 "x"
+        DOT@57..58 "."
+        NEWLINE@58..59 "\n"
+        WHITESPACE@59..61 "  "
+        LNAME@61..62 "y"
+    NEWLINE@62..63 "\n"
+  EOF@63..63 ""

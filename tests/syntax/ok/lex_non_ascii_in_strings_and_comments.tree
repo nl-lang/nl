@@ -1,0 +1,25 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..64 "# Non-ASCII characters are allowed in comments (héllo, ✓) and"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..86 "# in string literals."
+    NEWLINE@86..87 "\n"
+    ASSIGN_STMT@87..103
+      NAME_REF@87..88
+        LNAME@87..88 "s"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      LITERAL@91..103
+        STRING@91..103 "\"héllo ✓\""
+    NEWLINE@103..104 "\n"
+    ASSIGN_STMT@104..121
+      NAME_REF@104..105
+        LNAME@104..105 "t"
+      WHITESPACE@105..106 " "
+      EQ@106..107 "="
+      WHITESPACE@107..108 " "
+      LITERAL@108..121
+        STRING@108..121 "'ünïcödé'"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""

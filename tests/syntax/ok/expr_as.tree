@@ -1,0 +1,129 @@
+SOURCE_FILE@0..203
+  BLOCK@0..203
+    COMMENT@0..41 "# `as` binds tighter than `*` and takes a"
+    NEWLINE@41..42 "\n"
+    COMMENT@42..97 "# qualified type name or `Self` with no type arguments."
+    NEWLINE@97..98 "\n"
+    ASSIGN_STMT@98..117
+      NAME_REF@98..99
+        LNAME@98..99 "x"
+      WHITESPACE@99..100 " "
+      EQ@100..101 "="
+      WHITESPACE@101..102 " "
+      BIN_EXPR@102..117
+        NAME_REF@102..103
+          LNAME@102..103 "a"
+        WHITESPACE@103..104 " "
+        STAR@104..105 "*"
+        WHITESPACE@105..106 " "
+        AS_EXPR@106..117
+          NAME_REF@106..107
+            LNAME@106..107 "b"
+          WHITESPACE@107..108 " "
+          AS_KW@108..110 "as"
+          WHITESPACE@110..111 " "
+          NAMED_TYPE@111..117
+            QUAL_NAME@111..117
+              CNAME@111..117 "Number"
+    NEWLINE@117..118 "\n"
+    ASSIGN_STMT@118..136
+      NAME_REF@118..119
+        LNAME@118..119 "x"
+      WHITESPACE@119..120 " "
+      EQ@120..121 "="
+      WHITESPACE@121..122 " "
+      AS_EXPR@122..136
+        NAME_REF@122..123
+          LNAME@122..123 "v"
+        WHITESPACE@123..124 " "
+        AS_KW@124..126 "as"
+        WHITESPACE@126..127 " "
+        NAMED_TYPE@127..136
+          QUAL_NAME@127..136
+            CNAME@127..130 "Lib"
+            DOT@130..131 "."
+            CNAME@131..136 "Point"
+    NEWLINE@136..137 "\n"
+    ASSIGN_STMT@137..150
+      NAME_REF@137..138
+        LNAME@137..138 "x"
+      WHITESPACE@138..139 " "
+      EQ@139..140 "="
+      WHITESPACE@140..141 " "
+      AS_EXPR@141..150
+        NAME_REF@141..142
+          LNAME@141..142 "v"
+        WHITESPACE@142..143 " "
+        AS_KW@143..145 "as"
+        WHITESPACE@145..146 " "
+        NAMED_TYPE@146..150
+          SELF_TYPE_KW@146..150 "Self"
+    NEWLINE@150..151 "\n"
+    ASSIGN_STMT@151..166
+      NAME_REF@151..152
+        LNAME@151..152 "x"
+      WHITESPACE@152..153 " "
+      EQ@153..154 "="
+      WHITESPACE@154..155 " "
+      AS_EXPR@155..166
+        AS_EXPR@155..161
+          NAME_REF@155..156
+            LNAME@155..156 "v"
+          WHITESPACE@156..157 " "
+          AS_KW@157..159 "as"
+          WHITESPACE@159..160 " "
+          NAMED_TYPE@160..161
+            QUAL_NAME@160..161
+              CNAME@160..161 "A"
+        WHITESPACE@161..162 " "
+        AS_KW@162..164 "as"
+        WHITESPACE@164..165 " "
+        NAMED_TYPE@165..166
+          QUAL_NAME@165..166
+            CNAME@165..166 "B"
+    NEWLINE@166..167 "\n"
+    ASSIGN_STMT@167..187
+      NAME_REF@167..168
+        LNAME@167..168 "x"
+      WHITESPACE@168..169 " "
+      EQ@169..170 "="
+      WHITESPACE@170..171 " "
+      BIN_EXPR@171..187
+        AS_EXPR@171..182
+          NAME_REF@171..172
+            LNAME@171..172 "v"
+          WHITESPACE@172..173 " "
+          AS_KW@173..175 "as"
+          WHITESPACE@175..176 " "
+          NAMED_TYPE@176..182
+            QUAL_NAME@176..182
+              CNAME@176..182 "Number"
+        WHITESPACE@182..183 " "
+        LT@183..184 "<"
+        WHITESPACE@184..185 " "
+        LITERAL@185..187
+          NUMBER@185..187 "10"
+    NEWLINE@187..188 "\n"
+    ASSIGN_STMT@188..202
+      NAME_REF@188..189
+        LNAME@188..189 "x"
+      WHITESPACE@189..190 " "
+      EQ@190..191 "="
+      WHITESPACE@191..192 " "
+      BIN_EXPR@192..202
+        AS_EXPR@192..198
+          NAME_REF@192..193
+            LNAME@192..193 "v"
+          WHITESPACE@193..194 " "
+          AS_KW@194..196 "as"
+          WHITESPACE@196..197 " "
+          NAMED_TYPE@197..198
+            QUAL_NAME@197..198
+              CNAME@197..198 "T"
+        WHITESPACE@198..199 " "
+        PIPE@199..200 "|"
+        WHITESPACE@200..201 " "
+        NAME_REF@201..202
+          LNAME@201..202 "y"
+    NEWLINE@202..203 "\n"
+  EOF@203..203 ""

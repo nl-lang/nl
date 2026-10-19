@@ -1,0 +1,71 @@
+SOURCE_FILE@0..149
+  BLOCK@0..149
+    COMMENT@0..69 "# A `{…}` pattern goes by key; a positional pattern is written with"
+    NEWLINE@69..70 "\n"
+    COMMENT@70..95 "# brackets, `[123, 456]`."
+    NEWLINE@95..96 "\n"
+    EXPR_STMT@96..148
+      CASE_EXPR@96..148
+        CASE_KW@96..100 "case"
+        WHITESPACE@100..101 " "
+        NAME_REF@101..102
+          LNAME@101..102 "v"
+        NEWLINE@102..103 "\n"
+        WHEN_CLAUSE@103..125
+          WHEN_KW@103..107 "when"
+          WHITESPACE@107..108 " "
+          BRACE_PAT@108..118
+            L_CURLY@108..109 "{"
+            LITERAL_PAT@109..112
+              NUMBER@109..112 "123"
+            COMMA@112..113 ","
+            WHITESPACE@113..114 " "
+            LITERAL_PAT@114..117
+              NUMBER@114..117 "456"
+            R_CURLY@117..118 "}"
+          BLOCK@118..125
+            NEWLINE@118..119 "\n"
+            WHITESPACE@119..121 "  "
+            EXPR_STMT@121..124
+              CALL_EXPR@121..124
+                NAME_REF@121..122
+                  LNAME@121..122 "a"
+                ARG_LIST@122..124
+                  L_PAREN@122..123 "("
+                  R_PAREN@123..124 ")"
+            NEWLINE@124..125 "\n"
+        WHEN_CLAUSE@125..145
+          WHEN_KW@125..129 "when"
+          WHITESPACE@129..130 " "
+          BRACE_PAT@130..138
+            L_CURLY@130..131 "{"
+            LITERAL_PAT@131..132
+              NUMBER@131..132 "1"
+            COMMA@132..133 ","
+            WHITESPACE@133..134 " "
+            BRACE_PAT@134..137
+              L_CURLY@134..135 "{"
+              PAT_FIELD@135..136
+                NAME@135..136
+                  LNAME@135..136 "x"
+              R_CURLY@136..137 "}"
+            R_CURLY@137..138 "}"
+          BLOCK@138..145
+            NEWLINE@138..139 "\n"
+            WHITESPACE@139..141 "  "
+            EXPR_STMT@141..144
+              CALL_EXPR@141..144
+                NAME_REF@141..142
+                  LNAME@141..142 "b"
+                ARG_LIST@142..144
+                  L_PAREN@142..143 "("
+                  R_PAREN@143..144 ")"
+            NEWLINE@144..145 "\n"
+        END_KW@145..148 "end"
+    NEWLINE@148..149 "\n"
+  EOF@149..149 ""
+---
+error@109..112 4:7: a `{…}` pattern goes by key (`{name, key: p}`); a positional pattern is written with brackets: `[123]`
+error@114..117 4:12: a `{…}` pattern goes by key (`{name, key: p}`); a positional pattern is written with brackets: `[456]`
+error@131..132 6:7: a `{…}` pattern goes by key (`{name, key: p}`); a positional pattern is written with brackets: `[1]`
+error@134..137 6:10: a `{…}` pattern goes by key (`{name, key: p}`); a positional pattern is written with brackets: `[{x}]`

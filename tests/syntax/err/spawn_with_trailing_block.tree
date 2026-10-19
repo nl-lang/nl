@@ -1,0 +1,54 @@
+SOURCE_FILE@0..127
+  BLOCK@0..127
+    COMMENT@0..43 "# A block cannot be sent to a worker, after"
+    NEWLINE@43..44 "\n"
+    COMMENT@44..87 "# parenthesized or after command arguments."
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..109
+      NAME_REF@88..89
+        LNAME@88..89 "t"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      SPAWN_EXPR@92..109
+        SPAWN_KW@92..97 "spawn"
+        WHITESPACE@97..98 " "
+        CALL_EXPR@98..102
+          NAME_REF@98..99
+            LNAME@98..99 "f"
+          ARG_LIST@99..102
+            L_PAREN@99..100 "("
+            NAME_REF@100..101
+              LNAME@100..101 "x"
+            R_PAREN@101..102 ")"
+        WHITESPACE@102..103 " "
+        ERROR_NODE@103..109
+          TRAILING_BLOCK@103..109
+            DO_KW@103..105 "do"
+            BLOCK@105..106
+              NEWLINE@105..106 "\n"
+            END_KW@106..109 "end"
+    NEWLINE@109..110 "\n"
+    EXPR_STMT@110..126
+      SPAWN_EXPR@110..126
+        SPAWN_KW@110..115 "spawn"
+        WHITESPACE@115..116 " "
+        COMMAND_CALL@116..119
+          NAME_REF@116..117
+            LNAME@116..117 "f"
+          WHITESPACE@117..118 " "
+          COMMAND_ARGS@118..119
+            NAME_REF@118..119
+              LNAME@118..119 "x"
+        WHITESPACE@119..120 " "
+        ERROR_NODE@120..126
+          TRAILING_BLOCK@120..126
+            DO_KW@120..122 "do"
+            BLOCK@122..123
+              NEWLINE@122..123 "\n"
+            END_KW@123..126 "end"
+    NEWLINE@126..127 "\n"
+  EOF@127..127 ""
+---
+error@103..105 3:16: a block cannot be sent to a worker: pass a named function, or use `spawn do … end`
+error@120..122 5:11: a block cannot be sent to a worker: pass a named function, or use `spawn do … end`

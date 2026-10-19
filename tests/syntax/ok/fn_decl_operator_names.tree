@@ -1,0 +1,378 @@
+SOURCE_FILE@0..317
+  BLOCK@0..317
+    COMMENT@0..29 "# Every operator method name."
+    NEWLINE@29..30 "\n"
+    FN_DECL@30..43
+      FN_KW@30..32 "fn"
+      WHITESPACE@32..33 " "
+      QUAL_NAME@33..34
+        CNAME@33..34 "V"
+      DOT@34..35 "."
+      OP_NAME@35..36
+        PLUS@35..36 "+"
+      PARAM_LIST@36..39
+        L_PAREN@36..37 "("
+        PARAM@37..38
+          BIND_PAT@37..38
+            NAME@37..38
+              LNAME@37..38 "o"
+        R_PAREN@38..39 ")"
+      BLOCK@39..40
+        WHITESPACE@39..40 " "
+      END_KW@40..43 "end"
+    NEWLINE@43..44 "\n"
+    FN_DECL@44..57
+      FN_KW@44..46 "fn"
+      WHITESPACE@46..47 " "
+      QUAL_NAME@47..48
+        CNAME@47..48 "V"
+      DOT@48..49 "."
+      OP_NAME@49..50
+        MINUS@49..50 "-"
+      PARAM_LIST@50..53
+        L_PAREN@50..51 "("
+        PARAM@51..52
+          BIND_PAT@51..52
+            NAME@51..52
+              LNAME@51..52 "o"
+        R_PAREN@52..53 ")"
+      BLOCK@53..54
+        WHITESPACE@53..54 " "
+      END_KW@54..57 "end"
+    NEWLINE@57..58 "\n"
+    FN_DECL@58..71
+      FN_KW@58..60 "fn"
+      WHITESPACE@60..61 " "
+      QUAL_NAME@61..62
+        CNAME@61..62 "V"
+      DOT@62..63 "."
+      OP_NAME@63..64
+        STAR@63..64 "*"
+      PARAM_LIST@64..67
+        L_PAREN@64..65 "("
+        PARAM@65..66
+          BIND_PAT@65..66
+            NAME@65..66
+              LNAME@65..66 "o"
+        R_PAREN@66..67 ")"
+      BLOCK@67..68
+        WHITESPACE@67..68 " "
+      END_KW@68..71 "end"
+    NEWLINE@71..72 "\n"
+    FN_DECL@72..85
+      FN_KW@72..74 "fn"
+      WHITESPACE@74..75 " "
+      QUAL_NAME@75..76
+        CNAME@75..76 "V"
+      DOT@76..77 "."
+      OP_NAME@77..78
+        SLASH@77..78 "/"
+      PARAM_LIST@78..81
+        L_PAREN@78..79 "("
+        PARAM@79..80
+          BIND_PAT@79..80
+            NAME@79..80
+              LNAME@79..80 "o"
+        R_PAREN@80..81 ")"
+      BLOCK@81..82
+        WHITESPACE@81..82 " "
+      END_KW@82..85 "end"
+    NEWLINE@85..86 "\n"
+    FN_DECL@86..99
+      FN_KW@86..88 "fn"
+      WHITESPACE@88..89 " "
+      QUAL_NAME@89..90
+        CNAME@89..90 "V"
+      DOT@90..91 "."
+      OP_NAME@91..92
+        PERCENT@91..92 "%"
+      PARAM_LIST@92..95
+        L_PAREN@92..93 "("
+        PARAM@93..94
+          BIND_PAT@93..94
+            NAME@93..94
+              LNAME@93..94 "o"
+        R_PAREN@94..95 ")"
+      BLOCK@95..96
+        WHITESPACE@95..96 " "
+      END_KW@96..99 "end"
+    NEWLINE@99..100 "\n"
+    FN_DECL@100..114
+      FN_KW@100..102 "fn"
+      WHITESPACE@102..103 " "
+      QUAL_NAME@103..104
+        CNAME@103..104 "V"
+      DOT@104..105 "."
+      OP_NAME@105..107
+        STAR2@105..107 "**"
+      PARAM_LIST@107..110
+        L_PAREN@107..108 "("
+        PARAM@108..109
+          BIND_PAT@108..109
+            NAME@108..109
+              LNAME@108..109 "o"
+        R_PAREN@109..110 ")"
+      BLOCK@110..111
+        WHITESPACE@110..111 " "
+      END_KW@111..114 "end"
+    NEWLINE@114..115 "\n"
+    FN_DECL@115..129
+      FN_KW@115..117 "fn"
+      WHITESPACE@117..118 " "
+      QUAL_NAME@118..119
+        CNAME@118..119 "V"
+      DOT@119..120 "."
+      OP_NAME@120..122
+        SLASH2@120..122 "//"
+      PARAM_LIST@122..125
+        L_PAREN@122..123 "("
+        PARAM@123..124
+          BIND_PAT@123..124
+            NAME@123..124
+              LNAME@123..124 "o"
+        R_PAREN@124..125 ")"
+      BLOCK@125..126
+        WHITESPACE@125..126 " "
+      END_KW@126..129 "end"
+    NEWLINE@129..130 "\n"
+    FN_DECL@130..144
+      FN_KW@130..132 "fn"
+      WHITESPACE@132..133 " "
+      QUAL_NAME@133..134
+        CNAME@133..134 "V"
+      DOT@134..135 "."
+      OP_NAME@135..137
+        CONCAT@135..137 "<>"
+      PARAM_LIST@137..140
+        L_PAREN@137..138 "("
+        PARAM@138..139
+          BIND_PAT@138..139
+            NAME@138..139
+              LNAME@138..139 "o"
+        R_PAREN@139..140 ")"
+      BLOCK@140..141
+        WHITESPACE@140..141 " "
+      END_KW@141..144 "end"
+    NEWLINE@144..145 "\n"
+    FN_DECL@145..158
+      FN_KW@145..147 "fn"
+      WHITESPACE@147..148 " "
+      QUAL_NAME@148..149
+        CNAME@148..149 "V"
+      DOT@149..150 "."
+      OP_NAME@150..151
+        PIPE@150..151 "|"
+      PARAM_LIST@151..154
+        L_PAREN@151..152 "("
+        PARAM@152..153
+          BIND_PAT@152..153
+            NAME@152..153
+              LNAME@152..153 "o"
+        R_PAREN@153..154 ")"
+      BLOCK@154..155
+        WHITESPACE@154..155 " "
+      END_KW@155..158 "end"
+    NEWLINE@158..159 "\n"
+    FN_DECL@159..172
+      FN_KW@159..161 "fn"
+      WHITESPACE@161..162 " "
+      QUAL_NAME@162..163
+        CNAME@162..163 "V"
+      DOT@163..164 "."
+      OP_NAME@164..165
+        AMP@164..165 "&"
+      PARAM_LIST@165..168
+        L_PAREN@165..166 "("
+        PARAM@166..167
+          BIND_PAT@166..167
+            NAME@166..167
+              LNAME@166..167 "o"
+        R_PAREN@167..168 ")"
+      BLOCK@168..169
+        WHITESPACE@168..169 " "
+      END_KW@169..172 "end"
+    NEWLINE@172..173 "\n"
+    FN_DECL@173..186
+      FN_KW@173..175 "fn"
+      WHITESPACE@175..176 " "
+      QUAL_NAME@176..177
+        CNAME@176..177 "V"
+      DOT@177..178 "."
+      OP_NAME@178..179
+        CARET@178..179 "^"
+      PARAM_LIST@179..182
+        L_PAREN@179..180 "("
+        PARAM@180..181
+          BIND_PAT@180..181
+            NAME@180..181
+              LNAME@180..181 "o"
+        R_PAREN@181..182 ")"
+      BLOCK@182..183
+        WHITESPACE@182..183 " "
+      END_KW@183..186 "end"
+    NEWLINE@186..187 "\n"
+    FN_DECL@187..201
+      FN_KW@187..189 "fn"
+      WHITESPACE@189..190 " "
+      QUAL_NAME@190..191
+        CNAME@190..191 "V"
+      DOT@191..192 "."
+      OP_NAME@192..194
+        SHL@192..194 "<<"
+      PARAM_LIST@194..197
+        L_PAREN@194..195 "("
+        PARAM@195..196
+          BIND_PAT@195..196
+            NAME@195..196
+              LNAME@195..196 "o"
+        R_PAREN@196..197 ")"
+      BLOCK@197..198
+        WHITESPACE@197..198 " "
+      END_KW@198..201 "end"
+    NEWLINE@201..202 "\n"
+    FN_DECL@202..216
+      FN_KW@202..204 "fn"
+      WHITESPACE@204..205 " "
+      QUAL_NAME@205..206
+        CNAME@205..206 "V"
+      DOT@206..207 "."
+      OP_NAME@207..209
+        SHR@207..209 ">>"
+      PARAM_LIST@209..212
+        L_PAREN@209..210 "("
+        PARAM@210..211
+          BIND_PAT@210..211
+            NAME@210..211
+              LNAME@210..211 "o"
+        R_PAREN@211..212 ")"
+      BLOCK@212..213
+        WHITESPACE@212..213 " "
+      END_KW@213..216 "end"
+    NEWLINE@216..217 "\n"
+    FN_DECL@217..232
+      FN_KW@217..219 "fn"
+      WHITESPACE@219..220 " "
+      QUAL_NAME@220..221
+        CNAME@220..221 "V"
+      DOT@221..222 "."
+      OP_NAME@222..225
+        USHR@222..225 ">>>"
+      PARAM_LIST@225..228
+        L_PAREN@225..226 "("
+        PARAM@226..227
+          BIND_PAT@226..227
+            NAME@226..227
+              LNAME@226..227 "o"
+        R_PAREN@227..228 ")"
+      BLOCK@228..229
+        WHITESPACE@228..229 " "
+      END_KW@229..232 "end"
+    NEWLINE@232..233 "\n"
+    FN_DECL@233..247
+      FN_KW@233..235 "fn"
+      WHITESPACE@235..236 " "
+      QUAL_NAME@236..237
+        CNAME@236..237 "V"
+      DOT@237..238 "."
+      OP_NAME@238..240
+        EQ2@238..240 "=="
+      PARAM_LIST@240..243
+        L_PAREN@240..241 "("
+        PARAM@241..242
+          BIND_PAT@241..242
+            NAME@241..242
+              LNAME@241..242 "o"
+        R_PAREN@242..243 ")"
+      BLOCK@243..244
+        WHITESPACE@243..244 " "
+      END_KW@244..247 "end"
+    NEWLINE@247..248 "\n"
+    FN_DECL@248..261
+      FN_KW@248..250 "fn"
+      WHITESPACE@250..251 " "
+      QUAL_NAME@251..252
+        CNAME@251..252 "V"
+      DOT@252..253 "."
+      OP_NAME@253..254
+        LT@253..254 "<"
+      PARAM_LIST@254..257
+        L_PAREN@254..255 "("
+        PARAM@255..256
+          BIND_PAT@255..256
+            NAME@255..256
+              LNAME@255..256 "o"
+        R_PAREN@256..257 ")"
+      BLOCK@257..258
+        WHITESPACE@257..258 " "
+      END_KW@258..261 "end"
+    NEWLINE@261..262 "\n"
+    FN_DECL@262..276
+      FN_KW@262..264 "fn"
+      WHITESPACE@264..265 " "
+      QUAL_NAME@265..266
+        CNAME@265..266 "V"
+      DOT@266..267 "."
+      OP_NAME@267..269
+        LT_EQ@267..269 "<="
+      PARAM_LIST@269..272
+        L_PAREN@269..270 "("
+        PARAM@270..271
+          BIND_PAT@270..271
+            NAME@270..271
+              LNAME@270..271 "o"
+        R_PAREN@271..272 ")"
+      BLOCK@272..273
+        WHITESPACE@272..273 " "
+      END_KW@273..276 "end"
+    NEWLINE@276..277 "\n"
+    FN_DECL@277..290
+      FN_KW@277..279 "fn"
+      WHITESPACE@279..280 " "
+      QUAL_NAME@280..281
+        CNAME@280..281 "V"
+      DOT@281..282 "."
+      OP_NAME@282..283
+        GT@282..283 ">"
+      PARAM_LIST@283..286
+        L_PAREN@283..284 "("
+        PARAM@284..285
+          BIND_PAT@284..285
+            NAME@284..285
+              LNAME@284..285 "o"
+        R_PAREN@285..286 ")"
+      BLOCK@286..287
+        WHITESPACE@286..287 " "
+      END_KW@287..290 "end"
+    NEWLINE@290..291 "\n"
+    FN_DECL@291..305
+      FN_KW@291..293 "fn"
+      WHITESPACE@293..294 " "
+      QUAL_NAME@294..295
+        CNAME@294..295 "V"
+      DOT@295..296 "."
+      OP_NAME@296..298
+        GT_EQ@296..298 ">="
+      PARAM_LIST@298..301
+        L_PAREN@298..299 "("
+        PARAM@299..300
+          BIND_PAT@299..300
+            NAME@299..300
+              LNAME@299..300 "o"
+        R_PAREN@300..301 ")"
+      BLOCK@301..302
+        WHITESPACE@301..302 " "
+      END_KW@302..305 "end"
+    NEWLINE@305..306 "\n"
+    FN_DECL@306..316
+      FN_KW@306..308 "fn"
+      WHITESPACE@308..309 " "
+      QUAL_NAME@309..310
+        CNAME@309..310 "V"
+      DOT@310..311 "."
+      OP_NAME@311..312
+        TILDE@311..312 "~"
+      BLOCK@312..313
+        WHITESPACE@312..313 " "
+      END_KW@313..316 "end"
+    NEWLINE@316..317 "\n"
+  EOF@317..317 ""

@@ -1,0 +1,47 @@
+SOURCE_FILE@0..106
+  BLOCK@0..106
+    COMMENT@0..58 "# After `.` every word is a plain name, keywords included."
+    NEWLINE@58..59 "\n"
+    ASSIGN_STMT@59..70
+      NAME_REF@59..60
+        LNAME@59..60 "x"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      FIELD_EXPR@63..70
+        NAME_REF@63..66
+          LNAME@63..66 "obj"
+        DOT@66..67 "."
+        LNAME@67..70 "end"
+    NEWLINE@70..71 "\n"
+    ASSIGN_STMT@71..83
+      NAME_REF@71..72
+        LNAME@71..72 "y"
+      WHITESPACE@72..73 " "
+      EQ@73..74 "="
+      WHITESPACE@74..75 " "
+      FIELD_EXPR@75..83
+        NAME_REF@75..78
+          CNAME@75..78 "Foo"
+        DOT@78..79 "."
+        LNAME@79..83 "type"
+    NEWLINE@83..84 "\n"
+    ASSIGN_STMT@84..105
+      NAME_REF@84..85
+        LNAME@84..85 "z"
+      WHITESPACE@85..86 " "
+      EQ@86..87 "="
+      WHITESPACE@87..88 " "
+      FIELD_EXPR@88..105
+        FIELD_EXPR@88..100
+          FIELD_EXPR@88..94
+            NAME_REF@88..91
+              LNAME@88..91 "obj"
+            DOT@91..92 "."
+            LNAME@92..94 "if"
+          DOT@94..95 "."
+          LNAME@95..100 "while"
+        DOT@100..101 "."
+        CNAME@101..105 "Self"
+    NEWLINE@105..106 "\n"
+  EOF@106..106 ""

@@ -1,0 +1,22 @@
+SOURCE_FILE@0..66
+  BLOCK@0..66
+    COMMENT@0..55 "# To pass `(a)` and `b` as arguments write `f((a), b)`."
+    NEWLINE@55..56 "\n"
+    EXPR_STMT@56..65
+      CALL_EXPR@56..65
+        NAME_REF@56..57
+          LNAME@56..57 "f"
+        ARG_LIST@57..65
+          L_PAREN@57..58 "("
+          PAREN_EXPR@58..61
+            L_PAREN@58..59 "("
+            NAME_REF@59..60
+              LNAME@59..60 "a"
+            R_PAREN@60..61 ")"
+          COMMA@61..62 ","
+          WHITESPACE@62..63 " "
+          NAME_REF@63..64
+            LNAME@63..64 "b"
+          R_PAREN@64..65 ")"
+    NEWLINE@65..66 "\n"
+  EOF@66..66 ""

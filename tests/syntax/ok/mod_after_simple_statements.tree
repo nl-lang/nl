@@ -1,0 +1,109 @@
+SOURCE_FILE@0..251
+  BLOCK@0..251
+    COMMENT@0..51 "# A modifier may follow an expression statement, an"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..122 "# assignment, a compound and a multiple assignment, `return`, `break`,"
+    NEWLINE@122..123 "\n"
+    COMMENT@123..136 "# `continue`."
+    NEWLINE@136..137 "\n"
+    EXPR_STMT@137..161
+      FIELD_EXPR@137..145
+        SELF_EXPR@137..141
+          SELF_KW@137..141 "self"
+        DOT@141..142 "."
+        LNAME@142..145 "die"
+      WHITESPACE@145..146 " "
+      MODIFIER@146..161
+        IF_KW@146..148 "if"
+        WHITESPACE@148..149 " "
+        BIN_EXPR@149..161
+          AT_EXPR@149..156
+            AT_NAME@149..156 "@health"
+          WHITESPACE@156..157 " "
+          EQ2@157..159 "=="
+          WHITESPACE@159..160 " "
+          LITERAL@160..161
+            NUMBER@160..161 "0"
+    NEWLINE@161..162 "\n"
+    ASSIGN_STMT@162..172
+      NAME_REF@162..163
+        LNAME@162..163 "x"
+      WHITESPACE@163..164 " "
+      EQ@164..165 "="
+      WHITESPACE@165..166 " "
+      LITERAL@166..167
+        NUMBER@166..167 "1"
+      WHITESPACE@167..168 " "
+      MODIFIER@168..172
+        IF_KW@168..170 "if"
+        WHITESPACE@170..171 " "
+        NAME_REF@171..172
+          LNAME@171..172 "a"
+    NEWLINE@172..173 "\n"
+    COMPOUND_ASSIGN_STMT@173..184
+      NAME_REF@173..174
+        LNAME@173..174 "x"
+      WHITESPACE@174..175 " "
+      PLUS_EQ@175..177 "+="
+      WHITESPACE@177..178 " "
+      LITERAL@178..179
+        NUMBER@178..179 "1"
+      WHITESPACE@179..180 " "
+      MODIFIER@180..184
+        IF_KW@180..182 "if"
+        WHITESPACE@182..183 " "
+        NAME_REF@183..184
+          LNAME@183..184 "a"
+    NEWLINE@184..185 "\n"
+    MULTI_ASSIGN_STMT@185..201
+      TARGET_LIST@185..189
+        NAME_REF@185..186
+          LNAME@185..186 "x"
+        COMMA@186..187 ","
+        WHITESPACE@187..188 " "
+        NAME_REF@188..189
+          LNAME@188..189 "y"
+      WHITESPACE@189..190 " "
+      EQ@190..191 "="
+      WHITESPACE@191..192 " "
+      EXPR_LIST@192..196
+        NAME_REF@192..193
+          LNAME@192..193 "y"
+        COMMA@193..194 ","
+        WHITESPACE@194..195 " "
+        NAME_REF@195..196
+          LNAME@195..196 "x"
+      WHITESPACE@196..197 " "
+      MODIFIER@197..201
+        IF_KW@197..199 "if"
+        WHITESPACE@199..200 " "
+        NAME_REF@200..201
+          LNAME@200..201 "a"
+    NEWLINE@201..202 "\n"
+    LOOP_STMT@202..250
+      LOOP_KW@202..206 "loop"
+      BLOCK@206..247
+        NEWLINE@206..207 "\n"
+        WHITESPACE@207..209 "  "
+        BREAK_STMT@209..222
+          BREAK_KW@209..214 "break"
+          WHITESPACE@214..215 " "
+          MODIFIER@215..222
+            IF_KW@215..217 "if"
+            WHITESPACE@217..218 " "
+            NAME_REF@218..222
+              LNAME@218..222 "done"
+        NEWLINE@222..223 "\n"
+        WHITESPACE@223..225 "  "
+        CONTINUE_STMT@225..246
+          CONTINUE_KW@225..233 "continue"
+          WHITESPACE@233..234 " "
+          MODIFIER@234..246
+            UNLESS_KW@234..240 "unless"
+            WHITESPACE@240..241 " "
+            NAME_REF@241..246
+              LNAME@241..246 "ready"
+        NEWLINE@246..247 "\n"
+      END_KW@247..250 "end"
+    NEWLINE@250..251 "\n"
+  EOF@251..251 ""

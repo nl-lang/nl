@@ -1,0 +1,60 @@
+SOURCE_FILE@0..117
+  BLOCK@0..117
+    COMMENT@0..55 "# Postfix `!` after any step of a Lua path is an error;"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..84 "# the path goes on after it."
+    NEWLINE@84..85 "\n"
+    ASSIGN_STMT@85..92
+      NAME_REF@85..86
+        LNAME@85..86 "a"
+      WHITESPACE@86..87 " "
+      EQ@87..88 "="
+      WHITESPACE@88..89 " "
+      LUA_PATH@89..92
+        COLON@89..90 ":"
+        LNAME@90..91 "f"
+        ERROR_NODE@91..92
+          BANG_POSTFIX@91..92 "!"
+    NEWLINE@92..93 "\n"
+    ASSIGN_STMT@93..104
+      NAME_REF@93..94
+        LNAME@93..94 "b"
+      WHITESPACE@94..95 " "
+      EQ@95..96 "="
+      WHITESPACE@96..97 " "
+      LUA_PATH@97..104
+        COLON@97..98 ":"
+        LNAME@98..99 "f"
+        LUA_CALL@99..101
+          ARG_LIST@99..101
+            L_PAREN@99..100 "("
+            R_PAREN@100..101 ")"
+        LUA_FIELD@101..103
+          DOT@101..102 "."
+          LNAME@102..103 "g"
+        ERROR_NODE@103..104
+          BANG_POSTFIX@103..104 "!"
+    NEWLINE@104..105 "\n"
+    ASSIGN_STMT@105..116
+      NAME_REF@105..106
+        LNAME@105..106 "c"
+      WHITESPACE@106..107 " "
+      EQ@107..108 "="
+      WHITESPACE@108..109 " "
+      LUA_PATH@109..116
+        COLON@109..110 ":"
+        LNAME@110..111 "a"
+        LUA_FIELD@111..113
+          DOT@111..112 "."
+          LNAME@112..113 "b"
+        ERROR_NODE@113..114
+          BANG_POSTFIX@113..114 "!"
+        LUA_FIELD@114..116
+          DOT@114..115 "."
+          LNAME@115..116 "c"
+    NEWLINE@116..117 "\n"
+  EOF@117..117 ""
+---
+error@91..92 3:7: a Lua path is never called automatically, so it takes no `!`
+error@103..104 4:11: a Lua path is never called automatically, so it takes no `!`
+error@113..114 5:9: a Lua path is never called automatically, so it takes no `!`

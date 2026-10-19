@@ -1,0 +1,81 @@
+SOURCE_FILE@0..174
+  BLOCK@0..174
+    COMMENT@0..58 "# `fn (` on the same line opens the parameter list with or"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..117 "# without whitespace; on the next line it starts the body."
+    NEWLINE@117..118 "\n"
+    ASSIGN_STMT@118..134
+      NAME_REF@118..119
+        LNAME@118..119 "a"
+      WHITESPACE@119..120 " "
+      EQ@120..121 "="
+      WHITESPACE@121..122 " "
+      FN_EXPR@122..134
+        FN_KW@122..124 "fn"
+        WHITESPACE@124..125 " "
+        PARAM_LIST@125..128
+          L_PAREN@125..126 "("
+          PARAM@126..127
+            BIND_PAT@126..127
+              NAME@126..127
+                LNAME@126..127 "x"
+          R_PAREN@127..128 ")"
+        BLOCK@128..131
+          WHITESPACE@128..129 " "
+          EXPR_STMT@129..130
+            NAME_REF@129..130
+              LNAME@129..130 "x"
+          WHITESPACE@130..131 " "
+        END_KW@131..134 "end"
+    NEWLINE@134..135 "\n"
+    ASSIGN_STMT@135..149
+      NAME_REF@135..136
+        LNAME@135..136 "b"
+      WHITESPACE@136..137 " "
+      EQ@137..138 "="
+      WHITESPACE@138..139 " "
+      FN_EXPR@139..149
+        FN_KW@139..141 "fn"
+        BLOCK@141..146
+          NEWLINE@141..142 "\n"
+          EXPR_STMT@142..145
+            PAREN_EXPR@142..145
+              L_PAREN@142..143 "("
+              NAME_REF@143..144
+                LNAME@143..144 "x"
+              R_PAREN@144..145 ")"
+          NEWLINE@145..146 "\n"
+        END_KW@146..149 "end"
+    NEWLINE@149..150 "\n"
+    ASSIGN_STMT@150..173
+      NAME_REF@150..151
+        LNAME@150..151 "c"
+      WHITESPACE@151..152 " "
+      EQ@152..153 "="
+      WHITESPACE@153..154 " "
+      FN_EXPR@154..173
+        FN_KW@154..156 "fn"
+        PARAM_LIST@156..158
+          L_PAREN@156..157 "("
+          R_PAREN@157..158 ")"
+        BLOCK@158..170
+          WHITESPACE@158..159 " "
+          EXPR_STMT@159..169
+            FIELD_EXPR@159..169
+              PAREN_EXPR@159..167
+                L_PAREN@159..160 "("
+                BIN_EXPR@160..166
+                  NAME_REF@160..161
+                    LNAME@160..161 "a"
+                  WHITESPACE@161..162 " "
+                  OR_KW@162..164 "or"
+                  WHITESPACE@164..165 " "
+                  NAME_REF@165..166
+                    LNAME@165..166 "b"
+                R_PAREN@166..167 ")"
+              DOT@167..168 "."
+              LNAME@168..169 "x"
+          WHITESPACE@169..170 " "
+        END_KW@170..173 "end"
+    NEWLINE@173..174 "\n"
+  EOF@174..174 ""

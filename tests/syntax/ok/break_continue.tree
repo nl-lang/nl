@@ -1,0 +1,19 @@
+SOURCE_FILE@0..68
+  BLOCK@0..68
+    COMMENT@0..39 "# `break` and `continue` take no value."
+    NEWLINE@39..40 "\n"
+    LOOP_STMT@40..67
+      LOOP_KW@40..44 "loop"
+      BLOCK@44..64
+        NEWLINE@44..45 "\n"
+        WHITESPACE@45..47 "  "
+        BREAK_STMT@47..52
+          BREAK_KW@47..52 "break"
+        NEWLINE@52..53 "\n"
+        WHITESPACE@53..55 "  "
+        CONTINUE_STMT@55..63
+          CONTINUE_KW@55..63 "continue"
+        NEWLINE@63..64 "\n"
+      END_KW@64..67 "end"
+    NEWLINE@67..68 "\n"
+  EOF@68..68 ""

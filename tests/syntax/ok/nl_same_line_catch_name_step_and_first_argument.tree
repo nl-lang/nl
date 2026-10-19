@@ -1,0 +1,71 @@
+SOURCE_FILE@0..249
+  BLOCK@0..249
+    COMMENT@0..65 "# The name of `catch`, the `step` of a `for` header and the first"
+    NEWLINE@65..66 "\n"
+    COMMENT@66..144 "# argument of a command call are only taken on the same line; on the next line"
+    NEWLINE@144..145 "\n"
+    COMMENT@145..186 "# they begin the body or a new statement."
+    NEWLINE@186..187 "\n"
+    EXPR_STMT@187..210
+      TRY_EXPR@187..210
+        TRY_KW@187..190 "try"
+        BLOCK@190..197
+          NEWLINE@190..191 "\n"
+          WHITESPACE@191..193 "  "
+          EXPR_STMT@193..196
+            CALL_EXPR@193..196
+              NAME_REF@193..194
+                LNAME@193..194 "f"
+              ARG_LIST@194..196
+                L_PAREN@194..195 "("
+                R_PAREN@195..196 ")"
+          NEWLINE@196..197 "\n"
+        CATCH_CLAUSE@197..207
+          CATCH_KW@197..202 "catch"
+          BLOCK@202..207
+            NEWLINE@202..203 "\n"
+            WHITESPACE@203..205 "  "
+            EXPR_STMT@205..206
+              NAME_REF@205..206
+                LNAME@205..206 "e"
+            NEWLINE@206..207 "\n"
+        END_KW@207..210 "end"
+    NEWLINE@210..211 "\n"
+    FOR_STMT@211..238
+      FOR_KW@211..214 "for"
+      WHITESPACE@214..215 " "
+      BIND_PAT@215..216
+        NAME@215..216
+          LNAME@215..216 "i"
+      WHITESPACE@216..217 " "
+      IN_KW@217..219 "in"
+      WHITESPACE@219..220 " "
+      BIN_EXPR@220..225
+        LITERAL@220..221
+          NUMBER@220..221 "1"
+        DOT2@221..223 ".."
+        LITERAL@223..225
+          NUMBER@223..225 "10"
+      BLOCK@225..235
+        NEWLINE@225..226 "\n"
+        WHITESPACE@226..228 "  "
+        EXPR_STMT@228..234
+          COMMAND_CALL@228..234
+            NAME_REF@228..232
+              LNAME@228..232 "step"
+            WHITESPACE@232..233 " "
+            COMMAND_ARGS@233..234
+              LITERAL@233..234
+                NUMBER@233..234 "2"
+        NEWLINE@234..235 "\n"
+      END_KW@235..238 "end"
+    NEWLINE@238..239 "\n"
+    EXPR_STMT@239..244
+      NAME_REF@239..244
+        LNAME@239..244 "print"
+    NEWLINE@244..245 "\n"
+    EXPR_STMT@245..248
+      LITERAL@245..248
+        STRING@245..248 "\"x\""
+    NEWLINE@248..249 "\n"
+  EOF@249..249 ""

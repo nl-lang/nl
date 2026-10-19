@@ -1,0 +1,36 @@
+SOURCE_FILE@0..166
+  BLOCK@0..166
+    COMMENT@0..57 "# An import path with `.nl` and names of any class parse;"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..103 "# what the path resolves to is checked later."
+    NEWLINE@103..104 "\n"
+    IMPORT_DECL@104..128
+      IMPORT_KW@104..110 "import"
+      WHITESPACE@110..111 " "
+      NAME@111..114
+        LNAME@111..114 "foo"
+      WHITESPACE@114..115 " "
+      FROM_KW@115..119 "from"
+      WHITESPACE@119..120 " "
+      STRING@120..128 "'lib.nl'"
+    NEWLINE@128..129 "\n"
+    IMPORT_DECL@129..165
+      IMPORT_KW@129..135 "import"
+      WHITESPACE@135..136 " "
+      IMPORT_LIST@136..151
+        L_CURLY@136..137 "{"
+        WHITESPACE@137..138 " "
+        NAME@138..142
+          CNAME@138..142 "Mode"
+        COMMA@142..143 ","
+        WHITESPACE@143..144 " "
+        NAME@144..149
+          CNAME@144..149 "LIMIT"
+        WHITESPACE@149..150 " "
+        R_CURLY@150..151 "}"
+      WHITESPACE@151..152 " "
+      FROM_KW@152..156 "from"
+      WHITESPACE@156..157 " "
+      STRING@157..165 "'../a/b'"
+    NEWLINE@165..166 "\n"
+  EOF@166..166 ""

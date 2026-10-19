@@ -1,0 +1,11 @@
+item 1
+unhandled:	LuaError	item 2 fails
+item 3
+unhandled:	Exception	item 4 raises
+item 5
+pump	true
+next pump
+pump	true
+pump	false
+pump with a failing hook	true	true
+post a number	false	post: expects a function, not Number

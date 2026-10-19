@@ -1,0 +1,14 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..53 "# A function without parameters needs no parentheses."
+    NEWLINE@53..54 "\n"
+    FN_DECL@54..64
+      FN_KW@54..56 "fn"
+      WHITESPACE@56..57 " "
+      NAME@57..60
+        LNAME@57..60 "foo"
+      BLOCK@60..61
+        NEWLINE@60..61 "\n"
+      END_KW@61..64 "end"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""

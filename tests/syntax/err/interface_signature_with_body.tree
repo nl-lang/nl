@@ -1,0 +1,48 @@
+SOURCE_FILE@0..109
+  BLOCK@0..109
+    COMMENT@0..43 "# A signature in a declaration has no body."
+    NEWLINE@43..44 "\n"
+    INTERFACE_DECL@44..108
+      INTERFACE_KW@44..53 "interface"
+      WHITESPACE@53..54 " "
+      NAME@54..59
+        CNAME@54..59 "Shape"
+      NEWLINE@59..60 "\n"
+      WHITESPACE@60..62 "  "
+      IFACE_METHOD@62..77
+        FN_KW@62..64 "fn"
+        WHITESPACE@64..65 " "
+        NAME@65..69
+          LNAME@65..69 "area"
+        RETURN_TYPE@69..77
+          COLON@69..70 ":"
+          WHITESPACE@70..71 " "
+          NAMED_TYPE@71..77
+            QUAL_NAME@71..77
+              CNAME@71..77 "Number"
+      NEWLINE@77..78 "\n"
+      WHITESPACE@78..82 "    "
+      ERROR_NODE@82..89
+        BLOCK@82..86
+          EXPR_STMT@82..83
+            LITERAL@82..83
+              NUMBER@82..83 "1"
+          NEWLINE@83..84 "\n"
+          WHITESPACE@84..86 "  "
+        END_KW@86..89 "end"
+      NEWLINE@89..90 "\n"
+      WHITESPACE@90..92 "  "
+      IFACE_FIELD@92..104
+        NAME@92..96
+          LNAME@92..96 "name"
+        COLON@96..97 ":"
+        WHITESPACE@97..98 " "
+        NAMED_TYPE@98..104
+          QUAL_NAME@98..104
+            CNAME@98..104 "String"
+      NEWLINE@104..105 "\n"
+      END_KW@105..108 "end"
+    NEWLINE@108..109 "\n"
+  EOF@109..109 ""
+---
+error@82..83 4:5: a method in an interface declaration has no body: implement it in `interface Name for Type … end`

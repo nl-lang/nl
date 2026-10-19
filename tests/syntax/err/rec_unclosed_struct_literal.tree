@@ -1,0 +1,41 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..76 "# Recovery: an unclosed `{` of a struct literal; the declaration on the next"
+    NEWLINE@76..77 "\n"
+    COMMENT@77..91 "# line parses."
+    NEWLINE@91..92 "\n"
+    ASSIGN_STMT@92..111
+      NAME_REF@92..93
+        LNAME@92..93 "m"
+      WHITESPACE@93..94 " "
+      EQ@94..95 "="
+      WHITESPACE@95..96 " "
+      STRUCT_LIT@96..111
+        NAME_REF@96..103
+          CNAME@96..103 "Monster"
+        WHITESPACE@103..104 " "
+        L_CURLY@104..105 "{"
+        WHITESPACE@105..106 " "
+        FIELD_INIT@106..111
+          LNAME@106..108 "id"
+          COLON@108..109 ":"
+          WHITESPACE@109..110 " "
+          LITERAL@110..111
+            NUMBER@110..111 "1"
+    NEWLINE@111..112 "\n"
+    LET_DECL@112..121
+      LET_KW@112..115 "let"
+      WHITESPACE@115..116 " "
+      BIND_PAT@116..117
+        NAME@116..117
+          LNAME@116..117 "y"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      EXPR_LIST@120..121
+        LITERAL@120..121
+          NUMBER@120..121 "3"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""
+---
+error@112..115 4:1: expected `}` to close this `{`, found `let`

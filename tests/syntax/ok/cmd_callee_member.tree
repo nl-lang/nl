@@ -1,0 +1,99 @@
+SOURCE_FILE@0..251
+  BLOCK@0..251
+    COMMENT@0..51 "# A postfix expression whose last step is `.` and a"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..110 "# lowercase word or a keyword other than Self is a callee."
+    NEWLINE@110..111 "\n"
+    EXPR_STMT@111..127
+      COMMAND_CALL@111..127
+        FIELD_EXPR@111..124
+          NAME_REF@111..117
+            LNAME@111..117 "player"
+          DOT@117..118 "."
+          LNAME@118..124 "damage"
+        WHITESPACE@124..125 " "
+        COMMAND_ARGS@125..127
+          LITERAL@125..127
+            NUMBER@125..127 "10"
+    NEWLINE@127..128 "\n"
+    EXPR_STMT@128..161
+      COMMAND_CALL@128..161
+        FIELD_EXPR@128..137
+          NAME_REF@128..133
+            CNAME@128..133 "Event"
+          DOT@133..134 "."
+          LNAME@134..137 "run"
+        WHITESPACE@137..138 " "
+        COMMAND_ARGS@138..161
+          LITERAL@138..149
+            STRING@138..149 "\"EventName\""
+          COMMA@149..150 ","
+          WHITESPACE@150..151 " "
+          LITERAL@151..154
+            NUMBER@151..154 "123"
+          COMMA@154..155 ","
+          WHITESPACE@155..156 " "
+          LITERAL@156..161
+            STRING@156..161 "\"abc\""
+    NEWLINE@161..162 "\n"
+    EXPR_STMT@162..191
+      COMMAND_CALL@162..191
+        FIELD_EXPR@162..180
+          FIELD_EXPR@162..175
+            NAME_REF@162..168
+              CNAME@162..168 "Worker"
+            DOT@168..169 "."
+            LNAME@169..175 "parent"
+          DOT@175..176 "."
+          LNAME@176..180 "emit"
+        WHITESPACE@180..181 " "
+        COMMAND_ARGS@181..191
+          LITERAL@181..191
+            STRING@181..191 "\"NavReady\""
+    NEWLINE@191..192 "\n"
+    EXPR_STMT@192..208
+      COMMAND_CALL@192..208
+        FIELD_EXPR@192..202
+          NAME_REF@192..199
+            LNAME@192..199 "emitter"
+          DOT@199..200 "."
+          LNAME@200..202 "on"
+        WHITESPACE@202..203 " "
+        COMMAND_ARGS@203..208
+          LITERAL@203..208
+            STRING@203..208 "\"hit\""
+    NEWLINE@208..209 "\n"
+    EXPR_STMT@209..217
+      COMMAND_CALL@209..217
+        FIELD_EXPR@209..215
+          NAME_REF@209..210
+            LNAME@209..210 "t"
+          DOT@210..211 "."
+          LNAME@211..215 "type"
+        WHITESPACE@215..216 " "
+        COMMAND_ARGS@216..217
+          NAME_REF@216..217
+            LNAME@216..217 "x"
+    NEWLINE@217..218 "\n"
+    EXPR_STMT@218..250
+      COMMAND_CALL@218..250
+        FIELD_EXPR@218..241
+          CALL_EXPR@218..235
+            FIELD_EXPR@218..227
+              NAME_REF@218..223
+                CNAME@218..223 "Regex"
+              DOT@223..224 "."
+              LNAME@224..227 "new"
+            ARG_LIST@227..235
+              L_PAREN@227..228 "("
+              LITERAL@228..234
+                STRING@228..234 "',\\s*'"
+              R_PAREN@234..235 ")"
+          DOT@235..236 "."
+          LNAME@236..241 "split"
+        WHITESPACE@241..242 " "
+        COMMAND_ARGS@242..250
+          LITERAL@242..250
+            STRING@242..250 "\"a, b,c\""
+    NEWLINE@250..251 "\n"
+  EOF@251..251 ""

@@ -1,0 +1,19 @@
+SOURCE_FILE@0..59
+  BLOCK@0..59
+    COMMENT@0..50 "# Recovery: the file ends after a binary operator."
+    NEWLINE@50..51 "\n"
+    ASSIGN_STMT@51..58
+      NAME_REF@51..52
+        LNAME@51..52 "x"
+      WHITESPACE@52..53 " "
+      EQ@53..54 "="
+      WHITESPACE@54..55 " "
+      BIN_EXPR@55..58
+        LITERAL@55..56
+          NUMBER@55..56 "1"
+        WHITESPACE@56..57 " "
+        PLUS@57..58 "+"
+    NEWLINE@58..59 "\n"
+  EOF@59..59 ""
+---
+error@59..59 3:1: expected an expression, found the end of the file

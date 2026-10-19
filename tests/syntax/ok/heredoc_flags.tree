@@ -1,0 +1,32 @@
+SOURCE_FILE@0..149
+  BLOCK@0..149
+    COMMENT@0..45 "# The flags `-` (dedent), `=` (raw) and `-=`."
+    NEWLINE@45..46 "\n"
+    ASSIGN_STMT@46..82
+      NAME_REF@46..47
+        LNAME@46..47 "a"
+      WHITESPACE@47..48 " "
+      EQ@48..49 "="
+      WHITESPACE@49..50 " "
+      LITERAL@50..82
+        STRING@50..82 "\"\"\"-\n    dedented\n    text\n  \"\"\""
+    NEWLINE@82..83 "\n"
+    ASSIGN_STMT@83..109
+      NAME_REF@83..84
+        LNAME@83..84 "b"
+      WHITESPACE@84..85 " "
+      EQ@85..86 "="
+      WHITESPACE@86..87 " "
+      LITERAL@87..109
+        STRING@87..109 "\"\"\"=\n  raw \\n #{x}\n\"\"\""
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..148
+      NAME_REF@110..111
+        LNAME@110..111 "c"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      LITERAL@114..148
+        STRING@114..148 "\"\"\"-=\n    raw and dedented\n    \"\"\""
+    NEWLINE@148..149 "\n"
+  EOF@149..149 ""

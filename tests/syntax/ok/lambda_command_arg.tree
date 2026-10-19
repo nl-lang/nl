@@ -1,0 +1,107 @@
+SOURCE_FILE@0..211
+  BLOCK@0..211
+    COMMENT@0..51 "# A short function written with a name is a command"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..123 "# argument; `f x -> e` is `f(x -> e)`, and a block after it goes to the"
+    NEWLINE@123..124 "\n"
+    COMMENT@124..139 "# command call."
+    NEWLINE@139..140 "\n"
+    EXPR_STMT@140..165
+      COMMAND_CALL@140..165
+        NAME_REF@140..144
+          LNAME@140..144 "each"
+        WHITESPACE@144..145 " "
+        COMMAND_ARGS@145..165
+          NAME_REF@145..150
+            LNAME@145..150 "items"
+          COMMA@150..151 ","
+          WHITESPACE@151..152 " "
+          LAMBDA_EXPR@152..165
+            BLOCK_PARAMS@152..153
+              PARAM@152..153
+                BIND_PAT@152..153
+                  NAME@152..153
+                    LNAME@152..153 "x"
+            WHITESPACE@153..154 " "
+            ARROW@154..156 "->"
+            WHITESPACE@156..157 " "
+            BLOCK@157..165
+              EXPR_STMT@157..165
+                CALL_EXPR@157..165
+                  NAME_REF@157..162
+                    LNAME@157..162 "print"
+                  ARG_LIST@162..165
+                    L_PAREN@162..163 "("
+                    NAME_REF@163..164
+                      LNAME@163..164 "x"
+                    R_PAREN@164..165 ")"
+    NEWLINE@165..166 "\n"
+    EXPR_STMT@166..178
+      COMMAND_CALL@166..178
+        NAME_REF@166..167
+          LNAME@166..167 "f"
+        WHITESPACE@167..168 " "
+        COMMAND_ARGS@168..178
+          LAMBDA_EXPR@168..178
+            BLOCK_PARAMS@168..169
+              PARAM@168..169
+                BIND_PAT@168..169
+                  NAME@168..169
+                    LNAME@168..169 "x"
+            WHITESPACE@169..170 " "
+            ARROW@170..172 "->"
+            WHITESPACE@172..173 " "
+            BLOCK@173..178
+              EXPR_STMT@173..178
+                BIN_EXPR@173..178
+                  NAME_REF@173..174
+                    LNAME@173..174 "x"
+                  WHITESPACE@174..175 " "
+                  PLUS@175..176 "+"
+                  WHITESPACE@176..177 " "
+                  LITERAL@177..178
+                    NUMBER@177..178 "1"
+    NEWLINE@178..179 "\n"
+    EXPR_STMT@179..210
+      COMMAND_CALL@179..210
+        NAME_REF@179..183
+          LNAME@179..183 "each"
+        WHITESPACE@183..184 " "
+        COMMAND_ARGS@184..197
+          NAME_REF@184..189
+            LNAME@184..189 "items"
+          COMMA@189..190 ","
+          WHITESPACE@190..191 " "
+          LAMBDA_EXPR@191..197
+            BLOCK_PARAMS@191..192
+              PARAM@191..192
+                BIND_PAT@191..192
+                  NAME@191..192
+                    LNAME@191..192 "x"
+            WHITESPACE@192..193 " "
+            ARROW@193..195 "->"
+            WHITESPACE@195..196 " "
+            BLOCK@196..197
+              EXPR_STMT@196..197
+                NAME_REF@196..197
+                  LNAME@196..197 "x"
+        WHITESPACE@197..198 " "
+        TRAILING_BLOCK@198..210
+          DO_KW@198..200 "do"
+          WHITESPACE@200..201 " "
+          BLOCK_PARAMS@201..204
+            PIPE@201..202 "|"
+            PARAM@202..203
+              BIND_PAT@202..203
+                NAME@202..203
+                  LNAME@202..203 "y"
+            PIPE@203..204 "|"
+          BLOCK@204..207
+            WHITESPACE@204..205 " "
+            EXPR_STMT@205..206
+              NAME_REF@205..206
+                LNAME@205..206 "y"
+            WHITESPACE@206..207 " "
+          END_KW@207..210 "end"
+    NEWLINE@210..211 "\n"
+  EOF@211..211 ""

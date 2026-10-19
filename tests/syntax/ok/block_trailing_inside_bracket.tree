@@ -1,0 +1,34 @@
+SOURCE_FILE@0..89
+  BLOCK@0..89
+    COMMENT@0..44 "# Inside a bracket the block attaches to the"
+    NEWLINE@44..45 "\n"
+    COMMENT@45..71 "# call directly before it."
+    NEWLINE@71..72 "\n"
+    EXPR_STMT@72..88
+      COMMAND_CALL@72..88
+        NAME_REF@72..73
+          LNAME@72..73 "a"
+        WHITESPACE@73..74 " "
+        COMMAND_ARGS@74..88
+          CALL_EXPR@74..88
+            NAME_REF@74..75
+              LNAME@74..75 "f"
+            ARG_LIST@75..88
+              L_PAREN@75..76 "("
+              CALL_EXPR@76..87
+                NAME_REF@76..77
+                  LNAME@76..77 "g"
+                ARG_LIST@77..80
+                  L_PAREN@77..78 "("
+                  NAME_REF@78..79
+                    LNAME@78..79 "x"
+                  R_PAREN@79..80 ")"
+                WHITESPACE@80..81 " "
+                TRAILING_BLOCK@81..87
+                  DO_KW@81..83 "do"
+                  BLOCK@83..84
+                    NEWLINE@83..84 "\n"
+                  END_KW@84..87 "end"
+              R_PAREN@87..88 ")"
+    NEWLINE@88..89 "\n"
+  EOF@89..89 ""

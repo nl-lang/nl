@@ -1,0 +1,9 @@
+h é l l o 
+é	olléh	5
+load_nl ok
+include ok
+42
+variable 'y' expects (Number | String)?, got Table
+Exception	true
+42
+done

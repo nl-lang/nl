@@ -1,0 +1,65 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..89 "# `?.` and `??` are single tokens; `? .` is `?` and `.`, and `?` alone is only for types."
+    NEWLINE@89..90 "\n"
+    ASSIGN_STMT@90..100
+      NAME_REF@90..91
+        LNAME@90..91 "x"
+      WHITESPACE@91..92 " "
+      EQ@92..93 "="
+      WHITESPACE@93..94 " "
+      FIELD_EXPR@94..100
+        NAME_REF@94..95
+          LNAME@94..95 "a"
+        WHITESPACE@95..96 " "
+        ERROR_NODE@96..97
+          QUESTION@96..97 "?"
+        WHITESPACE@97..98 " "
+        DOT@98..99 "."
+        LNAME@99..100 "b"
+    NEWLINE@100..101 "\n"
+    ASSIGN_STMT@101..106
+      NAME_REF@101..102
+        LNAME@101..102 "y"
+      WHITESPACE@102..103 " "
+      EQ@103..104 "="
+      WHITESPACE@104..105 " "
+      NAME_REF@105..106
+        LNAME@105..106 "a"
+    WHITESPACE@106..107 " "
+    ERROR_NODE@107..110
+      QUESTION@107..108 "?"
+      WHITESPACE@108..109 " "
+      QUESTION@109..110 "?"
+    WHITESPACE@110..111 " "
+    EXPR_STMT@111..112
+      NAME_REF@111..112
+        LNAME@111..112 "b"
+    NEWLINE@112..113 "\n"
+    LET_DECL@113..132
+      LET_KW@113..116 "let"
+      WHITESPACE@116..117 " "
+      TYPED_PAT@117..128
+        BIND_PAT@117..118
+          NAME@117..118
+            LNAME@117..118 "n"
+        COLON@118..119 ":"
+        WHITESPACE@119..120 " "
+        OPTIONAL_TYPE@120..128
+          NAMED_TYPE@120..126
+            QUAL_NAME@120..126
+              CNAME@120..126 "Number"
+          ERROR_NODE@126..128
+            QUESTION2@126..128 "??"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      EXPR_LIST@131..132
+        LITERAL@131..132
+          NUMBER@131..132 "1"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""
+---
+error@96..97 2:7: `?` alone is only used in types (`T?`); the nil-safe member access is written `?.`, without a space inside
+error@107..108 3:7: unexpected `?` after the end of a statement: statements are separated by line breaks or `;`
+error@126..128 4:14: a type takes one `?`

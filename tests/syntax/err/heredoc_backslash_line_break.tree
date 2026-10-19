@@ -1,0 +1,31 @@
+SOURCE_FILE@0..146
+  BLOCK@0..146
+    COMMENT@0..61 "# In a heredoc the line break is already part of the text, so"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..107 "# a backslash directly before it is an error."
+    NEWLINE@107..108 "\n"
+    LET_DECL@108..139
+      LET_KW@108..111 "let"
+      WHITESPACE@111..112 " "
+      BIND_PAT@112..113
+        NAME@112..113
+          LNAME@112..113 "s"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      EXPR_LIST@116..139
+        LITERAL@116..139
+          STRING@116..139 "\"\"\"\n  one \\\n  two\n  \"\"\""
+    NEWLINE@139..140 "\n"
+    ASSIGN_STMT@140..145
+      NAME_REF@140..141
+        LNAME@140..141 "x"
+      WHITESPACE@141..142 " "
+      EQ@142..143 "="
+      WHITESPACE@143..144 " "
+      LITERAL@144..145
+        NUMBER@144..145 "1"
+    NEWLINE@145..146 "\n"
+  EOF@146..146 ""
+---
+error@126..127 4:7: a backslash cannot stand directly before a line break in a heredoc, where the line break is already part of the text; write `\\` for a backslash

@@ -1,0 +1,57 @@
+SOURCE_FILE@0..142
+  BLOCK@0..142
+    COMMENT@0..61 "# An explicit value is a number, a negative number or a plain"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..71 "# string."
+    NEWLINE@71..72 "\n"
+    ENUM_DECL@72..141
+      ENUM_KW@72..76 "enum"
+      WHITESPACE@76..77 " "
+      NAME@77..81
+        CNAME@77..81 "Team"
+      NEWLINE@81..82 "\n"
+      WHITESPACE@82..84 "  "
+      VARIANT@84..91
+        NAME@84..87
+          CNAME@84..87 "Red"
+        WHITESPACE@87..88 " "
+        EQ@88..89 "="
+        WHITESPACE@89..90 " "
+        LITERAL@90..91
+          NUMBER@90..91 "1"
+      NEWLINE@91..92 "\n"
+      WHITESPACE@92..94 "  "
+      VARIANT@94..103
+        NAME@94..98
+          CNAME@94..98 "Blue"
+        WHITESPACE@98..99 " "
+        EQ@99..100 "="
+        WHITESPACE@100..101 " "
+        PREFIX_EXPR@101..103
+          MINUS@101..102 "-"
+          LITERAL@102..103
+            NUMBER@102..103 "2"
+      NEWLINE@103..104 "\n"
+      WHITESPACE@104..106 "  "
+      VARIANT@106..121
+        NAME@106..111
+          CNAME@106..111 "Green"
+        WHITESPACE@111..112 " "
+        EQ@112..113 "="
+        WHITESPACE@113..114 " "
+        LITERAL@114..121
+          STRING@114..121 "'green'"
+      NEWLINE@121..122 "\n"
+      WHITESPACE@122..124 "  "
+      VARIANT@124..137
+        NAME@124..128
+          CNAME@124..128 "Gold"
+        WHITESPACE@128..129 " "
+        EQ@129..130 "="
+        WHITESPACE@130..131 " "
+        LITERAL@131..137
+          STRING@131..137 "\"gold\""
+      NEWLINE@137..138 "\n"
+      END_KW@138..141 "end"
+    NEWLINE@141..142 "\n"
+  EOF@142..142 ""

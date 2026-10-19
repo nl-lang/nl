@@ -1,0 +1,17 @@
+[package]
+name = "nl_syntax"
+description = "Lexer, parser, syntax tree and syntax diagnostics of the NL language"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+rowan.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+rowan.workspace = true

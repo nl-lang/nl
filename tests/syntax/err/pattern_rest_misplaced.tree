@@ -1,0 +1,52 @@
+SOURCE_FILE@0..100
+  BLOCK@0..100
+    COMMENT@0..61 "# `*rest` is not allowed in braces and only last in brackets."
+    NEWLINE@61..62 "\n"
+    LET_DECL@62..80
+      LET_KW@62..65 "let"
+      WHITESPACE@65..66 " "
+      BRACE_PAT@66..76
+        L_CURLY@66..67 "{"
+        PAT_FIELD@67..68
+          NAME@67..68
+            LNAME@67..68 "a"
+        COMMA@68..69 ","
+        WHITESPACE@69..70 " "
+        REST_PAT@70..75
+          STAR@70..71 "*"
+          NAME@71..75
+            LNAME@71..75 "rest"
+        R_CURLY@75..76 "}"
+      WHITESPACE@76..77 " "
+      EQ@77..78 "="
+      WHITESPACE@78..79 " "
+      EXPR_LIST@79..80
+        NAME_REF@79..80
+          LNAME@79..80 "t"
+    NEWLINE@80..81 "\n"
+    LET_DECL@81..99
+      LET_KW@81..84 "let"
+      WHITESPACE@84..85 " "
+      BRACKET_PAT@85..95
+        L_BRACK@85..86 "["
+        REST_PAT@86..91
+          STAR@86..87 "*"
+          NAME@87..91
+            LNAME@87..91 "rest"
+        COMMA@91..92 ","
+        WHITESPACE@92..93 " "
+        BIND_PAT@93..94
+          NAME@93..94
+            LNAME@93..94 "b"
+        R_BRACK@94..95 "]"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      EXPR_LIST@98..99
+        NAME_REF@98..99
+          LNAME@98..99 "t"
+    NEWLINE@99..100 "\n"
+  EOF@100..100 ""
+---
+error@70..71 2:9: `*rest` is not allowed in `{…}`; it is only allowed in a `[…]` pattern
+error@93..94 3:13: `*rest` must be the last item of the pattern

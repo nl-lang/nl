@@ -1,0 +1,9 @@
+bare name: cannot send a function without a name (argument 2)
+qualified: cannot send a function without a name (argument 2)
+bare name with sendable arguments: 2
+job started at spawn_rules.nl:30
+true
+long list: 100000
+deep nesting: 100000
+shape kept: true true true
+SendError: cannot send a function without a name (argument 1, at <.inner x 100000>.inner.f)

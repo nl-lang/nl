@@ -1,0 +1,44 @@
+SOURCE_FILE@0..141
+  BLOCK@0..141
+    COMMENT@0..55 "# A signature has no body, so every `:` after it is its"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..92 "# return type, whatever the spacing."
+    NEWLINE@92..93 "\n"
+    INTERFACE_DECL@93..140
+      INTERFACE_KW@93..102 "interface"
+      WHITESPACE@102..103 " "
+      NAME@103..104
+        CNAME@103..104 "I"
+      NEWLINE@104..105 "\n"
+      WHITESPACE@105..107 "  "
+      IFACE_METHOD@107..121
+        FN_KW@107..109 "fn"
+        WHITESPACE@109..110 " "
+        NAME@110..111
+          LNAME@110..111 "a"
+        PARAM_LIST@111..113
+          L_PAREN@111..112 "("
+          R_PAREN@112..113 ")"
+        WHITESPACE@113..114 " "
+        RETURN_TYPE@114..121
+          COLON@114..115 ":"
+          NAMED_TYPE@115..121
+            QUAL_NAME@115..121
+              CNAME@115..121 "Number"
+      NEWLINE@121..122 "\n"
+      WHITESPACE@122..124 "  "
+      IFACE_METHOD@124..136
+        FN_KW@124..126 "fn"
+        WHITESPACE@126..127 " "
+        NAME@127..128
+          LNAME@127..128 "b"
+        WHITESPACE@128..129 " "
+        RETURN_TYPE@129..136
+          COLON@129..130 ":"
+          NAMED_TYPE@130..136
+            QUAL_NAME@130..136
+              CNAME@130..136 "Number"
+      NEWLINE@136..137 "\n"
+      END_KW@137..140 "end"
+    NEWLINE@140..141 "\n"
+  EOF@141..141 ""

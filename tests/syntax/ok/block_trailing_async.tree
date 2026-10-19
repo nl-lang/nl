@@ -1,0 +1,30 @@
+SOURCE_FILE@0..67
+  BLOCK@0..67
+    COMMENT@0..35 "# `async do` makes the block async."
+    NEWLINE@35..36 "\n"
+    EXPR_STMT@36..66
+      CALL_EXPR@36..66
+        FIELD_EXPR@36..44
+          NAME_REF@36..40
+            LNAME@36..40 "task"
+          DOT@40..41 "."
+          LNAME@41..44 "run"
+        WHITESPACE@44..45 " "
+        TRAILING_BLOCK@45..66
+          ASYNC_KW@45..50 "async"
+          WHITESPACE@50..51 " "
+          DO_KW@51..53 "do"
+          BLOCK@53..63
+            NEWLINE@53..54 "\n"
+            WHITESPACE@54..56 "  "
+            EXPR_STMT@56..62
+              CALL_EXPR@56..62
+                NAME_REF@56..60
+                  LNAME@56..60 "work"
+                ARG_LIST@60..62
+                  L_PAREN@60..61 "("
+                  R_PAREN@61..62 ")"
+            NEWLINE@62..63 "\n"
+          END_KW@63..66 "end"
+    NEWLINE@66..67 "\n"
+  EOF@67..67 ""

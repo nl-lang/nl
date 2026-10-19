@@ -1,0 +1,36 @@
+SOURCE_FILE@0..206
+  BLOCK@0..206
+    COMMENT@0..58 "# A `!` touching a keyword used as a name is not the start"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..137 "# of a command argument; it is the postfix `!`, an error after a Lua path or a"
+    NEWLINE@137..138 "\n"
+    COMMENT@138..187 "# method call. The word after it is the argument."
+    NEWLINE@187..188 "\n"
+    EXPR_STMT@188..195
+      COMMAND_CALL@188..195
+        LUA_PATH@188..194
+          COLON@188..189 ":"
+          LNAME@189..193 "type"
+          ERROR_NODE@193..194
+            BANG@193..194 "!"
+        COMMAND_ARGS@194..195
+          NAME_REF@194..195
+            LNAME@194..195 "x"
+    NEWLINE@195..196 "\n"
+    EXPR_STMT@196..205
+      COMMAND_CALL@196..205
+        BANG_EXPR@196..204
+          METHOD_CALL@196..203
+            NAME_REF@196..199
+              LNAME@196..199 "obj"
+            COLON@199..200 ":"
+            LNAME@200..203 "end"
+          BANG@203..204 "!"
+        COMMAND_ARGS@204..205
+          NAME_REF@204..205
+            LNAME@204..205 "y"
+    NEWLINE@205..206 "\n"
+  EOF@206..206 ""
+---
+error@193..194 4:6: a Lua path is never called automatically, so it takes no `!`
+error@203..204 5:8: `!` cannot follow a method call `x:m`: a Lua method has no function value to take

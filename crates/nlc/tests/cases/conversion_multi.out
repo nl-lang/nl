@@ -1,0 +1,23 @@
+20
+20
+Base(2)
+Base(2)
+to: Base implements To<Out> and To<String>: write `as Out` to say which
+200
+300
+-1
+Base(3)
+Base
+Child
+Child
+Child
+Named
+as: cannot convert Thing to Target: ambiguous: Target implements From<Named> and From<Sized>, and Thing is each of them
+from: cannot convert Thing to Target: ambiguous: Target implements From<Named> and From<Sized>, and Thing is each of them
+from: cannot convert Number to Target: no From takes a Number
+7
+21
+to: Number implements To<Feet> and To<Celsius>: write `as Feet` to say which
+4
+1
+0

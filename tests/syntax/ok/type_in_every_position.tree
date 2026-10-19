@@ -1,0 +1,71 @@
+SOURCE_FILE@0..149
+  BLOCK@0..149
+    COMMENT@0..56 "# Types in annotations, return types, `is`, `as`, catch,"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..87 "# struct fields, type aliases."
+    NEWLINE@87..88 "\n"
+    FN_DECL@88..127
+      FN_KW@88..90 "fn"
+      WHITESPACE@90..91 " "
+      NAME@91..92
+        LNAME@91..92 "f"
+      PARAM_LIST@92..105
+        L_PAREN@92..93 "("
+        PARAM@93..104
+          TYPED_PAT@93..104
+            BIND_PAT@93..94
+              NAME@93..94
+                LNAME@93..94 "a"
+            COLON@94..95 ":"
+            WHITESPACE@95..96 " "
+            ARRAY_TYPE@96..104
+              L_BRACK@96..97 "["
+              NAMED_TYPE@97..103
+                QUAL_NAME@97..103
+                  CNAME@97..103 "Number"
+              R_BRACK@103..104 "]"
+        R_PAREN@104..105 ")"
+      RETURN_TYPE@105..123
+        COLON@105..106 ":"
+        WHITESPACE@106..107 " "
+        MAP_TYPE@107..123
+          L_CURLY@107..108 "{"
+          L_BRACK@108..109 "["
+          NAMED_TYPE@109..115
+            QUAL_NAME@109..115
+              CNAME@109..115 "String"
+          R_BRACK@115..116 "]"
+          COLON@116..117 ":"
+          WHITESPACE@117..118 " "
+          NAMED_TYPE@118..122
+            QUAL_NAME@118..122
+              CNAME@118..122 "Bool"
+          R_CURLY@122..123 "}"
+      BLOCK@123..124
+        NEWLINE@123..124 "\n"
+      END_KW@124..127 "end"
+    NEWLINE@127..128 "\n"
+    ASSIGN_STMT@128..148
+      NAME_REF@128..129
+        LNAME@128..129 "x"
+      WHITESPACE@129..130 " "
+      EQ@130..131 "="
+      WHITESPACE@131..132 " "
+      IS_EXPR@132..148
+        NAME_REF@132..133
+          LNAME@132..133 "v"
+        WHITESPACE@133..134 " "
+        IS_KW@134..136 "is"
+        WHITESPACE@136..137 " "
+        RECORD_TYPE@137..148
+          L_CURLY@137..138 "{"
+          RECORD_FIELD@138..147
+            LNAME@138..139 "a"
+            COLON@139..140 ":"
+            WHITESPACE@140..141 " "
+            NAMED_TYPE@141..147
+              QUAL_NAME@141..147
+                CNAME@141..147 "Number"
+          R_CURLY@147..148 "}"
+    NEWLINE@148..149 "\n"
+  EOF@149..149 ""

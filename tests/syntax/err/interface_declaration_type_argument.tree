@@ -1,0 +1,30 @@
+SOURCE_FILE@0..105
+  BLOCK@0..105
+    COMMENT@0..68 "# In an interface declaration each `<…>` argument must be a single"
+    NEWLINE@68..69 "\n"
+    COMMENT@69..77 "# CNAME."
+    NEWLINE@77..78 "\n"
+    INTERFACE_DECL@78..104
+      INTERFACE_KW@78..87 "interface"
+      WHITESPACE@87..88 " "
+      NAME@88..92
+        CNAME@88..92 "From"
+      TYPE_PARAMS@92..100
+        LT@92..93 "<"
+        TYPE_PARAM@93..96
+          NAME@93..96
+            CNAME@93..96 "Box"
+        ERROR_NODE@96..99
+          TYPE_ARGS@96..99
+            LT@96..97 "<"
+            NAMED_TYPE@97..98
+              QUAL_NAME@97..98
+                CNAME@97..98 "T"
+            GT@98..99 ">"
+        GT@99..100 ">"
+      NEWLINE@100..101 "\n"
+      END_KW@101..104 "end"
+    NEWLINE@104..105 "\n"
+  EOF@105..105 ""
+---
+error@96..97 3:19: a type parameter is a single capitalized name such as `T`; type arguments such as `Box<T>` belong to an implementation `interface … for Type`

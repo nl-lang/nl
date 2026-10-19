@@ -1,0 +1,54 @@
+SOURCE_FILE@0..113
+  BLOCK@0..113
+    COMMENT@0..61 "# A call whose trailing block ends in `end` takes a modifier."
+    NEWLINE@61..62 "\n"
+    EXPR_STMT@62..77
+      COMMAND_CALL@62..72
+        NAME_REF@62..63
+          LNAME@62..63 "f"
+        WHITESPACE@63..64 " "
+        COMMAND_ARGS@64..65
+          NAME_REF@64..65
+            LNAME@64..65 "x"
+        WHITESPACE@65..66 " "
+        TRAILING_BLOCK@66..72
+          DO_KW@66..68 "do"
+          BLOCK@68..69
+            NEWLINE@68..69 "\n"
+          END_KW@69..72 "end"
+      WHITESPACE@72..73 " "
+      MODIFIER@73..77
+        IF_KW@73..75 "if"
+        WHITESPACE@75..76 " "
+        NAME_REF@76..77
+          LNAME@76..77 "y"
+    NEWLINE@77..78 "\n"
+    EXPR_STMT@78..112
+      CALL_EXPR@78..99
+        FIELD_EXPR@78..88
+          NAME_REF@78..83
+            LNAME@78..83 "items"
+          DOT@83..84 "."
+          LNAME@84..88 "each"
+        WHITESPACE@88..89 " "
+        TRAILING_BLOCK@89..99
+          DO_KW@89..91 "do"
+          WHITESPACE@91..92 " "
+          BLOCK_PARAMS@92..95
+            PIPE@92..93 "|"
+            PARAM@93..94
+              BIND_PAT@93..94
+                NAME@93..94
+                  LNAME@93..94 "i"
+            PIPE@94..95 "|"
+          BLOCK@95..96
+            NEWLINE@95..96 "\n"
+          END_KW@96..99 "end"
+      WHITESPACE@99..100 " "
+      MODIFIER@100..112
+        UNLESS_KW@100..106 "unless"
+        WHITESPACE@106..107 " "
+        NAME_REF@107..112
+          LNAME@107..112 "empty"
+    NEWLINE@112..113 "\n"
+  EOF@113..113 ""

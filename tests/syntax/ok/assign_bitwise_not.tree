@@ -1,0 +1,28 @@
+SOURCE_FILE@0..123
+  BLOCK@0..123
+    COMMENT@0..57 "# `=` then a prefix `~`; with no space after `~` it is an"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..107 "# assignment, however the `=` and `~` are spaced."
+    NEWLINE@107..108 "\n"
+    ASSIGN_STMT@108..115
+      NAME_REF@108..109
+        LNAME@108..109 "x"
+      WHITESPACE@109..110 " "
+      EQ@110..111 "="
+      WHITESPACE@111..112 " "
+      PREFIX_EXPR@112..115
+        TILDE@112..113 "~"
+        NAME_REF@113..115
+          LNAME@113..115 "re"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..122
+      NAME_REF@116..117
+        LNAME@116..117 "y"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      PREFIX_EXPR@119..122
+        TILDE@119..120 "~"
+        NAME_REF@120..122
+          LNAME@120..122 "re"
+    NEWLINE@122..123 "\n"
+  EOF@123..123 ""

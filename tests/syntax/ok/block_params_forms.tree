@@ -1,0 +1,159 @@
+SOURCE_FILE@0..223
+  BLOCK@0..223
+    COMMENT@0..57 "# Block parameters: `||`, names, annotations, defaults, a"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..104 "# pattern, a trailing comma and a return type."
+    NEWLINE@104..105 "\n"
+    EXPR_STMT@105..116
+      CALL_EXPR@105..116
+        NAME_REF@105..106
+          LNAME@105..106 "f"
+        WHITESPACE@106..107 " "
+        TRAILING_BLOCK@107..116
+          DO_KW@107..109 "do"
+          WHITESPACE@109..110 " "
+          BLOCK_PARAMS@110..112
+            PIPE2@110..112 "||"
+          BLOCK@112..113
+            WHITESPACE@112..113 " "
+          END_KW@113..116 "end"
+    NEWLINE@116..117 "\n"
+    EXPR_STMT@117..133
+      CALL_EXPR@117..133
+        NAME_REF@117..118
+          LNAME@117..118 "f"
+        WHITESPACE@118..119 " "
+        TRAILING_BLOCK@119..133
+          DO_KW@119..121 "do"
+          WHITESPACE@121..122 " "
+          BLOCK_PARAMS@122..129
+            PIPE@122..123 "|"
+            PARAM@123..124
+              BIND_PAT@123..124
+                NAME@123..124
+                  LNAME@123..124 "a"
+            COMMA@124..125 ","
+            WHITESPACE@125..126 " "
+            PARAM@126..127
+              BIND_PAT@126..127
+                NAME@126..127
+                  LNAME@126..127 "b"
+            COMMA@127..128 ","
+            PIPE@128..129 "|"
+          BLOCK@129..130
+            WHITESPACE@129..130 " "
+          END_KW@130..133 "end"
+    NEWLINE@133..134 "\n"
+    EXPR_STMT@134..170
+      CALL_EXPR@134..170
+        NAME_REF@134..135
+          LNAME@134..135 "f"
+        WHITESPACE@135..136 " "
+        TRAILING_BLOCK@136..170
+          DO_KW@136..138 "do"
+          WHITESPACE@138..139 " "
+          BLOCK_PARAMS@139..161
+            PIPE@139..140 "|"
+            PARAM@140..149
+              TYPED_PAT@140..149
+                BIND_PAT@140..141
+                  NAME@140..141
+                    LNAME@140..141 "a"
+                COLON@141..142 ":"
+                WHITESPACE@142..143 " "
+                NAMED_TYPE@143..149
+                  QUAL_NAME@143..149
+                    CNAME@143..149 "Number"
+            COMMA@149..150 ","
+            WHITESPACE@150..151 " "
+            PARAM@151..160
+              TYPED_PAT@151..160
+                BIND_PAT@151..152
+                  NAME@151..152
+                    LNAME@151..152 "b"
+                COLON@152..153 ":"
+                WHITESPACE@153..154 " "
+                NAMED_TYPE@154..160
+                  QUAL_NAME@154..160
+                    CNAME@154..160 "String"
+            PIPE@160..161 "|"
+          RETURN_TYPE@161..166
+            COLON@161..162 ":"
+            WHITESPACE@162..163 " "
+            NAMED_TYPE@163..166
+              NIL_KW@163..166 "nil"
+          BLOCK@166..167
+            WHITESPACE@166..167 " "
+          END_KW@167..170 "end"
+    NEWLINE@170..171 "\n"
+    EXPR_STMT@171..187
+      CALL_EXPR@171..187
+        NAME_REF@171..172
+          LNAME@171..172 "f"
+        WHITESPACE@172..173 " "
+        TRAILING_BLOCK@173..187
+          DO_KW@173..175 "do"
+          WHITESPACE@175..176 " "
+          BLOCK_PARAMS@176..183
+            PIPE@176..177 "|"
+            PARAM@177..182
+              BIND_PAT@177..178
+                NAME@177..178
+                  LNAME@177..178 "a"
+              WHITESPACE@178..179 " "
+              EQ@179..180 "="
+              WHITESPACE@180..181 " "
+              LITERAL@181..182
+                NUMBER@181..182 "1"
+            PIPE@182..183 "|"
+          BLOCK@183..184
+            WHITESPACE@183..184 " "
+          END_KW@184..187 "end"
+    NEWLINE@187..188 "\n"
+    EXPR_STMT@188..205
+      CALL_EXPR@188..205
+        NAME_REF@188..189
+          LNAME@188..189 "f"
+        WHITESPACE@189..190 " "
+        TRAILING_BLOCK@190..205
+          DO_KW@190..192 "do"
+          WHITESPACE@192..193 " "
+          BLOCK_PARAMS@193..201
+            PIPE@193..194 "|"
+            PARAM@194..200
+              BRACE_PAT@194..200
+                L_CURLY@194..195 "{"
+                PAT_FIELD@195..196
+                  NAME@195..196
+                    LNAME@195..196 "x"
+                COMMA@196..197 ","
+                WHITESPACE@197..198 " "
+                PAT_FIELD@198..199
+                  NAME@198..199
+                    LNAME@198..199 "y"
+                R_CURLY@199..200 "}"
+            PIPE@200..201 "|"
+          BLOCK@201..202
+            WHITESPACE@201..202 " "
+          END_KW@202..205 "end"
+    NEWLINE@205..206 "\n"
+    EXPR_STMT@206..222
+      CALL_EXPR@206..222
+        NAME_REF@206..207
+          LNAME@206..207 "f"
+        WHITESPACE@207..208 " "
+        TRAILING_BLOCK@208..222
+          DO_KW@208..210 "do"
+          WHITESPACE@210..211 " "
+          BLOCK_PARAMS@211..218
+            PIPE@211..212 "|"
+            REST_PARAM@212..217
+              STAR@212..213 "*"
+              NAME@213..217
+                LNAME@213..217 "rest"
+            PIPE@217..218 "|"
+          BLOCK@218..219
+            WHITESPACE@218..219 " "
+          END_KW@219..222 "end"
+    NEWLINE@222..223 "\n"
+  EOF@223..223 ""

@@ -1,0 +1,84 @@
+SOURCE_FILE@0..131
+  BLOCK@0..131
+    COMMENT@0..68 "# A nil-safe target in an assignment of its own, simple or compound."
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..77
+      FIELD_EXPR@69..73
+        NAME_REF@69..70
+          LNAME@69..70 "a"
+        QUESTION_DOT@70..72 "?."
+        LNAME@72..73 "b"
+      WHITESPACE@73..74 " "
+      EQ@74..75 "="
+      WHITESPACE@75..76 " "
+      LITERAL@76..77
+        NUMBER@76..77 "1"
+    NEWLINE@77..78 "\n"
+    ASSIGN_STMT@78..88
+      INDEX_EXPR@78..84
+        NAME_REF@78..79
+          LNAME@78..79 "a"
+        QUESTION_DOT@79..81 "?."
+        L_BRACK@81..82 "["
+        NAME_REF@82..83
+          LNAME@82..83 "k"
+        R_BRACK@83..84 "]"
+      WHITESPACE@84..85 " "
+      EQ@85..86 "="
+      WHITESPACE@86..87 " "
+      LITERAL@87..88
+        NUMBER@87..88 "2"
+    NEWLINE@88..89 "\n"
+    ASSIGN_STMT@89..99
+      FIELD_EXPR@89..95
+        FIELD_EXPR@89..93
+          NAME_REF@89..90
+            LNAME@89..90 "a"
+          QUESTION_DOT@90..92 "?."
+          LNAME@92..93 "b"
+        DOT@93..94 "."
+        LNAME@94..95 "c"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      LITERAL@98..99
+        NUMBER@98..99 "3"
+    NEWLINE@99..100 "\n"
+    COMPOUND_ASSIGN_STMT@100..109
+      FIELD_EXPR@100..104
+        NAME_REF@100..101
+          LNAME@100..101 "a"
+        QUESTION_DOT@101..103 "?."
+        LNAME@103..104 "b"
+      WHITESPACE@104..105 " "
+      PLUS_EQ@105..107 "+="
+      WHITESPACE@107..108 " "
+      LITERAL@108..109
+        NUMBER@108..109 "1"
+    NEWLINE@109..110 "\n"
+    COMPOUND_ASSIGN_STMT@110..120
+      FIELD_EXPR@110..114
+        NAME_REF@110..111
+          LNAME@110..111 "a"
+        QUESTION_DOT@111..113 "?."
+        LNAME@113..114 "b"
+      WHITESPACE@114..115 " "
+      QUESTION2_EQ@115..118 "??="
+      WHITESPACE@118..119 " "
+      LITERAL@119..120
+        NUMBER@119..120 "0"
+    NEWLINE@120..121 "\n"
+    ASSIGN_STMT@121..130
+      LUA_PATH@121..126
+        COLON@121..122 ":"
+        LNAME@122..123 "p"
+        LUA_FIELD@123..126
+          QUESTION_DOT@123..125 "?."
+          LNAME@125..126 "x"
+      WHITESPACE@126..127 " "
+      EQ@127..128 "="
+      WHITESPACE@128..129 " "
+      LITERAL@129..130
+        NUMBER@129..130 "4"
+    NEWLINE@130..131 "\n"
+  EOF@131..131 ""

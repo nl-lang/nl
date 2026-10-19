@@ -1,0 +1,79 @@
+SOURCE_FILE@0..131
+  BLOCK@0..131
+    COMMENT@0..52 "# `x:m(a)`, `x:m` (the call `x:m()`), and a trailing"
+    NEWLINE@52..53 "\n"
+    COMMENT@53..81 "# block after a method call."
+    NEWLINE@81..82 "\n"
+    EXPR_STMT@82..88
+      METHOD_CALL@82..88
+        NAME_REF@82..83
+          LNAME@82..83 "x"
+        COLON@83..84 ":"
+        LNAME@84..85 "m"
+        ARG_LIST@85..88
+          L_PAREN@85..86 "("
+          NAME_REF@86..87
+            LNAME@86..87 "a"
+          R_PAREN@87..88 ")"
+    NEWLINE@88..89 "\n"
+    EXPR_STMT@89..92
+      METHOD_CALL@89..92
+        NAME_REF@89..90
+          LNAME@89..90 "x"
+        COLON@90..91 ":"
+        LNAME@91..92 "m"
+    NEWLINE@92..93 "\n"
+    ASSIGN_STMT@93..100
+      NAME_REF@93..94
+        LNAME@93..94 "y"
+      WHITESPACE@94..95 " "
+      EQ@95..96 "="
+      WHITESPACE@96..97 " "
+      METHOD_CALL@97..100
+        NAME_REF@97..98
+          LNAME@97..98 "x"
+        COLON@98..99 ":"
+        LNAME@99..100 "m"
+    NEWLINE@100..101 "\n"
+    EXPR_STMT@101..118
+      METHOD_CALL@101..118
+        NAME_REF@101..102
+          LNAME@101..102 "x"
+        COLON@102..103 ":"
+        LNAME@103..107 "each"
+        WHITESPACE@107..108 " "
+        TRAILING_BLOCK@108..118
+          DO_KW@108..110 "do"
+          WHITESPACE@110..111 " "
+          BLOCK_PARAMS@111..114
+            PIPE@111..112 "|"
+            PARAM@112..113
+              BIND_PAT@112..113
+                NAME@112..113
+                  LNAME@112..113 "v"
+            PIPE@113..114 "|"
+          BLOCK@114..115
+            WHITESPACE@114..115 " "
+          END_KW@115..118 "end"
+    NEWLINE@118..119 "\n"
+    EXPR_STMT@119..130
+      METHOD_CALL@119..130
+        METHOD_CALL@119..125
+          NAME_REF@119..120
+            LNAME@119..120 "x"
+          COLON@120..121 ":"
+          LNAME@121..122 "m"
+          ARG_LIST@122..125
+            L_PAREN@122..123 "("
+            LITERAL@123..124
+              NUMBER@123..124 "1"
+            R_PAREN@124..125 ")"
+        COLON@125..126 ":"
+        LNAME@126..127 "n"
+        ARG_LIST@127..130
+          L_PAREN@127..128 "("
+          LITERAL@128..129
+            NUMBER@128..129 "2"
+          R_PAREN@129..130 ")"
+    NEWLINE@130..131 "\n"
+  EOF@131..131 ""

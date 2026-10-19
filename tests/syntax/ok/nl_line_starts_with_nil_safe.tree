@@ -1,0 +1,79 @@
+SOURCE_FILE@0..178
+  BLOCK@0..178
+    COMMENT@0..64 "# `?.` and `??` at the start of a line continue the line before."
+    NEWLINE@64..65 "\n"
+    LET_DECL@65..117
+      LET_KW@65..68 "let"
+      WHITESPACE@68..69 " "
+      BIND_PAT@69..73
+        NAME@69..73
+          LNAME@69..73 "name"
+      WHITESPACE@73..74 " "
+      EQ@74..75 "="
+      WHITESPACE@75..76 " "
+      EXPR_LIST@76..117
+        BIN_EXPR@76..117
+          FIELD_EXPR@76..103
+            FIELD_EXPR@76..94
+              NAME_REF@76..82
+                LNAME@76..82 "player"
+              NEWLINE@82..83 "\n"
+              WHITESPACE@83..85 "  "
+              QUESTION_DOT@85..87 "?."
+              LNAME@87..94 "profile"
+            NEWLINE@94..95 "\n"
+            WHITESPACE@95..97 "  "
+            QUESTION_DOT@97..99 "?."
+            LNAME@99..103 "name"
+          NEWLINE@103..104 "\n"
+          WHITESPACE@104..106 "  "
+          QUESTION2@106..108 "??"
+          WHITESPACE@108..109 " "
+          LITERAL@109..117
+            STRING@109..117 "\"nobody\""
+    NEWLINE@117..118 "\n"
+    LET_DECL@118..142
+      LET_KW@118..121 "let"
+      WHITESPACE@121..122 " "
+      BIND_PAT@122..127
+        NAME@122..127
+          LNAME@122..127 "first"
+      WHITESPACE@127..128 " "
+      EQ@128..129 "="
+      WHITESPACE@129..130 " "
+      EXPR_LIST@130..142
+        INDEX_EXPR@130..142
+          NAME_REF@130..134
+            LNAME@130..134 "list"
+          NEWLINE@134..135 "\n"
+          WHITESPACE@135..137 "  "
+          QUESTION_DOT@137..139 "?."
+          L_BRACK@139..140 "["
+          LITERAL@140..141
+            NUMBER@140..141 "1"
+          R_BRACK@141..142 "]"
+    NEWLINE@142..143 "\n"
+    ASSIGN_STMT@143..177
+      NAME_REF@143..146
+        LNAME@143..146 "run"
+      WHITESPACE@146..147 " "
+      EQ@147..148 "="
+      WHITESPACE@148..149 " "
+      CALL_EXPR@149..177
+        FIELD_EXPR@149..166
+          NAME_REF@149..157
+            LNAME@149..157 "handlers"
+          NEWLINE@157..158 "\n"
+          WHITESPACE@158..160 "  "
+          QUESTION_DOT@160..162 "?."
+          LNAME@162..166 "done"
+        NEWLINE@166..167 "\n"
+        WHITESPACE@167..169 "  "
+        QUESTION_DOT@169..171 "?."
+        ARG_LIST@171..177
+          L_PAREN@171..172 "("
+          LITERAL@172..176
+            TRUE_KW@172..176 "true"
+          R_PAREN@176..177 ")"
+    NEWLINE@177..178 "\n"
+  EOF@178..178 ""

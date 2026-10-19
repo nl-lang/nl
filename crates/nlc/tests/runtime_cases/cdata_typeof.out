@@ -1,0 +1,3 @@
+Cdata
+parameter 'n' of want expects Number, got Cdata
+cdata_typeof.nl:15: attempt to perform '//' on Cdata and Table

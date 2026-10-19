@@ -1,0 +1,16 @@
+item	true	false
+tool	true	false
+hammer	true	false
+stone	false	false
+number	false	false
+nil	false	false
+item box	item saw	item claw
+a Hammer is not Priced yet
+item	true	false
+tool	true	true
+hammer	true	true
+6	6
+an Item is not Priced
+a Stone is not Named
+hammer claw	item saw
+3

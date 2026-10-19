@@ -1,0 +1,138 @@
+SOURCE_FILE@0..187
+  BLOCK@0..187
+    COMMENT@0..55 "# `if`, `unless`, `case`, `cond` and `try` as operands."
+    NEWLINE@55..56 "\n"
+    ASSIGN_STMT@56..82
+      NAME_REF@56..57
+        LNAME@56..57 "x"
+      WHITESPACE@57..58 " "
+      EQ@58..59 "="
+      WHITESPACE@59..60 " "
+      BIN_EXPR@60..82
+        LITERAL@60..61
+          NUMBER@60..61 "1"
+        WHITESPACE@61..62 " "
+        PLUS@62..63 "+"
+        WHITESPACE@63..64 " "
+        IF_EXPR@64..82
+          IF_KW@64..66 "if"
+          WHITESPACE@66..67 " "
+          NAME_REF@67..68
+            LNAME@67..68 "a"
+          SEMI@68..69 ";"
+          BLOCK@69..72
+            WHITESPACE@69..70 " "
+            EXPR_STMT@70..71
+              LITERAL@70..71
+                NUMBER@70..71 "2"
+            WHITESPACE@71..72 " "
+          ELSE_CLAUSE@72..79
+            ELSE_KW@72..76 "else"
+            BLOCK@76..79
+              WHITESPACE@76..77 " "
+              EXPR_STMT@77..78
+                LITERAL@77..78
+                  NUMBER@77..78 "3"
+              WHITESPACE@78..79 " "
+          END_KW@79..82 "end"
+    NEWLINE@82..83 "\n"
+    ASSIGN_STMT@83..112
+      NAME_REF@83..84
+        LNAME@83..84 "y"
+      WHITESPACE@84..85 " "
+      EQ@85..86 "="
+      WHITESPACE@86..87 " "
+      CASE_EXPR@87..112
+        CASE_KW@87..91 "case"
+        WHITESPACE@91..92 " "
+        NAME_REF@92..93
+          LNAME@92..93 "n"
+        NEWLINE@93..94 "\n"
+        WHEN_CLAUSE@94..109
+          WHEN_KW@94..98 "when"
+          WHITESPACE@98..99 " "
+          LITERAL@99..100
+            NUMBER@99..100 "1"
+          BLOCK@100..109
+            NEWLINE@100..101 "\n"
+            WHITESPACE@101..103 "  "
+            EXPR_STMT@103..108
+              LITERAL@103..108
+                STRING@103..108 "\"one\""
+            NEWLINE@108..109 "\n"
+        END_KW@109..112 "end"
+    NEWLINE@112..113 "\n"
+    ASSIGN_STMT@113..142
+      NAME_REF@113..114
+        LNAME@113..114 "z"
+      WHITESPACE@114..115 " "
+      EQ@115..116 "="
+      WHITESPACE@116..117 " "
+      TRY_EXPR@117..142
+        TRY_KW@117..120 "try"
+        BLOCK@120..127
+          NEWLINE@120..121 "\n"
+          WHITESPACE@121..123 "  "
+          EXPR_STMT@123..126
+            CALL_EXPR@123..126
+              NAME_REF@123..124
+                LNAME@123..124 "f"
+              ARG_LIST@124..126
+                L_PAREN@124..125 "("
+                R_PAREN@125..126 ")"
+          NEWLINE@126..127 "\n"
+        CATCH_CLAUSE@127..139
+          CATCH_KW@127..132 "catch"
+          BLOCK@132..139
+            NEWLINE@132..133 "\n"
+            WHITESPACE@133..135 "  "
+            EXPR_STMT@135..138
+              LITERAL@135..138
+                NIL_KW@135..138 "nil"
+            NEWLINE@138..139 "\n"
+        END_KW@139..142 "end"
+    NEWLINE@142..143 "\n"
+    ASSIGN_STMT@143..162
+      NAME_REF@143..144
+        LNAME@143..144 "w"
+      WHITESPACE@144..145 " "
+      EQ@145..146 "="
+      WHITESPACE@146..147 " "
+      UNLESS_EXPR@147..162
+        UNLESS_KW@147..153 "unless"
+        WHITESPACE@153..154 " "
+        NAME_REF@154..155
+          LNAME@154..155 "a"
+        SEMI@155..156 ";"
+        BLOCK@156..159
+          WHITESPACE@156..157 " "
+          EXPR_STMT@157..158
+            LITERAL@157..158
+              NUMBER@157..158 "1"
+          WHITESPACE@158..159 " "
+        END_KW@159..162 "end"
+    NEWLINE@162..163 "\n"
+    ASSIGN_STMT@163..186
+      NAME_REF@163..164
+        LNAME@163..164 "v"
+      WHITESPACE@164..165 " "
+      EQ@165..166 "="
+      WHITESPACE@166..167 " "
+      COND_EXPR@167..186
+        COND_KW@167..171 "cond"
+        NEWLINE@171..172 "\n"
+        COND_CLAUSE@172..183
+          WHEN_KW@172..176 "when"
+          WHITESPACE@176..177 " "
+          NAME_REF@177..178
+            LNAME@177..178 "a"
+          BLOCK@178..183
+            NEWLINE@178..179 "\n"
+            WHITESPACE@179..181 "  "
+            EXPR_STMT@181..182
+              LITERAL@181..182
+                NUMBER@181..182 "1"
+            NEWLINE@182..183 "\n"
+        END_KW@183..186 "end"
+    NEWLINE@186..187 "\n"
+  EOF@187..187 ""

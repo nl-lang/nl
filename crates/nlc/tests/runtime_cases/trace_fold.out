@@ -1,0 +1,5 @@
+stack traceback:
+	trace_fold.nl:5: in function <trace_fold.nl:5>
+	nl_helpers.lua:3: in function <nl_helpers.lua:2>
+	trace_fold.nl:7: in function <trace_fold.nl:6>
+	trace_fold.nl:6: in main chunk

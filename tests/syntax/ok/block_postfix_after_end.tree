@@ -1,0 +1,47 @@
+SOURCE_FILE@0..102
+  BLOCK@0..102
+    COMMENT@0..54 "# Postfix operators may follow the `end` of a trailing"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..63 "# block."
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..101
+      NAME_REF@64..69
+        LNAME@64..69 "total"
+      WHITESPACE@69..70 " "
+      EQ@70..71 "="
+      WHITESPACE@71..72 " "
+      FIELD_EXPR@72..101
+        CALL_EXPR@72..97
+          FIELD_EXPR@72..80
+            NAME_REF@72..76
+              LNAME@72..76 "list"
+            DOT@76..77 "."
+            LNAME@77..80 "map"
+          WHITESPACE@80..81 " "
+          TRAILING_BLOCK@81..97
+            DO_KW@81..83 "do"
+            WHITESPACE@83..84 " "
+            BLOCK_PARAMS@84..87
+              PIPE@84..85 "|"
+              PARAM@85..86
+                BIND_PAT@85..86
+                  NAME@85..86
+                    LNAME@85..86 "x"
+              PIPE@86..87 "|"
+            BLOCK@87..94
+              WHITESPACE@87..88 " "
+              EXPR_STMT@88..93
+                BIN_EXPR@88..93
+                  NAME_REF@88..89
+                    LNAME@88..89 "x"
+                  WHITESPACE@89..90 " "
+                  STAR@90..91 "*"
+                  WHITESPACE@91..92 " "
+                  LITERAL@92..93
+                    NUMBER@92..93 "2"
+              WHITESPACE@93..94 " "
+            END_KW@94..97 "end"
+        DOT@97..98 "."
+        LNAME@98..101 "sum"
+    NEWLINE@101..102 "\n"
+  EOF@102..102 ""

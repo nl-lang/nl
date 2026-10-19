@@ -1,0 +1,8 @@
+counter.lua run 1
+counter.lua run 2
+10
+20
+exports.nl run
+7
+exports.nl run
+7

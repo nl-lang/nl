@@ -1,0 +1,40 @@
+SOURCE_FILE@0..112
+  BLOCK@0..112
+    COMMENT@0..57 "# After the `:` of a method call and in a Lua path, every"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..81 "# word is a plain name."
+    NEWLINE@81..82 "\n"
+    EXPR_STMT@82..91
+      METHOD_CALL@82..91
+        NAME_REF@82..85
+          LNAME@82..85 "obj"
+        COLON@85..86 ":"
+        LNAME@86..89 "end"
+        ARG_LIST@89..91
+          L_PAREN@89..90 "("
+          R_PAREN@90..91 ")"
+    NEWLINE@91..92 "\n"
+    EXPR_STMT@92..100
+      LUA_PATH@92..100
+        COLON@92..93 ":"
+        LNAME@93..97 "type"
+        LUA_CALL@97..100
+          ARG_LIST@97..100
+            L_PAREN@97..98 "("
+            NAME_REF@98..99
+              LNAME@98..99 "x"
+            R_PAREN@99..100 ")"
+    NEWLINE@100..101 "\n"
+    EXPR_STMT@101..111
+      LUA_PATH@101..111
+        COLON@101..102 ":"
+        LNAME@102..104 "os"
+        LUA_FIELD@104..109
+          DOT@104..105 "."
+          LNAME@105..109 "time"
+        LUA_CALL@109..111
+          ARG_LIST@109..111
+            L_PAREN@109..110 "("
+            R_PAREN@110..111 ")"
+    NEWLINE@111..112 "\n"
+  EOF@112..112 ""

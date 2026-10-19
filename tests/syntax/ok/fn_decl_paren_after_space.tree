@@ -1,0 +1,31 @@
+SOURCE_FILE@0..131
+  BLOCK@0..131
+    COMMENT@0..54 "# A `(` on the same line after the declared name opens"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..104 "# the parameter list, with or without whitespace."
+    NEWLINE@104..105 "\n"
+    FN_DECL@105..130
+      FN_KW@105..107 "fn"
+      WHITESPACE@107..108 " "
+      NAME@108..111
+        LNAME@108..111 "foo"
+      WHITESPACE@111..112 " "
+      PARAM_LIST@112..126
+        L_PAREN@112..113 "("
+        PARAM@113..125
+          BRACE_PAT@113..125
+            L_CURLY@113..114 "{"
+            PAT_FIELD@114..124
+              LNAME@114..117 "key"
+              COLON@117..118 ":"
+              WHITESPACE@118..119 " "
+              BIND_PAT@119..124
+                NAME@119..124
+                  LNAME@119..124 "value"
+            R_CURLY@124..125 "}"
+        R_PAREN@125..126 ")"
+      BLOCK@126..127
+        NEWLINE@126..127 "\n"
+      END_KW@127..130 "end"
+    NEWLINE@130..131 "\n"
+  EOF@131..131 ""

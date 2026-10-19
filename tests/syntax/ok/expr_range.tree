@@ -1,0 +1,83 @@
+SOURCE_FILE@0..124
+  BLOCK@0..124
+    COMMENT@0..42 "# `..` and `...` above `|>` and below `|`;"
+    NEWLINE@42..43 "\n"
+    COMMENT@43..70 "# `-3..-1` is `(-3)..(-1)`."
+    NEWLINE@70..71 "\n"
+    ASSIGN_STMT@71..87
+      NAME_REF@71..72
+        LNAME@71..72 "x"
+      WHITESPACE@72..73 " "
+      EQ@73..74 "="
+      WHITESPACE@74..75 " "
+      BIN_EXPR@75..87
+        BIN_EXPR@75..80
+          NAME_REF@75..76
+            LNAME@75..76 "a"
+          WHITESPACE@76..77 " "
+          PLUS@77..78 "+"
+          WHITESPACE@78..79 " "
+          LITERAL@79..80
+            NUMBER@79..80 "1"
+        DOT2@80..82 ".."
+        BIN_EXPR@82..87
+          NAME_REF@82..83
+            LNAME@82..83 "b"
+          WHITESPACE@83..84 " "
+          MINUS@84..85 "-"
+          WHITESPACE@85..86 " "
+          LITERAL@86..87
+            NUMBER@86..87 "1"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..97
+      NAME_REF@88..89
+        LNAME@88..89 "x"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      BIN_EXPR@92..97
+        LITERAL@92..93
+          NUMBER@92..93 "1"
+        DOT3@93..96 "..."
+        NAME_REF@96..97
+          LNAME@96..97 "n"
+    NEWLINE@97..98 "\n"
+    ASSIGN_STMT@98..108
+      NAME_REF@98..99
+        LNAME@98..99 "x"
+      WHITESPACE@99..100 " "
+      EQ@100..101 "="
+      WHITESPACE@101..102 " "
+      BIN_EXPR@102..108
+        PREFIX_EXPR@102..104
+          MINUS@102..103 "-"
+          LITERAL@103..104
+            NUMBER@103..104 "3"
+        DOT2@104..106 ".."
+        PREFIX_EXPR@106..108
+          MINUS@106..107 "-"
+          LITERAL@107..108
+            NUMBER@107..108 "1"
+    NEWLINE@108..109 "\n"
+    ASSIGN_STMT@109..123
+      NAME_REF@109..110
+        LNAME@109..110 "x"
+      WHITESPACE@110..111 " "
+      EQ@111..112 "="
+      WHITESPACE@112..113 " "
+      BIN_EXPR@113..123
+        BIN_EXPR@113..118
+          NAME_REF@113..114
+            LNAME@113..114 "a"
+          WHITESPACE@114..115 " "
+          PIPE@115..116 "|"
+          WHITESPACE@116..117 " "
+          NAME_REF@117..118
+            LNAME@117..118 "b"
+        WHITESPACE@118..119 " "
+        DOT2@119..121 ".."
+        WHITESPACE@121..122 " "
+        NAME_REF@122..123
+          LNAME@122..123 "c"
+    NEWLINE@123..124 "\n"
+  EOF@124..124 ""

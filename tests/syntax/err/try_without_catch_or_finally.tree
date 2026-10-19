@@ -1,0 +1,28 @@
+SOURCE_FILE@0..58
+  BLOCK@0..58
+    COMMENT@0..39 "# `try` needs a `catch` or a `finally`."
+    NEWLINE@39..40 "\n"
+    ASSIGN_STMT@40..57
+      NAME_REF@40..41
+        LNAME@40..41 "x"
+      WHITESPACE@41..42 " "
+      EQ@42..43 "="
+      WHITESPACE@43..44 " "
+      TRY_EXPR@44..57
+        TRY_KW@44..47 "try"
+        BLOCK@47..54
+          NEWLINE@47..48 "\n"
+          WHITESPACE@48..50 "  "
+          EXPR_STMT@50..53
+            CALL_EXPR@50..53
+              NAME_REF@50..51
+                LNAME@50..51 "f"
+              ARG_LIST@51..53
+                L_PAREN@51..52 "("
+                R_PAREN@52..53 ")"
+          NEWLINE@53..54 "\n"
+        END_KW@54..57 "end"
+    NEWLINE@57..58 "\n"
+  EOF@58..58 ""
+---
+error@44..47 2:5: `try` needs at least one `catch` or a `finally`

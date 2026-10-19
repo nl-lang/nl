@@ -1,0 +1,20 @@
+SOURCE_FILE@0..150
+  BLOCK@0..150
+    COMMENT@0..64 "# `x =~ re` as a statement, with a space after `~`, is the match"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..141 "# operator habit; `x = ~re` is an assignment (see ok/assign_bitwise_not.nl)."
+    NEWLINE@141..142 "\n"
+    EXPR_STMT@142..149
+      NAME_REF@142..143
+        LNAME@142..143 "x"
+      WHITESPACE@143..144 " "
+      ERROR_NODE@144..149
+        EQ@144..145 "="
+        TILDE@145..146 "~"
+        WHITESPACE@146..147 " "
+        NAME_REF@147..149
+          LNAME@147..149 "re"
+    NEWLINE@149..150 "\n"
+  EOF@150..150 ""
+---
+error@144..145 3:3: there is no match operator `=~`: use `re.test(x)` or `x.match(re)`

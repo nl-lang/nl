@@ -1,0 +1,16 @@
+SOURCE_FILE@0..158
+  BLOCK@0..158
+    COMMENT@0..57 "# A content line that starts with `\"\"\"` escapes the first"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..120 "# quote; a `\"\"\"` that is not at the start of its line is text."
+    NEWLINE@120..121 "\n"
+    ASSIGN_STMT@121..157
+      NAME_REF@121..122
+        LNAME@121..122 "s"
+      WHITESPACE@122..123 " "
+      EQ@123..124 "="
+      WHITESPACE@124..125 " "
+      LITERAL@125..157
+        STRING@125..157 "\"\"\"\n  \\\"\"\"\n  text \"\"\" inside\n\"\"\""
+    NEWLINE@157..158 "\n"
+  EOF@158..158 ""

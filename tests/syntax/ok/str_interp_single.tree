@@ -1,0 +1,17 @@
+SOURCE_FILE@0..85
+  BLOCK@0..85
+    COMMENT@0..58 "# `#{ expr }` in a `\"…\"` string: STR_BEGIN expr STR_END."
+    NEWLINE@58..59 "\n"
+    ASSIGN_STMT@59..84
+      NAME_REF@59..60
+        LNAME@59..60 "s"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      INTERP_STRING@63..84
+        STR_BEGIN@63..81 "\"variable a was #{"
+        NAME_REF@81..82
+          LNAME@81..82 "a"
+        STR_END@82..84 "}\""
+    NEWLINE@84..85 "\n"
+  EOF@85..85 ""

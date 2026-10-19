@@ -1,0 +1,36 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..61 "# A number directly followed by a word character is an error."
+    NEWLINE@61..62 "\n"
+    ASSIGN_STMT@62..69
+      NAME_REF@62..63
+        LNAME@62..63 "a"
+      WHITESPACE@63..64 " "
+      EQ@64..65 "="
+      WHITESPACE@65..66 " "
+      LITERAL@66..69
+        NUMBER@66..69 "3px"
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..78
+      NAME_REF@70..71
+        LNAME@70..71 "b"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      LITERAL@74..78
+        NUMBER@74..78 "0x1g"
+    NEWLINE@78..79 "\n"
+    ASSIGN_STMT@79..85
+      NAME_REF@79..80
+        LNAME@79..80 "c"
+      WHITESPACE@80..81 " "
+      EQ@81..82 "="
+      WHITESPACE@82..83 " "
+      LITERAL@83..85
+        NUMBER@83..85 "1e"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""
+---
+error@66..69 2:5: `3px` is not a number: a number cannot be directly followed by a letter or `_`
+error@74..78 3:5: `0x1g` is not a number: a number cannot be directly followed by a letter or `_`
+error@83..85 4:5: `1e` is not a number: an exponent needs digits, as in `1e5` or `1e-3`

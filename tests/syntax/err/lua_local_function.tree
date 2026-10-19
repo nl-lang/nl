@@ -1,0 +1,54 @@
+SOURCE_FILE@0..157
+  BLOCK@0..157
+    COMMENT@0..67 "# `local f = function(x) … end` is Lua; one error for both words,"
+    NEWLINE@67..68 "\n"
+    COMMENT@68..115 "# and the function's `end` closes the function."
+    NEWLINE@115..116 "\n"
+    LET_DECL@116..145
+      ERROR_NODE@116..121
+        LNAME@116..121 "local"
+      WHITESPACE@121..122 " "
+      BIND_PAT@122..123
+        NAME@122..123
+          LNAME@122..123 "f"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      EXPR_LIST@126..145
+        FN_EXPR@126..145
+          ERROR_NODE@126..134
+            LNAME@126..134 "function"
+          PARAM_LIST@134..137
+            L_PAREN@134..135 "("
+            PARAM@135..136
+              BIND_PAT@135..136
+                NAME@135..136
+                  LNAME@135..136 "x"
+            R_PAREN@136..137 ")"
+          BLOCK@137..142
+            NEWLINE@137..138 "\n"
+            WHITESPACE@138..140 "  "
+            EXPR_STMT@140..141
+              NAME_REF@140..141
+                LNAME@140..141 "x"
+            NEWLINE@141..142 "\n"
+          END_KW@142..145 "end"
+    NEWLINE@145..146 "\n"
+    EXPR_STMT@146..156
+      COMMAND_CALL@146..156
+        NAME_REF@146..151
+          LNAME@146..151 "print"
+        WHITESPACE@151..152 " "
+        COMMAND_ARGS@152..156
+          CALL_EXPR@152..156
+            NAME_REF@152..153
+              LNAME@152..153 "f"
+            ARG_LIST@153..156
+              L_PAREN@153..154 "("
+              LITERAL@154..155
+                NUMBER@154..155 "1"
+              R_PAREN@155..156 ")"
+    NEWLINE@156..157 "\n"
+  EOF@157..157 ""
+---
+error@116..121 3:1: NL declares variables with `let` and writes functions with `fn`: write `let f = fn(x) … end`

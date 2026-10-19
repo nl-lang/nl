@@ -1,0 +1,116 @@
+SOURCE_FILE@0..202
+  BLOCK@0..202
+    COMMENT@0..53 "# A trailing block after the first name, a `.name`, a"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..117 "# `:name` or a call step; it is the last argument of that call."
+    NEWLINE@117..118 "\n"
+    EXPR_STMT@118..136
+      LUA_PATH@118..136
+        COLON@118..119 ":"
+        LNAME@119..123 "each"
+        WHITESPACE@123..124 " "
+        LUA_CALL@124..136
+          TRAILING_BLOCK@124..136
+            DO_KW@124..126 "do"
+            WHITESPACE@126..127 " "
+            BLOCK_PARAMS@127..130
+              PIPE@127..128 "|"
+              PARAM@128..129
+                BIND_PAT@128..129
+                  NAME@128..129
+                    LNAME@128..129 "x"
+              PIPE@129..130 "|"
+            BLOCK@130..133
+              WHITESPACE@130..131 " "
+              EXPR_STMT@131..132
+                NAME_REF@131..132
+                  LNAME@131..132 "x"
+              WHITESPACE@132..133 " "
+            END_KW@133..136 "end"
+    NEWLINE@136..137 "\n"
+    EXPR_STMT@137..157
+      LUA_PATH@137..157
+        COLON@137..138 ":"
+        LNAME@138..139 "t"
+        LUA_FIELD@139..144
+          DOT@139..140 "."
+          LNAME@140..144 "each"
+        WHITESPACE@144..145 " "
+        LUA_CALL@145..157
+          TRAILING_BLOCK@145..157
+            DO_KW@145..147 "do"
+            WHITESPACE@147..148 " "
+            BLOCK_PARAMS@148..151
+              PIPE@148..149 "|"
+              PARAM@149..150
+                BIND_PAT@149..150
+                  NAME@149..150
+                    LNAME@149..150 "x"
+              PIPE@150..151 "|"
+            BLOCK@151..154
+              WHITESPACE@151..152 " "
+              EXPR_STMT@152..153
+                NAME_REF@152..153
+                  LNAME@152..153 "x"
+              WHITESPACE@153..154 " "
+            END_KW@154..157 "end"
+    NEWLINE@157..158 "\n"
+    EXPR_STMT@158..178
+      LUA_PATH@158..178
+        COLON@158..159 ":"
+        LNAME@159..160 "t"
+        LUA_METHOD@160..178
+          COLON@160..161 ":"
+          LNAME@161..165 "each"
+          WHITESPACE@165..166 " "
+          TRAILING_BLOCK@166..178
+            DO_KW@166..168 "do"
+            WHITESPACE@168..169 " "
+            BLOCK_PARAMS@169..172
+              PIPE@169..170 "|"
+              PARAM@170..171
+                BIND_PAT@170..171
+                  NAME@170..171
+                    LNAME@170..171 "x"
+              PIPE@171..172 "|"
+            BLOCK@172..175
+              WHITESPACE@172..173 " "
+              EXPR_STMT@173..174
+                NAME_REF@173..174
+                  LNAME@173..174 "x"
+              WHITESPACE@174..175 " "
+            END_KW@175..178 "end"
+    NEWLINE@178..179 "\n"
+    EXPR_STMT@179..201
+      LUA_PATH@179..201
+        COLON@179..180 ":"
+        LNAME@180..181 "t"
+        LUA_FIELD@181..185
+          DOT@181..182 "."
+          LNAME@182..185 "map"
+        LUA_CALL@185..201
+          ARG_LIST@185..188
+            L_PAREN@185..186 "("
+            NAME_REF@186..187
+              LNAME@186..187 "f"
+            R_PAREN@187..188 ")"
+          WHITESPACE@188..189 " "
+          TRAILING_BLOCK@189..201
+            DO_KW@189..191 "do"
+            WHITESPACE@191..192 " "
+            BLOCK_PARAMS@192..195
+              PIPE@192..193 "|"
+              PARAM@193..194
+                BIND_PAT@193..194
+                  NAME@193..194
+                    LNAME@193..194 "x"
+              PIPE@194..195 "|"
+            BLOCK@195..198
+              WHITESPACE@195..196 " "
+              EXPR_STMT@196..197
+                NAME_REF@196..197
+                  LNAME@196..197 "x"
+              WHITESPACE@197..198 " "
+            END_KW@198..201 "end"
+    NEWLINE@201..202 "\n"
+  EOF@202..202 ""

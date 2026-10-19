@@ -1,0 +1,4 @@
+1
+doc
+# inside a string is not a comment
+# nor in a raw string

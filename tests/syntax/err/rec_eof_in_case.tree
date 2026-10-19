@@ -1,0 +1,30 @@
+SOURCE_FILE@0..63
+  BLOCK@0..63
+    COMMENT@0..42 "# Recovery: the file ends inside a `case`."
+    NEWLINE@42..43 "\n"
+    EXPR_STMT@43..63
+      CASE_EXPR@43..63
+        CASE_KW@43..47 "case"
+        WHITESPACE@47..48 " "
+        NAME_REF@48..49
+          LNAME@48..49 "x"
+        NEWLINE@49..50 "\n"
+        WHEN_CLAUSE@50..63
+          WHEN_KW@50..54 "when"
+          WHITESPACE@54..55 " "
+          LITERAL@55..56
+            NUMBER@55..56 "1"
+          BLOCK@56..63
+            NEWLINE@56..57 "\n"
+            WHITESPACE@57..59 "  "
+            EXPR_STMT@59..62
+              CALL_EXPR@59..62
+                NAME_REF@59..60
+                  LNAME@59..60 "y"
+                ARG_LIST@60..62
+                  L_PAREN@60..61 "("
+                  R_PAREN@61..62 ")"
+            NEWLINE@62..63 "\n"
+  EOF@63..63 ""
+---
+error@63..63 5:1: the `case` on line 2 has no `end`: the file ends first

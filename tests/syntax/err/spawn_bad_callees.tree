@@ -1,0 +1,115 @@
+SOURCE_FILE@0..200
+  BLOCK@0..200
+    COMMENT@0..55 "# The callee of `spawn` ends in a lowercase name; a Lua"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..109 "# path, a method call or an index is not a call_path."
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..126
+      NAME_REF@110..111
+        LNAME@110..111 "a"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      SPAWN_EXPR@114..126
+        SPAWN_KW@114..119 "spawn"
+        WHITESPACE@119..120 " "
+        CALL_EXPR@120..126
+          NAME_REF@120..123
+            CNAME@120..123 "Foo"
+          ARG_LIST@123..126
+            L_PAREN@123..124 "("
+            NAME_REF@124..125
+              LNAME@124..125 "x"
+            R_PAREN@125..126 ")"
+    NEWLINE@126..127 "\n"
+    ASSIGN_STMT@127..144
+      NAME_REF@127..128
+        LNAME@127..128 "b"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      SPAWN_EXPR@131..144
+        SPAWN_KW@131..136 "spawn"
+        WHITESPACE@136..137 " "
+        CALL_EXPR@137..144
+          SELF_EXPR@137..141
+            SELF_KW@137..141 "self"
+          ARG_LIST@141..144
+            L_PAREN@141..142 "("
+            NAME_REF@142..143
+              LNAME@142..143 "x"
+            R_PAREN@143..144 ")"
+    NEWLINE@144..145 "\n"
+    ASSIGN_STMT@145..164
+      NAME_REF@145..146
+        LNAME@145..146 "c"
+      WHITESPACE@146..147 " "
+      EQ@147..148 "="
+      WHITESPACE@148..149 " "
+      SPAWN_EXPR@149..164
+        SPAWN_KW@149..154 "spawn"
+        WHITESPACE@154..155 " "
+        ERROR_NODE@155..164
+          LUA_PATH@155..164
+            COLON@155..156 ":"
+            LNAME@156..159 "lua"
+            LUA_FIELD@159..161
+              DOT@159..160 "."
+              LNAME@160..161 "f"
+            LUA_CALL@161..164
+              ARG_LIST@161..164
+                L_PAREN@161..162 "("
+                NAME_REF@162..163
+                  LNAME@162..163 "x"
+                R_PAREN@163..164 ")"
+    NEWLINE@164..165 "\n"
+    ASSIGN_STMT@165..181
+      NAME_REF@165..166
+        LNAME@165..166 "d"
+      WHITESPACE@166..167 " "
+      EQ@167..168 "="
+      WHITESPACE@168..169 " "
+      SPAWN_EXPR@169..181
+        SPAWN_KW@169..174 "spawn"
+        WHITESPACE@174..175 " "
+        METHOD_CALL@175..181
+          NAME_REF@175..176
+            LNAME@175..176 "x"
+          COLON@176..177 ":"
+          LNAME@177..178 "m"
+          ARG_LIST@178..181
+            L_PAREN@178..179 "("
+            LITERAL@179..180
+              NUMBER@179..180 "1"
+            R_PAREN@180..181 ")"
+    NEWLINE@181..182 "\n"
+    ASSIGN_STMT@182..199
+      NAME_REF@182..183
+        LNAME@182..183 "e"
+      WHITESPACE@183..184 " "
+      EQ@184..185 "="
+      WHITESPACE@185..186 " "
+      CALL_EXPR@186..199
+        INDEX_EXPR@186..196
+          SPAWN_EXPR@186..193
+            SPAWN_KW@186..191 "spawn"
+            WHITESPACE@191..192 " "
+            NAME_REF@192..193
+              LNAME@192..193 "t"
+          L_BRACK@193..194 "["
+          LITERAL@194..195
+            NUMBER@194..195 "1"
+          R_BRACK@195..196 "]"
+        ARG_LIST@196..199
+          L_PAREN@196..197 "("
+          NAME_REF@197..198
+            LNAME@197..198 "x"
+          R_PAREN@198..199 ")"
+    NEWLINE@199..200 "\n"
+  EOF@200..200 ""
+---
+error@120..123 3:11: the callee of `spawn` must end in a lowercase function name, such as `spawn f(x)` or `spawn Nav.find(a)`
+error@137..141 4:11: the callee of `spawn` must end in a lowercase function name, such as `spawn f(x)` or `spawn Nav.find(a)`
+error@155..156 5:11: `spawn` takes a function name with `.member` steps; for a Lua function use `Worker.run`
+error@176..177 6:12: `spawn` calls a function by its name; a method call `x:m` cannot be sent to a worker
+error@193..194 7:12: `spawn` takes a function name with `.member` steps, not an index; for a computed function use `Worker.run`

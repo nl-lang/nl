@@ -1,0 +1,62 @@
+# The VM fork: x64 and arm64, JIT on and off.
+# The JIT on/off split is inside each script: every suite builds the fork
+# twice, with and without -DLUAJIT_DISABLE_JIT, and runs the JIT build with
+# -joff as well.
+#
+# Prerequisite: the fork's changes must be committed in the LuaJIT
+# submodule, pushed, and its gitlink updated here. Until then the checkout
+# below gets stock LuaJIT and every step fails.
+name: vm
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  vm:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest        # x64
+          - os: ubuntu-24.04-arm     # arm64
+          - os: macos-latest         # arm64
+    runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+      # .gitmodules uses SSH URLs; fetch the submodules over HTTPS instead.
+      # luajit-src-rs's own luajit2 submodule is not needed: the scripts copy
+      # LuaJIT/ in its place.
+      - name: Submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init LuaJIT luajit-src-rs
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rsync
+      - name: Rust side of the boundary (nl_capi C ABI, nl_sys)
+        run: |
+          cargo test -p nl_capi --lib capi
+          cargo check -p nl_sys
+          cargo test -p nl_sys
+      - name: VM tests (C API, events, threads; ASan+UBSan, TSan; real runtime, e2e, conformance)
+        run: tests/vm/run.sh
+      - name: Lua compatibility (upstream suite, stock bytecode corpus; fake and real runtime)
+        run: tests/lua-compat/run.sh
+      - name: nl_sys linked against the fork
+        run: tests/vm/nl_sys_link/run.sh --stock
+      - name: Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.os }}
+          path: |
+            target/vm/*.log
+            target/vm/*.out
+            target/vm/conform/
+            target/lua-compat/*.log
+            target/lua-compat/results/
+          if-no-files-found: ignore

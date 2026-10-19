@@ -1,0 +1,88 @@
+SOURCE_FILE@0..176
+  BLOCK@0..176
+    COMMENT@0..54 "# A Lua path is an assignment target when it ends in a"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..85 "# `.name` or an `[expr]` step."
+    NEWLINE@85..86 "\n"
+    ASSIGN_STMT@86..108
+      LUA_PATH@86..104
+        COLON@86..87 ":"
+        LNAME@87..93 "config"
+        LUA_FIELD@93..104
+          DOT@93..94 "."
+          ONAME@94..104 "maxPlayers"
+      WHITESPACE@104..105 " "
+      EQ@105..106 "="
+      WHITESPACE@106..107 " "
+      LITERAL@107..108
+        NUMBER@107..108 "8"
+    NEWLINE@108..109 "\n"
+    ASSIGN_STMT@109..127
+      LUA_PATH@109..123
+        COLON@109..110 ":"
+        LNAME@110..117 "players"
+        LUA_INDEX@117..120
+          L_BRACK@117..118 "["
+          LITERAL@118..119
+            NUMBER@118..119 "1"
+          R_BRACK@119..120 "]"
+        LUA_FIELD@120..123
+          DOT@120..121 "."
+          LNAME@121..123 "hp"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      LITERAL@126..127
+        NUMBER@126..127 "0"
+    NEWLINE@127..128 "\n"
+    ASSIGN_STMT@128..155
+      LUA_PATH@128..148
+        COLON@128..129 ":"
+        LNAME@129..133 "game"
+        LUA_FIELD@133..137
+          DOT@133..134 "."
+          LNAME@134..137 "get"
+        LUA_CALL@137..142
+          ARG_LIST@137..142
+            L_PAREN@137..138 "("
+            LITERAL@138..141
+              STRING@138..141 "\"x\""
+            R_PAREN@141..142 ")"
+        LUA_FIELD@142..148
+          DOT@142..143 "."
+          LNAME@143..148 "ready"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      LITERAL@151..155
+        TRUE_KW@151..155 "true"
+    NEWLINE@155..156 "\n"
+    ASSIGN_STMT@156..165
+      LUA_PATH@156..161
+        COLON@156..157 ":"
+        LNAME@157..158 "t"
+        LUA_INDEX@158..161
+          L_BRACK@158..159 "["
+          NAME_REF@159..160
+            LNAME@159..160 "k"
+          R_BRACK@160..161 "]"
+      WHITESPACE@161..162 " "
+      EQ@162..163 "="
+      WHITESPACE@163..164 " "
+      LITERAL@164..165
+        NUMBER@164..165 "1"
+    NEWLINE@165..166 "\n"
+    COMPOUND_ASSIGN_STMT@166..175
+      LUA_PATH@166..170
+        COLON@166..167 ":"
+        LNAME@167..168 "a"
+        LUA_FIELD@168..170
+          DOT@168..169 "."
+          LNAME@169..170 "b"
+      WHITESPACE@170..171 " "
+      PLUS_EQ@171..173 "+="
+      WHITESPACE@173..174 " "
+      LITERAL@174..175
+        NUMBER@174..175 "1"
+    NEWLINE@175..176 "\n"
+  EOF@176..176 ""

@@ -1,0 +1,40 @@
+SOURCE_FILE@0..59
+  BLOCK@0..59
+    COMMENT@0..39 "# `;` is an error in a bracket context."
+    NEWLINE@39..40 "\n"
+    EXPR_STMT@40..47
+      CALL_EXPR@40..47
+        NAME_REF@40..41
+          LNAME@40..41 "f"
+        ARG_LIST@41..47
+          L_PAREN@41..42 "("
+          NAME_REF@42..43
+            LNAME@42..43 "a"
+          ERROR_NODE@43..44
+            SEMI@43..44 ";"
+          WHITESPACE@44..45 " "
+          NAME_REF@45..46
+            LNAME@45..46 "b"
+          R_PAREN@46..47 ")"
+    NEWLINE@47..48 "\n"
+    ASSIGN_STMT@48..58
+      NAME_REF@48..49
+        LNAME@48..49 "t"
+      WHITESPACE@49..50 " "
+      EQ@50..51 "="
+      WHITESPACE@51..52 " "
+      LIST_EXPR@52..58
+        L_BRACK@52..53 "["
+        LITERAL@53..54
+          NUMBER@53..54 "1"
+        ERROR_NODE@54..55
+          SEMI@54..55 ";"
+        WHITESPACE@55..56 " "
+        LITERAL@56..57
+          NUMBER@56..57 "2"
+        R_BRACK@57..58 "]"
+    NEWLINE@58..59 "\n"
+  EOF@59..59 ""
+---
+error@43..44 2:4: `;` cannot separate items inside brackets: use `,`
+error@54..55 3:7: `;` cannot separate items inside brackets: use `,`

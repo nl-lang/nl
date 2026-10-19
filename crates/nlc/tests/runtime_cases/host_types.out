@@ -1,0 +1,37 @@
+gettype	Exception	true
+gettype	LuaError	true
+gettype	TypeError	true
+gettype	MatchError	true
+gettype	ConversionError	true
+gettype	RegexError	true
+gettype	EncodingError	true
+gettype	SendError	true
+gettype	WorkerError	true
+gettype	Range	true
+gettype	Task	true
+gettype	Regex	true
+gettype	Number	false
+gettype	Nil	false
+gettype	Any	false
+gettype	To	false
+gettype	check	false
+gettype	Sprite	false
+Range is	true	Task is	true
+settype	ok
+settype again	ok
+second metatable	settype: the host type name 'Sprite' is already registered for another metatable
+built-in name	settype: 'Exception' is the name of a built-in type
+Lua type name	settype: 'Number' is the name of a built-in type
+nil metatable	settype: the metatable of a host type must be a table, not nil
+bad name	settype: the name of a host type must be an identifier, not Number
+bad parent	settype: the parent of host type 'Kid' must be the metatable of a host type
+child	ok
+cycle	settype: host type 'Sprite' cannot be its own ancestor
+gettype Sprite	true	Exception	true
+typeof	Sprite	Kid	true	false
+new nil fields	cannot construct Exception: the fields must be given as a table, not nil
+new Task	cannot construct Task: it is not a struct
+new plain table	cannot construct a Table value: it is not a struct
+exception unknown	exception: no exception type named NoSuchType is known (nl_gettype)
+exception not one	exception: Sprite is not an exception type
+exception	TypeError	x

@@ -1,0 +1,52 @@
+SOURCE_FILE@0..138
+  BLOCK@0..138
+    COMMENT@0..53 "# `struct A : B` names the parent; spacing around `:`"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..72 "# does not matter."
+    NEWLINE@72..73 "\n"
+    STRUCT_DECL@73..93
+      STRUCT_KW@73..79 "struct"
+      WHITESPACE@79..80 " "
+      NAME@80..83
+        CNAME@80..83 "Bar"
+      WHITESPACE@83..84 " "
+      STRUCT_PARENT@84..89
+        COLON@84..85 ":"
+        WHITESPACE@85..86 " "
+        NAMED_TYPE@86..89
+          QUAL_NAME@86..89
+            CNAME@86..89 "Foo"
+      NEWLINE@89..90 "\n"
+      END_KW@90..93 "end"
+    NEWLINE@93..94 "\n"
+    STRUCT_DECL@94..113
+      STRUCT_KW@94..100 "struct"
+      WHITESPACE@100..101 " "
+      NAME@101..104
+        CNAME@101..104 "Baz"
+      WHITESPACE@104..105 " "
+      STRUCT_PARENT@105..109
+        COLON@105..106 ":"
+        NAMED_TYPE@106..109
+          QUAL_NAME@106..109
+            CNAME@106..109 "Foo"
+      NEWLINE@109..110 "\n"
+      END_KW@110..113 "end"
+    NEWLINE@113..114 "\n"
+    STRUCT_DECL@114..137
+      STRUCT_KW@114..120 "struct"
+      WHITESPACE@120..121 " "
+      NAME@121..124
+        CNAME@121..124 "Qux"
+      STRUCT_PARENT@124..133
+        COLON@124..125 ":"
+        WHITESPACE@125..126 " "
+        NAMED_TYPE@126..133
+          QUAL_NAME@126..133
+            CNAME@126..129 "Lib"
+            DOT@129..130 "."
+            CNAME@130..133 "Foo"
+      NEWLINE@133..134 "\n"
+      END_KW@134..137 "end"
+    NEWLINE@137..138 "\n"
+  EOF@138..138 ""

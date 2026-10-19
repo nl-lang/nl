@@ -1,0 +1,22 @@
+[package]
+name = "nl_text"
+description = "NL's UTF-8 string operations behind a C ABI, exported through nl_capi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+# The workspace lints, except that unsafe code is denied instead of forbidden,
+# so that the C ABI (src/abi.rs) alone can allow it. Keep the rest in step
+# with [workspace.lints] in the root Cargo.toml.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"

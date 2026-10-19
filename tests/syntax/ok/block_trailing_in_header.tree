@@ -1,0 +1,54 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..56 "# `do` followed on the same line by `|` in a header is a"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..92 "# trailing block, not the Lua `do`."
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..132
+      IF_EXPR@93..132
+        IF_KW@93..95 "if"
+        WHITESPACE@95..96 " "
+        CALL_EXPR@96..122
+          FIELD_EXPR@96..105
+            NAME_REF@96..101
+              LNAME@96..101 "items"
+            DOT@101..102 "."
+            LNAME@102..105 "any"
+          WHITESPACE@105..106 " "
+          TRAILING_BLOCK@106..122
+            DO_KW@106..108 "do"
+            WHITESPACE@108..109 " "
+            BLOCK_PARAMS@109..112
+              PIPE@109..110 "|"
+              PARAM@110..111
+                BIND_PAT@110..111
+                  NAME@110..111
+                    LNAME@110..111 "x"
+              PIPE@111..112 "|"
+            BLOCK@112..119
+              WHITESPACE@112..113 " "
+              EXPR_STMT@113..118
+                BIN_EXPR@113..118
+                  NAME_REF@113..114
+                    LNAME@113..114 "x"
+                  WHITESPACE@114..115 " "
+                  GT@115..116 ">"
+                  WHITESPACE@116..117 " "
+                  LITERAL@117..118
+                    NUMBER@117..118 "0"
+              WHITESPACE@118..119 " "
+            END_KW@119..122 "end"
+        BLOCK@122..129
+          NEWLINE@122..123 "\n"
+          WHITESPACE@123..125 "  "
+          EXPR_STMT@125..128
+            CALL_EXPR@125..128
+              NAME_REF@125..126
+                LNAME@125..126 "g"
+              ARG_LIST@126..128
+                L_PAREN@126..127 "("
+                R_PAREN@127..128 ")"
+          NEWLINE@128..129 "\n"
+        END_KW@129..132 "end"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""

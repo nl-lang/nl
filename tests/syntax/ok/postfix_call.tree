@@ -1,0 +1,87 @@
+SOURCE_FILE@0..172
+  BLOCK@0..172
+    COMMENT@0..58 "# A call; a `(` on the same line after whitespace is still"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..124 "# a call; `*expr` spreads as the last argument; a trailing comma."
+    NEWLINE@124..125 "\n"
+    EXPR_STMT@125..128
+      CALL_EXPR@125..128
+        NAME_REF@125..126
+          LNAME@125..126 "f"
+        ARG_LIST@126..128
+          L_PAREN@126..127 "("
+          R_PAREN@127..128 ")"
+    NEWLINE@128..129 "\n"
+    EXPR_STMT@129..136
+      CALL_EXPR@129..136
+        NAME_REF@129..130
+          LNAME@129..130 "f"
+        ARG_LIST@130..136
+          L_PAREN@130..131 "("
+          NAME_REF@131..132
+            LNAME@131..132 "a"
+          COMMA@132..133 ","
+          WHITESPACE@133..134 " "
+          NAME_REF@134..135
+            LNAME@134..135 "b"
+          R_PAREN@135..136 ")"
+    NEWLINE@136..137 "\n"
+    EXPR_STMT@137..142
+      CALL_EXPR@137..142
+        NAME_REF@137..138
+          LNAME@137..138 "f"
+        WHITESPACE@138..139 " "
+        ARG_LIST@139..142
+          L_PAREN@139..140 "("
+          NAME_REF@140..141
+            LNAME@140..141 "x"
+          R_PAREN@141..142 ")"
+    NEWLINE@142..143 "\n"
+    EXPR_STMT@143..154
+      CALL_EXPR@143..154
+        NAME_REF@143..144
+          LNAME@143..144 "f"
+        ARG_LIST@144..154
+          L_PAREN@144..145 "("
+          NAME_REF@145..146
+            LNAME@145..146 "a"
+          COMMA@146..147 ","
+          WHITESPACE@147..148 " "
+          SPREAD_ARG@148..153
+            STAR@148..149 "*"
+            NAME_REF@149..153
+              LNAME@149..153 "rest"
+          R_PAREN@153..154 ")"
+    NEWLINE@154..155 "\n"
+    EXPR_STMT@155..163
+      CALL_EXPR@155..163
+        NAME_REF@155..156
+          LNAME@155..156 "f"
+        ARG_LIST@156..163
+          L_PAREN@156..157 "("
+          NAME_REF@157..158
+            LNAME@157..158 "a"
+          COMMA@158..159 ","
+          WHITESPACE@159..160 " "
+          NAME_REF@160..161
+            LNAME@160..161 "b"
+          COMMA@161..162 ","
+          R_PAREN@162..163 ")"
+    NEWLINE@163..164 "\n"
+    EXPR_STMT@164..171
+      CALL_EXPR@164..171
+        CALL_EXPR@164..168
+          NAME_REF@164..165
+            LNAME@164..165 "f"
+          ARG_LIST@165..168
+            L_PAREN@165..166 "("
+            LITERAL@166..167
+              NUMBER@166..167 "1"
+            R_PAREN@167..168 ")"
+        ARG_LIST@168..171
+          L_PAREN@168..169 "("
+          LITERAL@169..170
+            NUMBER@169..170 "2"
+          R_PAREN@170..171 ")"
+    NEWLINE@171..172 "\n"
+  EOF@172..172 ""

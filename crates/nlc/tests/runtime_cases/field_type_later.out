@@ -1,0 +1,4 @@
+A
+B	B
+field 'd' of A expects ~B, got B
+field 'b' of A expects B?, got Number

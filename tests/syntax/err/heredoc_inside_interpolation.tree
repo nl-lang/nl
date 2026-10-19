@@ -1,0 +1,30 @@
+SOURCE_FILE@0..93
+  BLOCK@0..93
+    COMMENT@0..53 "# A heredoc cannot be opened inside an interpolation."
+    NEWLINE@53..54 "\n"
+    ASSIGN_STMT@54..86
+      NAME_REF@54..55
+        LNAME@54..55 "a"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      INTERP_STRING@58..86
+        STR_BEGIN@58..66 "\"\"\"\n  #{"
+        WHITESPACE@66..67 " "
+        LITERAL@67..80
+          STRING@67..80 "\"\"\"\n  x\n  \"\"\""
+        WHITESPACE@80..81 " "
+        STR_END@81..86 "}\n\"\"\""
+    NEWLINE@86..87 "\n"
+    ASSIGN_STMT@87..92
+      NAME_REF@87..88
+        LNAME@87..88 "b"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      LITERAL@91..92
+        NUMBER@91..92 "1"
+    NEWLINE@92..93 "\n"
+  EOF@93..93 ""
+---
+error@67..70 3:6: a heredoc cannot be opened inside an interpolation `#{…}`: bind the heredoc to a variable first, and interpolate the variable

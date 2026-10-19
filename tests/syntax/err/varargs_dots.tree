@@ -1,0 +1,93 @@
+SOURCE_FILE@0..287
+  BLOCK@0..287
+    COMMENT@0..57 "# NL has no varargs; `...` is only the range operator. As"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..134 "# a parameter, as a value, as a command argument and in a `Function` type it"
+    NEWLINE@134..135 "\n"
+    COMMENT@135..205 "# is reported with the `*args` form; the rest of each function parses."
+    NEWLINE@205..206 "\n"
+    FN_DECL@206..252
+      FN_KW@206..208 "fn"
+      WHITESPACE@208..209 " "
+      NAME@209..210
+        LNAME@209..210 "f"
+      PARAM_LIST@210..215
+        L_PAREN@210..211 "("
+        ERROR_NODE@211..214
+          DOT3@211..214 "..."
+        R_PAREN@214..215 ")"
+      BLOCK@215..249
+        NEWLINE@215..216 "\n"
+        WHITESPACE@216..218 "  "
+        EXPR_STMT@218..224
+          CALL_EXPR@218..224
+            NAME_REF@218..219
+              LNAME@218..219 "g"
+            ARG_LIST@219..224
+              L_PAREN@219..220 "("
+              ERROR_NODE@220..223
+                DOT3@220..223 "..."
+              R_PAREN@223..224 ")"
+        NEWLINE@224..225 "\n"
+        WHITESPACE@225..227 "  "
+        LET_DECL@227..240
+          LET_KW@227..230 "let"
+          WHITESPACE@230..231 " "
+          BIND_PAT@231..232
+            NAME@231..232
+              LNAME@231..232 "t"
+          WHITESPACE@232..233 " "
+          EQ@233..234 "="
+          WHITESPACE@234..235 " "
+          EXPR_LIST@235..240
+            LIST_EXPR@235..240
+              L_BRACK@235..236 "["
+              ERROR_NODE@236..239
+                DOT3@236..239 "..."
+              R_BRACK@239..240 "]"
+        NEWLINE@240..241 "\n"
+        WHITESPACE@241..243 "  "
+        EXPR_STMT@243..248
+          BIN_EXPR@243..248
+            NAME_REF@243..244
+              LNAME@243..244 "g"
+            WHITESPACE@244..245 " "
+            DOT3@245..248 "..."
+        NEWLINE@248..249 "\n"
+      END_KW@249..252 "end"
+    NEWLINE@252..253 "\n"
+    LET_DECL@253..286
+      LET_KW@253..256 "let"
+      WHITESPACE@256..257 " "
+      TYPED_PAT@257..286
+        BIND_PAT@257..258
+          NAME@257..258
+            LNAME@257..258 "h"
+        COLON@258..259 ":"
+        WHITESPACE@259..260 " "
+        FN_TYPE@260..286
+          CNAME@260..268 "Function"
+          FN_TYPE_PARAMS@268..281
+            L_PAREN@268..269 "("
+            FN_TYPE_PARAM@269..275
+              NAMED_TYPE@269..275
+                QUAL_NAME@269..275
+                  CNAME@269..275 "Number"
+            COMMA@275..276 ","
+            WHITESPACE@276..277 " "
+            ERROR_NODE@277..280
+              DOT3@277..280 "..."
+            R_PAREN@280..281 ")"
+          RETURN_TYPE@281..286
+            COLON@281..282 ":"
+            WHITESPACE@282..283 " "
+            NAMED_TYPE@283..286
+              NIL_KW@283..286 "nil"
+    NEWLINE@286..287 "\n"
+  EOF@287..287 ""
+---
+error@211..214 4:6: NL has no varargs parameter `...`: write `*args` as the last parameter; it collects the remaining arguments into the table `args`
+error@220..223 5:5: NL has no varargs: `...` is the range operator of `a...b`. Declare the last parameter as `*args` and read the table `args`; `f(*args)` passes its items on as arguments
+error@236..239 6:12: NL has no varargs: `...` is the range operator of `a...b`. Declare the last parameter as `*args` and read the table `args`; `f(*args)` passes its items on as arguments
+error@245..248 7:5: expected the end of the range after `...`: `a...b` is the range from `a` up to, but not including, `b`. NL has no varargs; use a `*args` parameter
+error@277..280 9:25: NL has no varargs parameter `...`: in a `Function` type the remaining arguments are written `*args: Type`

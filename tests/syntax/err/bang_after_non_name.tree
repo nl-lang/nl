@@ -1,0 +1,72 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..51 "# Postfix `!` after a call, an index, a Lua path, a"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..78 "# method call is an error."
+    NEWLINE@78..79 "\n"
+    ASSIGN_STMT@79..87
+      NAME_REF@79..80
+        LNAME@79..80 "a"
+      WHITESPACE@80..81 " "
+      EQ@81..82 "="
+      WHITESPACE@82..83 " "
+      BANG_EXPR@83..87
+        CALL_EXPR@83..86
+          NAME_REF@83..84
+            LNAME@83..84 "f"
+          ARG_LIST@84..86
+            L_PAREN@84..85 "("
+            R_PAREN@85..86 ")"
+        BANG_POSTFIX@86..87 "!"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..97
+      NAME_REF@88..89
+        LNAME@88..89 "b"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      BANG_EXPR@92..97
+        INDEX_EXPR@92..96
+          NAME_REF@92..93
+            LNAME@92..93 "t"
+          L_BRACK@93..94 "["
+          LITERAL@94..95
+            NUMBER@94..95 "1"
+          R_BRACK@95..96 "]"
+        BANG_POSTFIX@96..97 "!"
+    NEWLINE@97..98 "\n"
+    ASSIGN_STMT@98..112
+      NAME_REF@98..99
+        LNAME@98..99 "c"
+      WHITESPACE@99..100 " "
+      EQ@100..101 "="
+      WHITESPACE@101..102 " "
+      LUA_PATH@102..112
+        COLON@102..103 ":"
+        LNAME@103..106 "lua"
+        LUA_FIELD@106..111
+          DOT@106..107 "."
+          LNAME@107..111 "path"
+        ERROR_NODE@111..112
+          BANG_POSTFIX@111..112 "!"
+    NEWLINE@112..113 "\n"
+    ASSIGN_STMT@113..121
+      NAME_REF@113..114
+        LNAME@113..114 "d"
+      WHITESPACE@114..115 " "
+      EQ@115..116 "="
+      WHITESPACE@116..117 " "
+      BANG_EXPR@117..121
+        METHOD_CALL@117..120
+          NAME_REF@117..118
+            LNAME@117..118 "x"
+          COLON@118..119 ":"
+          LNAME@119..120 "m"
+        BANG_POSTFIX@120..121 "!"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""
+---
+error@86..87 3:8: `!` cannot follow a call: `!` names a function without calling it, and a call has already happened
+error@96..97 4:9: `!` can only follow a name, `@name` or a member `x.name`: it names a function without calling it
+error@111..112 5:14: a Lua path is never called automatically, so it takes no `!`
+error@120..121 6:8: `!` cannot follow a method call `x:m`: a Lua method has no function value to take

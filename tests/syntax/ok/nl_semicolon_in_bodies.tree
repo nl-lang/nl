@@ -1,0 +1,81 @@
+SOURCE_FILE@0..176
+  BLOCK@0..176
+    COMMENT@0..63 "# `;` separates struct fields, enum variants and the members of"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..79 "# an interface."
+    NEWLINE@79..80 "\n"
+    STRUCT_DECL@80..115
+      STRUCT_KW@80..86 "struct"
+      WHITESPACE@86..87 " "
+      NAME@87..88
+        CNAME@87..88 "P"
+      SEMI@88..89 ";"
+      WHITESPACE@89..90 " "
+      FIELD_DECL@90..99
+        NAME@90..91
+          LNAME@90..91 "x"
+        COLON@91..92 ":"
+        WHITESPACE@92..93 " "
+        NAMED_TYPE@93..99
+          QUAL_NAME@93..99
+            CNAME@93..99 "Number"
+      SEMI@99..100 ";"
+      WHITESPACE@100..101 " "
+      FIELD_DECL@101..110
+        NAME@101..102
+          LNAME@101..102 "y"
+        COLON@102..103 ":"
+        WHITESPACE@103..104 " "
+        NAMED_TYPE@104..110
+          QUAL_NAME@104..110
+            CNAME@104..110 "Number"
+      SEMI@110..111 ";"
+      WHITESPACE@111..112 " "
+      END_KW@112..115 "end"
+    NEWLINE@115..116 "\n"
+    ENUM_DECL@116..141
+      ENUM_KW@116..120 "enum"
+      WHITESPACE@120..121 " "
+      NAME@121..122
+        CNAME@121..122 "D"
+      SEMI@122..123 ";"
+      WHITESPACE@123..124 " "
+      VARIANT@124..129
+        NAME@124..129
+          CNAME@124..129 "North"
+      SEMI@129..130 ";"
+      WHITESPACE@130..131 " "
+      VARIANT@131..136
+        NAME@131..136
+          CNAME@131..136 "South"
+      SEMI@136..137 ";"
+      WHITESPACE@137..138 " "
+      END_KW@138..141 "end"
+    NEWLINE@141..142 "\n"
+    INTERFACE_DECL@142..175
+      INTERFACE_KW@142..151 "interface"
+      WHITESPACE@151..152 " "
+      NAME@152..153
+        CNAME@152..153 "I"
+      SEMI@153..154 ";"
+      WHITESPACE@154..155 " "
+      IFACE_METHOD@155..159
+        FN_KW@155..157 "fn"
+        WHITESPACE@157..158 " "
+        NAME@158..159
+          LNAME@158..159 "a"
+      SEMI@159..160 ";"
+      WHITESPACE@160..161 " "
+      IFACE_FIELD@161..170
+        NAME@161..162
+          LNAME@161..162 "b"
+        COLON@162..163 ":"
+        WHITESPACE@163..164 " "
+        NAMED_TYPE@164..170
+          QUAL_NAME@164..170
+            CNAME@164..170 "Number"
+      SEMI@170..171 ";"
+      WHITESPACE@171..172 " "
+      END_KW@172..175 "end"
+    NEWLINE@175..176 "\n"
+  EOF@176..176 ""

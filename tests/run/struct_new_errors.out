@@ -1,0 +1,6 @@
+100 x Monster
+100 x field 'first' of Game expects Entity, got Vec (struct_new_errors.nl:19: in function 'attempt')
+100 x field 'mode' of Game expects Mode, got String (struct_new_errors.nl:15: in function 'attempt')
+100 x field 'seed' of Game expects Number | String, got Vec (struct_new_errors.nl:17: in function 'attempt')
+100 x field 'x' of Vec expects Number, got String (struct_new_errors.nl:13: in function 'attempt')
+100 x field 'y' of Vec expects Number, got nil (struct_new_errors.nl:11: in function 'attempt')

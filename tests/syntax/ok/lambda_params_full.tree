@@ -1,0 +1,212 @@
+SOURCE_FILE@0..335
+  BLOCK@0..335
+    COMMENT@0..46 "# The parameters of a short function are block"
+    NEWLINE@46..47 "\n"
+    COMMENT@47..120 "# parameters: annotations, a return type, defaults, patterns, `*rest` and"
+    NEWLINE@120..121 "\n"
+    COMMENT@121..132 "# `**opts`."
+    NEWLINE@132..133 "\n"
+    LET_DECL@133..183
+      LET_KW@133..136 "let"
+      WHITESPACE@136..137 " "
+      BIND_PAT@137..141
+        NAME@137..141
+          LNAME@137..141 "area"
+      WHITESPACE@141..142 " "
+      EQ@142..143 "="
+      WHITESPACE@143..144 " "
+      EXPR_LIST@144..183
+        LAMBDA_EXPR@144..183
+          BLOCK_PARAMS@144..166
+            PIPE@144..145 "|"
+            PARAM@145..154
+              TYPED_PAT@145..154
+                BIND_PAT@145..146
+                  NAME@145..146
+                    LNAME@145..146 "w"
+                COLON@146..147 ":"
+                WHITESPACE@147..148 " "
+                NAMED_TYPE@148..154
+                  QUAL_NAME@148..154
+                    CNAME@148..154 "Number"
+            COMMA@154..155 ","
+            WHITESPACE@155..156 " "
+            PARAM@156..165
+              TYPED_PAT@156..165
+                BIND_PAT@156..157
+                  NAME@156..157
+                    LNAME@156..157 "h"
+                COLON@157..158 ":"
+                WHITESPACE@158..159 " "
+                NAMED_TYPE@159..165
+                  QUAL_NAME@159..165
+                    CNAME@159..165 "Number"
+            PIPE@165..166 "|"
+          RETURN_TYPE@166..174
+            COLON@166..167 ":"
+            WHITESPACE@167..168 " "
+            NAMED_TYPE@168..174
+              QUAL_NAME@168..174
+                CNAME@168..174 "Number"
+          WHITESPACE@174..175 " "
+          ARROW@175..177 "->"
+          WHITESPACE@177..178 " "
+          BLOCK@178..183
+            EXPR_STMT@178..183
+              BIN_EXPR@178..183
+                NAME_REF@178..179
+                  LNAME@178..179 "w"
+                WHITESPACE@179..180 " "
+                STAR@180..181 "*"
+                WHITESPACE@181..182 " "
+                NAME_REF@182..183
+                  LNAME@182..183 "h"
+    NEWLINE@183..184 "\n"
+    LET_DECL@184..242
+      LET_KW@184..187 "let"
+      WHITESPACE@187..188 " "
+      BIND_PAT@188..193
+        NAME@188..193
+          LNAME@188..193 "greet"
+      WHITESPACE@193..194 " "
+      EQ@194..195 "="
+      WHITESPACE@195..196 " "
+      EXPR_LIST@196..242
+        LAMBDA_EXPR@196..242
+          BLOCK_PARAMS@196..222
+            PIPE@196..197 "|"
+            PARAM@197..201
+              BIND_PAT@197..201
+                NAME@197..201
+                  LNAME@197..201 "name"
+            COMMA@201..202 ","
+            WHITESPACE@202..203 " "
+            PARAM@203..221
+              BIND_PAT@203..211
+                NAME@203..211
+                  LNAME@203..211 "greeting"
+              WHITESPACE@211..212 " "
+              EQ@212..213 "="
+              WHITESPACE@213..214 " "
+              LITERAL@214..221
+                STRING@214..221 "\"hello\""
+            PIPE@221..222 "|"
+          WHITESPACE@222..223 " "
+          ARROW@223..225 "->"
+          WHITESPACE@225..226 " "
+          BLOCK@226..242
+            EXPR_STMT@226..242
+              BIN_EXPR@226..242
+                NAME_REF@226..234
+                  LNAME@226..234 "greeting"
+                WHITESPACE@234..235 " "
+                CONCAT@235..237 "<>"
+                WHITESPACE@237..238 " "
+                NAME_REF@238..242
+                  LNAME@238..242 "name"
+    NEWLINE@242..243 "\n"
+    LET_DECL@243..266
+      LET_KW@243..246 "let"
+      WHITESPACE@246..247 " "
+      BIND_PAT@247..250
+        NAME@247..250
+          LNAME@247..250 "fst"
+      WHITESPACE@250..251 " "
+      EQ@251..252 "="
+      WHITESPACE@252..253 " "
+      EXPR_LIST@253..266
+        LAMBDA_EXPR@253..266
+          BLOCK_PARAMS@253..261
+            PIPE@253..254 "|"
+            PARAM@254..260
+              BRACE_PAT@254..260
+                L_CURLY@254..255 "{"
+                PAT_FIELD@255..256
+                  NAME@255..256
+                    LNAME@255..256 "x"
+                COMMA@256..257 ","
+                WHITESPACE@257..258 " "
+                PAT_FIELD@258..259
+                  NAME@258..259
+                    LNAME@258..259 "y"
+                R_CURLY@259..260 "}"
+            PIPE@260..261 "|"
+          WHITESPACE@261..262 " "
+          ARROW@262..264 "->"
+          WHITESPACE@264..265 " "
+          BLOCK@265..266
+            EXPR_STMT@265..266
+              NAME_REF@265..266
+                LNAME@265..266 "x"
+    NEWLINE@266..267 "\n"
+    LET_DECL@267..305
+      LET_KW@267..270 "let"
+      WHITESPACE@270..271 " "
+      BIND_PAT@271..276
+        NAME@271..276
+          LNAME@271..276 "count"
+      WHITESPACE@276..277 " "
+      EQ@277..278 "="
+      WHITESPACE@278..279 " "
+      EXPR_LIST@279..305
+        LAMBDA_EXPR@279..305
+          BLOCK_PARAMS@279..293
+            PIPE@279..280 "|"
+            PARAM@280..285
+              BIND_PAT@280..285
+                NAME@280..285
+                  LNAME@280..285 "first"
+            COMMA@285..286 ","
+            WHITESPACE@286..287 " "
+            REST_PARAM@287..292
+              STAR@287..288 "*"
+              NAME@288..292
+                LNAME@288..292 "rest"
+            PIPE@292..293 "|"
+          WHITESPACE@293..294 " "
+          ARROW@294..296 "->"
+          WHITESPACE@296..297 " "
+          BLOCK@297..305
+            EXPR_STMT@297..305
+              FIELD_EXPR@297..305
+                NAME_REF@297..301
+                  LNAME@297..301 "rest"
+                DOT@301..302 "."
+                LNAME@302..305 "len"
+    NEWLINE@305..306 "\n"
+    LET_DECL@306..334
+      LET_KW@306..309 "let"
+      WHITESPACE@309..310 " "
+      BIND_PAT@310..313
+        NAME@310..313
+          LNAME@310..313 "opt"
+      WHITESPACE@313..314 " "
+      EQ@314..315 "="
+      WHITESPACE@315..316 " "
+      EXPR_LIST@316..334
+        LAMBDA_EXPR@316..334
+          BLOCK_PARAMS@316..324
+            PIPE@316..317 "|"
+            PARAM@317..318
+              BIND_PAT@317..318
+                NAME@317..318
+                  LNAME@317..318 "x"
+            COMMA@318..319 ","
+            WHITESPACE@319..320 " "
+            KEYED_PARAM@320..323
+              STAR2@320..322 "**"
+              NAME@322..323
+                LNAME@322..323 "o"
+            PIPE@323..324 "|"
+          WHITESPACE@324..325 " "
+          ARROW@325..327 "->"
+          WHITESPACE@327..328 " "
+          BLOCK@328..334
+            EXPR_STMT@328..334
+              FIELD_EXPR@328..334
+                NAME_REF@328..329
+                  LNAME@328..329 "o"
+                DOT@329..330 "."
+                LNAME@330..334 "unit"
+    NEWLINE@334..335 "\n"
+  EOF@335..335 ""

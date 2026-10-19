@@ -1,0 +1,20 @@
+SOURCE_FILE@0..53
+  BLOCK@0..53
+    COMMENT@0..40 "# The file ends inside an interpolation."
+    NEWLINE@40..41 "\n"
+    ASSIGN_STMT@41..52
+      NAME_REF@41..42
+        LNAME@41..42 "a"
+      WHITESPACE@42..43 " "
+      EQ@43..44 "="
+      WHITESPACE@44..45 " "
+      INTERP_STRING@45..52
+        STR_BEGIN@45..50 "\"x #{"
+        WHITESPACE@50..51 " "
+        NAME_REF@51..52
+          LNAME@51..52 "y"
+        STR_END@52..52 ""
+    NEWLINE@52..53 "\n"
+  EOF@53..53 ""
+---
+error@48..50 2:8: an interpolation in a one-line string must close on the line where it opens: add the missing `}`, or use a heredoc `"""` for text on several lines

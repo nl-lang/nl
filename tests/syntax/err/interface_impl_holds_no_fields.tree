@@ -1,0 +1,53 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..56 "# An implementation holds method definitions, no fields."
+    NEWLINE@56..57 "\n"
+    INTERFACE_IMPL@57..132
+      INTERFACE_KW@57..66 "interface"
+      WHITESPACE@66..67 " "
+      NAMED_TYPE@67..72
+        QUAL_NAME@67..72
+          CNAME@67..72 "Shape"
+      WHITESPACE@72..73 " "
+      FOR_KW@73..76 "for"
+      WHITESPACE@76..77 " "
+      NAMED_TYPE@77..83
+        QUAL_NAME@77..83
+          CNAME@77..83 "Circle"
+      NEWLINE@83..84 "\n"
+      WHITESPACE@84..86 "  "
+      ERROR_NODE@86..98
+        LNAME@86..90 "name"
+        COLON@90..91 ":"
+        WHITESPACE@91..92 " "
+        NAMED_TYPE@92..98
+          QUAL_NAME@92..98
+            CNAME@92..98 "String"
+      NEWLINE@98..99 "\n"
+      WHITESPACE@99..101 "  "
+      FN_DECL@101..128
+        FN_KW@101..103 "fn"
+        WHITESPACE@103..104 " "
+        NAME@104..108
+          LNAME@104..108 "area"
+        RETURN_TYPE@108..116
+          COLON@108..109 ":"
+          WHITESPACE@109..110 " "
+          NAMED_TYPE@110..116
+            QUAL_NAME@110..116
+              CNAME@110..116 "Number"
+        BLOCK@116..125
+          NEWLINE@116..117 "\n"
+          WHITESPACE@117..121 "    "
+          EXPR_STMT@121..122
+            LITERAL@121..122
+              NUMBER@121..122 "1"
+          NEWLINE@122..123 "\n"
+          WHITESPACE@123..125 "  "
+        END_KW@125..128 "end"
+      NEWLINE@128..129 "\n"
+      END_KW@129..132 "end"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""
+---
+error@86..90 3:3: an implementation `interface … for …` holds method definitions only (`fn name … end`)

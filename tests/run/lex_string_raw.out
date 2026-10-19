@@ -1,0 +1,6 @@
+simple string
+\d+
+it's
+back\slash
+no #{interpolation} here
+tab\there

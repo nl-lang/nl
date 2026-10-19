@@ -1,0 +1,8 @@
+finally 1
+early 1
+no early return
+finally 0
+late 0
+1,3
+from body
+from catch

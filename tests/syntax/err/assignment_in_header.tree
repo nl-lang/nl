@@ -1,0 +1,32 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..44 "# `if x = 1` is an error with the hint `==`."
+    NEWLINE@44..45 "\n"
+    EXPR_STMT@45..64
+      IF_EXPR@45..64
+        IF_KW@45..47 "if"
+        WHITESPACE@47..48 " "
+        NAME_REF@48..49
+          LNAME@48..49 "x"
+        WHITESPACE@49..50 " "
+        ERROR_NODE@50..53
+          EQ@50..51 "="
+          WHITESPACE@51..52 " "
+          LITERAL@52..53
+            NUMBER@52..53 "1"
+        BLOCK@53..61
+          NEWLINE@53..54 "\n"
+          WHITESPACE@54..56 "  "
+          EXPR_STMT@56..60
+            CALL_EXPR@56..60
+              NAME_REF@56..58
+                LNAME@56..58 "go"
+              ARG_LIST@58..60
+                L_PAREN@58..59 "("
+                R_PAREN@59..60 ")"
+          NEWLINE@60..61 "\n"
+        END_KW@61..64 "end"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""
+---
+error@50..51 2:6: `=` assigns, and assignment is not an expression: to compare, write `==`

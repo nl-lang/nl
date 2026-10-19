@@ -1,0 +1,53 @@
+SOURCE_FILE@0..83
+  BLOCK@0..83
+    COMMENT@0..51 "# A nil-safe target needs an assignment of its own."
+    NEWLINE@51..52 "\n"
+    MULTI_ASSIGN_STMT@52..66
+      TARGET_LIST@52..59
+        FIELD_EXPR@52..56
+          NAME_REF@52..53
+            LNAME@52..53 "a"
+          QUESTION_DOT@53..55 "?."
+          LNAME@55..56 "b"
+        COMMA@56..57 ","
+        WHITESPACE@57..58 " "
+        NAME_REF@58..59
+          LNAME@58..59 "c"
+      WHITESPACE@59..60 " "
+      EQ@60..61 "="
+      WHITESPACE@61..62 " "
+      EXPR_LIST@62..66
+        LITERAL@62..63
+          NUMBER@62..63 "1"
+        COMMA@63..64 ","
+        WHITESPACE@64..65 " "
+        LITERAL@65..66
+          NUMBER@65..66 "2"
+    NEWLINE@66..67 "\n"
+    MULTI_ASSIGN_STMT@67..82
+      TARGET_LIST@67..75
+        NAME_REF@67..68
+          LNAME@67..68 "c"
+        COMMA@68..69 ","
+        WHITESPACE@69..70 " "
+        LUA_PATH@70..75
+          COLON@70..71 ":"
+          LNAME@71..72 "a"
+          LUA_FIELD@72..75
+            QUESTION_DOT@72..74 "?."
+            LNAME@74..75 "b"
+      WHITESPACE@75..76 " "
+      EQ@76..77 "="
+      WHITESPACE@77..78 " "
+      EXPR_LIST@78..82
+        LITERAL@78..79
+          NUMBER@78..79 "1"
+        COMMA@79..80 ","
+        WHITESPACE@80..81 " "
+        LITERAL@81..82
+          NUMBER@81..82 "2"
+    NEWLINE@82..83 "\n"
+  EOF@83..83 ""
+---
+error@52..56 2:1: a nil-safe target needs an assignment of its own: write `a?.b = x` on its own line, not in a multiple assignment
+error@70..75 3:4: a nil-safe target needs an assignment of its own: write `a?.b = x` on its own line, not in a multiple assignment

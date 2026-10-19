@@ -1,0 +1,66 @@
+SOURCE_FILE@0..118
+  BLOCK@0..118
+    COMMENT@0..40 "# `import` and `pub` only at file level."
+    NEWLINE@40..41 "\n"
+    FN_DECL@41..86
+      FN_KW@41..43 "fn"
+      WHITESPACE@43..44 " "
+      NAME@44..45
+        LNAME@44..45 "f"
+      BLOCK@45..83
+        NEWLINE@45..46 "\n"
+        WHITESPACE@46..48 "  "
+        IMPORT_DECL@48..67
+          IMPORT_KW@48..54 "import"
+          WHITESPACE@54..55 " "
+          NAME@55..56
+            LNAME@55..56 "a"
+          WHITESPACE@56..57 " "
+          FROM_KW@57..61 "from"
+          WHITESPACE@61..62 " "
+          STRING@62..67 "'lib'"
+        NEWLINE@67..68 "\n"
+        WHITESPACE@68..70 "  "
+        FN_DECL@70..82
+          PUB_KW@70..73 "pub"
+          WHITESPACE@73..74 " "
+          FN_KW@74..76 "fn"
+          WHITESPACE@76..77 " "
+          NAME@77..78
+            LNAME@77..78 "g"
+          BLOCK@78..79
+            WHITESPACE@78..79 " "
+          END_KW@79..82 "end"
+        NEWLINE@82..83 "\n"
+      END_KW@83..86 "end"
+    NEWLINE@86..87 "\n"
+    MODULE_DECL@87..117
+      MODULE_KW@87..93 "module"
+      WHITESPACE@93..94 " "
+      QUAL_NAME@94..95
+        CNAME@94..95 "M"
+      BLOCK@95..114
+        NEWLINE@95..96 "\n"
+        WHITESPACE@96..98 "  "
+        CONST_DECL@98..113
+          PUB_KW@98..101 "pub"
+          WHITESPACE@101..102 " "
+          CONST_KW@102..107 "const"
+          WHITESPACE@107..108 " "
+          BIND_PAT@108..109
+            NAME@108..109
+              LNAME@108..109 "x"
+          WHITESPACE@109..110 " "
+          EQ@110..111 "="
+          WHITESPACE@111..112 " "
+          EXPR_LIST@112..113
+            LITERAL@112..113
+              NUMBER@112..113 "1"
+        NEWLINE@113..114 "\n"
+      END_KW@114..117 "end"
+    NEWLINE@117..118 "\n"
+  EOF@118..118 ""
+---
+error@48..54 3:3: `import` is only allowed at the top of a file, before every other statement; to load a file while the program runs, call `require` or `include`
+error@70..73 4:3: `pub` is only allowed at the top level of a file
+error@98..101 7:3: `pub` is only allowed at the top level of a file

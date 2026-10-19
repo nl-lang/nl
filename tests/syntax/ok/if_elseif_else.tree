@@ -1,0 +1,69 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..51 "# `if`, any number of `elseif`, an optional `else`."
+    NEWLINE@51..52 "\n"
+    EXPR_STMT@52..107
+      IF_EXPR@52..107
+        IF_KW@52..54 "if"
+        WHITESPACE@54..55 " "
+        NAME_REF@55..56
+          LNAME@55..56 "a"
+        BLOCK@56..63
+          NEWLINE@56..57 "\n"
+          WHITESPACE@57..59 "  "
+          EXPR_STMT@59..62
+            CALL_EXPR@59..62
+              NAME_REF@59..60
+                LNAME@59..60 "x"
+              ARG_LIST@60..62
+                L_PAREN@60..61 "("
+                R_PAREN@61..62 ")"
+          NEWLINE@62..63 "\n"
+        ELSEIF_CLAUSE@63..78
+          ELSEIF_KW@63..69 "elseif"
+          WHITESPACE@69..70 " "
+          NAME_REF@70..71
+            LNAME@70..71 "b"
+          BLOCK@71..78
+            NEWLINE@71..72 "\n"
+            WHITESPACE@72..74 "  "
+            EXPR_STMT@74..77
+              CALL_EXPR@74..77
+                NAME_REF@74..75
+                  LNAME@74..75 "y"
+                ARG_LIST@75..77
+                  L_PAREN@75..76 "("
+                  R_PAREN@76..77 ")"
+            NEWLINE@77..78 "\n"
+        ELSEIF_CLAUSE@78..93
+          ELSEIF_KW@78..84 "elseif"
+          WHITESPACE@84..85 " "
+          NAME_REF@85..86
+            LNAME@85..86 "c"
+          BLOCK@86..93
+            NEWLINE@86..87 "\n"
+            WHITESPACE@87..89 "  "
+            EXPR_STMT@89..92
+              CALL_EXPR@89..92
+                NAME_REF@89..90
+                  LNAME@89..90 "z"
+                ARG_LIST@90..92
+                  L_PAREN@90..91 "("
+                  R_PAREN@91..92 ")"
+            NEWLINE@92..93 "\n"
+        ELSE_CLAUSE@93..104
+          ELSE_KW@93..97 "else"
+          BLOCK@97..104
+            NEWLINE@97..98 "\n"
+            WHITESPACE@98..100 "  "
+            EXPR_STMT@100..103
+              CALL_EXPR@100..103
+                NAME_REF@100..101
+                  LNAME@100..101 "w"
+                ARG_LIST@101..103
+                  L_PAREN@101..102 "("
+                  R_PAREN@102..103 ")"
+            NEWLINE@103..104 "\n"
+        END_KW@104..107 "end"
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""

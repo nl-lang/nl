@@ -1,0 +1,31 @@
+SOURCE_FILE@0..115
+  BLOCK@0..115
+    COMMENT@0..64 "# `Shapes.Circle { r: 1 }` is a struct literal because the whole"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..87 "# path is capitalized."
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..114
+      NAME_REF@88..89
+        LNAME@88..89 "c"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      STRUCT_LIT@92..114
+        FIELD_EXPR@92..105
+          NAME_REF@92..98
+            CNAME@92..98 "Shapes"
+          DOT@98..99 "."
+          CNAME@99..105 "Circle"
+        WHITESPACE@105..106 " "
+        L_CURLY@106..107 "{"
+        WHITESPACE@107..108 " "
+        FIELD_INIT@108..112
+          LNAME@108..109 "r"
+          COLON@109..110 ":"
+          WHITESPACE@110..111 " "
+          LITERAL@111..112
+            NUMBER@111..112 "1"
+        WHITESPACE@112..113 " "
+        R_CURLY@113..114 "}"
+    NEWLINE@114..115 "\n"
+  EOF@115..115 ""

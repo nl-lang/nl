@@ -1,0 +1,28 @@
+SOURCE_FILE@0..90
+  BLOCK@0..90
+    COMMENT@0..47 "# In a heredoc an interpolation may span lines."
+    NEWLINE@47..48 "\n"
+    ASSIGN_STMT@48..89
+      NAME_REF@48..49
+        LNAME@48..49 "s"
+      WHITESPACE@49..50 " "
+      EQ@50..51 "="
+      WHITESPACE@51..52 " "
+      INTERP_STRING@52..89
+        STR_BEGIN@52..67 "\"\"\"\n  total: #{"
+        NEWLINE@67..68 "\n"
+        WHITESPACE@68..72 "    "
+        BIN_EXPR@72..81
+          NAME_REF@72..73
+            LNAME@72..73 "a"
+          WHITESPACE@73..74 " "
+          PLUS@74..75 "+"
+          NEWLINE@75..76 "\n"
+          WHITESPACE@76..80 "    "
+          NAME_REF@80..81
+            LNAME@80..81 "b"
+        NEWLINE@81..82 "\n"
+        WHITESPACE@82..84 "  "
+        STR_END@84..89 "}\n\"\"\""
+    NEWLINE@89..90 "\n"
+  EOF@90..90 ""

@@ -1,0 +1,66 @@
+SOURCE_FILE@0..211
+  BLOCK@0..211
+    COMMENT@0..62 "# `async fn` declares or, in an operand, is an anonymous async"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..133 "# function; `async do` after a call or after `on Name` makes it async."
+    NEWLINE@133..134 "\n"
+    FN_DECL@134..151
+      ASYNC_KW@134..139 "async"
+      WHITESPACE@139..140 " "
+      FN_KW@140..142 "fn"
+      WHITESPACE@142..143 " "
+      NAME@143..147
+        LNAME@143..147 "load"
+      BLOCK@147..148
+        NEWLINE@147..148 "\n"
+      END_KW@148..151 "end"
+    NEWLINE@151..152 "\n"
+    ASSIGN_STMT@152..170
+      NAME_REF@152..153
+        LNAME@152..153 "f"
+      WHITESPACE@153..154 " "
+      EQ@154..155 "="
+      WHITESPACE@155..156 " "
+      FN_EXPR@156..170
+        ASYNC_KW@156..161 "async"
+        WHITESPACE@161..162 " "
+        FN_KW@162..164 "fn"
+        PARAM_LIST@164..166
+          L_PAREN@164..165 "("
+          R_PAREN@165..166 ")"
+        BLOCK@166..167
+          WHITESPACE@166..167 " "
+        END_KW@167..170 "end"
+    NEWLINE@170..171 "\n"
+    EXPR_STMT@171..185
+      CALL_EXPR@171..185
+        NAME_REF@171..172
+          LNAME@171..172 "g"
+        WHITESPACE@172..173 " "
+        TRAILING_BLOCK@173..185
+          ASYNC_KW@173..178 "async"
+          WHITESPACE@178..179 " "
+          DO_KW@179..181 "do"
+          BLOCK@181..182
+            WHITESPACE@181..182 " "
+          END_KW@182..185 "end"
+    NEWLINE@185..186 "\n"
+    EXPR_STMT@186..210
+      ON_EXPR@186..210
+        ON_KW@186..188 "on"
+        WHITESPACE@188..189 " "
+        QUAL_NAME@189..190
+          CNAME@189..190 "E"
+        WHITESPACE@190..191 " "
+        AS_KW@191..193 "as"
+        WHITESPACE@193..194 " "
+        STRING@194..197 "'h'"
+        WHITESPACE@197..198 " "
+        ASYNC_KW@198..203 "async"
+        WHITESPACE@203..204 " "
+        DO_KW@204..206 "do"
+        BLOCK@206..207
+          WHITESPACE@206..207 " "
+        END_KW@207..210 "end"
+    NEWLINE@210..211 "\n"
+  EOF@211..211 ""

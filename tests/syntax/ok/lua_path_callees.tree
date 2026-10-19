@@ -1,0 +1,85 @@
+SOURCE_FILE@0..190
+  BLOCK@0..190
+    COMMENT@0..50 "# A Lua path is a command callee when it ends in a"
+    NEWLINE@50..51 "\n"
+    COMMENT@51..102 "# `.name` or a `:name`, or is its first name alone."
+    NEWLINE@102..103 "\n"
+    EXPR_STMT@103..114
+      COMMAND_CALL@103..114
+        LUA_PATH@103..109
+          COLON@103..104 ":"
+          LNAME@104..109 "print"
+        WHITESPACE@109..110 " "
+        COMMAND_ARGS@110..114
+          LITERAL@110..114
+            STRING@110..114 "\"hi\""
+    NEWLINE@114..115 "\n"
+    EXPR_STMT@115..136
+      COMMAND_CALL@115..136
+        LUA_PATH@115..128
+          COLON@115..116 ":"
+          LNAME@116..120 "http"
+          LUA_FIELD@120..128
+            DOT@120..121 "."
+            LNAME@121..128 "request"
+        WHITESPACE@128..129 " "
+        COMMAND_ARGS@129..136
+          NAME_REF@129..132
+            LNAME@129..132 "url"
+          COMMA@132..133 ","
+          WHITESPACE@133..134 " "
+          NAME_REF@134..136
+            LNAME@134..136 "cb"
+    NEWLINE@136..137 "\n"
+    EXPR_STMT@137..157
+      COMMAND_CALL@137..157
+        LUA_PATH@137..152
+          COLON@137..138 ":"
+          LNAME@138..141 "hud"
+          LUA_FIELD@141..147
+            DOT@141..142 "."
+            LNAME@142..147 "panel"
+          LUA_METHOD@147..152
+            COLON@147..148 ":"
+            LNAME@148..152 "show"
+        WHITESPACE@152..153 " "
+        COMMAND_ARGS@153..157
+          LITERAL@153..157
+            TRUE_KW@153..157 "true"
+    NEWLINE@157..158 "\n"
+    EXPR_STMT@158..168
+      COMMAND_CALL@158..168
+        LUA_PATH@158..166
+          COLON@158..159 ":"
+          LNAME@159..160 "f"
+          LUA_CALL@160..162
+            ARG_LIST@160..162
+              L_PAREN@160..161 "("
+              R_PAREN@161..162 ")"
+          LUA_FIELD@162..166
+            DOT@162..163 "."
+            LNAME@163..166 "run"
+        WHITESPACE@166..167 " "
+        COMMAND_ARGS@167..168
+          LITERAL@167..168
+            NUMBER@167..168 "1"
+    NEWLINE@168..169 "\n"
+    EXPR_STMT@169..189
+      COMMAND_CALL@169..189
+        LUA_PATH@169..175
+          COLON@169..170 ":"
+          LNAME@170..175 "setup"
+        WHITESPACE@175..176 " "
+        COMMAND_ARGS@176..189
+          TABLE_EXPR@176..189
+            L_CURLY@176..177 "{"
+            TABLE_PAIR@177..188
+              TABLE_KEY@177..182
+                LNAME@177..182 "debug"
+              COLON@182..183 ":"
+              WHITESPACE@183..184 " "
+              LITERAL@184..188
+                TRUE_KW@184..188 "true"
+            R_CURLY@188..189 "}"
+    NEWLINE@189..190 "\n"
+  EOF@190..190 ""

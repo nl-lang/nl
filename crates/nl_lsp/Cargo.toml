@@ -1,0 +1,27 @@
+[package]
+name = "nl_lsp"
+description = "The NL language server: diagnostics, hover, go-to-definition and completion over LSP"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "nl-lsp"
+path = "src/main.rs"
+
+[dependencies]
+nl_syntax = { path = "../nl_syntax" }
+nl_sema = { path = "../nl_sema" }
+nl_capi = { path = "../nl_capi" }
+# The tree library of nl_syntax, for `TokenAtOffset` and `NodeOrToken`.
+rowan.workspace = true
+# The LSP transport and types, as rust-analyzer uses them.
+lsp-server = "0.10.0"
+lsp-types = "0.97.0"
+serde = "1.0.229"
+serde_json = "1.0.154"
+
+[lints]
+workspace = true

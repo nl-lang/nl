@@ -1,0 +1,48 @@
+SOURCE_FILE@0..129
+  BLOCK@0..129
+    COMMENT@0..61 "# `\\ddd` is at most 255, `\\u{…}` at most 10FFFF, `\\x` takes"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..79 "# two hex digits."
+    NEWLINE@79..80 "\n"
+    ASSIGN_STMT@80..90
+      NAME_REF@80..81
+        LNAME@80..81 "a"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      LITERAL@84..90
+        STRING@84..90 "\"\\256\""
+    NEWLINE@90..91 "\n"
+    ASSIGN_STMT@91..107
+      NAME_REF@91..92
+        LNAME@91..92 "b"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      LITERAL@95..107
+        STRING@95..107 "\"\\u{110000}\""
+    NEWLINE@107..108 "\n"
+    ASSIGN_STMT@108..117
+      NAME_REF@108..109
+        LNAME@108..109 "c"
+      WHITESPACE@109..110 " "
+      EQ@110..111 "="
+      WHITESPACE@111..112 " "
+      LITERAL@112..117
+        STRING@112..117 "\"\\x4\""
+    NEWLINE@117..118 "\n"
+    ASSIGN_STMT@118..128
+      NAME_REF@118..119
+        LNAME@118..119 "d"
+      WHITESPACE@119..120 " "
+      EQ@120..121 "="
+      WHITESPACE@121..122 " "
+      LITERAL@122..128
+        STRING@122..128 "\"\\u{}\""
+    NEWLINE@128..129 "\n"
+  EOF@129..129 ""
+---
+error@85..89 3:6: `\256` is larger than 255: a decimal escape writes one byte. Use `\u{…}` for a character
+error@96..106 4:6: `\u{110000}` is beyond the last Unicode code point, `\u{10FFFF}`
+error@113..116 5:6: `\x4` is not an escape: `\x` takes exactly two hexadecimal digits, as in `\x41`
+error@123..127 6:6: `\u{}` needs a hexadecimal code point between the braces, as in `\u{48}`

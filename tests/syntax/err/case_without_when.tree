@@ -1,0 +1,29 @@
+SOURCE_FILE@0..58
+  BLOCK@0..58
+    COMMENT@0..35 "# `case` needs at least one `when`."
+    NEWLINE@35..36 "\n"
+    EXPR_STMT@36..57
+      CASE_EXPR@36..57
+        CASE_KW@36..40 "case"
+        WHITESPACE@40..41 " "
+        NAME_REF@41..42
+          LNAME@41..42 "x"
+        NEWLINE@42..43 "\n"
+        ELSE_CLAUSE@43..54
+          ELSE_KW@43..47 "else"
+          BLOCK@47..54
+            NEWLINE@47..48 "\n"
+            WHITESPACE@48..50 "  "
+            EXPR_STMT@50..53
+              CALL_EXPR@50..53
+                NAME_REF@50..51
+                  LNAME@50..51 "y"
+                ARG_LIST@51..53
+                  L_PAREN@51..52 "("
+                  R_PAREN@52..53 ")"
+            NEWLINE@53..54 "\n"
+        END_KW@54..57 "end"
+    NEWLINE@57..58 "\n"
+  EOF@58..58 ""
+---
+error@43..47 3:1: `case` needs at least one `when` clause

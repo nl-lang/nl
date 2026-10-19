@@ -1,0 +1,64 @@
+SOURCE_FILE@0..142
+  BLOCK@0..142
+    COMMENT@0..50 "# Fields with a type, a default, both, or neither."
+    NEWLINE@50..51 "\n"
+    STRUCT_DECL@51..141
+      STRUCT_KW@51..57 "struct"
+      WHITESPACE@57..58 " "
+      NAME@58..65
+        CNAME@58..65 "Monster"
+      NEWLINE@65..66 "\n"
+      WHITESPACE@66..68 "  "
+      FIELD_DECL@68..78
+        NAME@68..70
+          LNAME@68..70 "id"
+        COLON@70..71 ":"
+        WHITESPACE@71..72 " "
+        NAMED_TYPE@72..78
+          QUAL_NAME@72..78
+            CNAME@72..78 "Number"
+      NEWLINE@78..79 "\n"
+      WHITESPACE@79..81 "  "
+      FIELD_DECL@81..105
+        NAME@81..85
+          LNAME@81..85 "name"
+        COLON@85..86 ":"
+        WHITESPACE@86..87 " "
+        NAMED_TYPE@87..93
+          QUAL_NAME@87..93
+            CNAME@87..93 "String"
+        WHITESPACE@93..94 " "
+        EQ@94..95 "="
+        WHITESPACE@95..96 " "
+        LITERAL@96..105
+          STRING@96..105 "\"unnamed\""
+      NEWLINE@105..106 "\n"
+      WHITESPACE@106..108 "  "
+      FIELD_DECL@108..117
+        NAME@108..113
+          LNAME@108..113 "count"
+        WHITESPACE@113..114 " "
+        EQ@114..115 "="
+        WHITESPACE@115..116 " "
+        LITERAL@116..117
+          NUMBER@116..117 "0"
+      NEWLINE@117..118 "\n"
+      WHITESPACE@118..120 "  "
+      FIELD_DECL@120..123
+        NAME@120..123
+          LNAME@120..123 "tag"
+      NEWLINE@123..124 "\n"
+      WHITESPACE@124..126 "  "
+      FIELD_DECL@126..137
+        NAME@126..130
+          LNAME@126..130 "next"
+        COLON@130..131 ":"
+        WHITESPACE@131..132 " "
+        OPTIONAL_TYPE@132..137
+          NAMED_TYPE@132..136
+            SELF_TYPE_KW@132..136 "Self"
+          QUESTION@136..137 "?"
+      NEWLINE@137..138 "\n"
+      END_KW@138..141 "end"
+    NEWLINE@141..142 "\n"
+  EOF@142..142 ""

@@ -1,0 +1,6 @@
+lib/prim.nl
+lib/prim.nl
+lib/prim.nl
+8
+ping
+include_identity.nl:10: cannot read lib/no_such_file.nl: no such file

@@ -1,0 +1,143 @@
+SOURCE_FILE@0..265
+  BLOCK@0..265
+    COMMENT@0..54 "# `-> do … end` is a function with statements, which"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..129 "# returns what `return` returns; after `->` the body may start on the next"
+    NEWLINE@129..130 "\n"
+    COMMENT@130..137 "# line."
+    NEWLINE@137..138 "\n"
+    LET_DECL@138..204
+      LET_KW@138..141 "let"
+      WHITESPACE@141..142 " "
+      BIND_PAT@142..148
+        NAME@142..148
+          LNAME@142..148 "minmax"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      EXPR_LIST@151..204
+        LAMBDA_EXPR@151..204
+          BLOCK_PARAMS@151..157
+            PIPE@151..152 "|"
+            PARAM@152..153
+              BIND_PAT@152..153
+                NAME@152..153
+                  LNAME@152..153 "a"
+            COMMA@153..154 ","
+            WHITESPACE@154..155 " "
+            PARAM@155..156
+              BIND_PAT@155..156
+                NAME@155..156
+                  LNAME@155..156 "b"
+            PIPE@156..157 "|"
+          WHITESPACE@157..158 " "
+          ARROW@158..160 "->"
+          WHITESPACE@160..161 " "
+          DO_KW@161..163 "do"
+          BLOCK@163..201
+            NEWLINE@163..164 "\n"
+            WHITESPACE@164..166 "  "
+            RETURN_STMT@166..186
+              RETURN_KW@166..172 "return"
+              WHITESPACE@172..173 " "
+              EXPR_LIST@173..177
+                NAME_REF@173..174
+                  LNAME@173..174 "a"
+                COMMA@174..175 ","
+                WHITESPACE@175..176 " "
+                NAME_REF@176..177
+                  LNAME@176..177 "b"
+              WHITESPACE@177..178 " "
+              MODIFIER@178..186
+                IF_KW@178..180 "if"
+                WHITESPACE@180..181 " "
+                BIN_EXPR@181..186
+                  NAME_REF@181..182
+                    LNAME@181..182 "a"
+                  WHITESPACE@182..183 " "
+                  LT@183..184 "<"
+                  WHITESPACE@184..185 " "
+                  NAME_REF@185..186
+                    LNAME@185..186 "b"
+            NEWLINE@186..187 "\n"
+            WHITESPACE@187..189 "  "
+            RETURN_STMT@189..200
+              RETURN_KW@189..195 "return"
+              WHITESPACE@195..196 " "
+              EXPR_LIST@196..200
+                NAME_REF@196..197
+                  LNAME@196..197 "b"
+                COMMA@197..198 ","
+                WHITESPACE@198..199 " "
+                NAME_REF@199..200
+                  LNAME@199..200 "a"
+            NEWLINE@200..201 "\n"
+          END_KW@201..204 "end"
+    NEWLINE@204..205 "\n"
+    LET_DECL@205..229
+      LET_KW@205..208 "let"
+      WHITESPACE@208..209 " "
+      BIND_PAT@209..214
+        NAME@209..214
+          LNAME@209..214 "later"
+      WHITESPACE@214..215 " "
+      EQ@215..216 "="
+      WHITESPACE@216..217 " "
+      EXPR_LIST@217..229
+        LAMBDA_EXPR@217..229
+          BLOCK_PARAMS@217..218
+            PARAM@217..218
+              BIND_PAT@217..218
+                NAME@217..218
+                  LNAME@217..218 "x"
+          WHITESPACE@218..219 " "
+          ARROW@219..221 "->"
+          NEWLINE@221..222 "\n"
+          WHITESPACE@222..224 "  "
+          BLOCK@224..229
+            EXPR_STMT@224..229
+              BIN_EXPR@224..229
+                NAME_REF@224..225
+                  LNAME@224..225 "x"
+                WHITESPACE@225..226 " "
+                PLUS@226..227 "+"
+                WHITESPACE@227..228 " "
+                LITERAL@228..229
+                  NUMBER@228..229 "1"
+    NEWLINE@229..230 "\n"
+    LET_DECL@230..264
+      LET_KW@230..233 "let"
+      WHITESPACE@233..234 " "
+      BIND_PAT@234..239
+        NAME@234..239
+          LNAME@234..239 "block"
+      WHITESPACE@239..240 " "
+      EQ@240..241 "="
+      WHITESPACE@241..242 " "
+      EXPR_LIST@242..264
+        LAMBDA_EXPR@242..264
+          BLOCK_PARAMS@242..243
+            PARAM@242..243
+              BIND_PAT@242..243
+                NAME@242..243
+                  LNAME@242..243 "x"
+          WHITESPACE@243..244 " "
+          ARROW@244..246 "->"
+          NEWLINE@246..247 "\n"
+          WHITESPACE@247..249 "  "
+          DO_KW@249..251 "do"
+          BLOCK@251..261
+            WHITESPACE@251..252 " "
+            EXPR_STMT@252..260
+              CALL_EXPR@252..260
+                NAME_REF@252..257
+                  LNAME@252..257 "print"
+                ARG_LIST@257..260
+                  L_PAREN@257..258 "("
+                  NAME_REF@258..259
+                    LNAME@258..259 "x"
+                  R_PAREN@259..260 ")"
+            WHITESPACE@260..261 " "
+          END_KW@261..264 "end"
+    NEWLINE@264..265 "\n"
+  EOF@265..265 ""

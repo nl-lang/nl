@@ -1,0 +1,5 @@
+100 x bat/1/1/nil/gem [level]
+100 x field 'id' of Monster expects Number, got nil []
+100 x field 'level' of Monster expects Number, got String [name]
+100 x unnamed/1/1/nil/none [name level loot]
+100 x unnamed/1/1/nil/ore [name level]

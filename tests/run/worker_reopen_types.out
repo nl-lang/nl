@@ -1,0 +1,4 @@
+First	true
+true	1
+SendError	cannot send the enum E, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)
+SendError	cannot send an instance of struct S, which has no name another state can find (it is declared inside a function or in a nested block, or another declaration of its module has its name) (argument 1)

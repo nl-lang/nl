@@ -1,0 +1,31 @@
+role rest=0 presence=true inclusion=x
+role rest=2 presence=true inclusion=nil
+role rest=0 presence=nil inclusion=nil
+role rest=1 presence=nil inclusion=nil
+role rest=0 presence=true inclusion=y
+role rest=0 presence=true inclusion=y
+role rest=0 presence=false inclusion=y
+false
+String
+a=1 b=2 k=3
+a=1 b=5 k=3
+a=1 b=5 k=nil
+a=1 b=2 k=4
+inner 1 2 kv nil
+inner 1 2 kv written
+inner 7 8 spread nil
+inner 7 8 nil nil
+hello, nl
+hi, nl
+hey, nl
+10
+20
+1
+2
+1 2
+1 5 nil
+Table
+a,b
+a,b
+
+keyed_args.nl:89: `**` needs a table of keyed arguments, got Number

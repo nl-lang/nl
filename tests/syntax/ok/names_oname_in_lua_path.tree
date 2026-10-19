@@ -1,0 +1,44 @@
+SOURCE_FILE@0..119
+  BLOCK@0..119
+    COMMENT@0..50 "# An ONAME is allowed as every name of a Lua path."
+    NEWLINE@50..51 "\n"
+    EXPR_STMT@51..70
+      LUA_PATH@51..70
+        COLON@51..52 ":"
+        LNAME@52..58 "player"
+        LUA_FIELD@58..68
+          DOT@58..59 "."
+          ONAME@59..68 "getHealth"
+        LUA_CALL@68..70
+          ARG_LIST@68..70
+            L_PAREN@68..69 "("
+            R_PAREN@69..70 ")"
+    NEWLINE@70..71 "\n"
+    EXPR_STMT@71..88
+      LUA_PATH@71..88
+        COLON@71..72 ":"
+        CNAME@72..85 "GetPlayerName"
+        LUA_CALL@85..88
+          ARG_LIST@85..88
+            L_PAREN@85..86 "("
+            LITERAL@86..87
+              NUMBER@86..87 "1"
+            R_PAREN@87..88 ")"
+    NEWLINE@88..89 "\n"
+    ASSIGN_STMT@89..118
+      NAME_REF@89..90
+        LNAME@89..90 "x"
+      WHITESPACE@90..91 " "
+      EQ@91..92 "="
+      WHITESPACE@92..93 " "
+      LUA_PATH@93..118
+        COLON@93..94 ":"
+        LNAME@94..97 "obj"
+        LUA_FIELD@97..107
+          DOT@97..98 "."
+          ONAME@98..107 "someField"
+        LUA_FIELD@107..118
+          DOT@107..108 "."
+          ONAME@108..118 "otherField"
+    NEWLINE@118..119 "\n"
+  EOF@119..119 ""

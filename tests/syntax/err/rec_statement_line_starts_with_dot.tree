@@ -1,0 +1,19 @@
+SOURCE_FILE@0..143
+  BLOCK@0..143
+    COMMENT@0..75 "# Recovery: a line that starts with `.` after a statement that cannot go on"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..130 "# (`return` without a value); no empty statement node."
+    NEWLINE@130..131 "\n"
+    RETURN_STMT@131..137
+      RETURN_KW@131..137 "return"
+    NEWLINE@137..138 "\n"
+    WHITESPACE@138..140 "  "
+    ERROR_NODE@140..141
+      DOT@140..141 "."
+    EXPR_STMT@141..142
+      NAME_REF@141..142
+        LNAME@141..142 "x"
+    NEWLINE@142..143 "\n"
+  EOF@143..143 ""
+---
+error@140..141 4:3: a line that starts with `.` continues the expression of the line before, and there is none to continue there

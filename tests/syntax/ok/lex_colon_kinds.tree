@@ -1,0 +1,114 @@
+SOURCE_FILE@0..258
+  BLOCK@0..258
+    COMMENT@0..56 "# Method call, Lua path, annotation, key and return-type"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..127 "# colons; after an fn header `: T` is a return type (the Lua-path body"
+    NEWLINE@127..128 "\n"
+    COMMENT@128..161 "# `fn g() :x()` warns, see err/)."
+    NEWLINE@161..162 "\n"
+    EXPR_STMT@162..176
+      METHOD_CALL@162..176
+        NAME_REF@162..166
+          LNAME@162..166 "conn"
+        COLON@166..167 ":"
+        LNAME@167..171 "send"
+        ARG_LIST@171..176
+          L_PAREN@171..172 "("
+          LITERAL@172..175
+            STRING@172..175 "\"x\""
+          R_PAREN@175..176 ")"
+    NEWLINE@176..177 "\n"
+    EXPR_STMT@177..186
+      LUA_PATH@177..186
+        COLON@177..178 ":"
+        LNAME@178..183 "print"
+        LUA_CALL@183..186
+          ARG_LIST@183..186
+            L_PAREN@183..184 "("
+            LITERAL@184..185
+              NUMBER@184..185 "1"
+            R_PAREN@185..186 ")"
+    NEWLINE@186..187 "\n"
+    LET_DECL@187..204
+      LET_KW@187..190 "let"
+      WHITESPACE@190..191 " "
+      TYPED_PAT@191..200
+        BIND_PAT@191..192
+          NAME@191..192
+            LNAME@191..192 "a"
+        WHITESPACE@192..193 " "
+        COLON@193..194 ":"
+        NAMED_TYPE@194..200
+          QUAL_NAME@194..200
+            CNAME@194..200 "Number"
+      WHITESPACE@200..201 " "
+      EQ@201..202 "="
+      WHITESPACE@202..203 " "
+      EXPR_LIST@203..204
+        LITERAL@203..204
+          NUMBER@203..204 "1"
+    NEWLINE@204..205 "\n"
+    ASSIGN_STMT@205..215
+      NAME_REF@205..206
+        LNAME@205..206 "t"
+      WHITESPACE@206..207 " "
+      EQ@207..208 "="
+      WHITESPACE@208..209 " "
+      TABLE_EXPR@209..215
+        L_CURLY@209..210 "{"
+        TABLE_PAIR@210..214
+          TABLE_KEY@210..211
+            LNAME@210..211 "k"
+          WHITESPACE@211..212 " "
+          COLON@212..213 ":"
+          LITERAL@213..214
+            NUMBER@213..214 "1"
+        R_CURLY@214..215 "}"
+    NEWLINE@215..216 "\n"
+    FN_DECL@216..229
+      FN_KW@216..218 "fn"
+      WHITESPACE@218..219 " "
+      NAME@219..220
+        LNAME@219..220 "f"
+      PARAM_LIST@220..222
+        L_PAREN@220..221 "("
+        R_PAREN@221..222 ")"
+      RETURN_TYPE@222..225
+        COLON@222..223 ":"
+        WHITESPACE@223..224 " "
+        NAMED_TYPE@224..225
+          QUAL_NAME@224..225
+            CNAME@224..225 "T"
+      BLOCK@225..226
+        NEWLINE@225..226 "\n"
+      END_KW@226..229 "end"
+    NEWLINE@229..230 "\n"
+    FN_DECL@230..257
+      FN_KW@230..232 "fn"
+      WHITESPACE@232..233 " "
+      NAME@233..234
+        LNAME@233..234 "g"
+      PARAM_LIST@234..236
+        L_PAREN@234..235 "("
+        R_PAREN@235..236 ")"
+      RETURN_TYPE@236..239
+        COLON@236..237 ":"
+        WHITESPACE@237..238 " "
+        NAMED_TYPE@238..239
+          QUAL_NAME@238..239
+            CNAME@238..239 "T"
+      BLOCK@239..254
+        NEWLINE@239..240 "\n"
+        WHITESPACE@240..242 "  "
+        EXPR_STMT@242..253
+          LUA_PATH@242..253
+            COLON@242..243 ":"
+            LNAME@243..251 "lua_call"
+            LUA_CALL@251..253
+              ARG_LIST@251..253
+                L_PAREN@251..252 "("
+                R_PAREN@252..253 ")"
+        NEWLINE@253..254 "\n"
+      END_KW@254..257 "end"
+    NEWLINE@257..258 "\n"
+  EOF@258..258 ""

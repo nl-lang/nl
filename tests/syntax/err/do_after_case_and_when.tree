@@ -1,0 +1,39 @@
+SOURCE_FILE@0..80
+  BLOCK@0..80
+    COMMENT@0..49 "# `do` at the end of a header: `case` and `when`."
+    NEWLINE@49..50 "\n"
+    EXPR_STMT@50..79
+      CASE_EXPR@50..79
+        CASE_KW@50..54 "case"
+        WHITESPACE@54..55 " "
+        NAME_REF@55..56
+          LNAME@55..56 "x"
+        WHITESPACE@56..57 " "
+        ERROR_NODE@57..59
+          DO_KW@57..59 "do"
+        NEWLINE@59..60 "\n"
+        WHEN_CLAUSE@60..76
+          WHEN_KW@60..64 "when"
+          WHITESPACE@64..65 " "
+          LITERAL@65..66
+            NUMBER@65..66 "1"
+          WHITESPACE@66..67 " "
+          ERROR_NODE@67..69
+            DO_KW@67..69 "do"
+          BLOCK@69..76
+            NEWLINE@69..70 "\n"
+            WHITESPACE@70..72 "  "
+            EXPR_STMT@72..75
+              CALL_EXPR@72..75
+                NAME_REF@72..73
+                  LNAME@72..73 "y"
+                ARG_LIST@73..75
+                  L_PAREN@73..74 "("
+                  R_PAREN@74..75 ")"
+            NEWLINE@75..76 "\n"
+        END_KW@76..79 "end"
+    NEWLINE@79..80 "\n"
+  EOF@80..80 ""
+---
+error@57..59 2:8: unexpected `do`: the header of `case` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@67..69 3:8: unexpected `do`: the header of `when` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

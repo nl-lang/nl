@@ -1,0 +1,92 @@
+SOURCE_FILE@0..173
+  BLOCK@0..173
+    COMMENT@0..58 "# Inside block parameters a top-level `|` closes the list;"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..116 "# a union type or a bitwise-or default needs parentheses."
+    NEWLINE@116..117 "\n"
+    EXPR_STMT@117..151
+      CALL_EXPR@117..151
+        NAME_REF@117..118
+          LNAME@117..118 "f"
+        WHITESPACE@118..119 " "
+        TRAILING_BLOCK@119..151
+          DO_KW@119..121 "do"
+          WHITESPACE@121..122 " "
+          BLOCK_PARAMS@122..147
+            PIPE@122..123 "|"
+            PARAM@123..133
+              TYPED_PAT@123..133
+                BIND_PAT@123..124
+                  NAME@123..124
+                    LNAME@123..124 "a"
+                COLON@124..125 ":"
+                WHITESPACE@125..126 " "
+                PAREN_TYPE@126..133
+                  L_PAREN@126..127 "("
+                  UNION_TYPE@127..132
+                    NAMED_TYPE@127..128
+                      QUAL_NAME@127..128
+                        CNAME@127..128 "A"
+                    WHITESPACE@128..129 " "
+                    PIPE@129..130 "|"
+                    WHITESPACE@130..131 " "
+                    NAMED_TYPE@131..132
+                      QUAL_NAME@131..132
+                        CNAME@131..132 "B"
+                  R_PAREN@132..133 ")"
+            COMMA@133..134 ","
+            WHITESPACE@134..135 " "
+            PARAM@135..146
+              BIND_PAT@135..136
+                NAME@135..136
+                  LNAME@135..136 "m"
+              WHITESPACE@136..137 " "
+              EQ@137..138 "="
+              WHITESPACE@138..139 " "
+              PAREN_EXPR@139..146
+                L_PAREN@139..140 "("
+                BIN_EXPR@140..145
+                  NAME_REF@140..141
+                    LNAME@140..141 "x"
+                  WHITESPACE@141..142 " "
+                  PIPE@142..143 "|"
+                  WHITESPACE@143..144 " "
+                  NAME_REF@144..145
+                    LNAME@144..145 "y"
+                R_PAREN@145..146 ")"
+            PIPE@146..147 "|"
+          BLOCK@147..148
+            WHITESPACE@147..148 " "
+          END_KW@148..151 "end"
+    NEWLINE@151..152 "\n"
+    EXPR_STMT@152..172
+      CALL_EXPR@152..172
+        NAME_REF@152..153
+          LNAME@152..153 "f"
+        WHITESPACE@153..154 " "
+        TRAILING_BLOCK@154..172
+          DO_KW@154..156 "do"
+          WHITESPACE@156..157 " "
+          BLOCK_PARAMS@157..168
+            PIPE@157..158 "|"
+            PARAM@158..167
+              BIND_PAT@158..159
+                NAME@158..159
+                  LNAME@158..159 "m"
+              WHITESPACE@159..160 " "
+              EQ@160..161 "="
+              WHITESPACE@161..162 " "
+              BIN_EXPR@162..167
+                NAME_REF@162..163
+                  LNAME@162..163 "x"
+                WHITESPACE@163..164 " "
+                CARET@164..165 "^"
+                WHITESPACE@165..166 " "
+                NAME_REF@166..167
+                  LNAME@166..167 "y"
+            PIPE@167..168 "|"
+          BLOCK@168..169
+            WHITESPACE@168..169 " "
+          END_KW@169..172 "end"
+    NEWLINE@172..173 "\n"
+  EOF@173..173 ""

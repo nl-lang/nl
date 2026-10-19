@@ -1,0 +1,87 @@
+SOURCE_FILE@0..154
+  BLOCK@0..154
+    COMMENT@0..44 "# `step` after a range iterable; parentheses"
+    NEWLINE@44..45 "\n"
+    COMMENT@45..72 "# allowed around the range."
+    NEWLINE@72..73 "\n"
+    FOR_STMT@73..98
+      FOR_KW@73..76 "for"
+      WHITESPACE@76..77 " "
+      BIND_PAT@77..78
+        NAME@77..78
+          LNAME@77..78 "i"
+      WHITESPACE@78..79 " "
+      IN_KW@79..81 "in"
+      WHITESPACE@81..82 " "
+      BIN_EXPR@82..87
+        LITERAL@82..83
+          NUMBER@82..83 "1"
+        DOT2@83..85 ".."
+        LITERAL@85..87
+          NUMBER@85..87 "10"
+      WHITESPACE@87..88 " "
+      FOR_STEP@88..94
+        STEP_KW@88..92 "step"
+        WHITESPACE@92..93 " "
+        LITERAL@93..94
+          NUMBER@93..94 "2"
+      BLOCK@94..95
+        NEWLINE@94..95 "\n"
+      END_KW@95..98 "end"
+    NEWLINE@98..99 "\n"
+    FOR_STMT@99..126
+      FOR_KW@99..102 "for"
+      WHITESPACE@102..103 " "
+      BIND_PAT@103..104
+        NAME@103..104
+          LNAME@103..104 "i"
+      WHITESPACE@104..105 " "
+      IN_KW@105..107 "in"
+      WHITESPACE@107..108 " "
+      BIN_EXPR@108..114
+        LITERAL@108..110
+          NUMBER@108..110 "10"
+        DOT3@110..113 "..."
+        LITERAL@113..114
+          NUMBER@113..114 "0"
+      WHITESPACE@114..115 " "
+      FOR_STEP@115..122
+        STEP_KW@115..119 "step"
+        WHITESPACE@119..120 " "
+        PREFIX_EXPR@120..122
+          MINUS@120..121 "-"
+          LITERAL@121..122
+            NUMBER@121..122 "1"
+      BLOCK@122..123
+        NEWLINE@122..123 "\n"
+      END_KW@123..126 "end"
+    NEWLINE@126..127 "\n"
+    FOR_STMT@127..153
+      FOR_KW@127..130 "for"
+      WHITESPACE@130..131 " "
+      BIND_PAT@131..132
+        NAME@131..132
+          LNAME@131..132 "i"
+      WHITESPACE@132..133 " "
+      IN_KW@133..135 "in"
+      WHITESPACE@135..136 " "
+      PAREN_EXPR@136..142
+        L_PAREN@136..137 "("
+        BIN_EXPR@137..141
+          LITERAL@137..138
+            NUMBER@137..138 "1"
+          DOT2@138..140 ".."
+          NAME_REF@140..141
+            LNAME@140..141 "n"
+        R_PAREN@141..142 ")"
+      WHITESPACE@142..143 " "
+      FOR_STEP@143..149
+        STEP_KW@143..147 "step"
+        WHITESPACE@147..148 " "
+        NAME_REF@148..149
+          LNAME@148..149 "k"
+      BLOCK@149..150
+        NEWLINE@149..150 "\n"
+      END_KW@150..153 "end"
+    NEWLINE@153..154 "\n"
+  EOF@154..154 ""

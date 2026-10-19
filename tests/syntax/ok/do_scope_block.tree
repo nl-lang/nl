@@ -1,0 +1,41 @@
+SOURCE_FILE@0..88
+  BLOCK@0..88
+    COMMENT@0..51 "# A `do` at the start of a statement opens a scope."
+    NEWLINE@51..52 "\n"
+    DO_BLOCK@52..80
+      DO_KW@52..54 "do"
+      BLOCK@54..77
+        NEWLINE@54..55 "\n"
+        WHITESPACE@55..57 "  "
+        LET_DECL@57..66
+          LET_KW@57..60 "let"
+          WHITESPACE@60..61 " "
+          BIND_PAT@61..62
+            NAME@61..62
+              LNAME@61..62 "x"
+          WHITESPACE@62..63 " "
+          EQ@63..64 "="
+          WHITESPACE@64..65 " "
+          EXPR_LIST@65..66
+            LITERAL@65..66
+              NUMBER@65..66 "1"
+        NEWLINE@66..67 "\n"
+        WHITESPACE@67..69 "  "
+        EXPR_STMT@69..76
+          COMMAND_CALL@69..76
+            NAME_REF@69..74
+              LNAME@69..74 "print"
+            WHITESPACE@74..75 " "
+            COMMAND_ARGS@75..76
+              NAME_REF@75..76
+                LNAME@75..76 "x"
+        NEWLINE@76..77 "\n"
+      END_KW@77..80 "end"
+    NEWLINE@80..81 "\n"
+    DO_BLOCK@81..87
+      DO_KW@81..83 "do"
+      BLOCK@83..84
+        WHITESPACE@83..84 " "
+      END_KW@84..87 "end"
+    NEWLINE@87..88 "\n"
+  EOF@88..88 ""

@@ -1,0 +1,41 @@
+SOURCE_FILE@0..102
+  BLOCK@0..102
+    COMMENT@0..59 "# Decimal numbers, with a fraction and with `_` separators."
+    NEWLINE@59..60 "\n"
+    ASSIGN_STMT@60..65
+      NAME_REF@60..61
+        LNAME@60..61 "x"
+      WHITESPACE@61..62 " "
+      EQ@62..63 "="
+      WHITESPACE@63..64 " "
+      LITERAL@64..65
+        NUMBER@64..65 "1"
+    NEWLINE@65..66 "\n"
+    ASSIGN_STMT@66..73
+      NAME_REF@66..67
+        LNAME@66..67 "x"
+      WHITESPACE@67..68 " "
+      EQ@68..69 "="
+      WHITESPACE@69..70 " "
+      LITERAL@70..73
+        NUMBER@70..73 "1.1"
+    NEWLINE@73..74 "\n"
+    ASSIGN_STMT@74..87
+      NAME_REF@74..75
+        LNAME@74..75 "x"
+      WHITESPACE@75..76 " "
+      EQ@76..77 "="
+      WHITESPACE@77..78 " "
+      LITERAL@78..87
+        NUMBER@78..87 "1_000_000"
+    NEWLINE@87..88 "\n"
+    ASSIGN_STMT@88..101
+      NAME_REF@88..89
+        LNAME@88..89 "x"
+      WHITESPACE@89..90 " "
+      EQ@90..91 "="
+      WHITESPACE@91..92 " "
+      LITERAL@92..101
+        NUMBER@92..101 "3.141_592"
+    NEWLINE@101..102 "\n"
+  EOF@102..102 ""

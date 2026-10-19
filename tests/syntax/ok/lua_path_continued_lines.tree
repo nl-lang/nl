@@ -1,0 +1,54 @@
+SOURCE_FILE@0..187
+  BLOCK@0..187
+    COMMENT@0..53 "# A `.name` step may start the next line; a line that"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..107 "# starts with `(`, `[` or `:` begins a new statement."
+    NEWLINE@107..108 "\n"
+    EXPR_STMT@108..153
+      LUA_PATH@108..153
+        COLON@108..109 ":"
+        LNAME@109..113 "game"
+        NEWLINE@113..114 "\n"
+        WHITESPACE@114..116 "  "
+        LUA_FIELD@116..127
+          DOT@116..117 "."
+          ONAME@117..127 "getService"
+        LUA_CALL@127..138
+          ARG_LIST@127..138
+            L_PAREN@127..128 "("
+            LITERAL@128..137
+              STRING@128..137 "\"Players\""
+            R_PAREN@137..138 ")"
+        NEWLINE@138..139 "\n"
+        WHITESPACE@139..141 "  "
+        LUA_FIELD@141..153
+          DOT@141..142 "."
+          ONAME@142..153 "localPlayer"
+    NEWLINE@153..154 "\n"
+    EXPR_STMT@154..160
+      LUA_PATH@154..160
+        COLON@154..155 ":"
+        LNAME@155..160 "print"
+    NEWLINE@160..161 "\n"
+    EXPR_STMT@161..178
+      PAREN_EXPR@161..178
+        L_PAREN@161..162 "("
+        LITERAL@162..177
+          STRING@162..177 "\"new statement\""
+        R_PAREN@177..178 ")"
+    NEWLINE@178..179 "\n"
+    EXPR_STMT@179..181
+      LUA_PATH@179..181
+        COLON@179..180 ":"
+        LNAME@180..181 "f"
+    NEWLINE@181..182 "\n"
+    EXPR_STMT@182..186
+      LUA_PATH@182..186
+        COLON@182..183 ":"
+        LNAME@183..184 "g"
+        LUA_CALL@184..186
+          ARG_LIST@184..186
+            L_PAREN@184..185 "("
+            R_PAREN@185..186 ")"
+    NEWLINE@186..187 "\n"
+  EOF@187..187 ""

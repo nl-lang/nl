@@ -1,0 +1,19 @@
+SOURCE_FILE@0..70
+  BLOCK@0..70
+    COMMENT@0..55 "# Only nil, any, unknown and never are lowercase types."
+    NEWLINE@55..56 "\n"
+    LET_DECL@56..69
+      LET_KW@56..59 "let"
+      WHITESPACE@59..60 " "
+      TYPED_PAT@60..69
+        BIND_PAT@60..61
+          NAME@60..61
+            LNAME@60..61 "a"
+        COLON@61..62 ":"
+        WHITESPACE@62..63 " "
+        NAMED_TYPE@63..69
+          LNAME@63..69 "number"
+    NEWLINE@69..70 "\n"
+  EOF@70..70 ""
+---
+error@63..69 2:8: `number` is not a type: type names are capitalized, and the lowercase types are only `nil`, `any`, `unknown` and `never`

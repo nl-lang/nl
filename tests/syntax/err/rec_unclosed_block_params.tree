@@ -1,0 +1,47 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..48 "# Recovery: an unclosed `|` of block parameters."
+    NEWLINE@48..49 "\n"
+    EXPR_STMT@49..79
+      CALL_EXPR@49..79
+        FIELD_EXPR@49..59
+          NAME_REF@49..54
+            LNAME@49..54 "items"
+          DOT@54..55 "."
+          LNAME@55..59 "each"
+        WHITESPACE@59..60 " "
+        TRAILING_BLOCK@60..79
+          DO_KW@60..62 "do"
+          WHITESPACE@62..63 " "
+          BLOCK_PARAMS@63..65
+            PIPE@63..64 "|"
+            PARAM@64..65
+              BIND_PAT@64..65
+                NAME@64..65
+                  LNAME@64..65 "x"
+          BLOCK@65..76
+            NEWLINE@65..66 "\n"
+            WHITESPACE@66..68 "  "
+            EXPR_STMT@68..75
+              COMMAND_CALL@68..75
+                NAME_REF@68..73
+                  LNAME@68..73 "print"
+                WHITESPACE@73..74 " "
+                COMMAND_ARGS@74..75
+                  NAME_REF@74..75
+                    LNAME@74..75 "x"
+            NEWLINE@75..76 "\n"
+          END_KW@76..79 "end"
+    NEWLINE@79..80 "\n"
+    ASSIGN_STMT@80..85
+      NAME_REF@80..81
+        LNAME@80..81 "y"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      LITERAL@84..85
+        NUMBER@84..85 "3"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""
+---
+error@68..73 3:3: expected `|` to close the block parameters, found `print`

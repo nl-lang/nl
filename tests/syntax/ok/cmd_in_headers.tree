@@ -1,0 +1,167 @@
+SOURCE_FILE@0..209
+  BLOCK@0..209
+    COMMENT@0..62 "# A command call may be a header expression and the subject of"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..72 "# `case`."
+    NEWLINE@72..73 "\n"
+    WHILE_STMT@73..92
+      WHILE_KW@73..78 "while"
+      WHITESPACE@78..79 " "
+      COMMAND_CALL@79..82
+        NAME_REF@79..80
+          LNAME@79..80 "f"
+        WHITESPACE@80..81 " "
+        COMMAND_ARGS@81..82
+          NAME_REF@81..82
+            LNAME@81..82 "x"
+      BLOCK@82..89
+        NEWLINE@82..83 "\n"
+        WHITESPACE@83..85 "  "
+        EXPR_STMT@85..88
+          CALL_EXPR@85..88
+            NAME_REF@85..86
+              LNAME@85..86 "g"
+            ARG_LIST@86..88
+              L_PAREN@86..87 "("
+              R_PAREN@87..88 ")"
+        NEWLINE@88..89 "\n"
+      END_KW@89..92 "end"
+    NEWLINE@92..93 "\n"
+    UNTIL_STMT@93..112
+      UNTIL_KW@93..98 "until"
+      WHITESPACE@98..99 " "
+      COMMAND_CALL@99..102
+        NAME_REF@99..100
+          LNAME@99..100 "f"
+        WHITESPACE@100..101 " "
+        COMMAND_ARGS@101..102
+          NAME_REF@101..102
+            LNAME@101..102 "x"
+      BLOCK@102..109
+        NEWLINE@102..103 "\n"
+        WHITESPACE@103..105 "  "
+        EXPR_STMT@105..108
+          CALL_EXPR@105..108
+            NAME_REF@105..106
+              LNAME@105..106 "g"
+            ARG_LIST@106..108
+              L_PAREN@106..107 "("
+              R_PAREN@107..108 ")"
+        NEWLINE@108..109 "\n"
+      END_KW@109..112 "end"
+    NEWLINE@112..113 "\n"
+    EXPR_STMT@113..133
+      UNLESS_EXPR@113..133
+        UNLESS_KW@113..119 "unless"
+        WHITESPACE@119..120 " "
+        COMMAND_CALL@120..123
+          NAME_REF@120..121
+            LNAME@120..121 "f"
+          WHITESPACE@121..122 " "
+          COMMAND_ARGS@122..123
+            NAME_REF@122..123
+              LNAME@122..123 "x"
+        BLOCK@123..130
+          NEWLINE@123..124 "\n"
+          WHITESPACE@124..126 "  "
+          EXPR_STMT@126..129
+            CALL_EXPR@126..129
+              NAME_REF@126..127
+                LNAME@126..127 "g"
+              ARG_LIST@127..129
+                L_PAREN@127..128 "("
+                R_PAREN@128..129 ")"
+          NEWLINE@129..130 "\n"
+        END_KW@130..133 "end"
+    NEWLINE@133..134 "\n"
+    EXPR_STMT@134..159
+      CASE_EXPR@134..159
+        CASE_KW@134..138 "case"
+        WHITESPACE@138..139 " "
+        COMMAND_CALL@139..142
+          NAME_REF@139..140
+            LNAME@139..140 "f"
+          WHITESPACE@140..141 " "
+          COMMAND_ARGS@141..142
+            NAME_REF@141..142
+              LNAME@141..142 "x"
+        NEWLINE@142..143 "\n"
+        WHEN_CLAUSE@143..156
+          WHEN_KW@143..147 "when"
+          WHITESPACE@147..148 " "
+          LITERAL@148..149
+            NUMBER@148..149 "1"
+          BLOCK@149..156
+            NEWLINE@149..150 "\n"
+            WHITESPACE@150..152 "  "
+            EXPR_STMT@152..155
+              CALL_EXPR@152..155
+                NAME_REF@152..153
+                  LNAME@152..153 "g"
+                ARG_LIST@153..155
+                  L_PAREN@153..154 "("
+                  R_PAREN@154..155 ")"
+            NEWLINE@155..156 "\n"
+        END_KW@156..159 "end"
+    NEWLINE@159..160 "\n"
+    EXPR_STMT@160..183
+      COND_EXPR@160..183
+        COND_KW@160..164 "cond"
+        NEWLINE@164..165 "\n"
+        COND_CLAUSE@165..180
+          WHEN_KW@165..169 "when"
+          WHITESPACE@169..170 " "
+          COMMAND_CALL@170..173
+            NAME_REF@170..171
+              LNAME@170..171 "f"
+            WHITESPACE@171..172 " "
+            COMMAND_ARGS@172..173
+              NAME_REF@172..173
+                LNAME@172..173 "x"
+          BLOCK@173..180
+            NEWLINE@173..174 "\n"
+            WHITESPACE@174..176 "  "
+            EXPR_STMT@176..179
+              CALL_EXPR@176..179
+                NAME_REF@176..177
+                  LNAME@176..177 "g"
+                ARG_LIST@177..179
+                  L_PAREN@177..178 "("
+                  R_PAREN@178..179 ")"
+            NEWLINE@179..180 "\n"
+        END_KW@180..183 "end"
+    NEWLINE@183..184 "\n"
+    EXPR_STMT@184..208
+      IF_EXPR@184..208
+        IF_KW@184..186 "if"
+        WHITESPACE@186..187 " "
+        LET_CONDITION@187..198
+          LET_KW@187..190 "let"
+          WHITESPACE@190..191 " "
+          BIND_PAT@191..192
+            NAME@191..192
+              LNAME@191..192 "y"
+          WHITESPACE@192..193 " "
+          EQ@193..194 "="
+          WHITESPACE@194..195 " "
+          COMMAND_CALL@195..198
+            NAME_REF@195..196
+              LNAME@195..196 "f"
+            WHITESPACE@196..197 " "
+            COMMAND_ARGS@197..198
+              NAME_REF@197..198
+                LNAME@197..198 "x"
+        BLOCK@198..205
+          NEWLINE@198..199 "\n"
+          WHITESPACE@199..201 "  "
+          EXPR_STMT@201..204
+            CALL_EXPR@201..204
+              NAME_REF@201..202
+                LNAME@201..202 "g"
+              ARG_LIST@202..204
+                L_PAREN@202..203 "("
+                R_PAREN@203..204 ")"
+          NEWLINE@204..205 "\n"
+        END_KW@205..208 "end"
+    NEWLINE@208..209 "\n"
+  EOF@209..209 ""

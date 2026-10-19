@@ -1,0 +1,125 @@
+SOURCE_FILE@0..231
+  BLOCK@0..231
+    COMMENT@0..66 "# A word followed by `:` at the start of an item is a key with any"
+    NEWLINE@66..67 "\n"
+    COMMENT@67..132 "# spacing, in tables, struct literals, patterns and record types."
+    NEWLINE@132..133 "\n"
+    ASSIGN_STMT@133..158
+      NAME_REF@133..134
+        LNAME@133..134 "t"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      TABLE_EXPR@137..158
+        L_CURLY@137..138 "{"
+        TABLE_PAIR@138..142
+          TABLE_KEY@138..139
+            LNAME@138..139 "a"
+          COLON@139..140 ":"
+          WHITESPACE@140..141 " "
+          NAME_REF@141..142
+            LNAME@141..142 "b"
+        COMMA@142..143 ","
+        WHITESPACE@143..144 " "
+        TABLE_PAIR@144..148
+          TABLE_KEY@144..145
+            LNAME@144..145 "f"
+          WHITESPACE@145..146 " "
+          COLON@146..147 ":"
+          NAME_REF@147..148
+            LNAME@147..148 "x"
+        COMMA@148..149 ","
+        WHITESPACE@149..150 " "
+        TABLE_PAIR@150..157
+          TABLE_KEY@150..154
+            LNAME@150..154 "type"
+          COLON@154..155 ":"
+          WHITESPACE@155..156 " "
+          LITERAL@156..157
+            NUMBER@156..157 "1"
+        R_CURLY@157..158 "}"
+    NEWLINE@158..159 "\n"
+    ASSIGN_STMT@159..177
+      NAME_REF@159..160
+        LNAME@159..160 "s"
+      WHITESPACE@160..161 " "
+      EQ@161..162 "="
+      WHITESPACE@162..163 " "
+      STRUCT_LIT@163..177
+        NAME_REF@163..167
+          CNAME@163..167 "Node"
+        WHITESPACE@167..168 " "
+        L_CURLY@168..169 "{"
+        FIELD_INIT@169..176
+          LNAME@169..173 "type"
+          WHITESPACE@173..174 " "
+          COLON@174..175 ":"
+          LITERAL@175..176
+            NUMBER@175..176 "1"
+        R_CURLY@176..177 "}"
+    NEWLINE@177..178 "\n"
+    LET_DECL@178..192
+      LET_KW@178..181 "let"
+      WHITESPACE@181..182 " "
+      BRACE_PAT@182..188
+        L_CURLY@182..183 "{"
+        PAT_FIELD@183..187
+          LNAME@183..184 "a"
+          WHITESPACE@184..185 " "
+          COLON@185..186 ":"
+          BIND_PAT@186..187
+            NAME@186..187
+              LNAME@186..187 "v"
+        R_CURLY@187..188 "}"
+      WHITESPACE@188..189 " "
+      EQ@189..190 "="
+      WHITESPACE@190..191 " "
+      EXPR_LIST@191..192
+        NAME_REF@191..192
+          LNAME@191..192 "t"
+    NEWLINE@192..193 "\n"
+    LET_DECL@193..218
+      LET_KW@193..196 "let"
+      WHITESPACE@196..197 " "
+      TYPED_PAT@197..214
+        BIND_PAT@197..198
+          NAME@197..198
+            LNAME@197..198 "r"
+        COLON@198..199 ":"
+        WHITESPACE@199..200 " "
+        RECORD_TYPE@200..214
+          L_CURLY@200..201 "{"
+          RECORD_FIELD@201..213
+            LNAME@201..205 "type"
+            WHITESPACE@205..206 " "
+            COLON@206..207 ":"
+            NAMED_TYPE@207..213
+              QUAL_NAME@207..213
+                CNAME@207..213 "String"
+          R_CURLY@213..214 "}"
+      WHITESPACE@214..215 " "
+      EQ@215..216 "="
+      WHITESPACE@216..217 " "
+      EXPR_LIST@217..218
+        NAME_REF@217..218
+          LNAME@217..218 "t"
+    NEWLINE@218..219 "\n"
+    ASSIGN_STMT@219..230
+      NAME_REF@219..220
+        LNAME@219..220 "u"
+      WHITESPACE@220..221 " "
+      EQ@221..222 "="
+      WHITESPACE@222..223 " "
+      TABLE_EXPR@223..230
+        L_CURLY@223..224 "{"
+        TABLE_PAIR@224..229
+          TABLE_KEY@224..225
+            LNAME@224..225 "f"
+          COLON@225..226 ":"
+          WHITESPACE@226..227 " "
+          LUA_PATH@227..229
+            COLON@227..228 ":"
+            LNAME@228..229 "x"
+        R_CURLY@229..230 "}"
+    NEWLINE@230..231 "\n"
+  EOF@231..231 ""

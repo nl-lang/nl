@@ -1,0 +1,16 @@
+trace_vm_errors.nl:9: attempt to index upvalue 'string_nothing' (a nil value)
+stack traceback:
+	trace_vm_errors.nl:9: in function 'deep'
+	trace_vm_errors.nl:30: in function <trace_vm_errors.nl:29>
+	trace_vm_errors.nl:29: in main chunk
+trace_vm_errors.nl:16: attempt to perform arithmetic on local 't' (a table value)
+stack traceback:
+	trace_vm_errors.nl:16: in function 'add_branch'
+	trace_vm_errors.nl:37: in function <trace_vm_errors.nl:36>
+	trace_vm_errors.nl:36: in main chunk
+trace_vm_errors.nl:9: attempt to index upvalue 'string_nothing' (a nil value)
+stack traceback:
+	trace_vm_errors.nl:9: in function 'deep'
+	trace_vm_errors.nl:25: in function 'via'
+	trace_vm_errors.nl:44: in function <trace_vm_errors.nl:43>
+	trace_vm_errors.nl:43: in main chunk

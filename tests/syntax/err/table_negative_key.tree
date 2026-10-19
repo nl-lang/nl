@@ -1,0 +1,25 @@
+SOURCE_FILE@0..57
+  BLOCK@0..57
+    COMMENT@0..44 "# A key cannot be negative; write `[-1]: x`."
+    NEWLINE@44..45 "\n"
+    ASSIGN_STMT@45..56
+      NAME_REF@45..46
+        LNAME@45..46 "t"
+      WHITESPACE@46..47 " "
+      EQ@47..48 "="
+      WHITESPACE@48..49 " "
+      TABLE_EXPR@49..56
+        L_CURLY@49..50 "{"
+        TABLE_PAIR@50..55
+          TABLE_KEY@50..52
+            MINUS@50..51 "-"
+            NUMBER@51..52 "1"
+          COLON@52..53 ":"
+          WHITESPACE@53..54 " "
+          NAME_REF@54..55
+            LNAME@54..55 "x"
+        R_CURLY@55..56 "}"
+    NEWLINE@56..57 "\n"
+  EOF@57..57 ""
+---
+error@50..51 2:6: a table key cannot be negative: set it with an assignment, `t[-1] = …`

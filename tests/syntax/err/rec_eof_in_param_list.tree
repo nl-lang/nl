@@ -1,0 +1,26 @@
+SOURCE_FILE@0..61
+  BLOCK@0..61
+    COMMENT@0..50 "# Recovery: the file ends inside a parameter list."
+    NEWLINE@50..51 "\n"
+    FN_DECL@51..61
+      FN_KW@51..53 "fn"
+      WHITESPACE@53..54 " "
+      NAME@54..55
+        LNAME@54..55 "f"
+      PARAM_LIST@55..60
+        L_PAREN@55..56 "("
+        PARAM@56..57
+          BIND_PAT@56..57
+            NAME@56..57
+              LNAME@56..57 "a"
+        COMMA@57..58 ","
+        WHITESPACE@58..59 " "
+        PARAM@59..60
+          BIND_PAT@59..60
+            NAME@59..60
+              LNAME@59..60 "b"
+      BLOCK@60..61
+        NEWLINE@60..61 "\n"
+  EOF@61..61 ""
+---
+error@61..61 3:1: expected `)` to close this `(`, found the end of the file

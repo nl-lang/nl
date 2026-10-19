@@ -1,0 +1,44 @@
+SOURCE_FILE@0..74
+  BLOCK@0..74
+    COMMENT@0..51 "# `->` needs a body, an expression or `do … end`."
+    NEWLINE@51..52 "\n"
+    EXPR_STMT@52..60
+      CALL_EXPR@52..60
+        NAME_REF@52..53
+          LNAME@52..53 "f"
+        ARG_LIST@53..60
+          L_PAREN@53..54 "("
+          LAMBDA_EXPR@54..58
+            BLOCK_PARAMS@54..55
+              PARAM@54..55
+                BIND_PAT@54..55
+                  NAME@54..55
+                    LNAME@54..55 "x"
+            WHITESPACE@55..56 " "
+            ARROW@56..58 "->"
+          WHITESPACE@58..59 " "
+          R_PAREN@59..60 ")"
+    NEWLINE@60..61 "\n"
+    LET_DECL@61..73
+      LET_KW@61..64 "let"
+      WHITESPACE@64..65 " "
+      BIND_PAT@65..66
+        NAME@65..66
+          LNAME@65..66 "p"
+      WHITESPACE@66..67 " "
+      EQ@67..68 "="
+      WHITESPACE@68..69 " "
+      EXPR_LIST@69..73
+        LAMBDA_EXPR@69..73
+          BLOCK_PARAMS@69..70
+            PARAM@69..70
+              BIND_PAT@69..70
+                NAME@69..70
+                  LNAME@69..70 "x"
+          WHITESPACE@70..71 " "
+          ARROW@71..73 "->"
+    NEWLINE@73..74 "\n"
+  EOF@74..74 ""
+---
+error@59..60 2:8: expected the body of the short function after `->`: an expression, or `do … end` for statements; found `)`
+error@74..74 4:1: expected the body of the short function after `->`: an expression, or `do … end` for statements; found the end of the file

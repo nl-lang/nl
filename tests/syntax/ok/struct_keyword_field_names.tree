@@ -1,0 +1,70 @@
+SOURCE_FILE@0..222
+  BLOCK@0..222
+    COMMENT@0..57 "# A keyword is a field name when `:` or `=` follows it on"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..133 "# the same line, even a keyword that closes blocks (`end`, `when`, `else`)."
+    NEWLINE@133..134 "\n"
+    STRUCT_DECL@134..221
+      STRUCT_KW@134..140 "struct"
+      WHITESPACE@140..141 " "
+      NAME@141..145
+        CNAME@141..145 "Node"
+      NEWLINE@145..146 "\n"
+      WHITESPACE@146..148 "  "
+      FIELD_DECL@148..160
+        NAME@148..152
+          LNAME@148..152 "type"
+        COLON@152..153 ":"
+        WHITESPACE@153..154 " "
+        NAMED_TYPE@154..160
+          QUAL_NAME@154..160
+            CNAME@154..160 "String"
+      NEWLINE@160..161 "\n"
+      WHITESPACE@161..163 "  "
+      FIELD_DECL@163..170
+        NAME@163..166
+          LNAME@163..166 "end"
+        WHITESPACE@166..167 " "
+        EQ@167..168 "="
+        WHITESPACE@168..169 " "
+        LITERAL@169..170
+          NUMBER@169..170 "0"
+      NEWLINE@170..171 "\n"
+      WHITESPACE@171..173 "  "
+      FIELD_DECL@173..189
+        NAME@173..175
+          LNAME@173..175 "if"
+        COLON@175..176 ":"
+        WHITESPACE@176..177 " "
+        NAMED_TYPE@177..181
+          QUAL_NAME@177..181
+            CNAME@177..181 "Bool"
+        WHITESPACE@181..182 " "
+        EQ@182..183 "="
+        WHITESPACE@183..184 " "
+        LITERAL@184..189
+          FALSE_KW@184..189 "false"
+      NEWLINE@189..190 "\n"
+      WHITESPACE@190..192 "  "
+      FIELD_DECL@192..204
+        NAME@192..196
+          LNAME@192..196 "when"
+        COLON@196..197 ":"
+        WHITESPACE@197..198 " "
+        NAMED_TYPE@198..204
+          QUAL_NAME@198..204
+            CNAME@198..204 "Number"
+      NEWLINE@204..205 "\n"
+      WHITESPACE@205..207 "  "
+      FIELD_DECL@207..217
+        NAME@207..211
+          LNAME@207..211 "else"
+        WHITESPACE@211..212 " "
+        EQ@212..213 "="
+        WHITESPACE@213..214 " "
+        LITERAL@214..217
+          NIL_KW@214..217 "nil"
+      NEWLINE@217..218 "\n"
+      END_KW@218..221 "end"
+    NEWLINE@221..222 "\n"
+  EOF@222..222 ""

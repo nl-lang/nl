@@ -1,0 +1,110 @@
+SOURCE_FILE@0..185
+  BLOCK@0..185
+    COMMENT@0..79 "# Every step of a Lua path has a nil-safe form; `?.` goes into the step's node."
+    NEWLINE@79..80 "\n"
+    ASSIGN_STMT@80..109
+      NAME_REF@80..81
+        LNAME@80..81 "x"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      LUA_PATH@84..109
+        COLON@84..85 ":"
+        CNAME@85..96 "LocalPlayer"
+        LUA_CALL@96..98
+          ARG_LIST@96..98
+            L_PAREN@96..97 "("
+            R_PAREN@97..98 ")"
+        LUA_METHOD@98..109
+          QUESTION_DOT@98..100 "?."
+          COLON@100..101 ":"
+          CNAME@101..107 "GetPos"
+          ARG_LIST@107..109
+            L_PAREN@107..108 "("
+            R_PAREN@108..109 ")"
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..136
+      NAME_REF@110..111
+        LNAME@110..111 "x"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      LUA_PATH@114..136
+        COLON@114..115 ":"
+        LNAME@115..116 "a"
+        LUA_FIELD@116..119
+          QUESTION_DOT@116..118 "?."
+          LNAME@118..119 "b"
+        LUA_INDEX@119..124
+          QUESTION_DOT@119..121 "?."
+          L_BRACK@121..122 "["
+          LITERAL@122..123
+            NUMBER@122..123 "1"
+          R_BRACK@123..124 "]"
+        LUA_CALL@124..129
+          QUESTION_DOT@124..126 "?."
+          ARG_LIST@126..129
+            L_PAREN@126..127 "("
+            LITERAL@127..128
+              NUMBER@127..128 "2"
+            R_PAREN@128..129 ")"
+        LUA_METHOD@129..136
+          QUESTION_DOT@129..131 "?."
+          COLON@131..132 ":"
+          LNAME@132..133 "m"
+          ARG_LIST@133..136
+            L_PAREN@133..134 "("
+            LITERAL@134..135
+              NUMBER@134..135 "3"
+            R_PAREN@135..136 ")"
+    NEWLINE@136..137 "\n"
+    ASSIGN_STMT@137..152
+      NAME_REF@137..138
+        LNAME@137..138 "x"
+      WHITESPACE@138..139 " "
+      EQ@139..140 "="
+      WHITESPACE@140..141 " "
+      LUA_PATH@141..152
+        COLON@141..142 ":"
+        LNAME@142..143 "a"
+        LUA_FIELD@143..146
+          QUESTION_DOT@143..145 "?."
+          LNAME@145..146 "b"
+        NEWLINE@146..147 "\n"
+        WHITESPACE@147..149 "  "
+        LUA_FIELD@149..152
+          QUESTION_DOT@149..151 "?."
+          LNAME@151..152 "c"
+    NEWLINE@152..153 "\n"
+    ASSIGN_STMT@153..166
+      LUA_PATH@153..162
+        COLON@153..154 ":"
+        LNAME@154..157 "cfg"
+        LUA_FIELD@157..162
+          QUESTION_DOT@157..159 "?."
+          LNAME@159..162 "max"
+      WHITESPACE@162..163 " "
+      EQ@163..164 "="
+      WHITESPACE@164..165 " "
+      LITERAL@165..166
+        NUMBER@165..166 "8"
+    NEWLINE@166..167 "\n"
+    ASSIGN_STMT@167..184
+      LUA_PATH@167..180
+        COLON@167..168 ":"
+        LNAME@168..171 "cfg"
+        LUA_FIELD@171..177
+          QUESTION_DOT@171..173 "?."
+          LNAME@173..177 "list"
+        LUA_INDEX@177..180
+          L_BRACK@177..178 "["
+          LITERAL@178..179
+            NUMBER@178..179 "1"
+          R_BRACK@179..180 "]"
+      WHITESPACE@180..181 " "
+      EQ@181..182 "="
+      WHITESPACE@182..183 " "
+      LITERAL@183..184
+        NUMBER@183..184 "0"
+    NEWLINE@184..185 "\n"
+  EOF@185..185 ""

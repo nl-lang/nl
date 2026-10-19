@@ -1,0 +1,30 @@
+SOURCE_FILE@0..80
+  BLOCK@0..80
+    COMMENT@0..57 "# CRLF is one line break; statements are separated by it."
+    NEWLINE@57..59 "\r\n"
+    ASSIGN_STMT@59..64
+      NAME_REF@59..60
+        LNAME@59..60 "x"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      LITERAL@63..64
+        NUMBER@63..64 "1"
+    NEWLINE@64..66 "\r\n"
+    ASSIGN_STMT@66..78
+      NAME_REF@66..67
+        LNAME@66..67 "y"
+      WHITESPACE@67..68 " "
+      EQ@68..69 "="
+      WHITESPACE@69..70 " "
+      BIN_EXPR@70..78
+        NAME_REF@70..71
+          LNAME@70..71 "x"
+        WHITESPACE@71..72 " "
+        PLUS@72..73 "+"
+        NEWLINE@73..75 "\r\n"
+        WHITESPACE@75..77 "  "
+        LITERAL@77..78
+          NUMBER@77..78 "2"
+    NEWLINE@78..80 "\r\n"
+  EOF@80..80 ""

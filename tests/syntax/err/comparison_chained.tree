@@ -1,0 +1,74 @@
+SOURCE_FILE@0..81
+  BLOCK@0..81
+    COMMENT@0..34 "# Comparisons are non-associative."
+    NEWLINE@34..35 "\n"
+    ASSIGN_STMT@35..48
+      NAME_REF@35..36
+        LNAME@35..36 "a"
+      WHITESPACE@36..37 " "
+      EQ@37..38 "="
+      WHITESPACE@38..39 " "
+      BIN_EXPR@39..48
+        BIN_EXPR@39..44
+          NAME_REF@39..40
+            LNAME@39..40 "x"
+          WHITESPACE@40..41 " "
+          LT@41..42 "<"
+          WHITESPACE@42..43 " "
+          NAME_REF@43..44
+            LNAME@43..44 "y"
+        WHITESPACE@44..45 " "
+        LT@45..46 "<"
+        WHITESPACE@46..47 " "
+        NAME_REF@47..48
+          LNAME@47..48 "z"
+    NEWLINE@48..49 "\n"
+    ASSIGN_STMT@49..64
+      NAME_REF@49..50
+        LNAME@49..50 "b"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      BIN_EXPR@53..64
+        BIN_EXPR@53..59
+          NAME_REF@53..54
+            LNAME@53..54 "x"
+          WHITESPACE@54..55 " "
+          EQ2@55..57 "=="
+          WHITESPACE@57..58 " "
+          NAME_REF@58..59
+            LNAME@58..59 "y"
+        WHITESPACE@59..60 " "
+        EQ2@60..62 "=="
+        WHITESPACE@62..63 " "
+        NAME_REF@63..64
+          LNAME@63..64 "z"
+    NEWLINE@64..65 "\n"
+    ASSIGN_STMT@65..80
+      NAME_REF@65..66
+        LNAME@65..66 "c"
+      WHITESPACE@66..67 " "
+      EQ@67..68 "="
+      WHITESPACE@68..69 " "
+      IS_EXPR@69..80
+        IS_EXPR@69..75
+          NAME_REF@69..70
+            LNAME@69..70 "x"
+          WHITESPACE@70..71 " "
+          IS_KW@71..73 "is"
+          WHITESPACE@73..74 " "
+          NAMED_TYPE@74..75
+            QUAL_NAME@74..75
+              CNAME@74..75 "A"
+        WHITESPACE@75..76 " "
+        IS_KW@76..78 "is"
+        WHITESPACE@78..79 " "
+        NAMED_TYPE@79..80
+          QUAL_NAME@79..80
+            CNAME@79..80 "B"
+    NEWLINE@80..81 "\n"
+  EOF@81..81 ""
+---
+error@45..46 2:11: comparisons cannot be chained (`a < b < c`): write `a < b and b < c`
+error@60..62 3:12: comparisons cannot be chained (`a < b < c`): write `a < b and b < c`
+error@76..78 4:12: comparisons cannot be chained (`a < b < c`): write `a < b and b < c`

@@ -1,0 +1,57 @@
+SOURCE_FILE@0..155
+  BLOCK@0..155
+    COMMENT@0..47 "# `fn f() :Number` is a body that starts with a"
+    NEWLINE@47..48 "\n"
+    COMMENT@48..112 "# Lua path; the compiler warns. The same after block parameters."
+    NEWLINE@112..113 "\n"
+    FN_DECL@113..131
+      FN_KW@113..115 "fn"
+      WHITESPACE@115..116 " "
+      NAME@116..117
+        LNAME@116..117 "f"
+      PARAM_LIST@117..119
+        L_PAREN@117..118 "("
+        R_PAREN@118..119 ")"
+      BLOCK@119..128
+        WHITESPACE@119..120 " "
+        EXPR_STMT@120..127
+          LUA_PATH@120..127
+            COLON@120..121 ":"
+            CNAME@121..127 "Number"
+        NEWLINE@127..128 "\n"
+      END_KW@128..131 "end"
+    NEWLINE@131..132 "\n"
+    EXPR_STMT@132..154
+      CALL_EXPR@132..154
+        NAME_REF@132..133
+          LNAME@132..133 "g"
+        WHITESPACE@133..134 " "
+        TRAILING_BLOCK@134..154
+          DO_KW@134..136 "do"
+          WHITESPACE@136..137 " "
+          BLOCK_PARAMS@137..140
+            PIPE@137..138 "|"
+            PARAM@138..139
+              BIND_PAT@138..139
+                NAME@138..139
+                  LNAME@138..139 "a"
+            PIPE@139..140 "|"
+          BLOCK@140..151
+            WHITESPACE@140..141 " "
+            EXPR_STMT@141..150
+              LUA_PATH@141..150
+                COLON@141..142 ":"
+                LNAME@142..147 "print"
+                LUA_CALL@147..150
+                  ARG_LIST@147..150
+                    L_PAREN@147..148 "("
+                    NAME_REF@148..149
+                      LNAME@148..149 "a"
+                    R_PAREN@149..150 ")"
+            WHITESPACE@150..151 " "
+          END_KW@151..154 "end"
+    NEWLINE@154..155 "\n"
+  EOF@155..155 ""
+---
+warning@120..127 3:8: this is a Lua path that starts the body; for a return type write the `:` directly after the header: `…): Number`
+warning@141..147 5:10: this is a Lua path that starts the body; for a return type write the `:` directly after the header: `…|: print`

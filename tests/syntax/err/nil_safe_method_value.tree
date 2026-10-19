@@ -1,0 +1,47 @@
+SOURCE_FILE@0..87
+  BLOCK@0..87
+    COMMENT@0..55 "# `x:m?.(…)` is not NL, since `x:m` is always a call."
+    NEWLINE@55..56 "\n"
+    ASSIGN_STMT@56..70
+      NAME_REF@56..57
+        LNAME@56..57 "x"
+      WHITESPACE@57..58 " "
+      EQ@58..59 "="
+      WHITESPACE@59..60 " "
+      CALL_EXPR@60..70
+        METHOD_CALL@60..65
+          NAME_REF@60..63
+            LNAME@60..63 "obj"
+          COLON@63..64 ":"
+          LNAME@64..65 "m"
+        QUESTION_DOT@65..67 "?."
+        ARG_LIST@67..70
+          L_PAREN@67..68 "("
+          LITERAL@68..69
+            NUMBER@68..69 "1"
+          R_PAREN@69..70 ")"
+    NEWLINE@70..71 "\n"
+    ASSIGN_STMT@71..86
+      NAME_REF@71..72
+        LNAME@71..72 "x"
+      WHITESPACE@72..73 " "
+      EQ@73..74 "="
+      WHITESPACE@74..75 " "
+      LUA_PATH@75..86
+        COLON@75..76 ":"
+        LNAME@76..79 "obj"
+        LUA_METHOD@79..81
+          COLON@79..80 ":"
+          LNAME@80..81 "m"
+        LUA_CALL@81..86
+          QUESTION_DOT@81..83 "?."
+          ARG_LIST@83..86
+            L_PAREN@83..84 "("
+            LITERAL@84..85
+              NUMBER@84..85 "1"
+            R_PAREN@85..86 ")"
+    NEWLINE@86..87 "\n"
+  EOF@87..87 ""
+---
+error@65..67 2:10: `x:m?.(…)` is not part of NL: `x:m` is always a call, so there is no method value to test for `nil`. To call `m` only when `x` is not `nil`, write `x?.:m(…)`
+error@81..83 3:11: `x:m?.(…)` is not part of NL: `x:m` is always a call, so there is no method value to test for `nil`. To call `m` only when `x` is not `nil`, write `x?.:m(…)`

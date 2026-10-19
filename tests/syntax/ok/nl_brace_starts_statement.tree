@@ -1,0 +1,23 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..54 "# `{` at the start of a line begins a new statement (a"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..95 "# table), even after a capitalized name."
+    NEWLINE@95..96 "\n"
+    ASSIGN_STMT@96..103
+      NAME_REF@96..97
+        LNAME@96..97 "x"
+      WHITESPACE@97..98 " "
+      EQ@98..99 "="
+      WHITESPACE@99..100 " "
+      NAME_REF@100..103
+        CNAME@100..103 "Foo"
+    NEWLINE@103..104 "\n"
+    EXPR_STMT@104..107
+      LIST_EXPR@104..107
+        L_BRACK@104..105 "["
+        NAME_REF@105..106
+          LNAME@105..106 "b"
+        R_BRACK@106..107 "]"
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""

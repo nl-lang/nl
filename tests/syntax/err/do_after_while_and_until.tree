@@ -1,0 +1,52 @@
+SOURCE_FILE@0..155
+  BLOCK@0..155
+    COMMENT@0..63 "# `do` at the end of a header: `while x do` is reported and the"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..112 "# `do` dropped, so the `end` matches the header."
+    NEWLINE@112..113 "\n"
+    WHILE_STMT@113..133
+      WHILE_KW@113..118 "while"
+      WHITESPACE@118..119 " "
+      NAME_REF@119..120
+        LNAME@119..120 "x"
+      WHITESPACE@120..121 " "
+      ERROR_NODE@121..123
+        DO_KW@121..123 "do"
+      BLOCK@123..130
+        NEWLINE@123..124 "\n"
+        WHITESPACE@124..126 "  "
+        EXPR_STMT@126..129
+          CALL_EXPR@126..129
+            NAME_REF@126..127
+              LNAME@126..127 "y"
+            ARG_LIST@127..129
+              L_PAREN@127..128 "("
+              R_PAREN@128..129 ")"
+        NEWLINE@129..130 "\n"
+      END_KW@130..133 "end"
+    NEWLINE@133..134 "\n"
+    UNTIL_STMT@134..154
+      UNTIL_KW@134..139 "until"
+      WHITESPACE@139..140 " "
+      NAME_REF@140..141
+        LNAME@140..141 "x"
+      WHITESPACE@141..142 " "
+      ERROR_NODE@142..144
+        DO_KW@142..144 "do"
+      BLOCK@144..151
+        NEWLINE@144..145 "\n"
+        WHITESPACE@145..147 "  "
+        EXPR_STMT@147..150
+          CALL_EXPR@147..150
+            NAME_REF@147..148
+              LNAME@147..148 "y"
+            ARG_LIST@148..150
+              L_PAREN@148..149 "("
+              R_PAREN@149..150 ")"
+        NEWLINE@150..151 "\n"
+      END_KW@151..154 "end"
+    NEWLINE@154..155 "\n"
+  EOF@155..155 ""
+---
+error@121..123 3:9: unexpected `do`: the header of `while` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@142..144 6:9: unexpected `do`: the header of `until` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

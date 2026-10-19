@@ -1,0 +1,56 @@
+SOURCE_FILE@0..132
+  BLOCK@0..132
+    COMMENT@0..74 "# Recovery: garbage inside an interface body; the members around it parse."
+    NEWLINE@74..75 "\n"
+    INTERFACE_DECL@75..125
+      INTERFACE_KW@75..84 "interface"
+      WHITESPACE@84..85 " "
+      NAME@85..86
+        CNAME@85..86 "I"
+      NEWLINE@86..87 "\n"
+      WHITESPACE@87..89 "  "
+      IFACE_METHOD@89..101
+        FN_KW@89..91 "fn"
+        WHITESPACE@91..92 " "
+        NAME@92..93
+          LNAME@92..93 "a"
+        RETURN_TYPE@93..101
+          COLON@93..94 ":"
+          WHITESPACE@94..95 " "
+          NAMED_TYPE@95..101
+            QUAL_NAME@95..101
+              CNAME@95..101 "Number"
+      NEWLINE@101..102 "\n"
+      WHITESPACE@102..104 "  "
+      ERROR_NODE@104..107
+        EQ@104..105 "="
+        WHITESPACE@105..106 " "
+        NUMBER@106..107 "5"
+      NEWLINE@107..108 "\n"
+      WHITESPACE@108..110 "  "
+      IFACE_FIELD@110..114
+        NAME@110..114
+          LNAME@110..114 "name"
+      NEWLINE@114..115 "\n"
+      WHITESPACE@115..117 "  "
+      IFACE_METHOD@117..121
+        FN_KW@117..119 "fn"
+        WHITESPACE@119..120 " "
+        NAME@120..121
+          LNAME@120..121 "b"
+      NEWLINE@121..122 "\n"
+      END_KW@122..125 "end"
+    NEWLINE@125..126 "\n"
+    ASSIGN_STMT@126..131
+      NAME_REF@126..127
+        LNAME@126..127 "x"
+      WHITESPACE@127..128 " "
+      EQ@128..129 "="
+      WHITESPACE@129..130 " "
+      LITERAL@130..131
+        NUMBER@130..131 "1"
+    NEWLINE@131..132 "\n"
+  EOF@132..132 ""
+---
+error@104..105 4:3: unexpected `=` in the body of `interface`
+error@110..114 5:3: a field requirement needs a type: `name: Type`

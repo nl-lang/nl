@@ -1,0 +1,23 @@
+SOURCE_FILE@0..39
+  BLOCK@0..39
+    COMMENT@0..28 "# `?` is used only in types."
+    NEWLINE@28..29 "\n"
+    ASSIGN_STMT@29..34
+      NAME_REF@29..30
+        LNAME@29..30 "x"
+      WHITESPACE@30..31 " "
+      EQ@31..32 "="
+      WHITESPACE@32..33 " "
+      NAME_REF@33..34
+        LNAME@33..34 "a"
+    WHITESPACE@34..35 " "
+    ERROR_NODE@35..36
+      QUESTION@35..36 "?"
+    WHITESPACE@36..37 " "
+    EXPR_STMT@37..38
+      NAME_REF@37..38
+        LNAME@37..38 "b"
+    NEWLINE@38..39 "\n"
+  EOF@39..39 ""
+---
+error@35..36 2:7: unexpected `?` after the end of a statement: statements are separated by line breaks or `;`

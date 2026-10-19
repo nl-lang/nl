@@ -1,0 +1,31 @@
+package.loaded.event	true
+bad argument #1 to 'on_run' (string expected, got table)
+bad argument #2 to 'on_run' (string expected, got boolean)
+bad argument #3 to 'on_run' (function expected, got table)
+bad argument #3 to 'on_run' (function expected, got no value)
+bad argument #1 to 'run' (string expected, got nil)
+bad argument #1 to 'run' (string expected, got no value)
+bad argument #2 to 'remove' (string expected, got table)
+five a	five b
+after remove	0
+on_run returns	0
+remove returns	0
+remove of nothing returns	0
+removed function released	true
+records released	true
+a
+run returned: nil
+one
+three, replaced
+second run:
+one
+three, replaced
+added
+third run:
+one, re-added
+three, replaced
+added
+on yields: n
+handler waits
+handler resumed
+run in a task returned: handler value

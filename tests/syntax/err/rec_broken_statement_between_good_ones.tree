@@ -1,0 +1,57 @@
+SOURCE_FILE@0..135
+  BLOCK@0..135
+    COMMENT@0..76 "# Recovery: a broken statement between two good ones; the good ones parse to"
+    NEWLINE@76..77 "\n"
+    COMMENT@77..98 "# their normal nodes."
+    NEWLINE@98..99 "\n"
+    LET_DECL@99..108
+      LET_KW@99..102 "let"
+      WHITESPACE@102..103 " "
+      BIND_PAT@103..104
+        NAME@103..104
+          LNAME@103..104 "a"
+      WHITESPACE@104..105 " "
+      EQ@105..106 "="
+      WHITESPACE@106..107 " "
+      EXPR_LIST@107..108
+        LITERAL@107..108
+          NUMBER@107..108 "1"
+    NEWLINE@108..109 "\n"
+    LET_DECL@109..124
+      LET_KW@109..112 "let"
+      WHITESPACE@112..113 " "
+      BIND_PAT@113..114
+        NAME@113..114
+          LNAME@113..114 "b"
+      WHITESPACE@114..115 " "
+      EQ@115..116 "="
+      WHITESPACE@116..117 " "
+      EXPR_LIST@117..124
+        BIN_EXPR@117..124
+          LITERAL@117..118
+            NUMBER@117..118 "2"
+          WHITESPACE@118..119 " "
+          PLUS@119..120 "+"
+          WHITESPACE@120..121 " "
+          ERROR_NODE@121..122
+            STAR@121..122 "*"
+          WHITESPACE@122..123 " "
+          LITERAL@123..124
+            NUMBER@123..124 "3"
+    NEWLINE@124..125 "\n"
+    LET_DECL@125..134
+      LET_KW@125..128 "let"
+      WHITESPACE@128..129 " "
+      BIND_PAT@129..130
+        NAME@129..130
+          LNAME@129..130 "c"
+      WHITESPACE@130..131 " "
+      EQ@131..132 "="
+      WHITESPACE@132..133 " "
+      EXPR_LIST@133..134
+        LITERAL@133..134
+          NUMBER@133..134 "4"
+    NEWLINE@134..135 "\n"
+  EOF@135..135 ""
+---
+error@121..122 4:13: expected an expression, found `*`

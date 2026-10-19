@@ -1,0 +1,169 @@
+SOURCE_FILE@0..299
+  BLOCK@0..299
+    COMMENT@0..50 "# `pub` before fn, const, struct, interface, enum,"
+    NEWLINE@50..51 "\n"
+    COMMENT@51..69 "# type and module."
+    NEWLINE@69..70 "\n"
+    FN_DECL@70..123
+      PUB_KW@70..73 "pub"
+      WHITESPACE@73..74 " "
+      FN_KW@74..76 "fn"
+      WHITESPACE@76..77 " "
+      NAME@77..86
+        LNAME@77..86 "find_path"
+      PARAM_LIST@86..110
+        L_PAREN@86..87 "("
+        PARAM@87..98
+          TYPED_PAT@87..98
+            BIND_PAT@87..91
+              NAME@87..91
+                LNAME@87..91 "from"
+            COLON@91..92 ":"
+            WHITESPACE@92..93 " "
+            NAMED_TYPE@93..98
+              QUAL_NAME@93..98
+                CNAME@93..98 "Point"
+        COMMA@98..99 ","
+        WHITESPACE@99..100 " "
+        PARAM@100..109
+          TYPED_PAT@100..109
+            BIND_PAT@100..102
+              NAME@100..102
+                LNAME@100..102 "to"
+            COLON@102..103 ":"
+            WHITESPACE@103..104 " "
+            NAMED_TYPE@104..109
+              QUAL_NAME@104..109
+                CNAME@104..109 "Point"
+        R_PAREN@109..110 ")"
+      RETURN_TYPE@110..119
+        COLON@110..111 ":"
+        WHITESPACE@111..112 " "
+        ARRAY_TYPE@112..119
+          L_BRACK@112..113 "["
+          NAMED_TYPE@113..118
+            QUAL_NAME@113..118
+              CNAME@113..118 "Point"
+          R_BRACK@118..119 "]"
+      BLOCK@119..120
+        NEWLINE@119..120 "\n"
+      END_KW@120..123 "end"
+    NEWLINE@123..124 "\n"
+    FN_DECL@124..145
+      PUB_KW@124..127 "pub"
+      WHITESPACE@127..128 " "
+      ASYNC_KW@128..133 "async"
+      WHITESPACE@133..134 " "
+      FN_KW@134..136 "fn"
+      WHITESPACE@136..137 " "
+      NAME@137..141
+        LNAME@137..141 "load"
+      BLOCK@141..142
+        WHITESPACE@141..142 " "
+      END_KW@142..145 "end"
+    NEWLINE@145..146 "\n"
+    CONST_DECL@146..166
+      PUB_KW@146..149 "pub"
+      WHITESPACE@149..150 " "
+      CONST_KW@150..155 "const"
+      WHITESPACE@155..156 " "
+      BIND_PAT@156..161
+        NAME@156..161
+          LNAME@156..161 "limit"
+      WHITESPACE@161..162 " "
+      EQ@162..163 "="
+      WHITESPACE@163..164 " "
+      EXPR_LIST@164..166
+        LITERAL@164..166
+          NUMBER@164..166 "10"
+    NEWLINE@166..167 "\n"
+    CONST_DECL@167..200
+      PUB_KW@167..170 "pub"
+      WHITESPACE@170..171 " "
+      CONST_KW@171..176 "const"
+      WHITESPACE@176..177 " "
+      BIND_PAT@177..180
+        NAME@177..180
+          CNAME@177..180 "MAX"
+      COMMA@180..181 ","
+      WHITESPACE@181..182 " "
+      TYPED_PAT@182..193
+        BIND_PAT@182..185
+          NAME@182..185
+            LNAME@182..185 "min"
+        COLON@185..186 ":"
+        WHITESPACE@186..187 " "
+        NAMED_TYPE@187..193
+          QUAL_NAME@187..193
+            CNAME@187..193 "Number"
+      WHITESPACE@193..194 " "
+      EQ@194..195 "="
+      WHITESPACE@195..196 " "
+      EXPR_LIST@196..200
+        LITERAL@196..197
+          NUMBER@196..197 "1"
+        COMMA@197..198 ","
+        WHITESPACE@198..199 " "
+        LITERAL@199..200
+          NUMBER@199..200 "2"
+    NEWLINE@200..201 "\n"
+    STRUCT_DECL@201..219
+      PUB_KW@201..204 "pub"
+      WHITESPACE@204..205 " "
+      STRUCT_KW@205..211 "struct"
+      WHITESPACE@211..212 " "
+      NAME@212..215
+        CNAME@212..215 "Foo"
+      WHITESPACE@215..216 " "
+      END_KW@216..219 "end"
+    NEWLINE@219..220 "\n"
+    INTERFACE_DECL@220..239
+      PUB_KW@220..223 "pub"
+      WHITESPACE@223..224 " "
+      INTERFACE_KW@224..233 "interface"
+      WHITESPACE@233..234 " "
+      NAME@234..235
+        CNAME@234..235 "I"
+      WHITESPACE@235..236 " "
+      END_KW@236..239 "end"
+    NEWLINE@239..240 "\n"
+    ENUM_DECL@240..261
+      PUB_KW@240..243 "pub"
+      WHITESPACE@243..244 " "
+      ENUM_KW@244..248 "enum"
+      WHITESPACE@248..249 " "
+      NAME@249..253
+        CNAME@249..253 "Mode"
+      NEWLINE@253..254 "\n"
+      WHITESPACE@254..256 "  "
+      VARIANT@256..257
+        NAME@256..257
+          CNAME@256..257 "A"
+      NEWLINE@257..258 "\n"
+      END_KW@258..261 "end"
+    NEWLINE@261..262 "\n"
+    TYPE_DECL@262..281
+      PUB_KW@262..265 "pub"
+      WHITESPACE@265..266 " "
+      TYPE_KW@266..270 "type"
+      WHITESPACE@270..271 " "
+      NAME@271..272
+        CNAME@271..272 "T"
+      WHITESPACE@272..273 " "
+      EQ@273..274 "="
+      WHITESPACE@274..275 " "
+      NAMED_TYPE@275..281
+        QUAL_NAME@275..281
+          CNAME@275..281 "Number"
+    NEWLINE@281..282 "\n"
+    MODULE_DECL@282..298
+      PUB_KW@282..285 "pub"
+      WHITESPACE@285..286 " "
+      MODULE_KW@286..292 "module"
+      WHITESPACE@292..293 " "
+      QUAL_NAME@293..294
+        CNAME@293..294 "M"
+      WHITESPACE@294..295 " "
+      END_KW@295..298 "end"
+    NEWLINE@298..299 "\n"
+  EOF@299..299 ""

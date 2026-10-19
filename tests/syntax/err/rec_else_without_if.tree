@@ -1,0 +1,42 @@
+SOURCE_FILE@0..75
+  BLOCK@0..75
+    COMMENT@0..45 "# Recovery: `else` and `elseif` with no `if`."
+    NEWLINE@45..46 "\n"
+    ASSIGN_STMT@46..51
+      NAME_REF@46..47
+        LNAME@46..47 "x"
+      WHITESPACE@47..48 " "
+      EQ@48..49 "="
+      WHITESPACE@49..50 " "
+      LITERAL@50..51
+        NUMBER@50..51 "1"
+    NEWLINE@51..52 "\n"
+    ERROR_NODE@52..56
+      ELSE_KW@52..56 "else"
+    NEWLINE@56..57 "\n"
+    WHITESPACE@57..59 "  "
+    ASSIGN_STMT@59..64
+      NAME_REF@59..60
+        LNAME@59..60 "y"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      LITERAL@63..64
+        NUMBER@63..64 "2"
+    NEWLINE@64..65 "\n"
+    ERROR_NODE@65..68
+      END_KW@65..68 "end"
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..74
+      NAME_REF@69..70
+        LNAME@69..70 "z"
+      WHITESPACE@70..71 " "
+      EQ@71..72 "="
+      WHITESPACE@72..73 " "
+      LITERAL@73..74
+        NUMBER@73..74 "3"
+    NEWLINE@74..75 "\n"
+  EOF@75..75 ""
+---
+error@52..56 3:1: unexpected `else`: there is no `if` here for it to continue
+error@65..68 5:1: unexpected `end`: there is no open block for it to close

@@ -1,0 +1,33 @@
+SOURCE_FILE@0..95
+  BLOCK@0..95
+    COMMENT@0..55 "# `(` and `[` on the next line are not a call or index,"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..75 "# even after `end`."
+    NEWLINE@75..76 "\n"
+    ASSIGN_STMT@76..90
+      NAME_REF@76..77
+        LNAME@76..77 "x"
+      WHITESPACE@77..78 " "
+      EQ@78..79 "="
+      WHITESPACE@79..80 " "
+      FN_EXPR@80..90
+        FN_KW@80..82 "fn"
+        PARAM_LIST@82..84
+          L_PAREN@82..83 "("
+          R_PAREN@83..84 ")"
+        BLOCK@84..87
+          WHITESPACE@84..85 " "
+          EXPR_STMT@85..86
+            LITERAL@85..86
+              NUMBER@85..86 "1"
+          WHITESPACE@86..87 " "
+        END_KW@87..90 "end"
+    NEWLINE@90..91 "\n"
+    EXPR_STMT@91..94
+      PAREN_EXPR@91..94
+        L_PAREN@91..92 "("
+        NAME_REF@92..93
+          LNAME@92..93 "y"
+        R_PAREN@93..94 ")"
+    NEWLINE@94..95 "\n"
+  EOF@95..95 ""

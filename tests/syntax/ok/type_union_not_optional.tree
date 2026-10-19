@@ -1,0 +1,122 @@
+SOURCE_FILE@0..158
+  BLOCK@0..158
+    COMMENT@0..52 "# `|` lowest, prefix `~` next, postfix `?` tightest;"
+    NEWLINE@52..53 "\n"
+    COMMENT@53..73 "# parentheses group."
+    NEWLINE@73..74 "\n"
+    LET_DECL@74..90
+      LET_KW@74..77 "let"
+      WHITESPACE@77..78 " "
+      TYPED_PAT@78..90
+        BIND_PAT@78..79
+          NAME@78..79
+            LNAME@78..79 "a"
+        COLON@79..80 ":"
+        WHITESPACE@80..81 " "
+        UNION_TYPE@81..90
+          NAMED_TYPE@81..82
+            QUAL_NAME@81..82
+              CNAME@81..82 "A"
+          WHITESPACE@82..83 " "
+          PIPE@83..84 "|"
+          WHITESPACE@84..85 " "
+          NAMED_TYPE@85..86
+            QUAL_NAME@85..86
+              CNAME@85..86 "B"
+          WHITESPACE@86..87 " "
+          PIPE@87..88 "|"
+          WHITESPACE@88..89 " "
+          NAMED_TYPE@89..90
+            QUAL_NAME@89..90
+              CNAME@89..90 "C"
+    NEWLINE@90..91 "\n"
+    LET_DECL@91..104
+      LET_KW@91..94 "let"
+      WHITESPACE@94..95 " "
+      TYPED_PAT@95..104
+        BIND_PAT@95..96
+          NAME@95..96
+            LNAME@95..96 "b"
+        COLON@96..97 ":"
+        WHITESPACE@97..98 " "
+        UNION_TYPE@98..104
+          NOT_TYPE@98..100
+            TILDE@98..99 "~"
+            NAMED_TYPE@99..100
+              QUAL_NAME@99..100
+                CNAME@99..100 "A"
+          WHITESPACE@100..101 " "
+          PIPE@101..102 "|"
+          WHITESPACE@102..103 " "
+          NAMED_TYPE@103..104
+            QUAL_NAME@103..104
+              CNAME@103..104 "B"
+    NEWLINE@104..105 "\n"
+    LET_DECL@105..115
+      LET_KW@105..108 "let"
+      WHITESPACE@108..109 " "
+      TYPED_PAT@109..115
+        BIND_PAT@109..110
+          NAME@109..110
+            LNAME@109..110 "c"
+        COLON@110..111 ":"
+        WHITESPACE@111..112 " "
+        NOT_TYPE@112..115
+          TILDE@112..113 "~"
+          OPTIONAL_TYPE@113..115
+            NAMED_TYPE@113..114
+              QUAL_NAME@113..114
+                CNAME@113..114 "A"
+            QUESTION@114..115 "?"
+    NEWLINE@115..116 "\n"
+    LET_DECL@116..141
+      LET_KW@116..119 "let"
+      WHITESPACE@119..120 " "
+      TYPED_PAT@120..141
+        BIND_PAT@120..121
+          NAME@120..121
+            LNAME@120..121 "d"
+        COLON@121..122 ":"
+        WHITESPACE@122..123 " "
+        OPTIONAL_TYPE@123..141
+          PAREN_TYPE@123..140
+            L_PAREN@123..124 "("
+            UNION_TYPE@124..139
+              NAMED_TYPE@124..130
+                QUAL_NAME@124..130
+                  CNAME@124..130 "Number"
+              WHITESPACE@130..131 " "
+              PIPE@131..132 "|"
+              WHITESPACE@132..133 " "
+              NAMED_TYPE@133..139
+                QUAL_NAME@133..139
+                  CNAME@133..139 "String"
+            R_PAREN@139..140 ")"
+          QUESTION@140..141 "?"
+    NEWLINE@141..142 "\n"
+    LET_DECL@142..157
+      LET_KW@142..145 "let"
+      WHITESPACE@145..146 " "
+      TYPED_PAT@146..157
+        BIND_PAT@146..147
+          NAME@146..147
+            LNAME@146..147 "e"
+        COLON@147..148 ":"
+        WHITESPACE@148..149 " "
+        NOT_TYPE@149..157
+          TILDE@149..150 "~"
+          PAREN_TYPE@150..157
+            L_PAREN@150..151 "("
+            UNION_TYPE@151..156
+              NAMED_TYPE@151..152
+                QUAL_NAME@151..152
+                  CNAME@151..152 "A"
+              WHITESPACE@152..153 " "
+              PIPE@153..154 "|"
+              WHITESPACE@154..155 " "
+              NAMED_TYPE@155..156
+                QUAL_NAME@155..156
+                  CNAME@155..156 "B"
+            R_PAREN@156..157 ")"
+    NEWLINE@157..158 "\n"
+  EOF@158..158 ""

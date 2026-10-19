@@ -1,0 +1,26 @@
+SOURCE_FILE@0..57
+  BLOCK@0..57
+    COMMENT@0..43 "# A pipe target takes no command arguments."
+    NEWLINE@43..44 "\n"
+    ASSIGN_STMT@44..56
+      NAME_REF@44..45
+        LNAME@44..45 "x"
+      WHITESPACE@45..46 " "
+      EQ@46..47 "="
+      WHITESPACE@47..48 " "
+      PIPE_EXPR@48..56
+        NAME_REF@48..49
+          LNAME@48..49 "a"
+        WHITESPACE@49..50 " "
+        PIPE_GT@50..52 "|>"
+        WHITESPACE@52..53 " "
+        NAME_REF@53..54
+          LNAME@53..54 "f"
+        WHITESPACE@54..55 " "
+        ERROR_NODE@55..56
+          NAME_REF@55..56
+            LNAME@55..56 "b"
+    NEWLINE@56..57 "\n"
+  EOF@57..57 ""
+---
+error@55..56 2:12: a pipe target takes no arguments without parentheses: write `f(…)` (the piped value comes first)

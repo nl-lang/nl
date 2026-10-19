@@ -1,0 +1,27 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..49 "# A brace pattern is all keyed or all positional."
+    NEWLINE@49..50 "\n"
+    LET_DECL@50..64
+      LET_KW@50..53 "let"
+      WHITESPACE@53..54 " "
+      BRACE_PAT@54..60
+        L_CURLY@54..55 "{"
+        LITERAL_PAT@55..56
+          NUMBER@55..56 "1"
+        COMMA@56..57 ","
+        WHITESPACE@57..58 " "
+        PAT_FIELD@58..59
+          NAME@58..59
+            LNAME@58..59 "a"
+        R_CURLY@59..60 "}"
+      WHITESPACE@60..61 " "
+      EQ@61..62 "="
+      WHITESPACE@62..63 " "
+      EXPR_LIST@63..64
+        NAME_REF@63..64
+          LNAME@63..64 "t"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""
+---
+error@55..56 2:6: a `{…}` pattern goes by key (`{name, key: p}`); a positional pattern is written with brackets: `[1]`

@@ -1,0 +1,29 @@
+SOURCE_FILE@0..55
+  BLOCK@0..55
+    COMMENT@0..40 "# Recovery: an unclosed `[` of an index."
+    NEWLINE@40..41 "\n"
+    ASSIGN_STMT@41..48
+      NAME_REF@41..42
+        LNAME@41..42 "x"
+      WHITESPACE@42..43 " "
+      EQ@43..44 "="
+      WHITESPACE@44..45 " "
+      INDEX_EXPR@45..48
+        NAME_REF@45..46
+          LNAME@45..46 "t"
+        L_BRACK@46..47 "["
+        LITERAL@47..48
+          NUMBER@47..48 "1"
+    NEWLINE@48..49 "\n"
+    ASSIGN_STMT@49..54
+      NAME_REF@49..50
+        LNAME@49..50 "y"
+      WHITESPACE@50..51 " "
+      EQ@51..52 "="
+      WHITESPACE@52..53 " "
+      LITERAL@53..54
+        NUMBER@53..54 "3"
+    NEWLINE@54..55 "\n"
+  EOF@55..55 ""
+---
+error@49..50 3:1: expected `]` to close this `[`, found `y`

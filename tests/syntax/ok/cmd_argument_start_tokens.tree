@@ -1,0 +1,173 @@
+SOURCE_FILE@0..162
+  BLOCK@0..162
+    COMMENT@0..33 "# Every token class that starts a"
+    NEWLINE@33..34 "\n"
+    COMMENT@34..53 "# command argument."
+    NEWLINE@53..54 "\n"
+    EXPR_STMT@54..57
+      COMMAND_CALL@54..57
+        NAME_REF@54..55
+          LNAME@54..55 "f"
+        WHITESPACE@55..56 " "
+        COMMAND_ARGS@56..57
+          NAME_REF@56..57
+            LNAME@56..57 "x"
+    NEWLINE@57..58 "\n"
+    EXPR_STMT@58..61
+      COMMAND_CALL@58..61
+        NAME_REF@58..59
+          LNAME@58..59 "f"
+        WHITESPACE@59..60 " "
+        COMMAND_ARGS@60..61
+          NAME_REF@60..61
+            CNAME@60..61 "X"
+    NEWLINE@61..62 "\n"
+    EXPR_STMT@62..66
+      COMMAND_CALL@62..66
+        NAME_REF@62..63
+          LNAME@62..63 "f"
+        WHITESPACE@63..64 " "
+        COMMAND_ARGS@64..66
+          AT_EXPR@64..66
+            AT_NAME@64..66 "@a"
+    NEWLINE@66..67 "\n"
+    EXPR_STMT@67..78
+      COMMAND_CALL@67..78
+        NAME_REF@67..68
+          LNAME@67..68 "f"
+        WHITESPACE@68..69 " "
+        COMMAND_ARGS@69..78
+          LUA_PATH@69..78
+            COLON@69..70 ":"
+            LNAME@70..73 "lua"
+            LUA_FIELD@73..78
+              DOT@73..74 "."
+              LNAME@74..78 "path"
+    NEWLINE@78..79 "\n"
+    EXPR_STMT@79..82
+      COMMAND_CALL@79..82
+        NAME_REF@79..80
+          LNAME@79..80 "f"
+        WHITESPACE@80..81 " "
+        COMMAND_ARGS@81..82
+          LITERAL@81..82
+            NUMBER@81..82 "1"
+    NEWLINE@82..83 "\n"
+    EXPR_STMT@83..88
+      COMMAND_CALL@83..88
+        NAME_REF@83..84
+          LNAME@83..84 "f"
+        WHITESPACE@84..85 " "
+        COMMAND_ARGS@85..88
+          LITERAL@85..88
+            STRING@85..88 "\"s\""
+    NEWLINE@88..89 "\n"
+    EXPR_STMT@89..99
+      COMMAND_CALL@89..99
+        NAME_REF@89..90
+          LNAME@89..90 "f"
+        WHITESPACE@90..91 " "
+        COMMAND_ARGS@91..99
+          INTERP_STRING@91..99
+            STR_BEGIN@91..95 "\"a#{"
+            NAME_REF@95..96
+              LNAME@95..96 "b"
+            STR_END@96..99 "}c\""
+    NEWLINE@99..100 "\n"
+    EXPR_STMT@100..105
+      COMMAND_CALL@100..105
+        NAME_REF@100..101
+          LNAME@100..101 "f"
+        WHITESPACE@101..102 " "
+        COMMAND_ARGS@102..105
+          LITERAL@102..105
+            NIL_KW@102..105 "nil"
+    NEWLINE@105..106 "\n"
+    EXPR_STMT@106..112
+      COMMAND_CALL@106..112
+        NAME_REF@106..107
+          LNAME@106..107 "f"
+        WHITESPACE@107..108 " "
+        COMMAND_ARGS@108..112
+          LITERAL@108..112
+            TRUE_KW@108..112 "true"
+    NEWLINE@112..113 "\n"
+    EXPR_STMT@113..120
+      COMMAND_CALL@113..120
+        NAME_REF@113..114
+          LNAME@113..114 "f"
+        WHITESPACE@114..115 " "
+        COMMAND_ARGS@115..120
+          LITERAL@115..120
+            FALSE_KW@115..120 "false"
+    NEWLINE@120..121 "\n"
+    EXPR_STMT@121..127
+      COMMAND_CALL@121..127
+        NAME_REF@121..122
+          LNAME@121..122 "f"
+        WHITESPACE@122..123 " "
+        COMMAND_ARGS@123..127
+          SELF_EXPR@123..127
+            SELF_KW@123..127 "self"
+    NEWLINE@127..128 "\n"
+    EXPR_STMT@128..134
+      COMMAND_CALL@128..134
+        NAME_REF@128..129
+          LNAME@128..129 "f"
+        WHITESPACE@129..130 " "
+        COMMAND_ARGS@130..134
+          SELF_EXPR@130..134
+            SELF_TYPE_KW@130..134 "Self"
+    NEWLINE@134..135 "\n"
+    EXPR_STMT@135..139
+      COMMAND_CALL@135..139
+        NAME_REF@135..136
+          LNAME@135..136 "f"
+        WHITESPACE@136..137 " "
+        COMMAND_ARGS@137..139
+          PREFIX_EXPR@137..139
+            BANG@137..138 "!"
+            NAME_REF@138..139
+              LNAME@138..139 "x"
+    NEWLINE@139..140 "\n"
+    EXPR_STMT@140..144
+      COMMAND_CALL@140..144
+        NAME_REF@140..141
+          LNAME@140..141 "f"
+        WHITESPACE@141..142 " "
+        COMMAND_ARGS@142..144
+          PREFIX_EXPR@142..144
+            TILDE@142..143 "~"
+            NAME_REF@143..144
+              LNAME@143..144 "x"
+    NEWLINE@144..145 "\n"
+    EXPR_STMT@145..152
+      COMMAND_CALL@145..152
+        NAME_REF@145..146
+          LNAME@145..146 "f"
+        WHITESPACE@146..147 " "
+        COMMAND_ARGS@147..152
+          PREFIX_EXPR@147..152
+            NOT_KW@147..150 "not"
+            WHITESPACE@150..151 " "
+            NAME_REF@151..152
+              LNAME@151..152 "x"
+    NEWLINE@152..153 "\n"
+    EXPR_STMT@153..161
+      COMMAND_CALL@153..161
+        NAME_REF@153..154
+          LNAME@153..154 "f"
+        WHITESPACE@154..155 " "
+        COMMAND_ARGS@155..161
+          TABLE_EXPR@155..161
+            L_CURLY@155..156 "{"
+            TABLE_PAIR@156..160
+              TABLE_KEY@156..157
+                LNAME@156..157 "a"
+              COLON@157..158 ":"
+              WHITESPACE@158..159 " "
+              LITERAL@159..160
+                NUMBER@159..160 "1"
+            R_CURLY@160..161 "}"
+    NEWLINE@161..162 "\n"
+  EOF@162..162 ""

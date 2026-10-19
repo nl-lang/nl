@@ -1,0 +1,31 @@
+SOURCE_FILE@0..115
+  BLOCK@0..115
+    COMMENT@0..57 "# An interpolation in a one-line string must close on its"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..96 "# line; the next line parses normally."
+    NEWLINE@96..97 "\n"
+    ASSIGN_STMT@97..108
+      NAME_REF@97..98
+        LNAME@97..98 "a"
+      WHITESPACE@98..99 " "
+      EQ@99..100 "="
+      WHITESPACE@100..101 " "
+      INTERP_STRING@101..108
+        STR_BEGIN@101..106 "\"x #{"
+        WHITESPACE@106..107 " "
+        NAME_REF@107..108
+          LNAME@107..108 "y"
+        STR_END@108..108 ""
+    NEWLINE@108..109 "\n"
+    ASSIGN_STMT@109..114
+      NAME_REF@109..110
+        LNAME@109..110 "b"
+      WHITESPACE@110..111 " "
+      EQ@111..112 "="
+      WHITESPACE@112..113 " "
+      LITERAL@113..114
+        NUMBER@113..114 "1"
+    NEWLINE@114..115 "\n"
+  EOF@115..115 ""
+---
+error@104..106 3:8: an interpolation in a one-line string must close on the line where it opens: add the missing `}`, or use a heredoc `"""` for text on several lines

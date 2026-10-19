@@ -1,0 +1,53 @@
+SOURCE_FILE@0..90
+  BLOCK@0..90
+    COMMENT@0..56 "# A command call `f a, b` is a call without parentheses."
+    NEWLINE@56..57 "\n"
+    EXPR_STMT@57..67
+      COMMAND_CALL@57..67
+        NAME_REF@57..62
+          LNAME@57..62 "print"
+        WHITESPACE@62..63 " "
+        COMMAND_ARGS@63..67
+          LITERAL@63..67
+            STRING@63..67 "\"hi\""
+    NEWLINE@67..68 "\n"
+    EXPR_STMT@68..74
+      COMMAND_CALL@68..74
+        NAME_REF@68..69
+          LNAME@68..69 "f"
+        WHITESPACE@69..70 " "
+        COMMAND_ARGS@70..74
+          NAME_REF@70..71
+            LNAME@70..71 "a"
+          COMMA@71..72 ","
+          WHITESPACE@72..73 " "
+          NAME_REF@73..74
+            LNAME@73..74 "b"
+    NEWLINE@74..75 "\n"
+    EXPR_STMT@75..89
+      COMMAND_CALL@75..89
+        NAME_REF@75..76
+          LNAME@75..76 "f"
+        WHITESPACE@76..77 " "
+        COMMAND_ARGS@77..89
+          NAME_REF@77..78
+            LNAME@77..78 "a"
+          COMMA@78..79 ","
+          WHITESPACE@79..80 " "
+          CALL_EXPR@80..84
+            NAME_REF@80..81
+              LNAME@80..81 "b"
+            ARG_LIST@81..84
+              L_PAREN@81..82 "("
+              NAME_REF@82..83
+                LNAME@82..83 "c"
+              R_PAREN@83..84 ")"
+          COMMA@84..85 ","
+          WHITESPACE@85..86 " "
+          FIELD_EXPR@86..89
+            NAME_REF@86..87
+              LNAME@86..87 "d"
+            DOT@87..88 "."
+            LNAME@88..89 "e"
+    NEWLINE@89..90 "\n"
+  EOF@90..90 ""

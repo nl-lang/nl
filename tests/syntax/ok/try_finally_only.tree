@@ -1,0 +1,34 @@
+SOURCE_FILE@0..105
+  BLOCK@0..105
+    COMMENT@0..52 "# `try` with only `finally`; bodies may start on the"
+    NEWLINE@52..53 "\n"
+    COMMENT@53..70 "# keyword's line."
+    NEWLINE@70..71 "\n"
+    EXPR_STMT@71..104
+      TRY_EXPR@71..104
+        TRY_KW@71..74 "try"
+        BLOCK@74..83
+          WHITESPACE@74..75 " "
+          EXPR_STMT@75..82
+            CALL_EXPR@75..82
+              NAME_REF@75..80
+                LNAME@75..80 "risky"
+              ARG_LIST@80..82
+                L_PAREN@80..81 "("
+                R_PAREN@81..82 ")"
+          WHITESPACE@82..83 " "
+        FINALLY_CLAUSE@83..101
+          FINALLY_KW@83..90 "finally"
+          BLOCK@90..101
+            WHITESPACE@90..91 " "
+            EXPR_STMT@91..100
+              CALL_EXPR@91..100
+                NAME_REF@91..98
+                  LNAME@91..98 "cleanup"
+                ARG_LIST@98..100
+                  L_PAREN@98..99 "("
+                  R_PAREN@99..100 ")"
+            WHITESPACE@100..101 " "
+        END_KW@101..104 "end"
+    NEWLINE@104..105 "\n"
+  EOF@105..105 ""

@@ -1,0 +1,21 @@
+# Links nl_sys and mlua against the VM fork, outside the
+# workspace: the workspace builds mlua with stock LuaJIT for nlc, so the
+# patch below cannot live there. Run with tests/vm/nl_sys_link/run.sh, which
+# prepares the patched luajit-src under target/nl_sys_link first.
+[package]
+name = "nl_sys_link"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+nl_sys = { path = "../../../crates/nl_sys" }
+mlua-sys = { version = "0.13", features = ["luajit", "vendored"] }
+mlua = { version = "0.12", features = ["luajit", "vendored"] }
+
+[patch.crates-io]
+# A copy of luajit-src-rs whose luajit2/ is the fork's working tree, made by
+# run.sh; nothing in the repository's git state changes.
+luajit-src = { path = "../../../target/nl_sys_link/luajit-src" }

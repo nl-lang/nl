@@ -1,0 +1,98 @@
+SOURCE_FILE@0..233
+  BLOCK@0..233
+    COMMENT@0..46 "# `true`, `false` and `nil` before `:` are not"
+    NEWLINE@46..47 "\n"
+    COMMENT@47..123 "# table keys; one error per item, the value is read, and the other items and"
+    NEWLINE@123..124 "\n"
+    COMMENT@124..160 "# the next statement are unaffected."
+    NEWLINE@160..161 "\n"
+    ASSIGN_STMT@161..226
+      NAME_REF@161..162
+        LNAME@161..162 "t"
+      WHITESPACE@162..163 " "
+      EQ@163..164 "="
+      WHITESPACE@164..165 " "
+      TABLE_EXPR@165..226
+        L_CURLY@165..166 "{"
+        TABLE_PAIR@166..173
+          ERROR_NODE@166..170
+            TRUE_KW@166..170 "true"
+          COLON@170..171 ":"
+          WHITESPACE@171..172 " "
+          LITERAL@172..173
+            NUMBER@172..173 "1"
+        COMMA@173..174 ","
+        WHITESPACE@174..175 " "
+        TABLE_PAIR@175..179
+          TABLE_KEY@175..176
+            LNAME@175..176 "a"
+          COLON@176..177 ":"
+          WHITESPACE@177..178 " "
+          LITERAL@178..179
+            NUMBER@178..179 "2"
+        COMMA@179..180 ","
+        WHITESPACE@180..181 " "
+        TABLE_PAIR@181..192
+          ERROR_NODE@181..186
+            FALSE_KW@181..186 "false"
+          COLON@186..187 ":"
+          WHITESPACE@187..188 " "
+          CALL_EXPR@188..192
+            NAME_REF@188..189
+              LNAME@188..189 "f"
+            ARG_LIST@189..192
+              L_PAREN@189..190 "("
+              LITERAL@190..191
+                NUMBER@190..191 "3"
+              R_PAREN@191..192 ")"
+        COMMA@192..193 ","
+        WHITESPACE@193..194 " "
+        TABLE_PAIR@194..202
+          ERROR_NODE@194..197
+            NIL_KW@194..197 "nil"
+          COLON@197..198 ":"
+          WHITESPACE@198..199 " "
+          LITERAL@199..202
+            STRING@199..202 "\"x\""
+        COMMA@202..203 ","
+        WHITESPACE@203..204 " "
+        TABLE_PAIR@204..213
+          TABLE_KEY@204..210
+            L_BRACK@204..205 "["
+            LITERAL@205..209
+              TRUE_KW@205..209 "true"
+            R_BRACK@209..210 "]"
+          COLON@210..211 ":"
+          WHITESPACE@211..212 " "
+          LITERAL@212..213
+            NUMBER@212..213 "4"
+        COMMA@213..214 ","
+        WHITESPACE@214..215 " "
+        TABLE_PAIR@215..225
+          TABLE_KEY@215..222
+            L_BRACK@215..216 "["
+            LITERAL@216..221
+              STRING@216..221 "\"nil\""
+            R_BRACK@221..222 "]"
+          COLON@222..223 ":"
+          WHITESPACE@223..224 " "
+          LITERAL@224..225
+            NUMBER@224..225 "5"
+        R_CURLY@225..226 "}"
+    NEWLINE@226..227 "\n"
+    ASSIGN_STMT@227..232
+      NAME_REF@227..228
+        LNAME@227..228 "u"
+      WHITESPACE@228..229 " "
+      EQ@229..230 "="
+      WHITESPACE@230..231 " "
+      LITERAL@231..232
+        NUMBER@231..232 "1"
+    NEWLINE@232..233 "\n"
+  EOF@233..233 ""
+---
+error@166..170 4:6: `true` is not a key name here. For the string key write `{"true": 1}`; a boolean key is set with an assignment, `t[true] = 1`
+error@181..186 4:21: `false` is not a key name here. For the string key write `{"false": f(3)}`; a boolean key is set with an assignment, `t[false] = f(3)`
+error@194..197 4:34: `nil` is not a key name here, and `nil` cannot be a key. For the string key write `{"nil": "x"}`
+error@204..210 4:44: a key is a word, a number or a plain string; a computed key is set with an assignment, `t[true] = …`
+error@215..222 4:55: a key is a word, a number or a plain string; a computed key is set with an assignment, `t["nil"] = …`

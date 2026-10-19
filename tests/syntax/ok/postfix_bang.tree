@@ -1,0 +1,104 @@
+SOURCE_FILE@0..209
+  BLOCK@0..209
+    COMMENT@0..55 "# Postfix `!` after an LNAME, a CNAME, an AT_NAME and a"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..102 "# `.name` member; member access may follow it."
+    NEWLINE@102..103 "\n"
+    ASSIGN_STMT@103..109
+      NAME_REF@103..104
+        LNAME@103..104 "a"
+      WHITESPACE@104..105 " "
+      EQ@105..106 "="
+      WHITESPACE@106..107 " "
+      BANG_EXPR@107..109
+        NAME_REF@107..108
+          LNAME@107..108 "f"
+        BANG_POSTFIX@108..109 "!"
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..118
+      NAME_REF@110..111
+        LNAME@110..111 "a"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      BANG_EXPR@114..118
+        FIELD_EXPR@114..117
+          NAME_REF@114..115
+            LNAME@114..115 "x"
+          DOT@115..116 "."
+          LNAME@116..117 "m"
+        BANG_POSTFIX@117..118 "!"
+    NEWLINE@118..119 "\n"
+    ASSIGN_STMT@119..132
+      NAME_REF@119..120
+        LNAME@119..120 "a"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      BANG_EXPR@123..132
+        AT_EXPR@123..131
+          AT_NAME@123..131 "@handler"
+        BANG_POSTFIX@131..132 "!"
+    NEWLINE@132..133 "\n"
+    ASSIGN_STMT@133..149
+      NAME_REF@133..134
+        LNAME@133..134 "a"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      BANG_EXPR@137..149
+        FIELD_EXPR@137..148
+          SELF_EXPR@137..141
+            SELF_TYPE_KW@137..141 "Self"
+          DOT@141..142 "."
+          LNAME@142..148 "helper"
+        BANG_POSTFIX@148..149 "!"
+    NEWLINE@149..150 "\n"
+    ASSIGN_STMT@150..161
+      NAME_REF@150..151
+        LNAME@150..151 "a"
+      WHITESPACE@151..152 " "
+      EQ@152..153 "="
+      WHITESPACE@153..154 " "
+      BANG_EXPR@154..161
+        NAME_REF@154..160
+          CNAME@154..160 "ON_HIT"
+        BANG_POSTFIX@160..161 "!"
+    NEWLINE@161..162 "\n"
+    ASSIGN_STMT@162..170
+      NAME_REF@162..163
+        LNAME@162..163 "a"
+      WHITESPACE@163..164 " "
+      EQ@164..165 "="
+      WHITESPACE@165..166 " "
+      FIELD_EXPR@166..170
+        BANG_EXPR@166..168
+          NAME_REF@166..167
+            LNAME@166..167 "f"
+          BANG_POSTFIX@167..168 "!"
+        DOT@168..169 "."
+        LNAME@169..170 "x"
+    NEWLINE@170..171 "\n"
+    EXPR_STMT@171..208
+      FIELD_EXPR@171..208
+        CALL_EXPR@171..202
+          FIELD_EXPR@171..181
+            NAME_REF@171..177
+              CNAME@171..177 "Worker"
+            DOT@177..178 "."
+            LNAME@178..181 "map"
+          ARG_LIST@181..202
+            L_PAREN@181..182 "("
+            NAME_REF@182..188
+              LNAME@182..188 "chunks"
+            COMMA@188..189 ","
+            WHITESPACE@189..190 " "
+            BANG_EXPR@190..201
+              NAME_REF@190..200
+                LNAME@190..200 "build_mesh"
+              BANG_POSTFIX@200..201 "!"
+            R_PAREN@201..202 ")"
+        DOT@202..203 "."
+        LNAME@203..208 "await"
+    NEWLINE@208..209 "\n"
+  EOF@209..209 ""

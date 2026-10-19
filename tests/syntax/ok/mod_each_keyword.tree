@@ -1,0 +1,61 @@
+SOURCE_FILE@0..104
+  BLOCK@0..104
+    COMMENT@0..31 "# The four statement modifiers."
+    NEWLINE@31..32 "\n"
+    EXPR_STMT@32..47
+      CALL_EXPR@32..38
+        NAME_REF@32..36
+          LNAME@32..36 "save"
+        ARG_LIST@36..38
+          L_PAREN@36..37 "("
+          R_PAREN@37..38 ")"
+      WHITESPACE@38..39 " "
+      MODIFIER@39..47
+        IF_KW@39..41 "if"
+        WHITESPACE@41..42 " "
+        NAME_REF@42..47
+          LNAME@42..47 "dirty"
+    NEWLINE@47..48 "\n"
+    EXPR_STMT@48..67
+      CALL_EXPR@48..54
+        NAME_REF@48..52
+          LNAME@48..52 "save"
+        ARG_LIST@52..54
+          L_PAREN@52..53 "("
+          R_PAREN@53..54 ")"
+      WHITESPACE@54..55 " "
+      MODIFIER@55..67
+        UNLESS_KW@55..61 "unless"
+        WHITESPACE@61..62 " "
+        NAME_REF@62..67
+          LNAME@62..67 "clean"
+    NEWLINE@67..68 "\n"
+    EXPR_STMT@68..85
+      CALL_EXPR@68..74
+        NAME_REF@68..72
+          LNAME@68..72 "step"
+        ARG_LIST@72..74
+          L_PAREN@72..73 "("
+          R_PAREN@73..74 ")"
+      WHITESPACE@74..75 " "
+      MODIFIER@75..85
+        WHILE_KW@75..80 "while"
+        WHITESPACE@80..81 " "
+        NAME_REF@81..85
+          LNAME@81..85 "busy"
+    NEWLINE@85..86 "\n"
+    EXPR_STMT@86..103
+      CALL_EXPR@86..92
+        NAME_REF@86..90
+          LNAME@86..90 "step"
+        ARG_LIST@90..92
+          L_PAREN@90..91 "("
+          R_PAREN@91..92 ")"
+      WHITESPACE@92..93 " "
+      MODIFIER@93..103
+        UNTIL_KW@93..98 "until"
+        WHITESPACE@98..99 " "
+        NAME_REF@99..103
+          LNAME@99..103 "done"
+    NEWLINE@103..104 "\n"
+  EOF@104..104 ""

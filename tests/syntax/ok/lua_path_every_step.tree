@@ -1,0 +1,93 @@
+SOURCE_FILE@0..212
+  BLOCK@0..212
+    COMMENT@0..49 "# Every step kind in one chain, in any order; the"
+    NEWLINE@49..50 "\n"
+    COMMENT@50..119 "# arguments and the index are NL expressions (`k.len` is the length)."
+    NEWLINE@119..120 "\n"
+    EXPR_STMT@120..174
+      LUA_PATH@120..174
+        COLON@120..121 ":"
+        LNAME@121..124 "hud"
+        LUA_FIELD@124..134
+          DOT@124..125 "."
+          ONAME@125..134 "mainPanel"
+        LUA_METHOD@134..148
+          COLON@134..135 ":"
+          ONAME@135..143 "getChild"
+          ARG_LIST@143..148
+            L_PAREN@143..144 "("
+            LITERAL@144..147
+              STRING@144..147 "\"x\""
+            R_PAREN@147..148 ")"
+        LUA_FIELD@148..154
+          DOT@148..149 "."
+          LNAME@149..154 "items"
+        LUA_INDEX@154..157
+          L_BRACK@154..155 "["
+          LITERAL@155..156
+            NUMBER@155..156 "1"
+          R_BRACK@156..157 "]"
+        LUA_METHOD@157..174
+          COLON@157..158 ":"
+          ONAME@158..168 "setVisible"
+          ARG_LIST@168..174
+            L_PAREN@168..169 "("
+            LITERAL@169..173
+              TRUE_KW@169..173 "true"
+            R_PAREN@173..174 ")"
+    NEWLINE@174..175 "\n"
+    EXPR_STMT@175..211
+      LUA_PATH@175..211
+        COLON@175..176 ":"
+        LNAME@176..177 "a"
+        LUA_FIELD@177..179
+          DOT@177..178 "."
+          LNAME@178..179 "b"
+        LUA_INDEX@179..186
+          L_BRACK@179..180 "["
+          FIELD_EXPR@180..185
+            NAME_REF@180..181
+              LNAME@180..181 "k"
+            DOT@181..182 "."
+            LNAME@182..185 "len"
+          R_BRACK@185..186 "]"
+        LUA_CALL@186..189
+          ARG_LIST@186..189
+            L_PAREN@186..187 "("
+            NAME_REF@187..188
+              LNAME@187..188 "x"
+            R_PAREN@188..189 ")"
+        LUA_METHOD@189..194
+          COLON@189..190 ":"
+          LNAME@190..191 "m"
+          ARG_LIST@191..194
+            L_PAREN@191..192 "("
+            NAME_REF@192..193
+              LNAME@192..193 "y"
+            R_PAREN@193..194 ")"
+        LUA_FIELD@194..196
+          DOT@194..195 "."
+          LNAME@195..196 "c"
+        LUA_METHOD@196..211
+          COLON@196..197 ":"
+          LNAME@197..198 "n"
+          WHITESPACE@198..199 " "
+          TRAILING_BLOCK@199..211
+            DO_KW@199..201 "do"
+            WHITESPACE@201..202 " "
+            BLOCK_PARAMS@202..205
+              PIPE@202..203 "|"
+              PARAM@203..204
+                BIND_PAT@203..204
+                  NAME@203..204
+                    LNAME@203..204 "z"
+              PIPE@204..205 "|"
+            BLOCK@205..208
+              WHITESPACE@205..206 " "
+              EXPR_STMT@206..207
+                NAME_REF@206..207
+                  LNAME@206..207 "z"
+              WHITESPACE@207..208 " "
+            END_KW@208..211 "end"
+    NEWLINE@211..212 "\n"
+  EOF@212..212 ""

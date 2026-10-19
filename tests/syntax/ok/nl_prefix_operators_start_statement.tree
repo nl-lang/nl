@@ -1,0 +1,53 @@
+SOURCE_FILE@0..99
+  BLOCK@0..99
+    COMMENT@0..55 "# `!`, `~` and `not` at the start of a line begin a new"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..68 "# statement."
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..74
+      NAME_REF@69..70
+        LNAME@69..70 "x"
+      WHITESPACE@70..71 " "
+      EQ@71..72 "="
+      WHITESPACE@72..73 " "
+      NAME_REF@73..74
+        LNAME@73..74 "a"
+    NEWLINE@74..75 "\n"
+    EXPR_STMT@75..77
+      PREFIX_EXPR@75..77
+        BANG@75..76 "!"
+        NAME_REF@76..77
+          LNAME@76..77 "b"
+    NEWLINE@77..78 "\n"
+    ASSIGN_STMT@78..83
+      NAME_REF@78..79
+        LNAME@78..79 "x"
+      WHITESPACE@79..80 " "
+      EQ@80..81 "="
+      WHITESPACE@81..82 " "
+      NAME_REF@82..83
+        LNAME@82..83 "a"
+    NEWLINE@83..84 "\n"
+    EXPR_STMT@84..86
+      PREFIX_EXPR@84..86
+        TILDE@84..85 "~"
+        NAME_REF@85..86
+          LNAME@85..86 "b"
+    NEWLINE@86..87 "\n"
+    ASSIGN_STMT@87..92
+      NAME_REF@87..88
+        LNAME@87..88 "x"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      NAME_REF@91..92
+        LNAME@91..92 "a"
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..98
+      PREFIX_EXPR@93..98
+        NOT_KW@93..96 "not"
+        WHITESPACE@96..97 " "
+        NAME_REF@97..98
+          LNAME@97..98 "b"
+    NEWLINE@98..99 "\n"
+  EOF@99..99 ""

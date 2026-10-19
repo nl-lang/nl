@@ -1,0 +1,49 @@
+SOURCE_FILE@0..128
+  BLOCK@0..128
+    COMMENT@0..63 "# `else if` is an `else` whose block starts with a nested `if`,"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..92 "# which needs its own `end`."
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..127
+      IF_EXPR@93..127
+        IF_KW@93..95 "if"
+        WHITESPACE@95..96 " "
+        NAME_REF@96..97
+          LNAME@96..97 "a"
+        BLOCK@97..104
+          NEWLINE@97..98 "\n"
+          WHITESPACE@98..100 "  "
+          EXPR_STMT@100..103
+            CALL_EXPR@100..103
+              NAME_REF@100..101
+                LNAME@100..101 "x"
+              ARG_LIST@101..103
+                L_PAREN@101..102 "("
+                R_PAREN@102..103 ")"
+          NEWLINE@103..104 "\n"
+        ELSE_CLAUSE@104..124
+          ELSE_KW@104..108 "else"
+          BLOCK@108..124
+            WHITESPACE@108..109 " "
+            EXPR_STMT@109..123
+              IF_EXPR@109..123
+                IF_KW@109..111 "if"
+                WHITESPACE@111..112 " "
+                NAME_REF@112..113
+                  LNAME@112..113 "b"
+                BLOCK@113..120
+                  NEWLINE@113..114 "\n"
+                  WHITESPACE@114..116 "  "
+                  EXPR_STMT@116..119
+                    CALL_EXPR@116..119
+                      NAME_REF@116..117
+                        LNAME@116..117 "y"
+                      ARG_LIST@117..119
+                        L_PAREN@117..118 "("
+                        R_PAREN@118..119 ")"
+                  NEWLINE@119..120 "\n"
+                END_KW@120..123 "end"
+            NEWLINE@123..124 "\n"
+        END_KW@124..127 "end"
+    NEWLINE@127..128 "\n"
+  EOF@128..128 ""

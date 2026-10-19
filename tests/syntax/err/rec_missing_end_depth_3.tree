@@ -1,0 +1,62 @@
+SOURCE_FILE@0..125
+  BLOCK@0..125
+    COMMENT@0..65 "# Recovery: the innermost of three nested blocks lacks its `end`."
+    NEWLINE@65..66 "\n"
+    FN_DECL@66..113
+      FN_KW@66..68 "fn"
+      WHITESPACE@68..69 " "
+      NAME@69..70
+        LNAME@69..70 "a"
+      PARAM_LIST@70..72
+        L_PAREN@70..71 "("
+        R_PAREN@71..72 ")"
+      BLOCK@72..110
+        NEWLINE@72..73 "\n"
+        WHITESPACE@73..75 "  "
+        WHILE_STMT@75..110
+          WHILE_KW@75..80 "while"
+          WHITESPACE@80..81 " "
+          NAME_REF@81..82
+            LNAME@81..82 "x"
+          BLOCK@82..110
+            NEWLINE@82..83 "\n"
+            WHITESPACE@83..87 "    "
+            EXPR_STMT@87..109
+              IF_EXPR@87..109
+                IF_KW@87..89 "if"
+                WHITESPACE@89..90 " "
+                NAME_REF@90..91
+                  LNAME@90..91 "y"
+                BLOCK@91..106
+                  NEWLINE@91..92 "\n"
+                  WHITESPACE@92..98 "      "
+                  EXPR_STMT@98..103
+                    CALL_EXPR@98..103
+                      NAME_REF@98..101
+                        LNAME@98..101 "foo"
+                      ARG_LIST@101..103
+                        L_PAREN@101..102 "("
+                        R_PAREN@102..103 ")"
+                  NEWLINE@103..104 "\n"
+                  WHITESPACE@104..106 "  "
+                END_KW@106..109 "end"
+            NEWLINE@109..110 "\n"
+      END_KW@110..113 "end"
+    NEWLINE@113..114 "\n"
+    NEWLINE@114..115 "\n"
+    LET_DECL@115..124
+      LET_KW@115..118 "let"
+      WHITESPACE@118..119 " "
+      BIND_PAT@119..120
+        NAME@119..120
+          LNAME@119..120 "z"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..124
+        LITERAL@123..124
+          NUMBER@123..124 "1"
+    NEWLINE@124..125 "\n"
+  EOF@125..125 ""
+---
+error@110..113 7:1: the `while` on line 3 has no `end`: by its indentation, this `end` closes an enclosing block

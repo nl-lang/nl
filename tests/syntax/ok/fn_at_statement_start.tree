@@ -1,0 +1,58 @@
+SOURCE_FILE@0..218
+  BLOCK@0..218
+    COMMENT@0..61 "# `fn` followed by an LNAME, or a CNAME starting `Type.name`,"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..138 "# declares a function; anything else is an anonymous function (here the last"
+    NEWLINE@138..139 "\n"
+    COMMENT@139..165 "# statement of its block)."
+    NEWLINE@165..166 "\n"
+    FN_DECL@166..176
+      FN_KW@166..168 "fn"
+      WHITESPACE@168..169 " "
+      NAME@169..172
+        LNAME@169..172 "foo"
+      BLOCK@172..173
+        NEWLINE@172..173 "\n"
+      END_KW@173..176 "end"
+    NEWLINE@176..177 "\n"
+    FN_DECL@177..191
+      FN_KW@177..179 "fn"
+      WHITESPACE@179..180 " "
+      QUAL_NAME@180..183
+        CNAME@180..183 "Foo"
+      DOT@183..184 "."
+      NAME@184..187
+        LNAME@184..187 "bar"
+      BLOCK@187..188
+        NEWLINE@187..188 "\n"
+      END_KW@188..191 "end"
+    NEWLINE@191..192 "\n"
+    FN_DECL@192..217
+      FN_KW@192..194 "fn"
+      WHITESPACE@194..195 " "
+      NAME@195..199
+        LNAME@195..199 "make"
+      BLOCK@199..214
+        NEWLINE@199..200 "\n"
+        WHITESPACE@200..202 "  "
+        EXPR_STMT@202..213
+          FN_EXPR@202..213
+            FN_KW@202..204 "fn"
+            PARAM_LIST@204..207
+              L_PAREN@204..205 "("
+              PARAM@205..206
+                BIND_PAT@205..206
+                  NAME@205..206
+                    LNAME@205..206 "x"
+              R_PAREN@206..207 ")"
+            BLOCK@207..210
+              WHITESPACE@207..208 " "
+              EXPR_STMT@208..209
+                NAME_REF@208..209
+                  LNAME@208..209 "x"
+              WHITESPACE@209..210 " "
+            END_KW@210..213 "end"
+        NEWLINE@213..214 "\n"
+      END_KW@214..217 "end"
+    NEWLINE@217..218 "\n"
+  EOF@218..218 ""

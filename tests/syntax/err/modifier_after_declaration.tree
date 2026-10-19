@@ -1,0 +1,44 @@
+SOURCE_FILE@0..73
+  BLOCK@0..73
+    COMMENT@0..43 "# A modifier does not follow a declaration."
+    NEWLINE@43..44 "\n"
+    LET_DECL@44..53
+      LET_KW@44..47 "let"
+      WHITESPACE@47..48 " "
+      BIND_PAT@48..49
+        NAME@48..49
+          LNAME@48..49 "x"
+      WHITESPACE@49..50 " "
+      EQ@50..51 "="
+      WHITESPACE@51..52 " "
+      EXPR_LIST@52..53
+        LITERAL@52..53
+          NUMBER@52..53 "1"
+    WHITESPACE@53..54 " "
+    ERROR_NODE@54..58
+      MODIFIER@54..58
+        IF_KW@54..56 "if"
+        WHITESPACE@56..57 " "
+        NAME_REF@57..58
+          LNAME@57..58 "y"
+    NEWLINE@58..59 "\n"
+    FN_DECL@59..67
+      FN_KW@59..61 "fn"
+      WHITESPACE@61..62 " "
+      NAME@62..63
+        LNAME@62..63 "f"
+      BLOCK@63..64
+        WHITESPACE@63..64 " "
+      END_KW@64..67 "end"
+    WHITESPACE@67..68 " "
+    ERROR_NODE@68..72
+      MODIFIER@68..72
+        IF_KW@68..70 "if"
+        WHITESPACE@70..71 " "
+        NAME_REF@71..72
+          LNAME@71..72 "y"
+    NEWLINE@72..73 "\n"
+  EOF@73..73 ""
+---
+error@54..56 2:11: a statement modifier (`if`) cannot follow a declaration; it only follows a call, an assignment, `return`, `break` or `continue`. Use a block: `if cond … end`
+error@68..70 3:10: a statement modifier (`if`) cannot follow a declaration; it only follows a call, an assignment, `return`, `break` or `continue`. Use a block: `if cond … end`

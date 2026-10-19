@@ -1,0 +1,412 @@
+SOURCE_FILE@0..707
+  COMMENT@0..100 "# Declare struct (a Lua class) with operators, declare type with a parent, declare fn, let and const"
+  NEWLINE@100..101 "\n"
+  DECL_STRUCT@101..303
+    DECLARE_KW@101..108 "declare"
+    WHITESPACE@108..109 " "
+    STRUCT_KW@109..115 "struct"
+    WHITESPACE@115..116 " "
+    NAME@116..121
+      CNAME@116..121 "Point"
+    NEWLINE@121..122 "\n"
+    WHITESPACE@122..124 "  "
+    DECL_FIELD@124..133
+      NAME@124..125
+        LNAME@124..125 "x"
+      COLON@125..126 ":"
+      WHITESPACE@126..127 " "
+      NAMED_TYPE@127..133
+        QUAL_NAME@127..133
+          CNAME@127..133 "Number"
+    NEWLINE@133..134 "\n"
+    WHITESPACE@134..136 "  "
+    DECL_FIELD@136..145
+      NAME@136..137
+        LNAME@136..137 "y"
+      COLON@137..138 ":"
+      WHITESPACE@138..139 " "
+      NAMED_TYPE@139..145
+        QUAL_NAME@139..145
+          CNAME@139..145 "Number"
+    NEWLINE@145..146 "\n"
+    WHITESPACE@146..148 "  "
+    DECL_FN@148..185
+      FN_KW@148..150 "fn"
+      WHITESPACE@150..151 " "
+      NAME@151..154
+        LNAME@151..154 "new"
+      PARAM_LIST@154..178
+        L_PAREN@154..155 "("
+        PARAM@155..165
+          TYPED_PAT@155..165
+            BIND_PAT@155..156
+              NAME@155..156
+                LNAME@155..156 "x"
+            COLON@156..157 ":"
+            WHITESPACE@157..158 " "
+            OPTIONAL_TYPE@158..165
+              NAMED_TYPE@158..164
+                QUAL_NAME@158..164
+                  CNAME@158..164 "Number"
+              QUESTION@164..165 "?"
+        COMMA@165..166 ","
+        WHITESPACE@166..167 " "
+        PARAM@167..177
+          TYPED_PAT@167..177
+            BIND_PAT@167..168
+              NAME@167..168
+                LNAME@167..168 "y"
+            COLON@168..169 ":"
+            WHITESPACE@169..170 " "
+            OPTIONAL_TYPE@170..177
+              NAMED_TYPE@170..176
+                QUAL_NAME@170..176
+                  CNAME@170..176 "Number"
+              QUESTION@176..177 "?"
+        R_PAREN@177..178 ")"
+      RETURN_TYPE@178..185
+        COLON@178..179 ":"
+        WHITESPACE@179..180 " "
+        NAMED_TYPE@180..185
+          QUAL_NAME@180..185
+            CNAME@180..185 "Point"
+    NEWLINE@185..186 "\n"
+    WHITESPACE@186..188 "  "
+    DECL_FN@188..211
+      FN_KW@188..190 "fn"
+      WHITESPACE@190..191 " "
+      NAME@191..197
+        LNAME@191..197 "length"
+      PARAM_LIST@197..203
+        L_PAREN@197..198 "("
+        SELF_PARAM@198..202
+          SELF_KW@198..202 "self"
+        R_PAREN@202..203 ")"
+      RETURN_TYPE@203..211
+        COLON@203..204 ":"
+        WHITESPACE@204..205 " "
+        NAMED_TYPE@205..211
+          QUAL_NAME@205..211
+            CNAME@205..211 "Number"
+    NEWLINE@211..212 "\n"
+    WHITESPACE@212..214 "  "
+    DECL_FN@214..239
+      FN_KW@214..216 "fn"
+      WHITESPACE@216..217 " "
+      OP_NAME@217..218
+        PLUS@217..218 "+"
+      PARAM_LIST@218..232
+        L_PAREN@218..219 "("
+        PARAM@219..231
+          TYPED_PAT@219..231
+            BIND_PAT@219..224
+              NAME@219..224
+                LNAME@219..224 "right"
+            COLON@224..225 ":"
+            WHITESPACE@225..226 " "
+            NAMED_TYPE@226..231
+              QUAL_NAME@226..231
+                CNAME@226..231 "Point"
+        R_PAREN@231..232 ")"
+      RETURN_TYPE@232..239
+        COLON@232..233 ":"
+        WHITESPACE@233..234 " "
+        NAMED_TYPE@234..239
+          QUAL_NAME@234..239
+            CNAME@234..239 "Point"
+    NEWLINE@239..240 "\n"
+    WHITESPACE@240..242 "  "
+    DECL_FN@242..253
+      FN_KW@242..244 "fn"
+      WHITESPACE@244..245 " "
+      OP_NAME@245..246
+        MINUS@245..246 "-"
+      RETURN_TYPE@246..253
+        COLON@246..247 ":"
+        WHITESPACE@247..248 " "
+        NAMED_TYPE@248..253
+          QUAL_NAME@248..253
+            CNAME@248..253 "Point"
+    NEWLINE@253..254 "\n"
+    WHITESPACE@254..256 "  "
+    DECL_FN@256..270
+      FN_KW@256..258 "fn"
+      WHITESPACE@258..259 " "
+      NAME@259..262
+        LNAME@259..262 "len"
+      RETURN_TYPE@262..270
+        COLON@262..263 ":"
+        WHITESPACE@263..264 " "
+        NAMED_TYPE@264..270
+          QUAL_NAME@264..270
+            CNAME@264..270 "Number"
+    NEWLINE@270..271 "\n"
+    WHITESPACE@271..273 "  "
+    DECL_FN@273..299
+      FN_KW@273..275 "fn"
+      WHITESPACE@275..276 " "
+      OP_NAME@276..278
+        L_BRACK@276..277 "["
+        R_BRACK@277..278 "]"
+      PARAM_LIST@278..291
+        L_PAREN@278..279 "("
+        PARAM@279..290
+          TYPED_PAT@279..290
+            BIND_PAT@279..282
+              NAME@279..282
+                LNAME@279..282 "key"
+            COLON@282..283 ":"
+            WHITESPACE@283..284 " "
+            NAMED_TYPE@284..290
+              QUAL_NAME@284..290
+                CNAME@284..290 "Number"
+        R_PAREN@290..291 ")"
+      RETURN_TYPE@291..299
+        COLON@291..292 ":"
+        WHITESPACE@292..293 " "
+        NAMED_TYPE@293..299
+          QUAL_NAME@293..299
+            CNAME@293..299 "Number"
+    NEWLINE@299..300 "\n"
+    END_KW@300..303 "end"
+  NEWLINE@303..304 "\n"
+  NEWLINE@304..305 "\n"
+  DECL_TYPE@305..413
+    DECLARE_KW@305..312 "declare"
+    WHITESPACE@312..313 " "
+    TYPE_KW@313..317 "type"
+    WHITESPACE@317..318 " "
+    NAME@318..324
+      CNAME@318..324 "Player"
+    WHITESPACE@324..325 " "
+    STRUCT_PARENT@325..333
+      COLON@325..326 ":"
+      WHITESPACE@326..327 " "
+      NAMED_TYPE@327..333
+        QUAL_NAME@327..333
+          CNAME@327..333 "Entity"
+    NEWLINE@333..334 "\n"
+    WHITESPACE@334..336 "  "
+    DECL_FN@336..374
+      FN_KW@336..338 "fn"
+      WHITESPACE@338..339 " "
+      NAME@339..347
+        LNAME@339..347 "steam_id"
+      PARAM_LIST@347..353
+        L_PAREN@347..348 "("
+        SELF_PARAM@348..352
+          SELF_KW@348..352 "self"
+        R_PAREN@352..353 ")"
+      RETURN_TYPE@353..361
+        COLON@353..354 ":"
+        WHITESPACE@354..355 " "
+        NAMED_TYPE@355..361
+          QUAL_NAME@355..361
+            CNAME@355..361 "String"
+      WHITESPACE@361..362 " "
+      LUA_KEY@362..374
+        AS_KW@362..364 "as"
+        WHITESPACE@364..365 " "
+        STRING@365..374 "'SteamID'"
+    NEWLINE@374..375 "\n"
+    WHITESPACE@375..377 "  "
+    DECL_FN@377..409
+      FN_KW@377..379 "fn"
+      WHITESPACE@379..380 " "
+      NAME@380..383
+        LNAME@380..383 "pos"
+      PARAM_LIST@383..389
+        L_PAREN@383..384 "("
+        SELF_PARAM@384..388
+          SELF_KW@384..388 "self"
+        R_PAREN@388..389 ")"
+      RETURN_TYPE@389..397
+        COLON@389..390 ":"
+        WHITESPACE@390..391 " "
+        NAMED_TYPE@391..397
+          QUAL_NAME@391..397
+            CNAME@391..397 "Vector"
+      WHITESPACE@397..398 " "
+      LUA_KEY@398..409
+        AS_KW@398..400 "as"
+        WHITESPACE@400..401 " "
+        STRING@401..409 "'GetPos'"
+    NEWLINE@409..410 "\n"
+    END_KW@410..413 "end"
+  NEWLINE@413..414 "\n"
+  NEWLINE@414..415 "\n"
+  DECL_TYPE@415..438
+    DECLARE_KW@415..422 "declare"
+    WHITESPACE@422..423 " "
+    TYPE_KW@423..427 "type"
+    WHITESPACE@427..428 " "
+    NAME@428..434
+      CNAME@428..434 "Entity"
+    NEWLINE@434..435 "\n"
+    END_KW@435..438 "end"
+  NEWLINE@438..439 "\n"
+  NEWLINE@439..440 "\n"
+  DECL_FN@440..488
+    DECLARE_KW@440..447 "declare"
+    WHITESPACE@447..448 " "
+    FN_KW@448..450 "fn"
+    WHITESPACE@450..451 " "
+    NAME@451..463
+      LNAME@451..463 "local_player"
+    PARAM_LIST@463..465
+      L_PAREN@463..464 "("
+      R_PAREN@464..465 ")"
+    RETURN_TYPE@465..473
+      COLON@465..466 ":"
+      WHITESPACE@466..467 " "
+      NAMED_TYPE@467..473
+        QUAL_NAME@467..473
+          CNAME@467..473 "Player"
+    WHITESPACE@473..474 " "
+    LUA_ROOT@474..488
+      EQ@474..475 "="
+      WHITESPACE@475..476 " "
+      LUA_PATH@476..488
+        COLON@476..477 ":"
+        CNAME@477..488 "LocalPlayer"
+  NEWLINE@488..489 "\n"
+  DECL_FN@489..571
+    DECLARE_KW@489..496 "declare"
+    WHITESPACE@496..497 " "
+    FN_KW@497..499 "fn"
+    WHITESPACE@499..500 " "
+    NAME@500..504
+      LNAME@500..504 "find"
+    TYPE_PARAMS@504..507
+      LT@504..505 "<"
+      TYPE_PARAM@505..506
+        NAME@505..506
+          CNAME@505..506 "T"
+      GT@506..507 ">"
+    PARAM_LIST@507..557
+      L_PAREN@507..508 "("
+      PARAM@508..518
+        TYPED_PAT@508..518
+          BIND_PAT@508..513
+            NAME@508..513
+              LNAME@508..513 "items"
+          COLON@513..514 ":"
+          WHITESPACE@514..515 " "
+          ARRAY_TYPE@515..518
+            L_BRACK@515..516 "["
+            NAMED_TYPE@516..517
+              QUAL_NAME@516..517
+                CNAME@516..517 "T"
+            R_BRACK@517..518 "]"
+      COMMA@518..519 ","
+      WHITESPACE@519..520 " "
+      REST_PARAM@520..530
+        STAR@520..521 "*"
+        NAME@521..525
+          LNAME@521..525 "rest"
+        COLON@525..526 ":"
+        WHITESPACE@526..527 " "
+        ARRAY_TYPE@527..530
+          L_BRACK@527..528 "["
+          NAMED_TYPE@528..529
+            QUAL_NAME@528..529
+              CNAME@528..529 "T"
+          R_BRACK@529..530 "]"
+      COMMA@530..531 ","
+      WHITESPACE@531..532 " "
+      KEYED_PARAM@532..556
+        STAR2@532..534 "**"
+        NAME@534..538
+          LNAME@534..538 "opts"
+        COLON@538..539 ":"
+        WHITESPACE@539..540 " "
+        RECORD_TYPE@540..556
+          L_CURLY@540..541 "{"
+          RECORD_FIELD@541..555
+            LNAME@541..546 "limit"
+            COLON@546..547 ":"
+            WHITESPACE@547..548 " "
+            OPTIONAL_TYPE@548..555
+              NAMED_TYPE@548..554
+                QUAL_NAME@548..554
+                  CNAME@548..554 "Number"
+              QUESTION@554..555 "?"
+          R_CURLY@555..556 "}"
+      R_PAREN@556..557 ")"
+    RETURN_TYPE@557..571
+      COLON@557..558 ":"
+      WHITESPACE@558..559 " "
+      TUPLE_TYPE@559..571
+        L_PAREN@559..560 "("
+        OPTIONAL_TYPE@560..562
+          NAMED_TYPE@560..561
+            QUAL_NAME@560..561
+              CNAME@560..561 "T"
+          QUESTION@561..562 "?"
+        COMMA@562..563 ","
+        WHITESPACE@563..564 " "
+        NAMED_TYPE@564..570
+          QUAL_NAME@564..570
+            CNAME@564..570 "Number"
+        R_PAREN@570..571 ")"
+  NEWLINE@571..572 "\n"
+  DECL_VALUE@572..622
+    DECLARE_KW@572..579 "declare"
+    WHITESPACE@579..580 " "
+    LET_KW@580..583 "let"
+    WHITESPACE@583..584 " "
+    NAME@584..595
+      LNAME@584..595 "frame_count"
+    COLON@595..596 ":"
+    WHITESPACE@596..597 " "
+    NAMED_TYPE@597..603
+      QUAL_NAME@597..603
+        CNAME@597..603 "Number"
+    WHITESPACE@603..604 " "
+    LUA_ROOT@604..622
+      EQ@604..605 "="
+      WHITESPACE@605..606 " "
+      LUA_PATH@606..622
+        COLON@606..607 ":"
+        LNAME@607..611 "game"
+        LUA_FIELD@611..622
+          DOT@611..612 "."
+          ONAME@612..622 "frameCount"
+  NEWLINE@622..623 "\n"
+  DECL_VALUE@623..677
+    DECLARE_KW@623..630 "declare"
+    WHITESPACE@630..631 " "
+    CONST_KW@631..636 "const"
+    WHITESPACE@636..637 " "
+    NAME@637..648
+      LNAME@637..648 "max_players"
+    COLON@648..649 ":"
+    WHITESPACE@649..650 " "
+    NAMED_TYPE@650..656
+      QUAL_NAME@650..656
+        CNAME@650..656 "Number"
+    WHITESPACE@656..657 " "
+    LUA_ROOT@657..677
+      EQ@657..658 "="
+      WHITESPACE@658..659 " "
+      LUA_PATH@659..677
+        COLON@659..660 ":"
+        LNAME@660..666 "config"
+        LUA_FIELD@666..677
+          DOT@666..667 "."
+          ONAME@667..677 "maxPlayers"
+  NEWLINE@677..678 "\n"
+  DECL_VALUE@678..706
+    DECLARE_KW@678..685 "declare"
+    WHITESPACE@685..686 " "
+    CONST_KW@686..691 "const"
+    WHITESPACE@691..692 " "
+    NAME@692..698
+      CNAME@692..698 "MAX_HP"
+    COLON@698..699 ":"
+    WHITESPACE@699..700 " "
+    NAMED_TYPE@700..706
+      QUAL_NAME@700..706
+        CNAME@700..706 "Number"
+  NEWLINE@706..707 "\n"
+  EOF@707..707 ""

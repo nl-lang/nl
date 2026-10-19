@@ -1,0 +1,3 @@
+LuaError	a Table error value (its __tostring raised an error)	true
+LuaError	a Table error value (its __tostring returned Number)	true
+raise:	LuaError

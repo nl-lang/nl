@@ -1,0 +1,20 @@
+SOURCE_FILE@0..65
+  BLOCK@0..65
+    COMMENT@0..53 "# A spread argument `*expr` is allowed after a comma."
+    NEWLINE@53..54 "\n"
+    EXPR_STMT@54..64
+      COMMAND_CALL@54..64
+        NAME_REF@54..55
+          LNAME@54..55 "f"
+        WHITESPACE@55..56 " "
+        COMMAND_ARGS@56..64
+          NAME_REF@56..57
+            LNAME@56..57 "a"
+          COMMA@57..58 ","
+          WHITESPACE@58..59 " "
+          SPREAD_ARG@59..64
+            STAR@59..60 "*"
+            NAME_REF@60..64
+              LNAME@60..64 "list"
+    NEWLINE@64..65 "\n"
+  EOF@65..65 ""

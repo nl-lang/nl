@@ -1,0 +1,21 @@
+SOURCE_FILE@0..87
+  BLOCK@0..87
+    COMMENT@0..57 "# A bare field must be an LNAME; a keyword alone is not a"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..66 "# field."
+    NEWLINE@66..67 "\n"
+    STRUCT_DECL@67..86
+      STRUCT_KW@67..73 "struct"
+      WHITESPACE@73..74 " "
+      NAME@74..75
+        CNAME@74..75 "S"
+      NEWLINE@75..76 "\n"
+      WHITESPACE@76..78 "  "
+      ERROR_NODE@78..82
+        LNAME@78..82 "type"
+      NEWLINE@82..83 "\n"
+      END_KW@83..86 "end"
+    NEWLINE@86..87 "\n"
+  EOF@87..87 ""
+---
+error@78..82 4:3: `type` is a keyword: a field named by a keyword needs a type or a default, as in `type: String`

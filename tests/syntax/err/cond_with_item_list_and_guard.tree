@@ -1,0 +1,59 @@
+SOURCE_FILE@0..106
+  BLOCK@0..106
+    COMMENT@0..53 "# A `cond` `when` takes one condition, no list and no"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..62 "# guard."
+    NEWLINE@62..63 "\n"
+    EXPR_STMT@63..105
+      COND_EXPR@63..105
+        COND_KW@63..67 "cond"
+        NEWLINE@67..68 "\n"
+        COND_CLAUSE@68..84
+          WHEN_KW@68..72 "when"
+          WHITESPACE@72..73 " "
+          NAME_REF@73..74
+            LNAME@73..74 "a"
+          ERROR_NODE@74..77
+            COMMA@74..75 ","
+            WHITESPACE@75..76 " "
+            NAME_REF@76..77
+              LNAME@76..77 "b"
+          BLOCK@77..84
+            NEWLINE@77..78 "\n"
+            WHITESPACE@78..80 "  "
+            EXPR_STMT@80..83
+              CALL_EXPR@80..83
+                NAME_REF@80..81
+                  LNAME@80..81 "x"
+                ARG_LIST@81..83
+                  L_PAREN@81..82 "("
+                  R_PAREN@82..83 ")"
+            NEWLINE@83..84 "\n"
+        COND_CLAUSE@84..102
+          WHEN_KW@84..88 "when"
+          WHITESPACE@88..89 " "
+          NAME_REF@89..90
+            LNAME@89..90 "c"
+          WHITESPACE@90..91 " "
+          ERROR_NODE@91..95
+            IF_KW@91..93 "if"
+            WHITESPACE@93..94 " "
+            NAME_REF@94..95
+              LNAME@94..95 "d"
+          BLOCK@95..102
+            NEWLINE@95..96 "\n"
+            WHITESPACE@96..98 "  "
+            EXPR_STMT@98..101
+              CALL_EXPR@98..101
+                NAME_REF@98..99
+                  LNAME@98..99 "y"
+                ARG_LIST@99..101
+                  L_PAREN@99..100 "("
+                  R_PAREN@100..101 ")"
+            NEWLINE@101..102 "\n"
+        END_KW@102..105 "end"
+    NEWLINE@105..106 "\n"
+  EOF@106..106 ""
+---
+error@74..75 4:7: a `when` of `cond` takes one condition: combine conditions with `or`
+error@91..93 6:8: a `when` of `cond` takes no guard: combine the conditions with `and`

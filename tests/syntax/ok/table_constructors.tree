@@ -1,0 +1,260 @@
+SOURCE_FILE@0..340
+  BLOCK@0..340
+    COMMENT@0..41 "# Lists in brackets, maps in braces: word"
+    NEWLINE@41..42 "\n"
+    COMMENT@42..116 "# keys, number keys, string keys, nested tables, trailing commas, spreads,"
+    NEWLINE@116..117 "\n"
+    COMMENT@117..152 "# the empty list and the empty map."
+    NEWLINE@152..153 "\n"
+    ASSIGN_STMT@153..166
+      NAME_REF@153..154
+        LNAME@153..154 "a"
+      WHITESPACE@154..155 " "
+      EQ@155..156 "="
+      WHITESPACE@156..157 " "
+      LIST_EXPR@157..166
+        L_BRACK@157..158 "["
+        LITERAL@158..159
+          NUMBER@158..159 "1"
+        COMMA@159..160 ","
+        WHITESPACE@160..161 " "
+        LITERAL@161..162
+          NUMBER@161..162 "2"
+        COMMA@162..163 ","
+        WHITESPACE@163..164 " "
+        LITERAL@164..165
+          NUMBER@164..165 "3"
+        R_BRACK@165..166 "]"
+    NEWLINE@166..167 "\n"
+    ASSIGN_STMT@167..192
+      NAME_REF@167..168
+        LNAME@167..168 "b"
+      WHITESPACE@168..169 " "
+      EQ@169..170 "="
+      WHITESPACE@170..171 " "
+      TABLE_EXPR@171..192
+        L_CURLY@171..172 "{"
+        WHITESPACE@172..173 " "
+        TABLE_PAIR@173..177
+          TABLE_KEY@173..174
+            LNAME@173..174 "a"
+          COLON@174..175 ":"
+          WHITESPACE@175..176 " "
+          LITERAL@176..177
+            NUMBER@176..177 "1"
+        COMMA@177..178 ","
+        WHITESPACE@178..179 " "
+        TABLE_PAIR@179..183
+          TABLE_KEY@179..180
+            LNAME@179..180 "b"
+          COLON@180..181 ":"
+          WHITESPACE@181..182 " "
+          LITERAL@182..183
+            NUMBER@182..183 "2"
+        COMMA@183..184 ","
+        WHITESPACE@184..185 " "
+        TABLE_PAIR@185..189
+          TABLE_KEY@185..186
+            NUMBER@185..186 "1"
+          COLON@186..187 ":"
+          WHITESPACE@187..188 " "
+          LITERAL@188..189
+            NUMBER@188..189 "3"
+        COMMA@189..190 ","
+        WHITESPACE@190..191 " "
+        R_CURLY@191..192 "}"
+    NEWLINE@192..193 "\n"
+    ASSIGN_STMT@193..225
+      NAME_REF@193..194
+        LNAME@193..194 "c"
+      WHITESPACE@194..195 " "
+      EQ@195..196 "="
+      WHITESPACE@196..197 " "
+      TABLE_EXPR@197..225
+        L_CURLY@197..198 "{"
+        WHITESPACE@198..199 " "
+        TABLE_PAIR@199..214
+          TABLE_KEY@199..211
+            STRING@199..211 "\"any string\""
+          COLON@211..212 ":"
+          WHITESPACE@212..213 " "
+          LITERAL@213..214
+            NUMBER@213..214 "1"
+        COMMA@214..215 ","
+        WHITESPACE@215..216 " "
+        TABLE_PAIR@216..223
+          TABLE_KEY@216..220
+            LNAME@216..220 "type"
+          COLON@220..221 ":"
+          WHITESPACE@221..222 " "
+          LITERAL@222..223
+            NUMBER@222..223 "2"
+        WHITESPACE@223..224 " "
+        R_CURLY@224..225 "}"
+    NEWLINE@225..226 "\n"
+    ASSIGN_STMT@226..267
+      NAME_REF@226..227
+        LNAME@226..227 "d"
+      WHITESPACE@227..228 " "
+      EQ@228..229 "="
+      WHITESPACE@229..230 " "
+      LIST_EXPR@230..267
+        L_BRACK@230..231 "["
+        LIST_EXPR@231..234
+          L_BRACK@231..232 "["
+          LITERAL@232..233
+            NUMBER@232..233 "1"
+          R_BRACK@233..234 "]"
+        COMMA@234..235 ","
+        WHITESPACE@235..236 " "
+        TABLE_EXPR@236..247
+          L_CURLY@236..237 "{"
+          TABLE_PAIR@237..246
+            TABLE_KEY@237..238
+              LNAME@237..238 "x"
+            COLON@238..239 ":"
+            WHITESPACE@239..240 " "
+            TABLE_EXPR@240..246
+              L_CURLY@240..241 "{"
+              TABLE_PAIR@241..245
+                TABLE_KEY@241..242
+                  LNAME@241..242 "y"
+                COLON@242..243 ":"
+                WHITESPACE@243..244 " "
+                LITERAL@244..245
+                  NUMBER@244..245 "2"
+              R_CURLY@245..246 "}"
+          R_CURLY@246..247 "}"
+        COMMA@247..248 ","
+        WHITESPACE@248..249 " "
+        LIST_EXPR@249..256
+          L_BRACK@249..250 "["
+          SPREAD_ARG@250..252
+            STAR@250..251 "*"
+            NAME_REF@251..252
+              LNAME@251..252 "a"
+          COMMA@252..253 ","
+          WHITESPACE@253..254 " "
+          LITERAL@254..255
+            NUMBER@254..255 "4"
+          R_BRACK@255..256 "]"
+        COMMA@256..257 ","
+        WHITESPACE@257..258 " "
+        LIST_EXPR@258..266
+          L_BRACK@258..259 "["
+          SPREAD_ARG@259..261
+            STAR@259..260 "*"
+            NAME_REF@260..261
+              LNAME@260..261 "a"
+          COMMA@261..262 ","
+          WHITESPACE@262..263 " "
+          SPREAD_ARG@263..265
+            STAR@263..264 "*"
+            NAME_REF@264..265
+              LNAME@264..265 "a"
+          R_BRACK@265..266 "]"
+        R_BRACK@266..267 "]"
+    NEWLINE@267..268 "\n"
+    ASSIGN_STMT@268..274
+      NAME_REF@268..269
+        LNAME@268..269 "e"
+      WHITESPACE@269..270 " "
+      EQ@270..271 "="
+      WHITESPACE@271..272 " "
+      TABLE_EXPR@272..274
+        L_CURLY@272..273 "{"
+        R_CURLY@273..274 "}"
+    NEWLINE@274..275 "\n"
+    ASSIGN_STMT@275..281
+      NAME_REF@275..276
+        LNAME@275..276 "f"
+      WHITESPACE@276..277 " "
+      EQ@277..278 "="
+      WHITESPACE@278..279 " "
+      LIST_EXPR@279..281
+        L_BRACK@279..280 "["
+        R_BRACK@280..281 "]"
+    NEWLINE@281..282 "\n"
+    ASSIGN_STMT@282..298
+      NAME_REF@282..283
+        LNAME@282..283 "g"
+      WHITESPACE@283..284 " "
+      EQ@284..285 "="
+      WHITESPACE@285..286 " "
+      LIST_EXPR@286..298
+        L_BRACK@286..287 "["
+        LITERAL@287..288
+          NUMBER@287..288 "1"
+        COMMA@288..289 ","
+        WHITESPACE@289..290 " "
+        LITERAL@290..293
+          NIL_KW@290..293 "nil"
+        COMMA@293..294 ","
+        WHITESPACE@294..295 " "
+        LITERAL@295..296
+          NUMBER@295..296 "3"
+        COMMA@296..297 ","
+        R_BRACK@297..298 "]"
+    NEWLINE@298..299 "\n"
+    ASSIGN_STMT@299..312
+      NAME_REF@299..300
+        LNAME@299..300 "h"
+      WHITESPACE@300..301 " "
+      EQ@301..302 "="
+      WHITESPACE@302..303 " "
+      CALL_EXPR@303..312
+        NAME_REF@303..304
+          LNAME@303..304 "f"
+        ARG_LIST@304..312
+          L_PAREN@304..305 "("
+          LIST_EXPR@305..311
+            L_BRACK@305..306 "["
+            LITERAL@306..307
+              NUMBER@306..307 "1"
+            COMMA@307..308 ","
+            WHITESPACE@308..309 " "
+            LITERAL@309..310
+              NUMBER@309..310 "2"
+            R_BRACK@310..311 "]"
+          R_PAREN@311..312 ")"
+    NEWLINE@312..313 "\n"
+    ASSIGN_STMT@313..328
+      NAME_REF@313..314
+        LNAME@313..314 "i"
+      WHITESPACE@314..315 " "
+      EQ@315..316 "="
+      WHITESPACE@316..317 " "
+      COMMAND_CALL@317..328
+        NAME_REF@317..318
+          LNAME@317..318 "f"
+        WHITESPACE@318..319 " "
+        COMMAND_ARGS@319..328
+          NAME_REF@319..320
+            LNAME@319..320 "a"
+          COMMA@320..321 ","
+          WHITESPACE@321..322 " "
+          LIST_EXPR@322..328
+            L_BRACK@322..323 "["
+            LITERAL@323..324
+              NUMBER@323..324 "1"
+            COMMA@324..325 ","
+            WHITESPACE@325..326 " "
+            LITERAL@326..327
+              NUMBER@326..327 "2"
+            R_BRACK@327..328 "]"
+    NEWLINE@328..329 "\n"
+    EXPR_STMT@329..339
+      FIELD_EXPR@329..339
+        LIST_EXPR@329..335
+          L_BRACK@329..330 "["
+          LITERAL@330..331
+            NUMBER@330..331 "1"
+          COMMA@331..332 ","
+          WHITESPACE@332..333 " "
+          LITERAL@333..334
+            NUMBER@333..334 "2"
+          R_BRACK@334..335 "]"
+        DOT@335..336 "."
+        LNAME@336..339 "len"
+    NEWLINE@339..340 "\n"
+  EOF@340..340 ""

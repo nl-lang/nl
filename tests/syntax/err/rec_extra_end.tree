@@ -1,0 +1,30 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..72 "# Recovery: a stray `end` at file level is reported once; the statements"
+    NEWLINE@72..73 "\n"
+    COMMENT@73..91 "# around it parse."
+    NEWLINE@91..92 "\n"
+    ASSIGN_STMT@92..97
+      NAME_REF@92..93
+        LNAME@92..93 "x"
+      WHITESPACE@93..94 " "
+      EQ@94..95 "="
+      WHITESPACE@95..96 " "
+      LITERAL@96..97
+        NUMBER@96..97 "1"
+    NEWLINE@97..98 "\n"
+    ERROR_NODE@98..101
+      END_KW@98..101 "end"
+    NEWLINE@101..102 "\n"
+    ASSIGN_STMT@102..107
+      NAME_REF@102..103
+        LNAME@102..103 "y"
+      WHITESPACE@103..104 " "
+      EQ@104..105 "="
+      WHITESPACE@105..106 " "
+      LITERAL@106..107
+        NUMBER@106..107 "2"
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""
+---
+error@98..101 4:1: unexpected `end`: there is no open block for it to close

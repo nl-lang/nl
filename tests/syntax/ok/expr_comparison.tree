@@ -1,0 +1,110 @@
+SOURCE_FILE@0..135
+  BLOCK@0..135
+    COMMENT@0..54 "# Comparisons and `is` sit below `|>` and above `and`."
+    NEWLINE@54..55 "\n"
+    ASSIGN_STMT@55..76
+      NAME_REF@55..56
+        LNAME@55..56 "x"
+      WHITESPACE@56..57 " "
+      EQ@57..58 "="
+      WHITESPACE@58..59 " "
+      BIN_EXPR@59..76
+        BIN_EXPR@59..65
+          NAME_REF@59..60
+            LNAME@59..60 "a"
+          WHITESPACE@60..61 " "
+          EQ2@61..63 "=="
+          WHITESPACE@63..64 " "
+          NAME_REF@64..65
+            LNAME@64..65 "b"
+        WHITESPACE@65..66 " "
+        AND_KW@66..69 "and"
+        WHITESPACE@69..70 " "
+        BIN_EXPR@70..76
+          NAME_REF@70..71
+            LNAME@70..71 "c"
+          WHITESPACE@71..72 " "
+          NEQ@72..74 "!="
+          WHITESPACE@74..75 " "
+          NAME_REF@75..76
+            LNAME@75..76 "d"
+    NEWLINE@76..77 "\n"
+    ASSIGN_STMT@77..115
+      NAME_REF@77..78
+        LNAME@77..78 "x"
+      WHITESPACE@78..79 " "
+      EQ@79..80 "="
+      WHITESPACE@80..81 " "
+      BIN_EXPR@81..115
+        BIN_EXPR@81..105
+          BIN_EXPR@81..96
+            BIN_EXPR@81..86
+              NAME_REF@81..82
+                LNAME@81..82 "a"
+              WHITESPACE@82..83 " "
+              LT@83..84 "<"
+              WHITESPACE@84..85 " "
+              NAME_REF@85..86
+                LNAME@85..86 "b"
+            WHITESPACE@86..87 " "
+            OR_KW@87..89 "or"
+            WHITESPACE@89..90 " "
+            BIN_EXPR@90..96
+              NAME_REF@90..91
+                LNAME@90..91 "a"
+              WHITESPACE@91..92 " "
+              LT_EQ@92..94 "<="
+              WHITESPACE@94..95 " "
+              NAME_REF@95..96
+                LNAME@95..96 "b"
+          WHITESPACE@96..97 " "
+          OR_KW@97..99 "or"
+          WHITESPACE@99..100 " "
+          BIN_EXPR@100..105
+            NAME_REF@100..101
+              LNAME@100..101 "a"
+            WHITESPACE@101..102 " "
+            GT@102..103 ">"
+            WHITESPACE@103..104 " "
+            NAME_REF@104..105
+              LNAME@104..105 "b"
+        WHITESPACE@105..106 " "
+        OR_KW@106..108 "or"
+        WHITESPACE@108..109 " "
+        BIN_EXPR@109..115
+          NAME_REF@109..110
+            LNAME@109..110 "a"
+          WHITESPACE@110..111 " "
+          GT_EQ@111..113 ">="
+          WHITESPACE@113..114 " "
+          NAME_REF@114..115
+            LNAME@114..115 "b"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..134
+      NAME_REF@116..117
+        LNAME@116..117 "x"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      BIN_EXPR@120..134
+        BIN_EXPR@120..125
+          NAME_REF@120..121
+            LNAME@120..121 "a"
+          WHITESPACE@121..122 " "
+          PLUS@122..123 "+"
+          WHITESPACE@123..124 " "
+          LITERAL@124..125
+            NUMBER@124..125 "1"
+        WHITESPACE@125..126 " "
+        EQ2@126..128 "=="
+        WHITESPACE@128..129 " "
+        BIN_EXPR@129..134
+          NAME_REF@129..130
+            LNAME@129..130 "b"
+          WHITESPACE@130..131 " "
+          STAR@131..132 "*"
+          WHITESPACE@132..133 " "
+          LITERAL@133..134
+            NUMBER@133..134 "2"
+    NEWLINE@134..135 "\n"
+  EOF@135..135 ""

@@ -1,0 +1,23 @@
+SOURCE_FILE@0..82
+  BLOCK@0..82
+    COMMENT@0..54 "# A field named `len` parses; the resolver rejects it."
+    NEWLINE@54..55 "\n"
+    STRUCT_DECL@55..81
+      STRUCT_KW@55..61 "struct"
+      WHITESPACE@61..62 " "
+      NAME@62..63
+        CNAME@62..63 "S"
+      NEWLINE@63..64 "\n"
+      WHITESPACE@64..66 "  "
+      FIELD_DECL@66..77
+        NAME@66..69
+          LNAME@66..69 "len"
+        COLON@69..70 ":"
+        WHITESPACE@70..71 " "
+        NAMED_TYPE@71..77
+          QUAL_NAME@71..77
+            CNAME@71..77 "Number"
+      NEWLINE@77..78 "\n"
+      END_KW@78..81 "end"
+    NEWLINE@81..82 "\n"
+  EOF@82..82 ""

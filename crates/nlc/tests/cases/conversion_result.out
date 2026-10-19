@@ -1,0 +1,8 @@
+as Number: cannot convert N to Number: To<Number> returned String
+interpolation: cannot convert Z to String: To<String> returned Number
+tostring: cannot convert Z to String: To<String> returned Number
+as String: cannot convert Z to String: To<String> returned Number
+From: cannot convert C to Bool: From<C> returned String
+nil result: cannot convert Number to C: To<C> returned nil
+Good(2) Good(2) Good(2)
+20

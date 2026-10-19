@@ -1,0 +1,111 @@
+SOURCE_FILE@0..277
+  BLOCK@0..277
+    COMMENT@0..55 "# A Lua path takes every step that follows it: `.name`,"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..131 "# `[expr]`, calls, `:name`; after a call, an index or a method the chain is"
+    NEWLINE@131..132 "\n"
+    COMMENT@132..202 "# still Lua. Parentheses end the path, and a `.name` after them is NL."
+    NEWLINE@202..203 "\n"
+    ASSIGN_STMT@203..219
+      NAME_REF@203..204
+        LNAME@203..204 "a"
+      WHITESPACE@204..205 " "
+      EQ@205..206 "="
+      WHITESPACE@206..207 " "
+      LUA_PATH@207..219
+        COLON@207..208 ":"
+        LNAME@208..209 "x"
+        LUA_FIELD@209..214
+          DOT@209..210 "."
+          ONAME@210..214 "getA"
+        LUA_FIELD@214..219
+          DOT@214..215 "."
+          ONAME@215..219 "getB"
+    NEWLINE@219..220 "\n"
+    ASSIGN_STMT@220..232
+      NAME_REF@220..221
+        LNAME@220..221 "b"
+      WHITESPACE@221..222 " "
+      EQ@222..223 "="
+      WHITESPACE@223..224 " "
+      LUA_PATH@224..232
+        COLON@224..225 ":"
+        LNAME@225..226 "x"
+        LUA_FIELD@226..228
+          DOT@226..227 "."
+          LNAME@227..228 "y"
+        LUA_CALL@228..230
+          ARG_LIST@228..230
+            L_PAREN@228..229 "("
+            R_PAREN@229..230 ")"
+        LUA_FIELD@230..232
+          DOT@230..231 "."
+          LNAME@231..232 "z"
+    NEWLINE@232..233 "\n"
+    ASSIGN_STMT@233..246
+      NAME_REF@233..234
+        LNAME@233..234 "c"
+      WHITESPACE@234..235 " "
+      EQ@235..236 "="
+      WHITESPACE@236..237 " "
+      LUA_PATH@237..246
+        COLON@237..238 ":"
+        LNAME@238..239 "x"
+        LUA_FIELD@239..241
+          DOT@239..240 "."
+          LNAME@240..241 "y"
+        LUA_INDEX@241..244
+          L_BRACK@241..242 "["
+          LITERAL@242..243
+            NUMBER@242..243 "1"
+          R_BRACK@243..244 "]"
+        LUA_FIELD@244..246
+          DOT@244..245 "."
+          LNAME@245..246 "z"
+    NEWLINE@246..247 "\n"
+    ASSIGN_STMT@247..261
+      NAME_REF@247..248
+        LNAME@247..248 "d"
+      WHITESPACE@248..249 " "
+      EQ@249..250 "="
+      WHITESPACE@250..251 " "
+      LUA_PATH@251..261
+        COLON@251..252 ":"
+        LNAME@252..253 "x"
+        LUA_FIELD@253..255
+          DOT@253..254 "."
+          LNAME@254..255 "y"
+        LUA_METHOD@255..259
+          COLON@255..256 ":"
+          LNAME@256..257 "z"
+          ARG_LIST@257..259
+            L_PAREN@257..258 "("
+            R_PAREN@258..259 ")"
+        LUA_FIELD@259..261
+          DOT@259..260 "."
+          LNAME@260..261 "w"
+    NEWLINE@261..262 "\n"
+    ASSIGN_STMT@262..276
+      NAME_REF@262..263
+        LNAME@262..263 "e"
+      WHITESPACE@263..264 " "
+      EQ@264..265 "="
+      WHITESPACE@265..266 " "
+      FIELD_EXPR@266..276
+        PAREN_EXPR@266..274
+          L_PAREN@266..267 "("
+          LUA_PATH@267..273
+            COLON@267..268 ":"
+            LNAME@268..269 "x"
+            LUA_FIELD@269..271
+              DOT@269..270 "."
+              LNAME@270..271 "y"
+            LUA_CALL@271..273
+              ARG_LIST@271..273
+                L_PAREN@271..272 "("
+                R_PAREN@272..273 ")"
+          R_PAREN@273..274 ")"
+        DOT@274..275 "."
+        LNAME@275..276 "z"
+    NEWLINE@276..277 "\n"
+  EOF@277..277 ""

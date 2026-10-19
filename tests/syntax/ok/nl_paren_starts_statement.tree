@@ -1,0 +1,16 @@
+SOURCE_FILE@0..52
+  BLOCK@0..52
+    COMMENT@0..45 "# `(` at the start of a line is never a call."
+    NEWLINE@45..46 "\n"
+    EXPR_STMT@46..47
+      NAME_REF@46..47
+        LNAME@46..47 "f"
+    NEWLINE@47..48 "\n"
+    EXPR_STMT@48..51
+      PAREN_EXPR@48..51
+        L_PAREN@48..49 "("
+        NAME_REF@49..50
+          LNAME@49..50 "x"
+        R_PAREN@50..51 ")"
+    NEWLINE@51..52 "\n"
+  EOF@52..52 ""

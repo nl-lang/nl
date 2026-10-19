@@ -1,0 +1,67 @@
+SOURCE_FILE@0..132
+  BLOCK@0..132
+    COMMENT@0..73 "# Recovery: garbage inside a parameter list; the other parameters and the"
+    NEWLINE@73..74 "\n"
+    COMMENT@74..87 "# body parse."
+    NEWLINE@87..88 "\n"
+    FN_DECL@88..125
+      FN_KW@88..90 "fn"
+      WHITESPACE@90..91 " "
+      NAME@91..92
+        LNAME@91..92 "f"
+      PARAM_LIST@92..113
+        L_PAREN@92..93 "("
+        PARAM@93..94
+          BIND_PAT@93..94
+            NAME@93..94
+              LNAME@93..94 "a"
+        COMMA@94..95 ","
+        WHITESPACE@95..96 " "
+        PARAM@96..97
+          LITERAL_PAT@96..97
+            NUMBER@96..97 "1"
+        WHITESPACE@97..98 " "
+        ERROR_NODE@98..101
+          PLUS@98..99 "+"
+          WHITESPACE@99..100 " "
+          NUMBER@100..101 "2"
+        COMMA@101..102 ","
+        WHITESPACE@102..103 " "
+        PARAM@103..112
+          TYPED_PAT@103..112
+            BIND_PAT@103..104
+              NAME@103..104
+                LNAME@103..104 "b"
+            COLON@104..105 ":"
+            WHITESPACE@105..106 " "
+            NAMED_TYPE@106..112
+              QUAL_NAME@106..112
+                CNAME@106..112 "Number"
+        R_PAREN@112..113 ")"
+      BLOCK@113..122
+        NEWLINE@113..114 "\n"
+        WHITESPACE@114..116 "  "
+        EXPR_STMT@116..121
+          BIN_EXPR@116..121
+            NAME_REF@116..117
+              LNAME@116..117 "a"
+            WHITESPACE@117..118 " "
+            PLUS@118..119 "+"
+            WHITESPACE@119..120 " "
+            NAME_REF@120..121
+              LNAME@120..121 "b"
+        NEWLINE@121..122 "\n"
+      END_KW@122..125 "end"
+    NEWLINE@125..126 "\n"
+    ASSIGN_STMT@126..131
+      NAME_REF@126..127
+        LNAME@126..127 "y"
+      WHITESPACE@127..128 " "
+      EQ@128..129 "="
+      WHITESPACE@129..130 " "
+      LITERAL@130..131
+        NUMBER@130..131 "1"
+    NEWLINE@131..132 "\n"
+  EOF@132..132 ""
+---
+error@98..99 3:11: expected `,` or `)`, found `+`

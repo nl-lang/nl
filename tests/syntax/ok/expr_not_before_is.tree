@@ -1,0 +1,64 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..63 "# `not x is T` is `(not x) is T`; `x is ~T` tests the opposite."
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..78
+      NAME_REF@64..65
+        LNAME@64..65 "a"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      IS_EXPR@68..78
+        PREFIX_EXPR@68..73
+          NOT_KW@68..71 "not"
+          WHITESPACE@71..72 " "
+          NAME_REF@72..73
+            LNAME@72..73 "x"
+        WHITESPACE@73..74 " "
+        IS_KW@74..76 "is"
+        WHITESPACE@76..77 " "
+        NAMED_TYPE@77..78
+          QUAL_NAME@77..78
+            CNAME@77..78 "T"
+    NEWLINE@78..79 "\n"
+    ASSIGN_STMT@79..95
+      NAME_REF@79..80
+        LNAME@79..80 "b"
+      WHITESPACE@80..81 " "
+      EQ@81..82 "="
+      WHITESPACE@82..83 " "
+      PREFIX_EXPR@83..95
+        NOT_KW@83..86 "not"
+        WHITESPACE@86..87 " "
+        PAREN_EXPR@87..95
+          L_PAREN@87..88 "("
+          IS_EXPR@88..94
+            NAME_REF@88..89
+              LNAME@88..89 "x"
+            WHITESPACE@89..90 " "
+            IS_KW@90..92 "is"
+            WHITESPACE@92..93 " "
+            NAMED_TYPE@93..94
+              QUAL_NAME@93..94
+                CNAME@93..94 "T"
+          R_PAREN@94..95 ")"
+    NEWLINE@95..96 "\n"
+    ASSIGN_STMT@96..107
+      NAME_REF@96..97
+        LNAME@96..97 "c"
+      WHITESPACE@97..98 " "
+      EQ@98..99 "="
+      WHITESPACE@99..100 " "
+      IS_EXPR@100..107
+        NAME_REF@100..101
+          LNAME@100..101 "x"
+        WHITESPACE@101..102 " "
+        IS_KW@102..104 "is"
+        WHITESPACE@104..105 " "
+        NOT_TYPE@105..107
+          TILDE@105..106 "~"
+          NAMED_TYPE@106..107
+            QUAL_NAME@106..107
+              CNAME@106..107 "T"
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""

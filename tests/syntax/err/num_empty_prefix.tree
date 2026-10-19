@@ -1,0 +1,36 @@
+SOURCE_FILE@0..80
+  BLOCK@0..80
+    COMMENT@0..55 "# `0x` and `0b` need digits; binary digits are 0 and 1."
+    NEWLINE@55..56 "\n"
+    ASSIGN_STMT@56..62
+      NAME_REF@56..57
+        LNAME@56..57 "a"
+      WHITESPACE@57..58 " "
+      EQ@58..59 "="
+      WHITESPACE@59..60 " "
+      LITERAL@60..62
+        NUMBER@60..62 "0x"
+    NEWLINE@62..63 "\n"
+    ASSIGN_STMT@63..69
+      NAME_REF@63..64
+        LNAME@63..64 "b"
+      WHITESPACE@64..65 " "
+      EQ@65..66 "="
+      WHITESPACE@66..67 " "
+      LITERAL@67..69
+        NUMBER@67..69 "0b"
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..79
+      NAME_REF@70..71
+        LNAME@70..71 "c"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      LITERAL@74..79
+        NUMBER@74..79 "0b102"
+    NEWLINE@79..80 "\n"
+  EOF@80..80 ""
+---
+error@60..62 2:5: `0x` must be followed by hexadecimal digits, as in `0xff`
+error@67..69 3:5: `0b` must be followed by binary digits, as in `0b1010`
+error@74..79 4:5: `0b102` is not a number: `2` is not a binary digit

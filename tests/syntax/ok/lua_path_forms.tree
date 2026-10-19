@@ -1,0 +1,157 @@
+SOURCE_FILE@0..395
+  BLOCK@0..395
+    COMMENT@0..51 "# Lua paths: a call, command arguments, a bare path"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..128 "# statement, a method call at the end, `.len` as a key, a field read after a"
+    NEWLINE@128..129 "\n"
+    COMMENT@129..193 "# call (still Lua), and an NL member after a parenthesized path."
+    NEWLINE@193..194 "\n"
+    EXPR_STMT@194..210
+      LUA_PATH@194..210
+        COLON@194..195 ":"
+        LNAME@195..201 "string"
+        LUA_FIELD@201..205
+          DOT@201..202 "."
+          LNAME@202..205 "len"
+        LUA_CALL@205..210
+          ARG_LIST@205..210
+            L_PAREN@205..206 "("
+            LITERAL@206..209
+              STRING@206..209 "\"x\""
+            R_PAREN@209..210 ")"
+    NEWLINE@210..211 "\n"
+    EXPR_STMT@211..243
+      COMMAND_CALL@211..243
+        NAME_REF@211..216
+          LNAME@211..216 "print"
+        WHITESPACE@216..217 " "
+        COMMAND_ARGS@217..243
+          LUA_PATH@217..243
+            COLON@217..218 ":"
+            LNAME@218..224 "string"
+            LUA_FIELD@224..228
+              DOT@224..225 "."
+              LNAME@225..228 "len"
+            LUA_CALL@228..243
+              ARG_LIST@228..243
+                L_PAREN@228..229 "("
+                LITERAL@229..242
+                  STRING@229..242 "\"some string\""
+                R_PAREN@242..243 ")"
+    NEWLINE@243..244 "\n"
+    LET_DECL@244..272
+      LET_KW@244..247 "let"
+      WHITESPACE@247..248 " "
+      BIND_PAT@248..251
+        NAME@248..251
+          LNAME@248..251 "max"
+      WHITESPACE@251..252 " "
+      EQ@252..253 "="
+      WHITESPACE@253..254 " "
+      EXPR_LIST@254..272
+        LUA_PATH@254..272
+          COLON@254..255 ":"
+          LNAME@255..261 "config"
+          LUA_FIELD@261..272
+            DOT@261..262 "."
+            ONAME@262..272 "maxPlayers"
+    NEWLINE@272..273 "\n"
+    EXPR_STMT@273..304
+      LUA_PATH@273..304
+        COLON@273..274 ":"
+        LNAME@274..277 "hud"
+        LUA_FIELD@277..287
+          DOT@277..278 "."
+          ONAME@278..287 "mainPanel"
+        LUA_METHOD@287..304
+          COLON@287..288 ":"
+          ONAME@288..298 "setVisible"
+          ARG_LIST@298..304
+            L_PAREN@298..299 "("
+            LITERAL@299..303
+              TRUE_KW@299..303 "true"
+            R_PAREN@303..304 ")"
+    NEWLINE@304..305 "\n"
+    EXPR_STMT@305..339
+      COMMAND_CALL@305..339
+        LUA_PATH@305..318
+          COLON@305..306 ":"
+          LNAME@306..310 "http"
+          LUA_FIELD@310..318
+            DOT@310..311 "."
+            LNAME@311..318 "request"
+        WHITESPACE@318..319 " "
+        COMMAND_ARGS@319..339
+          NAME_REF@319..322
+            LNAME@319..322 "url"
+          COMMA@322..323 ","
+          WHITESPACE@323..324 " "
+          NAME_REF@324..331
+            LNAME@324..331 "resolve"
+          COMMA@331..332 ","
+          WHITESPACE@332..333 " "
+          NAME_REF@333..339
+            LNAME@333..339 "reject"
+    NEWLINE@339..340 "\n"
+    EXPR_STMT@340..355
+      LUA_PATH@340..355
+        COLON@340..341 ":"
+        LNAME@341..355 "collectgarbage"
+    NEWLINE@355..356 "\n"
+    ASSIGN_STMT@356..366
+      NAME_REF@356..357
+        LNAME@356..357 "n"
+      WHITESPACE@357..358 " "
+      EQ@358..359 "="
+      WHITESPACE@359..360 " "
+      LUA_PATH@360..366
+        COLON@360..361 ":"
+        LNAME@361..362 "t"
+        LUA_FIELD@362..366
+          DOT@362..363 "."
+          LNAME@363..366 "len"
+    NEWLINE@366..367 "\n"
+    ASSIGN_STMT@367..379
+      NAME_REF@367..368
+        LNAME@367..368 "v"
+      WHITESPACE@368..369 " "
+      EQ@369..370 "="
+      WHITESPACE@370..371 " "
+      LUA_PATH@371..379
+        COLON@371..372 ":"
+        LNAME@372..373 "a"
+        LUA_FIELD@373..375
+          DOT@373..374 "."
+          LNAME@374..375 "b"
+        LUA_CALL@375..377
+          ARG_LIST@375..377
+            L_PAREN@375..376 "("
+            R_PAREN@376..377 ")"
+        LUA_FIELD@377..379
+          DOT@377..378 "."
+          LNAME@378..379 "c"
+    NEWLINE@379..380 "\n"
+    ASSIGN_STMT@380..394
+      NAME_REF@380..381
+        LNAME@380..381 "w"
+      WHITESPACE@381..382 " "
+      EQ@382..383 "="
+      WHITESPACE@383..384 " "
+      FIELD_EXPR@384..394
+        PAREN_EXPR@384..392
+          L_PAREN@384..385 "("
+          LUA_PATH@385..391
+            COLON@385..386 ":"
+            LNAME@386..387 "a"
+            LUA_FIELD@387..389
+              DOT@387..388 "."
+              LNAME@388..389 "b"
+            LUA_CALL@389..391
+              ARG_LIST@389..391
+                L_PAREN@389..390 "("
+                R_PAREN@390..391 ")"
+          R_PAREN@391..392 ")"
+        DOT@392..393 "."
+        LNAME@393..394 "c"
+    NEWLINE@394..395 "\n"
+  EOF@395..395 ""

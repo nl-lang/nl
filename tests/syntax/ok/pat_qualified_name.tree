@@ -1,0 +1,69 @@
+SOURCE_FILE@0..175
+  BLOCK@0..175
+    COMMENT@0..56 "# A dotted capitalized name is a qualified-name pattern,"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..97 "# as a positional item and after `key:`."
+    NEWLINE@97..98 "\n"
+    EXPR_STMT@98..174
+      CASE_EXPR@98..174
+        CASE_KW@98..102 "case"
+        WHITESPACE@102..103 " "
+        NAME_REF@103..104
+          LNAME@103..104 "d"
+        NEWLINE@104..105 "\n"
+        WHEN_CLAUSE@105..137
+          WHEN_KW@105..109 "when"
+          WHITESPACE@109..110 " "
+          BRACKET_PAT@110..130
+            L_BRACK@110..111 "["
+            QUALIFIED_PAT@111..126
+              QUAL_NAME@111..126
+                CNAME@111..120 "Direction"
+                DOT@120..121 "."
+                CNAME@121..126 "North"
+            COMMA@126..127 ","
+            WHITESPACE@127..128 " "
+            BIND_PAT@128..129
+              NAME@128..129
+                LNAME@128..129 "x"
+            R_BRACK@129..130 "]"
+          BLOCK@130..137
+            NEWLINE@130..131 "\n"
+            WHITESPACE@131..133 "  "
+            EXPR_STMT@133..136
+              CALL_EXPR@133..136
+                NAME_REF@133..134
+                  LNAME@133..134 "a"
+                ARG_LIST@134..136
+                  L_PAREN@134..135 "("
+                  R_PAREN@135..136 ")"
+            NEWLINE@136..137 "\n"
+        WHEN_CLAUSE@137..171
+          WHEN_KW@137..141 "when"
+          WHITESPACE@141..142 " "
+          BRACE_PAT@142..164
+            L_CURLY@142..143 "{"
+            PAT_FIELD@143..163
+              LNAME@143..146 "dir"
+              COLON@146..147 ":"
+              WHITESPACE@147..148 " "
+              QUALIFIED_PAT@148..163
+                QUAL_NAME@148..163
+                  CNAME@148..157 "Direction"
+                  DOT@157..158 "."
+                  CNAME@158..163 "North"
+            R_CURLY@163..164 "}"
+          BLOCK@164..171
+            NEWLINE@164..165 "\n"
+            WHITESPACE@165..167 "  "
+            EXPR_STMT@167..170
+              CALL_EXPR@167..170
+                NAME_REF@167..168
+                  LNAME@167..168 "b"
+                ARG_LIST@168..170
+                  L_PAREN@168..169 "("
+                  R_PAREN@169..170 ")"
+            NEWLINE@170..171 "\n"
+        END_KW@171..174 "end"
+    NEWLINE@174..175 "\n"
+  EOF@175..175 ""

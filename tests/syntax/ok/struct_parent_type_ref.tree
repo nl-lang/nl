@@ -1,0 +1,28 @@
+SOURCE_FILE@0..89
+  BLOCK@0..89
+    COMMENT@0..61 "# The parent is a `type_ref`, qualified, with type arguments."
+    NEWLINE@61..62 "\n"
+    STRUCT_DECL@62..88
+      STRUCT_KW@62..68 "struct"
+      WHITESPACE@68..69 " "
+      NAME@69..70
+        CNAME@69..70 "A"
+      WHITESPACE@70..71 " "
+      STRUCT_PARENT@71..84
+        COLON@71..72 ":"
+        WHITESPACE@72..73 " "
+        NAMED_TYPE@73..84
+          QUAL_NAME@73..81
+            CNAME@73..76 "Geo"
+            DOT@76..77 "."
+            CNAME@77..81 "Base"
+          TYPE_ARGS@81..84
+            LT@81..82 "<"
+            NAMED_TYPE@82..83
+              QUAL_NAME@82..83
+                CNAME@82..83 "T"
+            GT@83..84 ">"
+      NEWLINE@84..85 "\n"
+      END_KW@85..88 "end"
+    NEWLINE@88..89 "\n"
+  EOF@89..89 ""

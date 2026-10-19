@@ -1,0 +1,85 @@
+SOURCE_FILE@0..131
+  BLOCK@0..131
+    COMMENT@0..49 "# Operator methods, enums and anonymous functions"
+    NEWLINE@49..50 "\n"
+    COMMENT@50..76 "# take no type parameters."
+    NEWLINE@76..77 "\n"
+    FN_DECL@77..93
+      FN_KW@77..79 "fn"
+      WHITESPACE@79..80 " "
+      QUAL_NAME@80..81
+        CNAME@80..81 "V"
+      DOT@81..82 "."
+      OP_NAME@82..83
+        PLUS@82..83 "+"
+      TYPE_PARAMS@83..86
+        LT@83..84 "<"
+        TYPE_PARAM@84..85
+          NAME@84..85
+            CNAME@84..85 "T"
+        GT@85..86 ">"
+      PARAM_LIST@86..89
+        L_PAREN@86..87 "("
+        PARAM@87..88
+          BIND_PAT@87..88
+            NAME@87..88
+              LNAME@87..88 "o"
+        R_PAREN@88..89 ")"
+      BLOCK@89..90
+        WHITESPACE@89..90 " "
+      END_KW@90..93 "end"
+    NEWLINE@93..94 "\n"
+    ENUM_DECL@94..111
+      ENUM_KW@94..98 "enum"
+      WHITESPACE@98..99 " "
+      NAME@99..100
+        CNAME@99..100 "E"
+      TYPE_PARAMS@100..103
+        LT@100..101 "<"
+        TYPE_PARAM@101..102
+          NAME@101..102
+            CNAME@101..102 "T"
+        GT@102..103 ">"
+      NEWLINE@103..104 "\n"
+      WHITESPACE@104..106 "  "
+      VARIANT@106..107
+        NAME@106..107
+          CNAME@106..107 "A"
+      NEWLINE@107..108 "\n"
+      END_KW@108..111 "end"
+    NEWLINE@111..112 "\n"
+    ASSIGN_STMT@112..130
+      NAME_REF@112..113
+        LNAME@112..113 "f"
+      WHITESPACE@113..114 " "
+      EQ@114..115 "="
+      WHITESPACE@115..116 " "
+      FN_EXPR@116..130
+        FN_KW@116..118 "fn"
+        ERROR_NODE@118..121
+          TYPE_PARAMS@118..121
+            LT@118..119 "<"
+            TYPE_PARAM@119..120
+              NAME@119..120
+                CNAME@119..120 "T"
+            GT@120..121 ">"
+        PARAM_LIST@121..124
+          L_PAREN@121..122 "("
+          PARAM@122..123
+            BIND_PAT@122..123
+              NAME@122..123
+                LNAME@122..123 "x"
+          R_PAREN@123..124 ")"
+        BLOCK@124..127
+          WHITESPACE@124..125 " "
+          EXPR_STMT@125..126
+            NAME_REF@125..126
+              LNAME@125..126 "x"
+          WHITESPACE@126..127 " "
+        END_KW@127..130 "end"
+    NEWLINE@130..131 "\n"
+  EOF@131..131 ""
+---
+error@83..84 3:7: an operator method takes no type parameters
+error@100..101 4:7: an enum takes no type parameters
+error@118..119 7:7: an anonymous function takes no type parameters

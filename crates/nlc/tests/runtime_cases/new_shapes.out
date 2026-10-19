@@ -1,0 +1,64 @@
+point 1: Point {x=1 y=0} [type x, default y, type y] loops
+point 2-4: Point {x=1 y=0} [default y] constructor
+point given 1-4: Point {x=1 y=2} [] -
+point mistyped: TypeError: field 'x' of Point expects Number, got String [type x] -
+point missing 1-4: TypeError: field 'x' of Point expects Number, got nil [type x] -
+point unknown 1-4: Point has no field 'z' [] -
+point twice 1: Point {x=4 y=0} [default y] loops
+point twice 2-4: Point {x=4 y=0} [default y] constructor
+child 1: Point3 {x=1 y=0 z=5} [default y, type z] loops
+child 2-4: Point3 {x=1 y=0 z=5} [default y] constructor
+child nil 1: Point3 {x=1 y=0 z=0} [default y, default z] loops
+child nil 2-4: Point3 {x=1 y=0 z=0} [default y, default z] constructor
+child mistyped: TypeError: field 'y' of Point3 expects Number, got Bool [type y] -
+thing early 1: Thing {any=false id=1 label=none mode=Easy owner=Point} [type id, default label, type label, type at, default mode, type mode, type key, type next, type owner, type rec, type other, default any, type any] loops
+thing early 2-4: Thing {any=false id=1 label=none mode=Easy owner=Point} [default label, default mode, type next, default any] loops
+thing early next: TypeError: field 'next' of Thing expects <not yet defined>?, got Number [default label, default mode, type next] loops
+thing 1: Thing {any=false id=1 label=none mode=Easy owner=Point} [default label, default mode, type next, default any] loops
+thing 2-3: Thing {any=false id=1 label=none mode=Easy owner=Point} [default label, default mode, default any] constructor
+thing later owner 1: Thing {any=false id=1 label=none mode=Easy owner=Later} [default label, default mode, type owner, default any] constructor
+thing later owner 2: Thing {any=false id=1 label=none mode=Easy owner=Later} [default label, default mode, default any] loops
+thing later owner 3-4: Thing {any=false id=1 label=none mode=Easy owner=Later} [default label, default mode, default any] constructor
+thing later next 1: Thing {any=false id=1 label=none mode=Easy next=Later owner=Point} [default label, default mode, default any] loops
+thing later next 2-4: Thing {any=false id=1 label=none mode=Easy next=Later owner=Point} [default label, default mode, default any] constructor
+thing full 1: Thing {any=false at=Point3 free=Table id=1 key=k label=l mode=Hard other=5 owner=Point rec=Table} [default any] loops
+thing full 2-4: Thing {any=false at=Point3 free=Table id=1 key=k label=l mode=Hard other=5 owner=Point rec=Table} [default any] constructor
+thing bad id string 1-4: TypeError: field 'id' of Thing expects Number, got String [type id] -
+thing bad label number 1-4: TypeError: field 'label' of Thing expects String, got Number [type label] -
+thing bad at number 1: TypeError: field 'at' of Thing expects Point?, got Number [default label, type at] loops
+thing bad at number 2-4: TypeError: field 'at' of Thing expects Point?, got Number [default label, type at] constructor
+thing bad at table 1-4: TypeError: field 'at' of Thing expects Point?, got Table [default label, type at] constructor
+thing bad mode string 1: TypeError: field 'mode' of Thing expects Mode, got String [default label, type mode] loops
+thing bad mode string 2-4: TypeError: field 'mode' of Thing expects Mode, got String [default label, type mode] constructor
+thing bad key boolean 1: TypeError: field 'key' of Thing expects Number | String | nil, got Bool [default label, default mode, type key] loops
+thing bad key boolean 2-4: TypeError: field 'key' of Thing expects Number | String | nil, got Bool [default label, default mode, type key] constructor
+thing bad next number 1-4: TypeError: field 'next' of Thing expects Later?, got Number [default label, default mode, type next] constructor
+thing bad owner string 1: TypeError: field 'owner' of Thing expects Point | Later, got String [default label, default mode, type owner] loops
+thing bad owner string 2-4: TypeError: field 'owner' of Thing expects Point | Later, got String [default label, default mode, type owner] constructor
+thing bad rec table 1: TypeError: field 'rec' of Thing expects {a: Number}?, got Table [default label, default mode, type rec] loops
+thing bad rec table 2-4: TypeError: field 'rec' of Thing expects {a: Number}?, got Table [default label, default mode, type rec] constructor
+thing bad other string 1: TypeError: field 'other' of Thing expects ~String, got String [default label, default mode, type other] loops
+thing bad other string 2-4: TypeError: field 'other' of Thing expects ~String, got String [default label, default mode, type other] constructor
+thing unknown 1-4: Thing has no field 'nope' [default label, default mode, default any] loops
+pair 1: Pair {a=Point b=Point c=1} [default c, type a, type b] loops
+pair 2-4: Pair {a=Point b=Point c=1} [default c] constructor
+pair of a child 1-2: Pair {a=Point3 b=Point3 c=1} [default c] constructor
+pair of the new kind 1: Pair {a=Other b=Other c=1} [default c, type a, type b] constructor
+pair of the new kind 2: Pair {a=Other b=Other c=1} [default c] loops
+pair of the new kind 3-4: Pair {a=Other b=Other c=1} [default c] constructor
+pair of the old kind 1-2: TypeError: field 'a' of Pair expects Other, got Point [default c, type a] constructor
+many 1-4: Many {f1=1 f120=120 f40=40 f80=80} [default f40, default f80, default f120] loops
+odd 1-4: Odd {1=one v=e} [default v] loops
+quoted 1: Quoted {a b?"c"=1 end=e} [default end] loops
+quoted 2-4: Quoted {a b?"c"=1 end=e} [default end] constructor
+empty 1-4: Empty {} [] -
+empty unknown: Empty has no field 'x' [] -
+a table 1-4: cannot construct a Table value: it is not a struct [] -
+false: cannot construct a Bool value: it is not a struct [] -
+an enum: cannot construct Mode: it is not a struct [] -
+an instance 1-4: cannot construct a Point value: it is not a struct [] -
+shared metatable: 4
+locked point 1: Thing {any=false at=Point id=1 label=none mode=Easy owner=Point} [default label, default mode, default any] loops
+locked point 2-4: Thing {any=false at=Point id=1 label=none mode=Easy owner=Point} [default label, default mode, default any] constructor
+spoof 1-4: TypeError: field 'at' of Thing expects Point?, got Table [default label, type at] constructor
+random: 7200 constructions, 4260 raised, 740 with a default that a constructor evaluated, 0 not what the loops give, 0 not in the order of the literal's first

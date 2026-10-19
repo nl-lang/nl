@@ -1,0 +1,60 @@
+SOURCE_FILE@0..176
+  BLOCK@0..176
+    COMMENT@0..57 "# A line that ends with a binary operator, `=` or a unary"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..120 "# operator needs an operand, which is read from the next line."
+    NEWLINE@120..121 "\n"
+    LET_DECL@121..147
+      LET_KW@121..124 "let"
+      WHITESPACE@124..125 " "
+      BIND_PAT@125..130
+        NAME@125..130
+          LNAME@125..130 "total"
+      WHITESPACE@130..131 " "
+      EQ@131..132 "="
+      WHITESPACE@132..133 " "
+      EXPR_LIST@133..147
+        BIN_EXPR@133..147
+          NAME_REF@133..137
+            LNAME@133..137 "base"
+          WHITESPACE@137..138 " "
+          PLUS@138..139 "+"
+          NEWLINE@139..140 "\n"
+          WHITESPACE@140..142 "  "
+          NAME_REF@142..147
+            LNAME@142..147 "bonus"
+    NEWLINE@147..148 "\n"
+    LET_DECL@148..163
+      LET_KW@148..151 "let"
+      WHITESPACE@151..152 " "
+      BIND_PAT@152..153
+        NAME@152..153
+          LNAME@152..153 "t"
+      WHITESPACE@153..154 " "
+      EQ@154..155 "="
+      NEWLINE@155..156 "\n"
+      WHITESPACE@156..158 "  "
+      EXPR_LIST@158..163
+        BIN_EXPR@158..163
+          NAME_REF@158..159
+            LNAME@158..159 "a"
+          WHITESPACE@159..160 " "
+          STAR@160..161 "*"
+          WHITESPACE@161..162 " "
+          NAME_REF@162..163
+            LNAME@162..163 "b"
+    NEWLINE@163..164 "\n"
+    ASSIGN_STMT@164..175
+      NAME_REF@164..165
+        LNAME@164..165 "x"
+      WHITESPACE@165..166 " "
+      EQ@166..167 "="
+      WHITESPACE@167..168 " "
+      PREFIX_EXPR@168..175
+        NOT_KW@168..171 "not"
+        NEWLINE@171..172 "\n"
+        WHITESPACE@172..174 "  "
+        NAME_REF@174..175
+          LNAME@174..175 "y"
+    NEWLINE@175..176 "\n"
+  EOF@176..176 ""

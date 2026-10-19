@@ -1,0 +1,33 @@
+inner failed with 3
+stack traceback:
+	trace_calls.nl:17: in function 'inner'
+	trace_calls.nl:21: in function 'middle'
+	trace_calls.nl:26: in function 'outer'
+	trace_calls.nl:39: in function <trace_calls.nl:38>
+	trace_calls.nl:38: in main chunk
+cannot shift by -1
+stack traceback:
+	trace_calls.nl:12: in function 'Point.shifted'
+	trace_calls.nl:48: in function <trace_calls.nl:46>
+	trace_calls.nl:46: in main chunk
+block failed at 2
+stack traceback:
+	trace_calls.nl:57: in function <trace_calls.nl:56>
+	trace_calls.nl:32: in function 'each'
+	trace_calls.nl:56: in function <trace_calls.nl:55>
+	trace_calls.nl:55: in main chunk
+closure failed
+stack traceback:
+	trace_calls.nl:66: in function <trace_calls.nl:65>
+	trace_calls.nl:70: in function <trace_calls.nl:69>
+	trace_calls.nl:69: in main chunk
+lib failed with 6
+stack traceback:
+	lib/trace_lib.nl:4: in function 'fail_in_lib'
+	trace_calls.nl:78: in function <trace_calls.nl:77>
+	trace_calls.nl:77: in main chunk
+second after first
+stack traceback:
+	trace_calls.nl:89: in function <trace_calls.nl:88>
+	trace_calls.nl:86: in function <trace_calls.nl:85>
+	trace_calls.nl:85: in main chunk

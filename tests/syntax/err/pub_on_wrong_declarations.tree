@@ -1,0 +1,113 @@
+SOURCE_FILE@0..232
+  BLOCK@0..232
+    COMMENT@0..50 "# `pub` before `let`, `global`, `fn Type.name`, an"
+    NEWLINE@50..51 "\n"
+    COMMENT@51..118 "# implementation or `on` is an error; `pub const` takes names only."
+    NEWLINE@118..119 "\n"
+    ERROR_NODE@119..122
+      PUB_KW@119..122 "pub"
+    WHITESPACE@122..123 " "
+    LET_DECL@123..132
+      LET_KW@123..126 "let"
+      WHITESPACE@126..127 " "
+      BIND_PAT@127..128
+        NAME@127..128
+          LNAME@127..128 "a"
+      WHITESPACE@128..129 " "
+      EQ@129..130 "="
+      WHITESPACE@130..131 " "
+      EXPR_LIST@131..132
+        LITERAL@131..132
+          NUMBER@131..132 "1"
+    NEWLINE@132..133 "\n"
+    ERROR_NODE@133..136
+      PUB_KW@133..136 "pub"
+    WHITESPACE@136..137 " "
+    GLOBAL_DECL@137..149
+      GLOBAL_KW@137..143 "global"
+      WHITESPACE@143..144 " "
+      NAME@144..145
+        CNAME@144..145 "B"
+      WHITESPACE@145..146 " "
+      EQ@146..147 "="
+      WHITESPACE@147..148 " "
+      LITERAL@148..149
+        NUMBER@148..149 "2"
+    NEWLINE@149..150 "\n"
+    FN_DECL@150..168
+      PUB_KW@150..153 "pub"
+      WHITESPACE@153..154 " "
+      FN_KW@154..156 "fn"
+      WHITESPACE@156..157 " "
+      QUAL_NAME@157..160
+        CNAME@157..160 "Foo"
+      DOT@160..161 "."
+      NAME@161..164
+        LNAME@161..164 "bar"
+      BLOCK@164..165
+        WHITESPACE@164..165 " "
+      END_KW@165..168 "end"
+    NEWLINE@168..169 "\n"
+    INTERFACE_IMPL@169..194
+      PUB_KW@169..172 "pub"
+      WHITESPACE@172..173 " "
+      INTERFACE_KW@173..182 "interface"
+      WHITESPACE@182..183 " "
+      NAMED_TYPE@183..184
+        QUAL_NAME@183..184
+          CNAME@183..184 "I"
+      WHITESPACE@184..185 " "
+      FOR_KW@185..188 "for"
+      WHITESPACE@188..189 " "
+      NAMED_TYPE@189..190
+        QUAL_NAME@189..190
+          CNAME@189..190 "T"
+      WHITESPACE@190..191 " "
+      END_KW@191..194 "end"
+    NEWLINE@194..195 "\n"
+    ERROR_NODE@195..198
+      PUB_KW@195..198 "pub"
+    WHITESPACE@198..199 " "
+    EXPR_STMT@199..210
+      ON_EXPR@199..210
+        ON_KW@199..201 "on"
+        WHITESPACE@201..202 " "
+        QUAL_NAME@202..203
+          CNAME@202..203 "E"
+        WHITESPACE@203..204 " "
+        DO_KW@204..206 "do"
+        BLOCK@206..207
+          WHITESPACE@206..207 " "
+        END_KW@207..210 "end"
+    NEWLINE@210..211 "\n"
+    CONST_DECL@211..231
+      PUB_KW@211..214 "pub"
+      WHITESPACE@214..215 " "
+      CONST_KW@215..220 "const"
+      WHITESPACE@220..221 " "
+      BRACE_PAT@221..227
+        L_CURLY@221..222 "{"
+        PAT_FIELD@222..223
+          NAME@222..223
+            LNAME@222..223 "x"
+        COMMA@223..224 ","
+        WHITESPACE@224..225 " "
+        PAT_FIELD@225..226
+          NAME@225..226
+            LNAME@225..226 "y"
+        R_CURLY@226..227 "}"
+      WHITESPACE@227..228 " "
+      EQ@228..229 "="
+      WHITESPACE@229..230 " "
+      EXPR_LIST@230..231
+        NAME_REF@230..231
+          LNAME@230..231 "t"
+    NEWLINE@231..232 "\n"
+  EOF@232..232 ""
+---
+error@119..122 3:1: `pub` cannot be used on `let`: it applies to `fn`, `const`, `struct`, `interface`, `enum`, `type` and `module` declarations
+error@133..136 4:1: `pub` cannot be used on `global`: it applies to `fn`, `const`, `struct`, `interface`, `enum`, `type` and `module` declarations
+error@150..153 5:1: `pub` cannot be used on a method: a method is exported with its type
+error@169..172 6:1: `pub` cannot be used on an implementation `interface … for …`: it is exported with the types
+error@195..198 7:1: `pub` cannot be used on `on`: it applies to `fn`, `const`, `struct`, `interface`, `enum`, `type` and `module` declarations
+error@221..227 8:11: `pub const` takes names only, not patterns

@@ -1,0 +1,37 @@
+SOURCE_FILE@0..118
+  BLOCK@0..118
+    COMMENT@0..76 "# Recovery: two nested blocks are still open at the end of the file; each is"
+    NEWLINE@76..77 "\n"
+    COMMENT@77..93 "# reported once."
+    NEWLINE@93..94 "\n"
+    FN_DECL@94..118
+      FN_KW@94..96 "fn"
+      WHITESPACE@96..97 " "
+      NAME@97..98
+        LNAME@97..98 "a"
+      PARAM_LIST@98..100
+        L_PAREN@98..99 "("
+        R_PAREN@99..100 ")"
+      BLOCK@100..118
+        NEWLINE@100..101 "\n"
+        WHITESPACE@101..103 "  "
+        EXPR_STMT@103..118
+          IF_EXPR@103..118
+            IF_KW@103..105 "if"
+            WHITESPACE@105..106 " "
+            NAME_REF@106..107
+              LNAME@106..107 "x"
+            BLOCK@107..118
+              NEWLINE@107..108 "\n"
+              WHITESPACE@108..112 "    "
+              EXPR_STMT@112..117
+                CALL_EXPR@112..117
+                  NAME_REF@112..115
+                    LNAME@112..115 "foo"
+                  ARG_LIST@115..117
+                    L_PAREN@115..116 "("
+                    R_PAREN@116..117 ")"
+              NEWLINE@117..118 "\n"
+  EOF@118..118 ""
+---
+error@118..118 6:1: the `if` on line 4 has no `end`: the file ends first

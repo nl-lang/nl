@@ -1,0 +1,104 @@
+SOURCE_FILE@0..161
+  BLOCK@0..161
+    COMMENT@0..62 "# Bracket patterns: names are positional; `*rest` or `*` last."
+    NEWLINE@62..63 "\n"
+    LET_DECL@63..80
+      LET_KW@63..66 "let"
+      WHITESPACE@66..67 " "
+      BRACKET_PAT@67..73
+        L_BRACK@67..68 "["
+        BIND_PAT@68..69
+          NAME@68..69
+            LNAME@68..69 "a"
+        COMMA@69..70 ","
+        WHITESPACE@70..71 " "
+        BIND_PAT@71..72
+          NAME@71..72
+            LNAME@71..72 "b"
+        R_BRACK@72..73 "]"
+      WHITESPACE@73..74 " "
+      EQ@74..75 "="
+      WHITESPACE@75..76 " "
+      EXPR_LIST@76..80
+        NAME_REF@76..80
+          LNAME@76..80 "pair"
+    NEWLINE@80..81 "\n"
+    LET_DECL@81..105
+      LET_KW@81..84 "let"
+      WHITESPACE@84..85 " "
+      BRACKET_PAT@85..98
+        L_BRACK@85..86 "["
+        BIND_PAT@86..90
+          NAME@86..90
+            LNAME@86..90 "head"
+        COMMA@90..91 ","
+        WHITESPACE@91..92 " "
+        REST_PAT@92..97
+          STAR@92..93 "*"
+          NAME@93..97
+            LNAME@93..97 "tail"
+        R_BRACK@97..98 "]"
+      WHITESPACE@98..99 " "
+      EQ@99..100 "="
+      WHITESPACE@100..101 " "
+      EXPR_LIST@101..105
+        NAME_REF@101..105
+          LNAME@101..105 "list"
+    NEWLINE@105..106 "\n"
+    LET_DECL@106..127
+      LET_KW@106..109 "let"
+      WHITESPACE@109..110 " "
+      BRACKET_PAT@110..120
+        L_BRACK@110..111 "["
+        BIND_PAT@111..116
+          NAME@111..116
+            LNAME@111..116 "first"
+        COMMA@116..117 ","
+        WHITESPACE@117..118 " "
+        REST_PAT@118..119
+          STAR@118..119 "*"
+        R_BRACK@119..120 "]"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..127
+        NAME_REF@123..127
+          LNAME@123..127 "list"
+    NEWLINE@127..128 "\n"
+    LET_DECL@128..142
+      LET_KW@128..131 "let"
+      WHITESPACE@131..132 " "
+      BRACKET_PAT@132..135
+        L_BRACK@132..133 "["
+        REST_PAT@133..134
+          STAR@133..134 "*"
+        R_BRACK@134..135 "]"
+      WHITESPACE@135..136 " "
+      EQ@136..137 "="
+      WHITESPACE@137..138 " "
+      EXPR_LIST@138..142
+        NAME_REF@138..142
+          LNAME@138..142 "list"
+    NEWLINE@142..143 "\n"
+    LET_DECL@143..160
+      LET_KW@143..146 "let"
+      WHITESPACE@146..147 " "
+      BRACKET_PAT@147..156
+        L_BRACK@147..148 "["
+        BIND_PAT@148..149
+          NAME@148..149
+            LNAME@148..149 "x"
+        COMMA@149..150 ","
+        WHITESPACE@150..151 " "
+        LITERAL_PAT@151..154
+          NUMBER@151..154 "456"
+        COMMA@154..155 ","
+        R_BRACK@155..156 "]"
+      WHITESPACE@156..157 " "
+      EQ@157..158 "="
+      WHITESPACE@158..159 " "
+      EXPR_LIST@159..160
+        NAME_REF@159..160
+          LNAME@159..160 "t"
+    NEWLINE@160..161 "\n"
+  EOF@161..161 ""

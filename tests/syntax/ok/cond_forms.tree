@@ -1,0 +1,62 @@
+SOURCE_FILE@0..102
+  BLOCK@0..102
+    COMMENT@0..47 "# `cond`, one condition per `when`, and `else`."
+    NEWLINE@47..48 "\n"
+    EXPR_STMT@48..101
+      COND_EXPR@48..101
+        COND_KW@48..52 "cond"
+        NEWLINE@52..53 "\n"
+        COND_CLAUSE@53..70
+          WHEN_KW@53..57 "when"
+          WHITESPACE@57..58 " "
+          BIN_EXPR@58..63
+            NAME_REF@58..59
+              LNAME@58..59 "a"
+            WHITESPACE@59..60 " "
+            GT@60..61 ">"
+            WHITESPACE@61..62 " "
+            NAME_REF@62..63
+              LNAME@62..63 "b"
+          BLOCK@63..70
+            NEWLINE@63..64 "\n"
+            WHITESPACE@64..66 "  "
+            EXPR_STMT@66..69
+              CALL_EXPR@66..69
+                NAME_REF@66..67
+                  LNAME@66..67 "x"
+                ARG_LIST@67..69
+                  L_PAREN@67..68 "("
+                  R_PAREN@68..69 ")"
+            NEWLINE@69..70 "\n"
+        COND_CLAUSE@70..87
+          WHEN_KW@70..74 "when"
+          WHITESPACE@74..75 " "
+          NAME_REF@75..80
+            LNAME@75..80 "ready"
+          BLOCK@80..87
+            NEWLINE@80..81 "\n"
+            WHITESPACE@81..83 "  "
+            EXPR_STMT@83..86
+              CALL_EXPR@83..86
+                NAME_REF@83..84
+                  LNAME@83..84 "y"
+                ARG_LIST@84..86
+                  L_PAREN@84..85 "("
+                  R_PAREN@85..86 ")"
+            NEWLINE@86..87 "\n"
+        ELSE_CLAUSE@87..98
+          ELSE_KW@87..91 "else"
+          BLOCK@91..98
+            NEWLINE@91..92 "\n"
+            WHITESPACE@92..94 "  "
+            EXPR_STMT@94..97
+              CALL_EXPR@94..97
+                NAME_REF@94..95
+                  LNAME@94..95 "z"
+                ARG_LIST@95..97
+                  L_PAREN@95..96 "("
+                  R_PAREN@96..97 ")"
+            NEWLINE@97..98 "\n"
+        END_KW@98..101 "end"
+    NEWLINE@101..102 "\n"
+  EOF@102..102 ""

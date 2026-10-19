@@ -1,0 +1,90 @@
+SOURCE_FILE@0..213
+  BLOCK@0..213
+    COMMENT@0..63 "# An expression statement that is not last and not a call or an"
+    NEWLINE@63..64 "\n"
+    COMMENT@64..133 "# assignment parses; the discarded-value rule is checked on the tree."
+    NEWLINE@133..134 "\n"
+    FN_DECL@134..212
+      FN_KW@134..136 "fn"
+      WHITESPACE@136..137 " "
+      NAME@137..138
+        LNAME@137..138 "f"
+      BLOCK@138..209
+        NEWLINE@138..139 "\n"
+        WHITESPACE@139..141 "  "
+        EXPR_STMT@141..145
+          LITERAL@141..145
+            TRUE_KW@141..145 "true"
+        NEWLINE@145..146 "\n"
+        WHITESPACE@146..148 "  "
+        EXPR_STMT@148..153
+          BIN_EXPR@148..153
+            NAME_REF@148..149
+              LNAME@148..149 "a"
+            WHITESPACE@149..150 " "
+            PLUS@150..151 "+"
+            WHITESPACE@151..152 " "
+            NAME_REF@152..153
+              LNAME@152..153 "b"
+        NEWLINE@153..154 "\n"
+        WHITESPACE@154..156 "  "
+        EXPR_STMT@156..158
+          BANG_EXPR@156..158
+            NAME_REF@156..157
+              LNAME@156..157 "x"
+            BANG_POSTFIX@157..158 "!"
+        NEWLINE@158..159 "\n"
+        WHITESPACE@159..161 "  "
+        EXPR_STMT@161..173
+          STRUCT_LIT@161..173
+            NAME_REF@161..164
+              CNAME@161..164 "Foo"
+            WHITESPACE@164..165 " "
+            L_CURLY@165..166 "{"
+            WHITESPACE@166..167 " "
+            FIELD_INIT@167..171
+              LNAME@167..168 "a"
+              COLON@168..169 ":"
+              WHITESPACE@169..170 " "
+              LITERAL@170..171
+                NUMBER@170..171 "1"
+            WHITESPACE@171..172 " "
+            R_CURLY@172..173 "}"
+        NEWLINE@173..174 "\n"
+        WHITESPACE@174..176 "  "
+        EXPR_STMT@176..182
+          LIST_EXPR@176..182
+            L_BRACK@176..177 "["
+            LITERAL@177..178
+              NUMBER@177..178 "1"
+            COMMA@178..179 ","
+            WHITESPACE@179..180 " "
+            LITERAL@180..181
+              NUMBER@180..181 "2"
+            R_BRACK@181..182 "]"
+        NEWLINE@182..183 "\n"
+        WHITESPACE@183..185 "  "
+        EXPR_STMT@185..204
+          IF_EXPR@185..204
+            IF_KW@185..187 "if"
+            WHITESPACE@187..188 " "
+            NAME_REF@188..189
+              LNAME@188..189 "a"
+            BLOCK@189..201
+              NEWLINE@189..190 "\n"
+              WHITESPACE@190..194 "    "
+              EXPR_STMT@194..198
+                LITERAL@194..198
+                  TRUE_KW@194..198 "true"
+              NEWLINE@198..199 "\n"
+              WHITESPACE@199..201 "  "
+            END_KW@201..204 "end"
+        NEWLINE@204..205 "\n"
+        WHITESPACE@205..207 "  "
+        EXPR_STMT@207..208
+          LITERAL@207..208
+            NUMBER@207..208 "1"
+        NEWLINE@208..209 "\n"
+      END_KW@209..212 "end"
+    NEWLINE@212..213 "\n"
+  EOF@213..213 ""

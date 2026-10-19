@@ -1,0 +1,15 @@
+SOURCE_FILE@0..71
+  BLOCK@0..71
+    WHITESPACE@0..3 "\u{feff}"
+    COMMENT@3..64 "# A byte-order mark at the very start of the file is skipped."
+    NEWLINE@64..65 "\n"
+    ASSIGN_STMT@65..70
+      NAME_REF@65..66
+        LNAME@65..66 "x"
+      WHITESPACE@66..67 " "
+      EQ@67..68 "="
+      WHITESPACE@68..69 " "
+      LITERAL@69..70
+        NUMBER@69..70 "1"
+    NEWLINE@70..71 "\n"
+  EOF@71..71 ""

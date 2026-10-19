@@ -1,0 +1,38 @@
+SOURCE_FILE@0..119
+  BLOCK@0..119
+    COMMENT@0..58 "# The block's first statement may follow the parameters on"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..75 "# the same line."
+    NEWLINE@75..76 "\n"
+    EXPR_STMT@76..118
+      CALL_EXPR@76..118
+        FIELD_EXPR@76..88
+          NAME_REF@76..80
+            LNAME@76..80 "task"
+          DOT@80..81 "."
+          LNAME@81..88 "on_done"
+        WHITESPACE@88..89 " "
+        TRAILING_BLOCK@89..118
+          DO_KW@89..91 "do"
+          WHITESPACE@91..92 " "
+          BLOCK_PARAMS@92..101
+            PIPE@92..93 "|"
+            PARAM@93..100
+              BIND_PAT@93..100
+                NAME@93..100
+                  LNAME@93..100 "profile"
+            PIPE@100..101 "|"
+          BLOCK@101..115
+            WHITESPACE@101..102 " "
+            EXPR_STMT@102..114
+              COMMAND_CALL@102..114
+                NAME_REF@102..106
+                  LNAME@102..106 "show"
+                WHITESPACE@106..107 " "
+                COMMAND_ARGS@107..114
+                  NAME_REF@107..114
+                    LNAME@107..114 "profile"
+            WHITESPACE@114..115 " "
+          END_KW@115..118 "end"
+    NEWLINE@118..119 "\n"
+  EOF@119..119 ""

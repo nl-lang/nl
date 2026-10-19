@@ -1,0 +1,70 @@
+SOURCE_FILE@0..117
+  BLOCK@0..117
+    COMMENT@0..54 "# The body of a short function is an expression, never"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..72 "# a command call."
+    NEWLINE@72..73 "\n"
+    LET_DECL@73..95
+      LET_KW@73..76 "let"
+      WHITESPACE@76..77 " "
+      BIND_PAT@77..78
+        NAME@77..78
+          LNAME@77..78 "f"
+      WHITESPACE@78..79 " "
+      EQ@79..80 "="
+      WHITESPACE@80..81 " "
+      EXPR_LIST@81..95
+        LAMBDA_EXPR@81..95
+          BLOCK_PARAMS@81..84
+            PIPE@81..82 "|"
+            PARAM@82..83
+              BIND_PAT@82..83
+                NAME@82..83
+                  LNAME@82..83 "a"
+            PIPE@83..84 "|"
+          WHITESPACE@84..85 " "
+          ARROW@85..87 "->"
+          WHITESPACE@87..88 " "
+          BLOCK@88..95
+            EXPR_STMT@88..95
+              COMMAND_CALL@88..95
+                NAME_REF@88..93
+                  LNAME@88..93 "print"
+                WHITESPACE@93..94 " "
+                COMMAND_ARGS@94..95
+                  NAME_REF@94..95
+                    LNAME@94..95 "a"
+    NEWLINE@95..96 "\n"
+    LET_DECL@96..116
+      LET_KW@96..99 "let"
+      WHITESPACE@99..100 " "
+      BIND_PAT@100..101
+        NAME@100..101
+          LNAME@100..101 "g"
+      WHITESPACE@101..102 " "
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      EXPR_LIST@104..116
+        LAMBDA_EXPR@104..116
+          BLOCK_PARAMS@104..105
+            PARAM@104..105
+              BIND_PAT@104..105
+                NAME@104..105
+                  LNAME@104..105 "x"
+          WHITESPACE@105..106 " "
+          ARROW@106..108 "->"
+          WHITESPACE@108..109 " "
+          BLOCK@109..116
+            EXPR_STMT@109..116
+              COMMAND_CALL@109..116
+                NAME_REF@109..114
+                  LNAME@109..114 "print"
+                WHITESPACE@114..115 " "
+                COMMAND_ARGS@115..116
+                  NAME_REF@115..116
+                    LNAME@115..116 "x"
+    NEWLINE@116..117 "\n"
+  EOF@117..117 ""
+---
+error@88..95 3:16: the body of a short function is an expression, not a command call: write `print(a)`, or use a block body, `-> do … end`
+error@109..116 4:14: the body of a short function is an expression, not a command call: write `print(x)`, or use a block body, `-> do … end`

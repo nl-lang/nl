@@ -1,0 +1,110 @@
+SOURCE_FILE@0..279
+  BLOCK@0..279
+    COMMENT@0..58 "# After a complete expression `if` is a modifier; where an"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..131 "# operand is expected it begins an expression; after `return` and at the"
+    NEWLINE@131..132 "\n"
+    COMMENT@132..179 "# start of a command argument it is a modifier."
+    NEWLINE@179..180 "\n"
+    EXPR_STMT@180..188
+      CALL_EXPR@180..183
+        NAME_REF@180..181
+          LNAME@180..181 "f"
+        ARG_LIST@181..183
+          L_PAREN@181..182 "("
+          R_PAREN@182..183 ")"
+      WHITESPACE@183..184 " "
+      MODIFIER@184..188
+        IF_KW@184..186 "if"
+        WHITESPACE@186..187 " "
+        NAME_REF@187..188
+          LNAME@187..188 "x"
+    NEWLINE@188..189 "\n"
+    ASSIGN_STMT@189..211
+      NAME_REF@189..190
+        LNAME@189..190 "y"
+      WHITESPACE@190..191 " "
+      EQ@191..192 "="
+      WHITESPACE@192..193 " "
+      IF_EXPR@193..211
+        IF_KW@193..195 "if"
+        WHITESPACE@195..196 " "
+        NAME_REF@196..197
+          LNAME@196..197 "x"
+        SEMI@197..198 ";"
+        BLOCK@198..201
+          WHITESPACE@198..199 " "
+          EXPR_STMT@199..200
+            LITERAL@199..200
+              NUMBER@199..200 "1"
+          WHITESPACE@200..201 " "
+        ELSE_CLAUSE@201..208
+          ELSE_KW@201..205 "else"
+          BLOCK@205..208
+            WHITESPACE@205..206 " "
+            EXPR_STMT@206..207
+              LITERAL@206..207
+                NUMBER@206..207 "2"
+            WHITESPACE@207..208 " "
+        END_KW@208..211 "end"
+    NEWLINE@211..212 "\n"
+    EXPR_STMT@212..222
+      NAME_REF@212..217
+        LNAME@212..217 "print"
+      WHITESPACE@217..218 " "
+      MODIFIER@218..222
+        IF_KW@218..220 "if"
+        WHITESPACE@220..221 " "
+        NAME_REF@221..222
+          LNAME@221..222 "x"
+    NEWLINE@222..223 "\n"
+    FN_DECL@223..278
+      FN_KW@223..225 "fn"
+      WHITESPACE@225..226 " "
+      NAME@226..227
+        LNAME@226..227 "g"
+      BLOCK@227..275
+        NEWLINE@227..228 "\n"
+        WHITESPACE@228..230 "  "
+        RETURN_STMT@230..244
+          RETURN_KW@230..236 "return"
+          WHITESPACE@236..237 " "
+          MODIFIER@237..244
+            IF_KW@237..239 "if"
+            WHITESPACE@239..240 " "
+            NAME_REF@240..244
+              LNAME@240..244 "done"
+        NEWLINE@244..245 "\n"
+        WHITESPACE@245..247 "  "
+        RETURN_STMT@247..274
+          RETURN_KW@247..253 "return"
+          WHITESPACE@253..254 " "
+          EXPR_LIST@254..274
+            PAREN_EXPR@254..274
+              L_PAREN@254..255 "("
+              IF_EXPR@255..273
+                IF_KW@255..257 "if"
+                WHITESPACE@257..258 " "
+                NAME_REF@258..259
+                  LNAME@258..259 "a"
+                SEMI@259..260 ";"
+                BLOCK@260..263
+                  WHITESPACE@260..261 " "
+                  EXPR_STMT@261..262
+                    NAME_REF@261..262
+                      LNAME@261..262 "b"
+                  WHITESPACE@262..263 " "
+                ELSE_CLAUSE@263..270
+                  ELSE_KW@263..267 "else"
+                  BLOCK@267..270
+                    WHITESPACE@267..268 " "
+                    EXPR_STMT@268..269
+                      NAME_REF@268..269
+                        LNAME@268..269 "c"
+                    WHITESPACE@269..270 " "
+                END_KW@270..273 "end"
+              R_PAREN@273..274 ")"
+        NEWLINE@274..275 "\n"
+      END_KW@275..278 "end"
+    NEWLINE@278..279 "\n"
+  EOF@279..279 ""

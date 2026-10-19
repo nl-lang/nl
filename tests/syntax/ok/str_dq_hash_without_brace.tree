@@ -1,0 +1,25 @@
+SOURCE_FILE@0..124
+  BLOCK@0..124
+    COMMENT@0..59 "# A `#` not followed by `{` is an ordinary character; `\\#{`"
+    NEWLINE@59..60 "\n"
+    COMMENT@60..84 "# writes a literal `#{`."
+    NEWLINE@84..85 "\n"
+    ASSIGN_STMT@85..96
+      NAME_REF@85..86
+        LNAME@85..86 "a"
+      WHITESPACE@86..87 " "
+      EQ@87..88 "="
+      WHITESPACE@88..89 " "
+      LITERAL@89..96
+        STRING@89..96 "\"a # b\""
+    NEWLINE@96..97 "\n"
+    ASSIGN_STMT@97..123
+      NAME_REF@97..98
+        LNAME@97..98 "b"
+      WHITESPACE@98..99 " "
+      EQ@99..100 "="
+      WHITESPACE@100..101 " "
+      LITERAL@101..123
+        STRING@101..123 "\"\\#{not interpolated}\""
+    NEWLINE@123..124 "\n"
+  EOF@124..124 ""

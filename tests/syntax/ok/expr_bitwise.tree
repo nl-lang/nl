@@ -1,0 +1,76 @@
+SOURCE_FILE@0..95
+  BLOCK@0..95
+    COMMENT@0..43 "# `|` below `^` below `&` below the shifts."
+    NEWLINE@43..44 "\n"
+    ASSIGN_STMT@44..66
+      NAME_REF@44..45
+        LNAME@44..45 "x"
+      WHITESPACE@45..46 " "
+      EQ@46..47 "="
+      WHITESPACE@47..48 " "
+      BIN_EXPR@48..66
+        NAME_REF@48..49
+          LNAME@48..49 "a"
+        WHITESPACE@49..50 " "
+        PIPE@50..51 "|"
+        WHITESPACE@51..52 " "
+        BIN_EXPR@52..66
+          NAME_REF@52..53
+            LNAME@52..53 "b"
+          WHITESPACE@53..54 " "
+          CARET@54..55 "^"
+          WHITESPACE@55..56 " "
+          BIN_EXPR@56..66
+            NAME_REF@56..57
+              LNAME@56..57 "c"
+            WHITESPACE@57..58 " "
+            AMP@58..59 "&"
+            WHITESPACE@59..60 " "
+            BIN_EXPR@60..66
+              NAME_REF@60..61
+                LNAME@60..61 "d"
+              WHITESPACE@61..62 " "
+              SHL@62..64 "<<"
+              WHITESPACE@64..65 " "
+              NAME_REF@65..66
+                LNAME@65..66 "e"
+    NEWLINE@66..67 "\n"
+    ASSIGN_STMT@67..83
+      NAME_REF@67..68
+        LNAME@67..68 "x"
+      WHITESPACE@68..69 " "
+      EQ@69..70 "="
+      WHITESPACE@70..71 " "
+      BIN_EXPR@71..83
+        BIN_EXPR@71..77
+          NAME_REF@71..72
+            LNAME@71..72 "a"
+          WHITESPACE@72..73 " "
+          SHR@73..75 ">>"
+          WHITESPACE@75..76 " "
+          NAME_REF@76..77
+            LNAME@76..77 "b"
+        WHITESPACE@77..78 " "
+        USHR@78..81 ">>>"
+        WHITESPACE@81..82 " "
+        NAME_REF@82..83
+          LNAME@82..83 "c"
+    NEWLINE@83..84 "\n"
+    ASSIGN_STMT@84..94
+      NAME_REF@84..85
+        LNAME@84..85 "x"
+      WHITESPACE@85..86 " "
+      EQ@86..87 "="
+      WHITESPACE@87..88 " "
+      BIN_EXPR@88..94
+        PREFIX_EXPR@88..90
+          TILDE@88..89 "~"
+          NAME_REF@89..90
+            LNAME@89..90 "a"
+        WHITESPACE@90..91 " "
+        AMP@91..92 "&"
+        WHITESPACE@92..93 " "
+        NAME_REF@93..94
+          LNAME@93..94 "b"
+    NEWLINE@94..95 "\n"
+  EOF@95..95 ""

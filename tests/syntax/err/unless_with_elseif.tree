@@ -1,0 +1,62 @@
+SOURCE_FILE@0..98
+  BLOCK@0..98
+    COMMENT@0..42 "# `unless` takes no `elseif` and no `let`."
+    NEWLINE@42..43 "\n"
+    EXPR_STMT@43..76
+      UNLESS_EXPR@43..76
+        UNLESS_KW@43..49 "unless"
+        WHITESPACE@49..50 " "
+        NAME_REF@50..51
+          LNAME@50..51 "a"
+        BLOCK@51..58
+          NEWLINE@51..52 "\n"
+          WHITESPACE@52..54 "  "
+          EXPR_STMT@54..57
+            CALL_EXPR@54..57
+              NAME_REF@54..55
+                LNAME@54..55 "x"
+              ARG_LIST@55..57
+                L_PAREN@55..56 "("
+                R_PAREN@56..57 ")"
+          NEWLINE@57..58 "\n"
+        ERROR_NODE@58..73
+          ELSEIF_KW@58..64 "elseif"
+          WHITESPACE@64..65 " "
+          NAME_REF@65..66
+            LNAME@65..66 "b"
+          BLOCK@66..73
+            NEWLINE@66..67 "\n"
+            WHITESPACE@67..69 "  "
+            EXPR_STMT@69..72
+              CALL_EXPR@69..72
+                NAME_REF@69..70
+                  LNAME@69..70 "y"
+                ARG_LIST@70..72
+                  L_PAREN@70..71 "("
+                  R_PAREN@71..72 ")"
+            NEWLINE@72..73 "\n"
+        END_KW@73..76 "end"
+    NEWLINE@76..77 "\n"
+    EXPR_STMT@77..97
+      UNLESS_EXPR@77..97
+        UNLESS_KW@77..83 "unless"
+        WHITESPACE@83..84 " "
+        LET_CONDITION@84..93
+          LET_KW@84..87 "let"
+          WHITESPACE@87..88 " "
+          BIND_PAT@88..89
+            NAME@88..89
+              LNAME@88..89 "x"
+          WHITESPACE@89..90 " "
+          EQ@90..91 "="
+          WHITESPACE@91..92 " "
+          NAME_REF@92..93
+            LNAME@92..93 "y"
+        BLOCK@93..94
+          NEWLINE@93..94 "\n"
+        END_KW@94..97 "end"
+    NEWLINE@97..98 "\n"
+  EOF@98..98 ""
+---
+error@58..64 4:1: `unless` takes no `elseif`: use `if` with `elseif`, or `else`
+error@84..87 7:8: `unless let` is not allowed; use `if let`

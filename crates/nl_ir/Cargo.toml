@@ -1,0 +1,16 @@
+[package]
+name = "nl_ir"
+description = "The core IR of NL and the lowering from the syntax tree"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+nl_syntax = { path = "../nl_syntax" }
+nl_sema = { path = "../nl_sema" }
+rowan.workspace = true
+
+[lints]
+workspace = true

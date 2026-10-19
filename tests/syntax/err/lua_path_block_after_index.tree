@@ -1,0 +1,45 @@
+SOURCE_FILE@0..90
+  BLOCK@0..90
+    COMMENT@0..64 "# A trailing block cannot follow an `[expr]` step of a Lua path."
+    NEWLINE@64..65 "\n"
+    EXPR_STMT@65..83
+      LUA_PATH@65..83
+        COLON@65..66 ":"
+        LNAME@66..67 "t"
+        LUA_INDEX@67..70
+          L_BRACK@67..68 "["
+          LITERAL@68..69
+            NUMBER@68..69 "1"
+          R_BRACK@69..70 "]"
+        WHITESPACE@70..71 " "
+        ERROR_NODE@71..83
+          TRAILING_BLOCK@71..83
+            DO_KW@71..73 "do"
+            WHITESPACE@73..74 " "
+            BLOCK_PARAMS@74..77
+              PIPE@74..75 "|"
+              PARAM@75..76
+                BIND_PAT@75..76
+                  NAME@75..76
+                    LNAME@75..76 "x"
+              PIPE@76..77 "|"
+            BLOCK@77..80
+              WHITESPACE@77..78 " "
+              EXPR_STMT@78..79
+                NAME_REF@78..79
+                  LNAME@78..79 "x"
+              WHITESPACE@79..80 " "
+            END_KW@80..83 "end"
+    NEWLINE@83..84 "\n"
+    ASSIGN_STMT@84..89
+      NAME_REF@84..85
+        LNAME@84..85 "x"
+      WHITESPACE@85..86 " "
+      EQ@86..87 "="
+      WHITESPACE@87..88 " "
+      LITERAL@88..89
+        NUMBER@88..89 "1"
+    NEWLINE@89..90 "\n"
+  EOF@90..90 ""
+---
+error@71..73 2:7: a `do … end` block cannot follow an index in a Lua path: it is passed to a call, so it follows a name, a `.name`, a `:name` or a call

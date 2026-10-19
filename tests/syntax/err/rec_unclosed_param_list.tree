@@ -1,0 +1,48 @@
+SOURCE_FILE@0..100
+  BLOCK@0..100
+    COMMENT@0..71 "# Recovery: an unclosed parameter list; the body and `end` still match."
+    NEWLINE@71..72 "\n"
+    FN_DECL@72..93
+      FN_KW@72..74 "fn"
+      WHITESPACE@74..75 " "
+      NAME@75..76
+        LNAME@75..76 "f"
+      PARAM_LIST@76..81
+        L_PAREN@76..77 "("
+        PARAM@77..78
+          BIND_PAT@77..78
+            NAME@77..78
+              LNAME@77..78 "a"
+        COMMA@78..79 ","
+        WHITESPACE@79..80 " "
+        PARAM@80..81
+          BIND_PAT@80..81
+            NAME@80..81
+              LNAME@80..81 "b"
+      BLOCK@81..90
+        NEWLINE@81..82 "\n"
+        WHITESPACE@82..84 "  "
+        EXPR_STMT@84..89
+          BIN_EXPR@84..89
+            NAME_REF@84..85
+              LNAME@84..85 "a"
+            WHITESPACE@85..86 " "
+            PLUS@86..87 "+"
+            WHITESPACE@87..88 " "
+            NAME_REF@88..89
+              LNAME@88..89 "b"
+        NEWLINE@89..90 "\n"
+      END_KW@90..93 "end"
+    NEWLINE@93..94 "\n"
+    ASSIGN_STMT@94..99
+      NAME_REF@94..95
+        LNAME@94..95 "y"
+      WHITESPACE@95..96 " "
+      EQ@96..97 "="
+      WHITESPACE@97..98 " "
+      LITERAL@98..99
+        NUMBER@98..99 "3"
+    NEWLINE@99..100 "\n"
+  EOF@100..100 ""
+---
+error@84..85 3:3: expected `)` to close this `(`, found `a`

@@ -1,0 +1,42 @@
+SOURCE_FILE@0..109
+  BLOCK@0..109
+    COMMENT@0..61 "# The handler name is a plain string; the event a capitalized"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..69 "# name."
+    NEWLINE@69..70 "\n"
+    EXPR_STMT@70..92
+      ON_EXPR@70..92
+        ON_KW@70..72 "on"
+        WHITESPACE@72..73 " "
+        QUAL_NAME@73..74
+          CNAME@73..74 "E"
+        WHITESPACE@74..75 " "
+        AS_KW@75..77 "as"
+        WHITESPACE@77..78 " "
+        INTERP_STRING@78..85
+          STR_BEGIN@78..82 "\"h#{"
+          NAME_REF@82..83
+            LNAME@82..83 "x"
+          STR_END@83..85 "}\""
+        WHITESPACE@85..86 " "
+        DO_KW@86..88 "do"
+        BLOCK@88..89
+          WHITESPACE@88..89 " "
+        END_KW@89..92 "end"
+    NEWLINE@92..93 "\n"
+    EXPR_STMT@93..108
+      ON_EXPR@93..108
+        ON_KW@93..95 "on"
+        WHITESPACE@95..96 " "
+        QUAL_NAME@96..101
+          LNAME@96..101 "lower"
+        WHITESPACE@101..102 " "
+        DO_KW@102..104 "do"
+        BLOCK@104..105
+          WHITESPACE@104..105 " "
+        END_KW@105..108 "end"
+    NEWLINE@108..109 "\n"
+  EOF@109..109 ""
+---
+error@78..82 3:9: a handler name is a plain string, without interpolation
+error@96..101 4:4: an event name is capitalized: write `Lower`

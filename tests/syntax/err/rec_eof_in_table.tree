@@ -1,0 +1,24 @@
+SOURCE_FILE@0..53
+  BLOCK@0..53
+    COMMENT@0..41 "# Recovery: the file ends inside a table."
+    NEWLINE@41..42 "\n"
+    ASSIGN_STMT@42..52
+      NAME_REF@42..43
+        LNAME@42..43 "t"
+      WHITESPACE@43..44 " "
+      EQ@44..45 "="
+      WHITESPACE@45..46 " "
+      TABLE_EXPR@46..52
+        L_CURLY@46..47 "{"
+        TABLE_PAIR@47..51
+          TABLE_KEY@47..48
+            LNAME@47..48 "a"
+          COLON@48..49 ":"
+          WHITESPACE@49..50 " "
+          LITERAL@50..51
+            NUMBER@50..51 "1"
+        COMMA@51..52 ","
+    NEWLINE@52..53 "\n"
+  EOF@53..53 ""
+---
+error@53..53 3:1: expected `}` to close this `{`, found the end of the file

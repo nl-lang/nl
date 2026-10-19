@@ -1,0 +1,37 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..50 "# An ONAME as a primary, a member and a table key."
+    NEWLINE@50..51 "\n"
+    ASSIGN_STMT@51..68
+      NAME_REF@51..52
+        LNAME@51..52 "a"
+      WHITESPACE@52..53 " "
+      EQ@53..54 "="
+      WHITESPACE@54..55 " "
+      FIELD_EXPR@55..68
+        NAME_REF@55..58
+          LNAME@55..58 "obj"
+        DOT@58..59 "."
+        ONAME@59..68 "getHealth"
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..85
+      NAME_REF@69..70
+        LNAME@69..70 "b"
+      WHITESPACE@70..71 " "
+      EQ@71..72 "="
+      WHITESPACE@72..73 " "
+      TABLE_EXPR@73..85
+        L_CURLY@73..74 "{"
+        TABLE_PAIR@74..84
+          TABLE_KEY@74..81
+            ONAME@74..81 "someKey"
+          COLON@81..82 ":"
+          WHITESPACE@82..83 " "
+          LITERAL@83..84
+            NUMBER@83..84 "1"
+        R_CURLY@84..85 "}"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""
+---
+error@59..68 2:9: `getHealth` is not an NL name: NL names are snake_case (`get_health`), PascalCase or SCREAMING_SNAKE_CASE. A name in this style is a Lua name, allowed only in a Lua path (`:obj.getHealth()`) or as a method name after `:` (`obj:getHealth()`); a table key in this style is written as a string (`t["getHealth"]`)
+error@74..81 3:6: a table key in this style is written as a string: `{"someKey": …}`

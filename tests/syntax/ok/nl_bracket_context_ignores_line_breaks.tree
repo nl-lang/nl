@@ -1,0 +1,86 @@
+SOURCE_FILE@0..122
+  BLOCK@0..122
+    COMMENT@0..56 "# Inside `( )`, `[ ]` and `{ }` line breaks are ignored."
+    NEWLINE@56..57 "\n"
+    EXPR_STMT@57..70
+      CALL_EXPR@57..70
+        NAME_REF@57..58
+          LNAME@57..58 "f"
+        ARG_LIST@58..70
+          L_PAREN@58..59 "("
+          NEWLINE@59..60 "\n"
+          WHITESPACE@60..62 "  "
+          NAME_REF@62..63
+            LNAME@62..63 "a"
+          COMMA@63..64 ","
+          NEWLINE@64..65 "\n"
+          WHITESPACE@65..67 "  "
+          NAME_REF@67..68
+            LNAME@67..68 "b"
+          NEWLINE@68..69 "\n"
+          R_PAREN@69..70 ")"
+    NEWLINE@70..71 "\n"
+    EXPR_STMT@71..79
+      INDEX_EXPR@71..79
+        NAME_REF@71..72
+          LNAME@71..72 "t"
+        L_BRACK@72..73 "["
+        NEWLINE@73..74 "\n"
+        WHITESPACE@74..76 "  "
+        LITERAL@76..77
+          NUMBER@76..77 "1"
+        NEWLINE@77..78 "\n"
+        R_BRACK@78..79 "]"
+    NEWLINE@79..80 "\n"
+    ASSIGN_STMT@80..107
+      NAME_REF@80..81
+        LNAME@80..81 "x"
+      WHITESPACE@81..82 " "
+      EQ@82..83 "="
+      WHITESPACE@83..84 " "
+      TABLE_EXPR@84..107
+        L_CURLY@84..85 "{"
+        NEWLINE@85..86 "\n"
+        WHITESPACE@86..88 "  "
+        TABLE_PAIR@88..92
+          TABLE_KEY@88..89
+            LNAME@88..89 "a"
+          COLON@89..90 ":"
+          WHITESPACE@90..91 " "
+          LITERAL@91..92
+            NUMBER@91..92 "1"
+        COMMA@92..93 ","
+        NEWLINE@93..94 "\n"
+        WHITESPACE@94..96 "  "
+        TABLE_PAIR@96..105
+          TABLE_KEY@96..97
+            LNAME@96..97 "b"
+          NEWLINE@97..98 "\n"
+          WHITESPACE@98..102 "    "
+          COLON@102..103 ":"
+          WHITESPACE@103..104 " "
+          LITERAL@104..105
+            NUMBER@104..105 "2"
+        NEWLINE@105..106 "\n"
+        R_CURLY@106..107 "}"
+    NEWLINE@107..108 "\n"
+    ASSIGN_STMT@108..121
+      NAME_REF@108..109
+        LNAME@108..109 "y"
+      WHITESPACE@109..110 " "
+      EQ@110..111 "="
+      WHITESPACE@111..112 " "
+      PAREN_EXPR@112..121
+        L_PAREN@112..113 "("
+        BIN_EXPR@113..120
+          NAME_REF@113..114
+            LNAME@113..114 "a"
+          NEWLINE@114..115 "\n"
+          WHITESPACE@115..117 "  "
+          MINUS@117..118 "-"
+          WHITESPACE@118..119 " "
+          NAME_REF@119..120
+            LNAME@119..120 "b"
+        R_PAREN@120..121 ")"
+    NEWLINE@121..122 "\n"
+  EOF@122..122 ""

@@ -1,0 +1,78 @@
+SOURCE_FILE@0..164
+  BLOCK@0..164
+    COMMENT@0..51 "# `true`, `false` and `nil` are not keys of a keyed"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..100 "# brace pattern; the key is written as a string."
+    NEWLINE@100..101 "\n"
+    LET_DECL@101..131
+      LET_KW@101..104 "let"
+      WHITESPACE@104..105 " "
+      BRACE_PAT@105..127
+        L_CURLY@105..106 "{"
+        PAT_FIELD@106..113
+          ERROR_NODE@106..110
+            TRUE_KW@106..110 "true"
+          COLON@110..111 ":"
+          WHITESPACE@111..112 " "
+          BIND_PAT@112..113
+            NAME@112..113
+              LNAME@112..113 "x"
+        COMMA@113..114 ","
+        WHITESPACE@114..115 " "
+        PAT_FIELD@115..116
+          NAME@115..116
+            LNAME@115..116 "a"
+        COMMA@116..117 ","
+        WHITESPACE@117..118 " "
+        PAT_FIELD@118..126
+          ERROR_NODE@118..121
+            NIL_KW@118..121 "nil"
+          COLON@121..122 ":"
+          WHITESPACE@122..123 " "
+          BRACE_PAT@123..126
+            L_CURLY@123..124 "{"
+            PAT_FIELD@124..125
+              NAME@124..125
+                LNAME@124..125 "b"
+            R_CURLY@125..126 "}"
+        R_CURLY@126..127 "}"
+      WHITESPACE@127..128 " "
+      EQ@128..129 "="
+      WHITESPACE@129..130 " "
+      EXPR_LIST@130..131
+        NAME_REF@130..131
+          LNAME@130..131 "t"
+    NEWLINE@131..132 "\n"
+    LET_DECL@132..163
+      LET_KW@132..135 "let"
+      WHITESPACE@135..136 " "
+      BRACE_PAT@136..159
+        L_CURLY@136..137 "{"
+        PAT_FIELD@137..146
+          STRING@137..143 "\"true\""
+          COLON@143..144 ":"
+          WHITESPACE@144..145 " "
+          BIND_PAT@145..146
+            NAME@145..146
+              LNAME@145..146 "y"
+        COMMA@146..147 ","
+        WHITESPACE@147..148 " "
+        PAT_FIELD@148..158
+          STRING@148..155 "\"false\""
+          COLON@155..156 ":"
+          WHITESPACE@156..157 " "
+          BIND_PAT@157..158
+            NAME@157..158
+              LNAME@157..158 "z"
+        R_CURLY@158..159 "}"
+      WHITESPACE@159..160 " "
+      EQ@160..161 "="
+      WHITESPACE@161..162 " "
+      EXPR_LIST@162..163
+        NAME_REF@162..163
+          LNAME@162..163 "t"
+    NEWLINE@163..164 "\n"
+  EOF@164..164 ""
+---
+error@106..110 3:6: `true` is not a key name here: write the key as a string, `{"true": x}`
+error@118..121 3:18: `nil` is not a key name here: write the key as a string, `{"nil": {b}}`

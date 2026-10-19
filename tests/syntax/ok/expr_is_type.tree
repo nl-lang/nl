@@ -1,0 +1,77 @@
+SOURCE_FILE@0..133
+  BLOCK@0..133
+    COMMENT@0..60 "# `is` takes a full type, a union included; the type ends at"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..69 "# `and`."
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..101
+      NAME_REF@70..71
+        LNAME@70..71 "x"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      BIN_EXPR@74..101
+        IS_EXPR@74..94
+          NAME_REF@74..75
+            LNAME@74..75 "v"
+          WHITESPACE@75..76 " "
+          IS_KW@76..78 "is"
+          WHITESPACE@78..79 " "
+          UNION_TYPE@79..94
+            NAMED_TYPE@79..85
+              QUAL_NAME@79..85
+                CNAME@79..85 "Number"
+            WHITESPACE@85..86 " "
+            PIPE@86..87 "|"
+            WHITESPACE@87..88 " "
+            NAMED_TYPE@88..94
+              QUAL_NAME@88..94
+                CNAME@88..94 "String"
+        WHITESPACE@94..95 " "
+        AND_KW@95..98 "and"
+        WHITESPACE@98..99 " "
+        NAME_REF@99..101
+          LNAME@99..101 "ok"
+    NEWLINE@101..102 "\n"
+    ASSIGN_STMT@102..115
+      NAME_REF@102..103
+        LNAME@102..103 "x"
+      WHITESPACE@103..104 " "
+      EQ@104..105 "="
+      WHITESPACE@105..106 " "
+      IS_EXPR@106..115
+        NAME_REF@106..107
+          LNAME@106..107 "v"
+        WHITESPACE@107..108 " "
+        IS_KW@108..110 "is"
+        WHITESPACE@110..111 " "
+        NOT_TYPE@111..115
+          TILDE@111..112 "~"
+          NAMED_TYPE@112..115
+            NIL_KW@112..115 "nil"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..132
+      NAME_REF@116..117
+        LNAME@116..117 "x"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      IS_EXPR@120..132
+        NAME_REF@120..121
+          LNAME@120..121 "v"
+        WHITESPACE@121..122 " "
+        IS_KW@122..124 "is"
+        WHITESPACE@124..125 " "
+        OPTIONAL_TYPE@125..132
+          NAMED_TYPE@125..131
+            QUAL_NAME@125..128
+              CNAME@125..128 "Box"
+            TYPE_ARGS@128..131
+              LT@128..129 "<"
+              NAMED_TYPE@129..130
+                QUAL_NAME@129..130
+                  CNAME@129..130 "T"
+              GT@130..131 ">"
+          QUESTION@131..132 "?"
+    NEWLINE@132..133 "\n"
+  EOF@133..133 ""

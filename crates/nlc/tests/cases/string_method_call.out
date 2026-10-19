@@ -1,0 +1,13 @@
+HéLLO
+héLlo
+**héllo**
+s:upper(): string_method_call.nl:9: attempt to call member 'upper' of String (a nil value)
+s:sub(1, 2): TypeError String.sub argument 1 expects String, got Number
+olléh
+ABC	hé
+HéLLO!
+42	end of 41	2
+2
+written through a file handle
+nil receiver: string_method_call.nl:43: attempt to call method 'upcase' of a nil value
+missing method: string_method_call.nl:48: attempt to call method 'missing' (a nil value)

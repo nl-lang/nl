@@ -1,0 +1,44 @@
+SOURCE_FILE@0..68
+  BLOCK@0..68
+    COMMENT@0..46 "# Nothing that calls may follow a postfix `!`."
+    NEWLINE@46..47 "\n"
+    EXPR_STMT@47..52
+      CALL_EXPR@47..52
+        BANG_EXPR@47..49
+          NAME_REF@47..48
+            LNAME@47..48 "f"
+          BANG_POSTFIX@48..49 "!"
+        ARG_LIST@49..52
+          L_PAREN@49..50 "("
+          NAME_REF@50..51
+            LNAME@50..51 "x"
+          R_PAREN@51..52 ")"
+    NEWLINE@52..53 "\n"
+    EXPR_STMT@53..55
+      BANG_EXPR@53..55
+        NAME_REF@53..54
+          LNAME@53..54 "f"
+        BANG_POSTFIX@54..55 "!"
+    WHITESPACE@55..56 " "
+    EXPR_STMT@56..57
+      NAME_REF@56..57
+        LNAME@56..57 "x"
+    NEWLINE@57..58 "\n"
+    EXPR_STMT@58..67
+      BANG_EXPR@58..60
+        NAME_REF@58..59
+          LNAME@58..59 "f"
+        BANG_POSTFIX@59..60 "!"
+      WHITESPACE@60..61 " "
+      ERROR_NODE@61..67
+        TRAILING_BLOCK@61..67
+          DO_KW@61..63 "do"
+          BLOCK@63..64
+            WHITESPACE@63..64 " "
+          END_KW@64..67 "end"
+    NEWLINE@67..68 "\n"
+  EOF@68..68 ""
+---
+error@49..50 2:3: `f!` is the function itself: nothing that calls may follow it. Write `f(…)` to call `f`
+error@56..57 3:4: `f!` is the function itself and cannot be called: to call it, write `f(…)` or `f x` without the `!`
+error@61..63 4:4: `f!` is the function itself: nothing that calls may follow it, not even a block

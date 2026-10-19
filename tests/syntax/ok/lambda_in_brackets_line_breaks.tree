@@ -1,0 +1,65 @@
+SOURCE_FILE@0..129
+  BLOCK@0..129
+    COMMENT@0..54 "# In a bracket context line breaks are ignored, so the"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..95 "# `->` may stand on the next line there."
+    NEWLINE@95..96 "\n"
+    EXPR_STMT@96..116
+      CALL_EXPR@96..116
+        NAME_REF@96..97
+          LNAME@96..97 "f"
+        ARG_LIST@97..116
+          L_PAREN@97..98 "("
+          LAMBDA_EXPR@98..115
+            BLOCK_PARAMS@98..104
+              PIPE@98..99 "|"
+              PARAM@99..100
+                BIND_PAT@99..100
+                  NAME@99..100
+                    LNAME@99..100 "a"
+              COMMA@100..101 ","
+              WHITESPACE@101..102 " "
+              PARAM@102..103
+                BIND_PAT@102..103
+                  NAME@102..103
+                    LNAME@102..103 "b"
+              PIPE@103..104 "|"
+            NEWLINE@104..105 "\n"
+            WHITESPACE@105..107 "  "
+            ARROW@107..109 "->"
+            WHITESPACE@109..110 " "
+            BLOCK@110..115
+              EXPR_STMT@110..115
+                BIN_EXPR@110..115
+                  NAME_REF@110..111
+                    LNAME@110..111 "a"
+                  WHITESPACE@111..112 " "
+                  PLUS@112..113 "+"
+                  WHITESPACE@113..114 " "
+                  NAME_REF@114..115
+                    LNAME@114..115 "b"
+          R_PAREN@115..116 ")"
+    NEWLINE@116..117 "\n"
+    EXPR_STMT@117..128
+      CALL_EXPR@117..128
+        NAME_REF@117..118
+          LNAME@117..118 "g"
+        ARG_LIST@118..128
+          L_PAREN@118..119 "("
+          LAMBDA_EXPR@119..127
+            BLOCK_PARAMS@119..120
+              PARAM@119..120
+                BIND_PAT@119..120
+                  NAME@119..120
+                    LNAME@119..120 "x"
+            NEWLINE@120..121 "\n"
+            WHITESPACE@121..123 "  "
+            ARROW@123..125 "->"
+            WHITESPACE@125..126 " "
+            BLOCK@126..127
+              EXPR_STMT@126..127
+                NAME_REF@126..127
+                  LNAME@126..127 "x"
+          R_PAREN@127..128 ")"
+    NEWLINE@128..129 "\n"
+  EOF@129..129 ""

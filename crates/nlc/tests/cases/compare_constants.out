@@ -1,0 +1,11 @@
+Number.< with String
+true
+Number.> with String
+false
+Bool.< with Bool
+true
+Number.< with String
+true
+true
+false
+true

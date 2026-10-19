@@ -1,0 +1,94 @@
+SOURCE_FILE@0..168
+  BLOCK@0..168
+    COMMENT@0..61 "# Struct patterns with shorthand and keyed items, a qualified"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..77 "# name, `Self`."
+    NEWLINE@77..78 "\n"
+    LET_DECL@78..96
+      LET_KW@78..81 "let"
+      WHITESPACE@81..82 " "
+      STRUCT_PAT@82..92
+        QUAL_NAME@82..88
+          CNAME@82..88 "Circle"
+        WHITESPACE@88..89 " "
+        L_CURLY@89..90 "{"
+        PAT_FIELD@90..91
+          NAME@90..91
+            LNAME@90..91 "r"
+        R_CURLY@91..92 "}"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      EXPR_LIST@95..96
+        NAME_REF@95..96
+          LNAME@95..96 "c"
+    NEWLINE@96..97 "\n"
+    LET_DECL@97..124
+      LET_KW@97..100 "let"
+      WHITESPACE@100..101 " "
+      STRUCT_PAT@101..120
+        QUAL_NAME@101..105
+          CNAME@101..105 "Rect"
+        WHITESPACE@105..106 " "
+        L_CURLY@106..107 "{"
+        PAT_FIELD@107..108
+          NAME@107..108
+            LNAME@107..108 "w"
+        COMMA@108..109 ","
+        WHITESPACE@109..110 " "
+        PAT_FIELD@110..119
+          LNAME@110..111 "h"
+          COLON@111..112 ":"
+          WHITESPACE@112..113 " "
+          BIND_PAT@113..119
+            NAME@113..119
+              LNAME@113..119 "height"
+        R_CURLY@119..120 "}"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..124
+        NAME_REF@123..124
+          LNAME@123..124 "r"
+    NEWLINE@124..125 "\n"
+    LET_DECL@125..150
+      LET_KW@125..128 "let"
+      WHITESPACE@128..129 " "
+      STRUCT_PAT@129..146
+        QUAL_NAME@129..142
+          CNAME@129..135 "Shapes"
+          DOT@135..136 "."
+          CNAME@136..142 "Circle"
+        WHITESPACE@142..143 " "
+        L_CURLY@143..144 "{"
+        PAT_FIELD@144..145
+          NAME@144..145
+            LNAME@144..145 "r"
+        R_CURLY@145..146 "}"
+      WHITESPACE@146..147 " "
+      EQ@147..148 "="
+      WHITESPACE@148..149 " "
+      EXPR_LIST@149..150
+        NAME_REF@149..150
+          LNAME@149..150 "c"
+    NEWLINE@150..151 "\n"
+    LET_DECL@151..167
+      LET_KW@151..154 "let"
+      WHITESPACE@154..155 " "
+      STRUCT_PAT@155..163
+        QUAL_NAME@155..159
+          SELF_TYPE_KW@155..159 "Self"
+        WHITESPACE@159..160 " "
+        L_CURLY@160..161 "{"
+        PAT_FIELD@161..162
+          NAME@161..162
+            LNAME@161..162 "x"
+        R_CURLY@162..163 "}"
+      WHITESPACE@163..164 " "
+      EQ@164..165 "="
+      WHITESPACE@165..166 " "
+      EXPR_LIST@166..167
+        NAME_REF@166..167
+          LNAME@166..167 "s"
+    NEWLINE@167..168 "\n"
+  EOF@168..168 ""

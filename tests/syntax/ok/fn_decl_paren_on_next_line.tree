@@ -1,0 +1,21 @@
+SOURCE_FILE@0..67
+  BLOCK@0..67
+    COMMENT@0..51 "# A `(` on the line after the name starts the body."
+    NEWLINE@51..52 "\n"
+    FN_DECL@52..66
+      FN_KW@52..54 "fn"
+      WHITESPACE@54..55 " "
+      NAME@55..58
+        LNAME@55..58 "foo"
+      BLOCK@58..63
+        NEWLINE@58..59 "\n"
+        EXPR_STMT@59..62
+          PAREN_EXPR@59..62
+            L_PAREN@59..60 "("
+            NAME_REF@60..61
+              LNAME@60..61 "x"
+            R_PAREN@61..62 ")"
+        NEWLINE@62..63 "\n"
+      END_KW@63..66 "end"
+    NEWLINE@66..67 "\n"
+  EOF@67..67 ""

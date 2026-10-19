@@ -1,0 +1,45 @@
+SOURCE_FILE@0..138
+  BLOCK@0..138
+    COMMENT@0..55 "# The type of `catch` is a type; a lowercase name other"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..102 "# than nil, any, unknown and never is not one."
+    NEWLINE@102..103 "\n"
+    EXPR_STMT@103..137
+      TRY_EXPR@103..137
+        TRY_KW@103..106 "try"
+        BLOCK@106..113
+          NEWLINE@106..107 "\n"
+          WHITESPACE@107..109 "  "
+          EXPR_STMT@109..112
+            CALL_EXPR@109..112
+              NAME_REF@109..110
+                LNAME@109..110 "f"
+              ARG_LIST@110..112
+                L_PAREN@110..111 "("
+                R_PAREN@111..112 ")"
+          NEWLINE@112..113 "\n"
+        CATCH_CLAUSE@113..134
+          CATCH_KW@113..118 "catch"
+          WHITESPACE@118..119 " "
+          NAME@119..120
+            LNAME@119..120 "e"
+          COLON@120..121 ":"
+          WHITESPACE@121..122 " "
+          NAMED_TYPE@122..127
+            LNAME@122..127 "lower"
+          BLOCK@127..134
+            NEWLINE@127..128 "\n"
+            WHITESPACE@128..130 "  "
+            EXPR_STMT@130..133
+              CALL_EXPR@130..133
+                NAME_REF@130..131
+                  LNAME@130..131 "g"
+                ARG_LIST@131..133
+                  L_PAREN@131..132 "("
+                  R_PAREN@132..133 ")"
+            NEWLINE@133..134 "\n"
+        END_KW@134..137 "end"
+    NEWLINE@137..138 "\n"
+  EOF@138..138 ""
+---
+error@122..127 5:10: `lower` is not a type: type names are capitalized, and the lowercase types are only `nil`, `any`, `unknown` and `never`

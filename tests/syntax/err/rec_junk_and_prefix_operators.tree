@@ -1,0 +1,37 @@
+SOURCE_FILE@0..163
+  BLOCK@0..163
+    COMMENT@0..77 "# Recovery: tokens that cannot start an operand, mixed with prefix operators,"
+    NEWLINE@77..78 "\n"
+    COMMENT@78..142 "# are skipped as one error node; the operand after them is read."
+    NEWLINE@142..143 "\n"
+    ASSIGN_STMT@143..156
+      NAME_REF@143..144
+        LNAME@143..144 "x"
+      WHITESPACE@144..145 " "
+      EQ@145..146 "="
+      WHITESPACE@146..147 " "
+      PREFIX_EXPR@147..156
+        MINUS@147..148 "-"
+        WHITESPACE@148..149 " "
+        ERROR_NODE@149..154
+          STAR@149..150 "*"
+          WHITESPACE@150..151 " "
+          MINUS@151..152 "-"
+          WHITESPACE@152..153 " "
+          STAR@153..154 "*"
+        WHITESPACE@154..155 " "
+        NAME_REF@155..156
+          LNAME@155..156 "y"
+    NEWLINE@156..157 "\n"
+    ASSIGN_STMT@157..162
+      NAME_REF@157..158
+        LNAME@157..158 "z"
+      WHITESPACE@158..159 " "
+      EQ@159..160 "="
+      WHITESPACE@160..161 " "
+      LITERAL@161..162
+        NUMBER@161..162 "2"
+    NEWLINE@162..163 "\n"
+  EOF@163..163 ""
+---
+error@149..150 3:7: expected an expression, found `*`

@@ -1,0 +1,4 @@
+TypeError	return value of f expects Number, got nil
+TypeError	return value of g expects Number, got nil
+TypeError	return value of h expects nil, got Number
+1	nil

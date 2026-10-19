@@ -1,0 +1,280 @@
+SOURCE_FILE@0..515
+  COMMENT@0..89 "# Declare module with a lua_root, fields with `as`, functions, consts and a nested struct"
+  NEWLINE@89..90 "\n"
+  DECL_MODULE@90..407
+    DECLARE_KW@90..97 "declare"
+    WHITESPACE@97..98 " "
+    MODULE_KW@98..104 "module"
+    WHITESPACE@104..105 " "
+    NAME@105..108
+      CNAME@105..108 "Foo"
+    WHITESPACE@108..109 " "
+    LUA_ROOT@109..115
+      EQ@109..110 "="
+      WHITESPACE@110..111 " "
+      LUA_PATH@111..115
+        COLON@111..112 ":"
+        LNAME@112..115 "foo"
+    NEWLINE@115..116 "\n"
+    WHITESPACE@116..118 "  "
+    DECL_FIELD@118..161
+      NAME@118..133
+        LNAME@118..133 "coolness_factor"
+      COLON@133..134 ":"
+      WHITESPACE@134..135 " "
+      NAMED_TYPE@135..141
+        QUAL_NAME@135..141
+          CNAME@135..141 "Number"
+      WHITESPACE@141..142 " "
+      LUA_KEY@142..161
+        AS_KW@142..144 "as"
+        WHITESPACE@144..145 " "
+        STRING@145..161 "'coolnessFactor'"
+    NEWLINE@161..162 "\n"
+    WHITESPACE@162..164 "  "
+    DECL_VALUE@164..183
+      CONST_KW@164..169 "const"
+      WHITESPACE@169..170 " "
+      NAME@170..175
+        LNAME@170..175 "limit"
+      COLON@175..176 ":"
+      WHITESPACE@176..177 " "
+      NAMED_TYPE@177..183
+        QUAL_NAME@177..183
+          CNAME@177..183 "Number"
+    NEWLINE@183..184 "\n"
+    WHITESPACE@184..186 "  "
+    DECL_FN@186..252
+      FN_KW@186..188 "fn"
+      WHITESPACE@188..189 " "
+      NAME@189..203
+        LNAME@189..203 "return_largest"
+      PARAM_LIST@203..225
+        L_PAREN@203..204 "("
+        PARAM@204..213
+          TYPED_PAT@204..213
+            BIND_PAT@204..205
+              NAME@204..205
+                LNAME@204..205 "a"
+            COLON@205..206 ":"
+            WHITESPACE@206..207 " "
+            NAMED_TYPE@207..213
+              QUAL_NAME@207..213
+                CNAME@207..213 "Number"
+        COMMA@213..214 ","
+        WHITESPACE@214..215 " "
+        PARAM@215..224
+          TYPED_PAT@215..224
+            BIND_PAT@215..216
+              NAME@215..216
+                LNAME@215..216 "b"
+            COLON@216..217 ":"
+            WHITESPACE@217..218 " "
+            NAMED_TYPE@218..224
+              QUAL_NAME@218..224
+                CNAME@218..224 "Number"
+        R_PAREN@224..225 ")"
+      RETURN_TYPE@225..233
+        COLON@225..226 ":"
+        WHITESPACE@226..227 " "
+        NAMED_TYPE@227..233
+          QUAL_NAME@227..233
+            CNAME@227..233 "Number"
+      WHITESPACE@233..234 " "
+      LUA_KEY@234..252
+        AS_KW@234..236 "as"
+        WHITESPACE@236..237 " "
+        STRING@237..252 "'ReturnLargest'"
+    NEWLINE@252..253 "\n"
+    WHITESPACE@253..255 "  "
+    DECL_FN@255..298
+      FN_KW@255..257 "fn"
+      WHITESPACE@257..258 " "
+      NAME@258..262
+        LNAME@258..262 "each"
+      PARAM_LIST@262..298
+        L_PAREN@262..263 "("
+        PARAM@263..277
+          TYPED_PAT@263..277
+            BIND_PAT@263..267
+              NAME@263..267
+                LNAME@263..267 "list"
+            COLON@267..268 ":"
+            WHITESPACE@268..269 " "
+            ARRAY_TYPE@269..277
+              L_BRACK@269..270 "["
+              NAMED_TYPE@270..276
+                QUAL_NAME@270..276
+                  CNAME@270..276 "Number"
+              R_BRACK@276..277 "]"
+        COMMA@277..278 ","
+        WHITESPACE@278..279 " "
+        PARAM@279..297
+          TYPED_PAT@279..297
+            BIND_PAT@279..287
+              NAME@279..287
+                LNAME@279..287 "callback"
+            COLON@287..288 ":"
+            WHITESPACE@288..289 " "
+            NAMED_TYPE@289..297
+              QUAL_NAME@289..297
+                CNAME@289..297 "Function"
+        R_PAREN@297..298 ")"
+    NEWLINE@298..299 "\n"
+    WHITESPACE@299..301 "  "
+    DECL_STRUCT@301..403
+      STRUCT_KW@301..307 "struct"
+      WHITESPACE@307..308 " "
+      NAME@308..313
+        CNAME@308..313 "Point"
+      NEWLINE@313..314 "\n"
+      WHITESPACE@314..318 "    "
+      DECL_FIELD@318..327
+        NAME@318..319
+          LNAME@318..319 "x"
+        COLON@319..320 ":"
+        WHITESPACE@320..321 " "
+        NAMED_TYPE@321..327
+          QUAL_NAME@321..327
+            CNAME@321..327 "Number"
+      NEWLINE@327..328 "\n"
+      WHITESPACE@328..332 "    "
+      DECL_FN@332..369
+        FN_KW@332..334 "fn"
+        WHITESPACE@334..335 " "
+        NAME@335..338
+          LNAME@335..338 "new"
+        PARAM_LIST@338..362
+          L_PAREN@338..339 "("
+          PARAM@339..349
+            TYPED_PAT@339..349
+              BIND_PAT@339..340
+                NAME@339..340
+                  LNAME@339..340 "x"
+              COLON@340..341 ":"
+              WHITESPACE@341..342 " "
+              OPTIONAL_TYPE@342..349
+                NAMED_TYPE@342..348
+                  QUAL_NAME@342..348
+                    CNAME@342..348 "Number"
+                QUESTION@348..349 "?"
+          COMMA@349..350 ","
+          WHITESPACE@350..351 " "
+          PARAM@351..361
+            TYPED_PAT@351..361
+              BIND_PAT@351..352
+                NAME@351..352
+                  LNAME@351..352 "y"
+              COLON@352..353 ":"
+              WHITESPACE@353..354 " "
+              OPTIONAL_TYPE@354..361
+                NAMED_TYPE@354..360
+                  QUAL_NAME@354..360
+                    CNAME@354..360 "Number"
+                QUESTION@360..361 "?"
+          R_PAREN@361..362 ")"
+        RETURN_TYPE@362..369
+          COLON@362..363 ":"
+          WHITESPACE@363..364 " "
+          NAMED_TYPE@364..369
+            QUAL_NAME@364..369
+              CNAME@364..369 "Point"
+      NEWLINE@369..370 "\n"
+      WHITESPACE@370..374 "    "
+      DECL_FN@374..397
+        FN_KW@374..376 "fn"
+        WHITESPACE@376..377 " "
+        NAME@377..383
+          LNAME@377..383 "length"
+        PARAM_LIST@383..389
+          L_PAREN@383..384 "("
+          SELF_PARAM@384..388
+            SELF_KW@384..388 "self"
+          R_PAREN@388..389 ")"
+        RETURN_TYPE@389..397
+          COLON@389..390 ":"
+          WHITESPACE@390..391 " "
+          NAMED_TYPE@391..397
+            QUAL_NAME@391..397
+              CNAME@391..397 "Number"
+      NEWLINE@397..398 "\n"
+      WHITESPACE@398..400 "  "
+      END_KW@400..403 "end"
+    NEWLINE@403..404 "\n"
+    END_KW@404..407 "end"
+  NEWLINE@407..408 "\n"
+  NEWLINE@408..409 "\n"
+  DECL_MODULE@409..514
+    DECLARE_KW@409..416 "declare"
+    WHITESPACE@416..417 " "
+    MODULE_KW@417..423 "module"
+    WHITESPACE@423..424 " "
+    NAME@424..428
+      CNAME@424..428 "Json"
+    WHITESPACE@428..429 " "
+    LUA_ROOT@429..447
+      EQ@429..430 "="
+      WHITESPACE@430..431 " "
+      LUA_PATH@431..447
+        COLON@431..432 ":"
+        LNAME@432..439 "require"
+        LUA_CALL@439..447
+          ARG_LIST@439..447
+            L_PAREN@439..440 "("
+            LITERAL@440..446
+              STRING@440..446 "'json'"
+            R_PAREN@446..447 ")"
+    NEWLINE@447..448 "\n"
+    WHITESPACE@448..450 "  "
+    DECL_FN@450..479
+      FN_KW@450..452 "fn"
+      WHITESPACE@452..453 " "
+      NAME@453..459
+        LNAME@453..459 "encode"
+      PARAM_LIST@459..471
+        L_PAREN@459..460 "("
+        PARAM@460..470
+          TYPED_PAT@460..470
+            BIND_PAT@460..465
+              NAME@460..465
+                LNAME@460..465 "value"
+            COLON@465..466 ":"
+            WHITESPACE@466..467 " "
+            NAMED_TYPE@467..470
+              LNAME@467..470 "any"
+        R_PAREN@470..471 ")"
+      RETURN_TYPE@471..479
+        COLON@471..472 ":"
+        WHITESPACE@472..473 " "
+        NAMED_TYPE@473..479
+          QUAL_NAME@473..479
+            CNAME@473..479 "String"
+    NEWLINE@479..480 "\n"
+    WHITESPACE@480..482 "  "
+    DECL_FN@482..510
+      FN_KW@482..484 "fn"
+      WHITESPACE@484..485 " "
+      NAME@485..491
+        LNAME@485..491 "decode"
+      PARAM_LIST@491..505
+        L_PAREN@491..492 "("
+        PARAM@492..504
+          TYPED_PAT@492..504
+            BIND_PAT@492..496
+              NAME@492..496
+                LNAME@492..496 "text"
+            COLON@496..497 ":"
+            WHITESPACE@497..498 " "
+            NAMED_TYPE@498..504
+              QUAL_NAME@498..504
+                CNAME@498..504 "String"
+        R_PAREN@504..505 ")"
+      RETURN_TYPE@505..510
+        COLON@505..506 ":"
+        WHITESPACE@506..507 " "
+        NAMED_TYPE@507..510
+          LNAME@507..510 "any"
+    NEWLINE@510..511 "\n"
+    END_KW@511..514 "end"
+  NEWLINE@514..515 "\n"
+  EOF@515..515 ""

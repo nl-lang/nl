@@ -1,0 +1,105 @@
+SOURCE_FILE@0..199
+  BLOCK@0..199
+    COMMENT@0..65 "# `{` after a capitalized name path opens a struct literal; after"
+    NEWLINE@65..66 "\n"
+    COMMENT@66..132 "# a lowercase callee it starts a table argument of a command call."
+    NEWLINE@132..133 "\n"
+    ASSIGN_STMT@133..147
+      NAME_REF@133..134
+        LNAME@133..134 "x"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      STRUCT_LIT@137..147
+        NAME_REF@137..140
+          CNAME@137..140 "Foo"
+        WHITESPACE@140..141 " "
+        L_CURLY@141..142 "{"
+        FIELD_INIT@142..146
+          LNAME@142..143 "a"
+          COLON@143..144 ":"
+          WHITESPACE@144..145 " "
+          LITERAL@145..146
+            NUMBER@145..146 "1"
+        R_CURLY@146..147 "}"
+    NEWLINE@147..148 "\n"
+    ASSIGN_STMT@148..166
+      NAME_REF@148..149
+        LNAME@148..149 "x"
+      WHITESPACE@149..150 " "
+      EQ@150..151 "="
+      WHITESPACE@151..152 " "
+      STRUCT_LIT@152..166
+        FIELD_EXPR@152..159
+          NAME_REF@152..155
+            CNAME@152..155 "Lib"
+          DOT@155..156 "."
+          CNAME@156..159 "Foo"
+        WHITESPACE@159..160 " "
+        L_CURLY@160..161 "{"
+        FIELD_INIT@161..165
+          LNAME@161..162 "a"
+          COLON@162..163 ":"
+          WHITESPACE@163..164 " "
+          LITERAL@164..165
+            NUMBER@164..165 "1"
+        R_CURLY@165..166 "}"
+    NEWLINE@166..167 "\n"
+    EXPR_STMT@167..175
+      COMMAND_CALL@167..175
+        NAME_REF@167..168
+          LNAME@167..168 "f"
+        WHITESPACE@168..169 " "
+        COMMAND_ARGS@169..175
+          TABLE_EXPR@169..175
+            L_CURLY@169..170 "{"
+            TABLE_PAIR@170..174
+              TABLE_KEY@170..171
+                LNAME@170..171 "a"
+              COLON@171..172 ":"
+              WHITESPACE@172..173 " "
+              LITERAL@173..174
+                NUMBER@173..174 "1"
+            R_CURLY@174..175 "}"
+    NEWLINE@175..176 "\n"
+    EXPR_STMT@176..186
+      COMMAND_CALL@176..186
+        FIELD_EXPR@176..179
+          NAME_REF@176..177
+            LNAME@176..177 "x"
+          DOT@177..178 "."
+          LNAME@178..179 "m"
+        WHITESPACE@179..180 " "
+        COMMAND_ARGS@180..186
+          TABLE_EXPR@180..186
+            L_CURLY@180..181 "{"
+            TABLE_PAIR@181..185
+              TABLE_KEY@181..182
+                LNAME@181..182 "a"
+              COLON@182..183 ":"
+              WHITESPACE@183..184 " "
+              LITERAL@184..185
+                NUMBER@184..185 "1"
+            R_CURLY@185..186 "}"
+    NEWLINE@186..187 "\n"
+    EXPR_STMT@187..198
+      COMMAND_CALL@187..198
+        FIELD_EXPR@187..191
+          NAME_REF@187..188
+            LNAME@187..188 "x"
+          DOT@188..189 "."
+          LNAME@189..191 "on"
+        WHITESPACE@191..192 " "
+        COMMAND_ARGS@192..198
+          TABLE_EXPR@192..198
+            L_CURLY@192..193 "{"
+            TABLE_PAIR@193..197
+              TABLE_KEY@193..194
+                LNAME@193..194 "a"
+              COLON@194..195 ":"
+              WHITESPACE@195..196 " "
+              LITERAL@196..197
+                NUMBER@196..197 "1"
+            R_CURLY@197..198 "}"
+    NEWLINE@198..199 "\n"
+  EOF@199..199 ""

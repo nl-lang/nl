@@ -1,0 +1,79 @@
+SOURCE_FILE@0..178
+  BLOCK@0..178
+    COMMENT@0..75 "# Recovery: garbage inside a `case` before the first `when` and in a `when`"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..107 "# item list; the clauses parse."
+    NEWLINE@107..108 "\n"
+    EXPR_STMT@108..171
+      CASE_EXPR@108..171
+        CASE_KW@108..112 "case"
+        WHITESPACE@112..113 " "
+        NAME_REF@113..114
+          LNAME@113..114 "x"
+        NEWLINE@114..115 "\n"
+        WHITESPACE@115..117 "  "
+        ERROR_NODE@117..137
+          BLOCK@117..137
+            EXPR_STMT@117..136
+              COMMAND_CALL@117..136
+                NAME_REF@117..122
+                  LNAME@117..122 "print"
+                WHITESPACE@122..123 " "
+                COMMAND_ARGS@123..136
+                  LITERAL@123..136
+                    STRING@123..136 "\"no when yet\""
+            NEWLINE@136..137 "\n"
+        WHEN_CLAUSE@137..155
+          WHEN_KW@137..141 "when"
+          WHITESPACE@141..142 " "
+          LITERAL@142..143
+            NUMBER@142..143 "1"
+          COMMA@143..144 ","
+          WHITESPACE@144..145 " "
+          COMMA@145..146 ","
+          WHITESPACE@146..147 " "
+          LITERAL@147..148
+            NUMBER@147..148 "2"
+          BLOCK@148..155
+            NEWLINE@148..149 "\n"
+            WHITESPACE@149..151 "  "
+            EXPR_STMT@151..154
+              CALL_EXPR@151..154
+                NAME_REF@151..152
+                  LNAME@151..152 "a"
+                ARG_LIST@152..154
+                  L_PAREN@152..153 "("
+                  R_PAREN@153..154 ")"
+            NEWLINE@154..155 "\n"
+        WHEN_CLAUSE@155..168
+          WHEN_KW@155..159 "when"
+          BLOCK@159..168
+            WHITESPACE@159..160 " "
+            ERROR_NODE@160..161
+              R_PAREN@160..161 ")"
+            NEWLINE@161..162 "\n"
+            WHITESPACE@162..164 "  "
+            EXPR_STMT@164..167
+              CALL_EXPR@164..167
+                NAME_REF@164..165
+                  LNAME@164..165 "b"
+                ARG_LIST@165..167
+                  L_PAREN@165..166 "("
+                  R_PAREN@166..167 ")"
+            NEWLINE@167..168 "\n"
+        END_KW@168..171 "end"
+    NEWLINE@171..172 "\n"
+    ASSIGN_STMT@172..177
+      NAME_REF@172..173
+        LNAME@172..173 "y"
+      WHITESPACE@173..174 " "
+      EQ@174..175 "="
+      WHITESPACE@175..176 " "
+      LITERAL@176..177
+        NUMBER@176..177 "1"
+    NEWLINE@177..178 "\n"
+  EOF@178..178 ""
+---
+error@117..122 4:3: expected `when`, found a line break (then `print`): the body of `case` is a list of `when` clauses
+error@145..146 5:9: expected a value or a pattern after `,`, found `,`
+error@160..161 7:6: expected a value or a pattern after `when`, found `)`

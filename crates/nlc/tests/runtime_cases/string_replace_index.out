@@ -1,0 +1,7 @@
+EncodingError: String.gsub: argument 2 is not valid UTF-8 (byte 1)
+EncodingError: String.sub: argument 2 is not valid UTF-8 (byte 1)
+EncodingError: String.gsub: the replacement function returned a string that is not valid UTF-8 (byte 1)
+EncodingError: String.sub: the replacement function returned a string that is not valid UTF-8 (byte 2)
+aéc	a[b]c
+TypeError: a string is indexed by a number or a range, not Table
+true

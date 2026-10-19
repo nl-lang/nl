@@ -1,0 +1,30 @@
+SOURCE_FILE@0..72
+  BLOCK@0..72
+    COMMENT@0..52 "# Inside brackets `name {` cannot be a command call."
+    NEWLINE@52..53 "\n"
+    EXPR_STMT@53..71
+      CALL_EXPR@53..71
+        NAME_REF@53..56
+          LNAME@53..56 "add"
+        ARG_LIST@56..71
+          L_PAREN@56..57 "("
+          COMMAND_CALL@57..70
+            NAME_REF@57..63
+              LNAME@57..63 "widget"
+            WHITESPACE@63..64 " "
+            COMMAND_ARGS@64..70
+              TABLE_EXPR@64..70
+                L_CURLY@64..65 "{"
+                TABLE_PAIR@65..69
+                  TABLE_KEY@65..66
+                    LNAME@65..66 "x"
+                  COLON@66..67 ":"
+                  WHITESPACE@67..68 " "
+                  LITERAL@68..69
+                    NUMBER@68..69 "1"
+                R_CURLY@69..70 "}"
+          R_PAREN@70..71 ")"
+    NEWLINE@71..72 "\n"
+  EOF@72..72 ""
+---
+error@57..70 2:5: a call without parentheses is only allowed as a whole statement, the value of an assignment or declaration, or a header; write `widget({x: 1})`

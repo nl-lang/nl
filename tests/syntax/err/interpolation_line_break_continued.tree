@@ -1,0 +1,40 @@
+SOURCE_FILE@0..184
+  BLOCK@0..184
+    COMMENT@0..66 "# A line break inside `#{…}` of a one-line string; when the next"
+    NEWLINE@66..67 "\n"
+    COMMENT@67..143 "# line closes the interpolation and the string, the expression goes on there"
+    NEWLINE@143..144 "\n"
+    COMMENT@144..158 "# (one error)."
+    NEWLINE@158..159 "\n"
+    ASSIGN_STMT@159..177
+      NAME_REF@159..160
+        LNAME@159..160 "a"
+      WHITESPACE@160..161 " "
+      EQ@161..162 "="
+      WHITESPACE@162..163 " "
+      INTERP_STRING@163..177
+        STR_BEGIN@163..168 "\"x #{"
+        WHITESPACE@168..169 " "
+        BIN_EXPR@169..174
+          LITERAL@169..170
+            NUMBER@169..170 "1"
+          WHITESPACE@170..171 " "
+          PLUS@171..172 "+"
+          NEWLINE@172..173 "\n"
+          LITERAL@173..174
+            NUMBER@173..174 "2"
+        WHITESPACE@174..175 " "
+        STR_END@175..177 "}\""
+    NEWLINE@177..178 "\n"
+    ASSIGN_STMT@178..183
+      NAME_REF@178..179
+        LNAME@178..179 "b"
+      WHITESPACE@179..180 " "
+      EQ@180..181 "="
+      WHITESPACE@181..182 " "
+      LITERAL@182..183
+        NUMBER@182..183 "1"
+    NEWLINE@183..184 "\n"
+  EOF@184..184 ""
+---
+error@166..168 4:8: an interpolation in a one-line string must close on the line where it opens: add the missing `}`, or use a heredoc `"""` for text on several lines

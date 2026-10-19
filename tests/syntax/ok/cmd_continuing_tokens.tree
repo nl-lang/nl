@@ -1,0 +1,155 @@
+SOURCE_FILE@0..192
+  BLOCK@0..192
+    COMMENT@0..53 "# After a callee these tokens continue the expression"
+    NEWLINE@53..54 "\n"
+    COMMENT@54..88 "# instead of starting an argument."
+    NEWLINE@88..89 "\n"
+    ASSIGN_STMT@89..97
+      NAME_REF@89..90
+        LNAME@89..90 "x"
+      WHITESPACE@90..91 " "
+      EQ@91..92 "="
+      WHITESPACE@92..93 " "
+      BIN_EXPR@93..97
+        NAME_REF@93..94
+          LNAME@93..94 "f"
+        WHITESPACE@94..95 " "
+        MINUS@95..96 "-"
+        LITERAL@96..97
+          NUMBER@96..97 "1"
+    NEWLINE@97..98 "\n"
+    ASSIGN_STMT@98..109
+      NAME_REF@98..99
+        LNAME@98..99 "x"
+      WHITESPACE@99..100 " "
+      EQ@100..101 "="
+      WHITESPACE@101..102 " "
+      BIN_EXPR@102..109
+        NAME_REF@102..103
+          LNAME@102..103 "f"
+        WHITESPACE@103..104 " "
+        STAR@104..105 "*"
+        NAME_REF@105..109
+          LNAME@105..109 "list"
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..119
+      NAME_REF@110..111
+        LNAME@110..111 "x"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      INDEX_EXPR@114..119
+        NAME_REF@114..115
+          LNAME@114..115 "f"
+        WHITESPACE@115..116 " "
+        L_BRACK@116..117 "["
+        LITERAL@117..118
+          NUMBER@117..118 "1"
+        R_BRACK@118..119 "]"
+    NEWLINE@119..120 "\n"
+    ASSIGN_STMT@120..129
+      NAME_REF@120..121
+        LNAME@120..121 "x"
+      WHITESPACE@121..122 " "
+      EQ@122..123 "="
+      WHITESPACE@123..124 " "
+      CALL_EXPR@124..129
+        NAME_REF@124..125
+          LNAME@124..125 "f"
+        WHITESPACE@125..126 " "
+        ARG_LIST@126..129
+          L_PAREN@126..127 "("
+          NAME_REF@127..128
+            LNAME@127..128 "x"
+          R_PAREN@128..129 ")"
+    NEWLINE@129..130 "\n"
+    ASSIGN_STMT@130..147
+      NAME_REF@130..131
+        LNAME@130..131 "x"
+      WHITESPACE@131..132 " "
+      EQ@132..133 "="
+      WHITESPACE@133..134 " "
+      BIN_EXPR@134..147
+        CALL_EXPR@134..143
+          NAME_REF@134..135
+            LNAME@134..135 "f"
+          WHITESPACE@135..136 " "
+          ARG_LIST@136..143
+            L_PAREN@136..137 "("
+            BIN_EXPR@137..142
+              NAME_REF@137..138
+                LNAME@137..138 "a"
+              WHITESPACE@138..139 " "
+              PLUS@139..140 "+"
+              WHITESPACE@140..141 " "
+              NAME_REF@141..142
+                LNAME@141..142 "b"
+            R_PAREN@142..143 ")"
+        WHITESPACE@143..144 " "
+        STAR@144..145 "*"
+        WHITESPACE@145..146 " "
+        LITERAL@146..147
+          NUMBER@146..147 "2"
+    NEWLINE@147..148 "\n"
+    ASSIGN_STMT@148..157
+      NAME_REF@148..149
+        LNAME@148..149 "x"
+      WHITESPACE@149..150 " "
+      EQ@150..151 "="
+      WHITESPACE@151..152 " "
+      BIN_EXPR@152..157
+        NAME_REF@152..153
+          LNAME@152..153 "f"
+        WHITESPACE@153..154 " "
+        DOT2@154..156 ".."
+        NAME_REF@156..157
+          LNAME@156..157 "x"
+    NEWLINE@157..158 "\n"
+    ASSIGN_STMT@158..169
+      NAME_REF@158..159
+        LNAME@158..159 "x"
+      WHITESPACE@159..160 " "
+      EQ@160..161 "="
+      WHITESPACE@161..162 " "
+      BIN_EXPR@162..169
+        NAME_REF@162..163
+          LNAME@162..163 "f"
+        WHITESPACE@163..164 " "
+        AND_KW@164..167 "and"
+        WHITESPACE@167..168 " "
+        NAME_REF@168..169
+          LNAME@168..169 "y"
+    NEWLINE@169..170 "\n"
+    ASSIGN_STMT@170..180
+      NAME_REF@170..171
+        LNAME@170..171 "x"
+      WHITESPACE@171..172 " "
+      EQ@172..173 "="
+      WHITESPACE@173..174 " "
+      IS_EXPR@174..180
+        NAME_REF@174..175
+          LNAME@174..175 "f"
+        WHITESPACE@175..176 " "
+        IS_KW@176..178 "is"
+        WHITESPACE@178..179 " "
+        NAMED_TYPE@179..180
+          QUAL_NAME@179..180
+            CNAME@179..180 "T"
+    NEWLINE@180..181 "\n"
+    ASSIGN_STMT@181..191
+      NAME_REF@181..182
+        LNAME@181..182 "x"
+      WHITESPACE@182..183 " "
+      EQ@183..184 "="
+      WHITESPACE@184..185 " "
+      AS_EXPR@185..191
+        NAME_REF@185..186
+          LNAME@185..186 "f"
+        WHITESPACE@186..187 " "
+        AS_KW@187..189 "as"
+        WHITESPACE@189..190 " "
+        NAMED_TYPE@190..191
+          QUAL_NAME@190..191
+            CNAME@190..191 "T"
+    NEWLINE@191..192 "\n"
+  EOF@192..192 ""

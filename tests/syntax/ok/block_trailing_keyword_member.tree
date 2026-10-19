@@ -1,0 +1,19 @@
+SOURCE_FILE@0..61
+  BLOCK@0..61
+    COMMENT@0..42 "# A member named by a keyword is a callee."
+    NEWLINE@42..43 "\n"
+    EXPR_STMT@43..60
+      CALL_EXPR@43..60
+        FIELD_EXPR@43..53
+          NAME_REF@43..50
+            LNAME@43..50 "emitter"
+          DOT@50..51 "."
+          LNAME@51..53 "on"
+        WHITESPACE@53..54 " "
+        TRAILING_BLOCK@54..60
+          DO_KW@54..56 "do"
+          BLOCK@56..57
+            NEWLINE@56..57 "\n"
+          END_KW@57..60 "end"
+    NEWLINE@60..61 "\n"
+  EOF@61..61 ""

@@ -1,0 +1,77 @@
+SOURCE_FILE@0..165
+  BLOCK@0..165
+    COMMENT@0..58 "# Method signatures without bodies and field requirements."
+    NEWLINE@58..59 "\n"
+    INTERFACE_DECL@59..164
+      INTERFACE_KW@59..68 "interface"
+      WHITESPACE@68..69 " "
+      NAME@69..74
+        CNAME@69..74 "Shape"
+      NEWLINE@74..75 "\n"
+      WHITESPACE@75..77 "  "
+      IFACE_METHOD@77..92
+        FN_KW@77..79 "fn"
+        WHITESPACE@79..80 " "
+        NAME@80..84
+          LNAME@80..84 "area"
+        RETURN_TYPE@84..92
+          COLON@84..85 ":"
+          WHITESPACE@85..86 " "
+          NAMED_TYPE@86..92
+            QUAL_NAME@86..92
+              CNAME@86..92 "Number"
+      NEWLINE@92..93 "\n"
+      WHITESPACE@93..95 "  "
+      IFACE_METHOD@95..125
+        FN_KW@95..97 "fn"
+        WHITESPACE@97..98 " "
+        NAME@98..103
+          LNAME@98..103 "scale"
+        PARAM_LIST@103..119
+          L_PAREN@103..104 "("
+          PARAM@104..118
+            TYPED_PAT@104..118
+              BIND_PAT@104..110
+                NAME@104..110
+                  LNAME@104..110 "factor"
+              COLON@110..111 ":"
+              WHITESPACE@111..112 " "
+              NAMED_TYPE@112..118
+                QUAL_NAME@112..118
+                  CNAME@112..118 "Number"
+          R_PAREN@118..119 ")"
+        RETURN_TYPE@119..125
+          COLON@119..120 ":"
+          WHITESPACE@120..121 " "
+          NAMED_TYPE@121..125
+            SELF_TYPE_KW@121..125 "Self"
+      NEWLINE@125..126 "\n"
+      WHITESPACE@126..128 "  "
+      IFACE_METHOD@128..145
+        ASYNC_KW@128..133 "async"
+        WHITESPACE@133..134 " "
+        FN_KW@134..136 "fn"
+        WHITESPACE@136..137 " "
+        NAME@137..141
+          LNAME@137..141 "load"
+        PARAM_LIST@141..145
+          L_PAREN@141..142 "("
+          PARAM@142..144
+            BIND_PAT@142..144
+              NAME@142..144
+                LNAME@142..144 "id"
+          R_PAREN@144..145 ")"
+      NEWLINE@145..146 "\n"
+      WHITESPACE@146..148 "  "
+      IFACE_FIELD@148..160
+        NAME@148..152
+          LNAME@148..152 "name"
+        COLON@152..153 ":"
+        WHITESPACE@153..154 " "
+        NAMED_TYPE@154..160
+          QUAL_NAME@154..160
+            CNAME@154..160 "String"
+      NEWLINE@160..161 "\n"
+      END_KW@161..164 "end"
+    NEWLINE@164..165 "\n"
+  EOF@165..165 ""

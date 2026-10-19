@@ -1,0 +1,78 @@
+SOURCE_FILE@0..125
+  BLOCK@0..125
+    COMMENT@0..51 "# `self`, `Self`, `@name` and a parenthesized expr."
+    NEWLINE@51..52 "\n"
+    FN_DECL@52..124
+      FN_KW@52..54 "fn"
+      WHITESPACE@54..55 " "
+      QUAL_NAME@55..58
+        CNAME@55..58 "Foo"
+      DOT@58..59 "."
+      NAME@59..60
+        LNAME@59..60 "m"
+      PARAM_LIST@60..67
+        L_PAREN@60..61 "("
+        REST_PARAM@61..66
+          STAR@61..62 "*"
+          NAME@62..66
+            LNAME@62..66 "args"
+        R_PAREN@66..67 ")"
+      BLOCK@67..121
+        NEWLINE@67..68 "\n"
+        WHITESPACE@68..70 "  "
+        ASSIGN_STMT@70..78
+          NAME_REF@70..71
+            LNAME@70..71 "x"
+          WHITESPACE@71..72 " "
+          EQ@72..73 "="
+          WHITESPACE@73..74 " "
+          SELF_EXPR@74..78
+            SELF_KW@74..78 "self"
+        NEWLINE@78..79 "\n"
+        WHITESPACE@79..81 "  "
+        ASSIGN_STMT@81..89
+          NAME_REF@81..82
+            LNAME@81..82 "x"
+          WHITESPACE@82..83 " "
+          EQ@83..84 "="
+          WHITESPACE@84..85 " "
+          SELF_EXPR@85..89
+            SELF_TYPE_KW@85..89 "Self"
+        NEWLINE@89..90 "\n"
+        WHITESPACE@90..92 "  "
+        ASSIGN_STMT@92..99
+          NAME_REF@92..93
+            LNAME@92..93 "x"
+          WHITESPACE@93..94 " "
+          EQ@94..95 "="
+          WHITESPACE@95..96 " "
+          AT_EXPR@96..99
+            AT_NAME@96..99 "@hp"
+        NEWLINE@99..100 "\n"
+        WHITESPACE@100..102 "  "
+        ASSIGN_STMT@102..113
+          NAME_REF@102..103
+            LNAME@102..103 "x"
+          WHITESPACE@103..104 " "
+          EQ@104..105 "="
+          WHITESPACE@105..106 " "
+          PAREN_EXPR@106..113
+            L_PAREN@106..107 "("
+            BIN_EXPR@107..112
+              NAME_REF@107..108
+                LNAME@107..108 "a"
+              WHITESPACE@108..109 " "
+              PLUS@109..110 "+"
+              WHITESPACE@110..111 " "
+              NAME_REF@111..112
+                LNAME@111..112 "b"
+            R_PAREN@112..113 ")"
+        NEWLINE@113..114 "\n"
+        WHITESPACE@114..116 "  "
+        EXPR_STMT@116..120
+          NAME_REF@116..120
+            LNAME@116..120 "args"
+        NEWLINE@120..121 "\n"
+      END_KW@121..124 "end"
+    NEWLINE@124..125 "\n"
+  EOF@125..125 ""

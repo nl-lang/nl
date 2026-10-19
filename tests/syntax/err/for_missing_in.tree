@@ -1,0 +1,34 @@
+SOURCE_FILE@0..45
+  BLOCK@0..45
+    COMMENT@0..19 "# `for` needs `in`."
+    NEWLINE@19..20 "\n"
+    FOR_STMT@20..44
+      FOR_KW@20..23 "for"
+      WHITESPACE@23..24 " "
+      BIND_PAT@24..25
+        NAME@24..25
+          LNAME@24..25 "i"
+      WHITESPACE@25..26 " "
+      BIN_EXPR@26..30
+        LITERAL@26..27
+          NUMBER@26..27 "1"
+        DOT2@27..29 ".."
+        LITERAL@29..30
+          NUMBER@29..30 "3"
+      BLOCK@30..41
+        NEWLINE@30..31 "\n"
+        WHITESPACE@31..33 "  "
+        EXPR_STMT@33..40
+          COMMAND_CALL@33..40
+            NAME_REF@33..38
+              LNAME@33..38 "print"
+            WHITESPACE@38..39 " "
+            COMMAND_ARGS@39..40
+              NAME_REF@39..40
+                LNAME@39..40 "i"
+        NEWLINE@40..41 "\n"
+      END_KW@41..44 "end"
+    NEWLINE@44..45 "\n"
+  EOF@45..45 ""
+---
+error@26..27 2:7: expected `in` after the loop variables, found `1`

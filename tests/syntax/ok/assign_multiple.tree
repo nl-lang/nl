@@ -1,0 +1,64 @@
+SOURCE_FILE@0..87
+  BLOCK@0..87
+    COMMENT@0..48 "# `x, y = y, x`; the targets may be of any kind."
+    NEWLINE@48..49 "\n"
+    MULTI_ASSIGN_STMT@49..60
+      TARGET_LIST@49..53
+        NAME_REF@49..50
+          LNAME@49..50 "x"
+        COMMA@50..51 ","
+        WHITESPACE@51..52 " "
+        NAME_REF@52..53
+          LNAME@52..53 "y"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      EXPR_LIST@56..60
+        NAME_REF@56..57
+          LNAME@56..57 "y"
+        COMMA@57..58 ","
+        WHITESPACE@58..59 " "
+        NAME_REF@59..60
+          LNAME@59..60 "x"
+    NEWLINE@60..61 "\n"
+    MULTI_ASSIGN_STMT@61..86
+      TARGET_LIST@61..74
+        FIELD_EXPR@61..64
+          NAME_REF@61..62
+            LNAME@61..62 "a"
+          DOT@62..63 "."
+          LNAME@63..64 "b"
+        COMMA@64..65 ","
+        WHITESPACE@65..66 " "
+        INDEX_EXPR@66..70
+          NAME_REF@66..67
+            LNAME@66..67 "c"
+          L_BRACK@67..68 "["
+          LITERAL@68..69
+            NUMBER@68..69 "1"
+          R_BRACK@69..70 "]"
+        COMMA@70..71 ","
+        WHITESPACE@71..72 " "
+        AT_EXPR@72..74
+          AT_NAME@72..74 "@d"
+      WHITESPACE@74..75 " "
+      EQ@75..76 "="
+      WHITESPACE@76..77 " "
+      EXPR_LIST@77..86
+        LITERAL@77..78
+          NUMBER@77..78 "1"
+        COMMA@78..79 ","
+        WHITESPACE@79..80 " "
+        LITERAL@80..81
+          NUMBER@80..81 "2"
+        COMMA@81..82 ","
+        WHITESPACE@82..83 " "
+        COMMAND_CALL@83..86
+          NAME_REF@83..84
+            LNAME@83..84 "f"
+          WHITESPACE@84..85 " "
+          COMMAND_ARGS@85..86
+            NAME_REF@85..86
+              LNAME@85..86 "x"
+    NEWLINE@86..87 "\n"
+  EOF@87..87 ""

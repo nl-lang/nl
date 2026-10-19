@@ -1,0 +1,63 @@
+SOURCE_FILE@0..115
+  BLOCK@0..115
+    COMMENT@0..70 "# Recovery: garbage inside an enum body; the variants around it parse."
+    NEWLINE@70..71 "\n"
+    ENUM_DECL@71..108
+      ENUM_KW@71..75 "enum"
+      WHITESPACE@75..76 " "
+      NAME@76..77
+        CNAME@76..77 "E"
+      NEWLINE@77..78 "\n"
+      WHITESPACE@78..80 "  "
+      VARIANT@80..81
+        NAME@80..81
+          CNAME@80..81 "A"
+      NEWLINE@81..82 "\n"
+      WHITESPACE@82..84 "  "
+      ERROR_NODE@84..89
+        EXPR_STMT@84..89
+          BIN_EXPR@84..89
+            LITERAL@84..85
+              NUMBER@84..85 "1"
+            WHITESPACE@85..86 " "
+            PLUS@86..87 "+"
+            WHITESPACE@87..88 " "
+            LITERAL@88..89
+              NUMBER@88..89 "2"
+      NEWLINE@89..90 "\n"
+      WHITESPACE@90..92 "  "
+      VARIANT@92..97
+        NAME@92..93
+          CNAME@92..93 "B"
+        WHITESPACE@93..94 " "
+        EQ@94..95 "="
+        WHITESPACE@95..96 " "
+        LITERAL@96..97
+          NUMBER@96..97 "3"
+      ERROR_NODE@97..98
+        COMMA@97..98 ","
+      WHITESPACE@98..99 " "
+      VARIANT@99..100
+        NAME@99..100
+          CNAME@99..100 "C"
+      NEWLINE@100..101 "\n"
+      WHITESPACE@101..103 "  "
+      VARIANT@103..104
+        NAME@103..104
+          CNAME@103..104 "D"
+      NEWLINE@104..105 "\n"
+      END_KW@105..108 "end"
+    NEWLINE@108..109 "\n"
+    ASSIGN_STMT@109..114
+      NAME_REF@109..110
+        LNAME@109..110 "x"
+      WHITESPACE@110..111 " "
+      EQ@111..112 "="
+      WHITESPACE@112..113 " "
+      LITERAL@113..114
+        NUMBER@113..114 "1"
+    NEWLINE@114..115 "\n"
+  EOF@115..115 ""
+---
+error@84..85 4:3: an enum body holds variants only, one `Name` or `Name = value` per line
+error@97..98 5:8: the members of `enum` are written one per line, not separated by `,`

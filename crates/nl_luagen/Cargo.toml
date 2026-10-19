@@ -1,0 +1,14 @@
+[package]
+name = "nl_luagen"
+description = "Prints the NL core IR as Lua source (the oracle backend)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+nl_ir = { path = "../nl_ir" }
+
+[lints]
+workspace = true

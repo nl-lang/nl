@@ -1,0 +1,110 @@
+SOURCE_FILE@0..291
+  BLOCK@0..291
+    COMMENT@0..65 "# `as` names the export table of `import from`, gives the handler"
+    NEWLINE@65..66 "\n"
+    COMMENT@66..142 "# name of `on`, binds the whole value in a pattern and a `when` pattern, and"
+    NEWLINE@142..143 "\n"
+    COMMENT@143..182 "# is the conversion operator elsewhere."
+    NEWLINE@182..183 "\n"
+    IMPORT_DECL@183..207
+      IMPORT_KW@183..189 "import"
+      WHITESPACE@189..190 " "
+      FROM_KW@190..194 "from"
+      WHITESPACE@194..195 " "
+      STRING@195..200 "'lib'"
+      WHITESPACE@200..201 " "
+      AS_KW@201..203 "as"
+      WHITESPACE@203..204 " "
+      NAME@204..207
+        CNAME@204..207 "Lib"
+    NEWLINE@207..208 "\n"
+    EXPR_STMT@208..226
+      ON_EXPR@208..226
+        ON_KW@208..210 "on"
+        WHITESPACE@210..211 " "
+        QUAL_NAME@211..212
+          CNAME@211..212 "E"
+        WHITESPACE@212..213 " "
+        AS_KW@213..215 "as"
+        WHITESPACE@215..216 " "
+        STRING@216..219 "'h'"
+        WHITESPACE@219..220 " "
+        DO_KW@220..222 "do"
+        BLOCK@222..223
+          WHITESPACE@222..223 " "
+        END_KW@223..226 "end"
+    NEWLINE@226..227 "\n"
+    LET_DECL@227..243
+      LET_KW@227..230 "let"
+      WHITESPACE@230..231 " "
+      AS_PAT@231..239
+        BRACE_PAT@231..234
+          L_CURLY@231..232 "{"
+          PAT_FIELD@232..233
+            NAME@232..233
+              LNAME@232..233 "a"
+          R_CURLY@233..234 "}"
+        WHITESPACE@234..235 " "
+        AS_KW@235..237 "as"
+        WHITESPACE@237..238 " "
+        NAME@238..239
+          LNAME@238..239 "t"
+      WHITESPACE@239..240 " "
+      EQ@240..241 "="
+      WHITESPACE@241..242 " "
+      EXPR_LIST@242..243
+        NAME_REF@242..243
+          LNAME@242..243 "v"
+    NEWLINE@243..244 "\n"
+    EXPR_STMT@244..274
+      CASE_EXPR@244..274
+        CASE_KW@244..248 "case"
+        WHITESPACE@248..249 " "
+        NAME_REF@249..250
+          LNAME@249..250 "v"
+        NEWLINE@250..251 "\n"
+        WHEN_CLAUSE@251..271
+          WHEN_KW@251..255 "when"
+          WHITESPACE@255..256 " "
+          AS_PAT@256..264
+            BRACE_PAT@256..259
+              L_CURLY@256..257 "{"
+              PAT_FIELD@257..258
+                NAME@257..258
+                  LNAME@257..258 "a"
+              R_CURLY@258..259 "}"
+            WHITESPACE@259..260 " "
+            AS_KW@260..262 "as"
+            WHITESPACE@262..263 " "
+            NAME@263..264
+              LNAME@263..264 "w"
+          BLOCK@264..271
+            NEWLINE@264..265 "\n"
+            WHITESPACE@265..267 "  "
+            EXPR_STMT@267..270
+              CALL_EXPR@267..270
+                NAME_REF@267..268
+                  LNAME@267..268 "g"
+                ARG_LIST@268..270
+                  L_PAREN@268..269 "("
+                  R_PAREN@269..270 ")"
+            NEWLINE@270..271 "\n"
+        END_KW@271..274 "end"
+    NEWLINE@274..275 "\n"
+    ASSIGN_STMT@275..290
+      NAME_REF@275..276
+        LNAME@275..276 "n"
+      WHITESPACE@276..277 " "
+      EQ@277..278 "="
+      WHITESPACE@278..279 " "
+      AS_EXPR@279..290
+        NAME_REF@279..280
+          LNAME@279..280 "v"
+        WHITESPACE@280..281 " "
+        AS_KW@281..283 "as"
+        WHITESPACE@283..284 " "
+        NAMED_TYPE@284..290
+          QUAL_NAME@284..290
+            CNAME@284..290 "Number"
+    NEWLINE@290..291 "\n"
+  EOF@291..291 ""

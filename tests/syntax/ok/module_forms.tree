@@ -1,0 +1,67 @@
+SOURCE_FILE@0..200
+  BLOCK@0..200
+    COMMENT@0..61 "# `module` with a plain or qualified name and a body; `module"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..94 "# Foo end` on one line is empty."
+    NEWLINE@94..95 "\n"
+    MODULE_DECL@95..153
+      MODULE_KW@95..101 "module"
+      WHITESPACE@101..102 " "
+      QUAL_NAME@102..111
+        CNAME@102..111 "Inventory"
+      BLOCK@111..150
+        NEWLINE@111..112 "\n"
+        WHITESPACE@112..114 "  "
+        LET_DECL@114..128
+          LET_KW@114..117 "let"
+          WHITESPACE@117..118 " "
+          BIND_PAT@118..123
+            NAME@118..123
+              LNAME@118..123 "items"
+          WHITESPACE@123..124 " "
+          EQ@124..125 "="
+          WHITESPACE@125..126 " "
+          EXPR_LIST@126..128
+            TABLE_EXPR@126..128
+              L_CURLY@126..127 "{"
+              R_CURLY@127..128 "}"
+        NEWLINE@128..129 "\n"
+        WHITESPACE@129..131 "  "
+        FN_DECL@131..149
+          FN_KW@131..133 "fn"
+          WHITESPACE@133..134 " "
+          NAME@134..137
+            LNAME@134..137 "add"
+          PARAM_LIST@137..143
+            L_PAREN@137..138 "("
+            PARAM@138..142
+              BIND_PAT@138..142
+                NAME@138..142
+                  LNAME@138..142 "item"
+            R_PAREN@142..143 ")"
+          BLOCK@143..146
+            NEWLINE@143..144 "\n"
+            WHITESPACE@144..146 "  "
+          END_KW@146..149 "end"
+        NEWLINE@149..150 "\n"
+      END_KW@150..153 "end"
+    NEWLINE@153..154 "\n"
+    MODULE_DECL@154..182
+      MODULE_KW@154..160 "module"
+      WHITESPACE@160..161 " "
+      QUAL_NAME@161..178
+        CNAME@161..170 "Inventory"
+        DOT@170..171 "."
+        CNAME@171..178 "Filters"
+      NEWLINE@178..179 "\n"
+      END_KW@179..182 "end"
+    NEWLINE@182..183 "\n"
+    MODULE_DECL@183..199
+      MODULE_KW@183..189 "module"
+      WHITESPACE@189..190 " "
+      QUAL_NAME@190..195
+        CNAME@190..195 "Empty"
+      WHITESPACE@195..196 " "
+      END_KW@196..199 "end"
+    NEWLINE@199..200 "\n"
+  EOF@200..200 ""

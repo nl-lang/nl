@@ -1,0 +1,214 @@
+SOURCE_FILE@0..324
+  BLOCK@0..324
+    COMMENT@0..58 "# The pipe target: a name, `@name`, a member chain, a call"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..121 "# with arguments, a method call, a Lua path, a trailing block."
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..132
+      NAME_REF@122..123
+        LNAME@122..123 "x"
+      WHITESPACE@123..124 " "
+      EQ@124..125 "="
+      WHITESPACE@125..126 " "
+      PIPE_EXPR@126..132
+        NAME_REF@126..127
+          LNAME@126..127 "a"
+        WHITESPACE@127..128 " "
+        PIPE_GT@128..130 "|>"
+        WHITESPACE@130..131 " "
+        NAME_REF@131..132
+          LNAME@131..132 "f"
+    NEWLINE@132..133 "\n"
+    ASSIGN_STMT@133..150
+      NAME_REF@133..134
+        LNAME@133..134 "x"
+      WHITESPACE@134..135 " "
+      EQ@135..136 "="
+      WHITESPACE@136..137 " "
+      PIPE_EXPR@137..150
+        NAME_REF@137..138
+          LNAME@137..138 "a"
+        WHITESPACE@138..139 " "
+        PIPE_GT@139..141 "|>"
+        WHITESPACE@141..142 " "
+        AT_EXPR@142..150
+          AT_NAME@142..150 "@handler"
+    NEWLINE@150..151 "\n"
+    ASSIGN_STMT@151..165
+      NAME_REF@151..152
+        LNAME@151..152 "x"
+      WHITESPACE@152..153 " "
+      EQ@153..154 "="
+      WHITESPACE@154..155 " "
+      PIPE_EXPR@155..165
+        NAME_REF@155..156
+          LNAME@155..156 "a"
+        WHITESPACE@156..157 " "
+        PIPE_GT@157..159 "|>"
+        WHITESPACE@159..160 " "
+        FIELD_EXPR@160..165
+          FIELD_EXPR@160..163
+            NAME_REF@160..161
+              LNAME@160..161 "x"
+            DOT@161..162 "."
+            LNAME@162..163 "y"
+          DOT@163..164 "."
+          LNAME@164..165 "m"
+    NEWLINE@165..166 "\n"
+    ASSIGN_STMT@166..179
+      NAME_REF@166..167
+        LNAME@166..167 "x"
+      WHITESPACE@167..168 " "
+      EQ@168..169 "="
+      WHITESPACE@169..170 " "
+      PIPE_EXPR@170..179
+        NAME_REF@170..171
+          LNAME@170..171 "a"
+        WHITESPACE@171..172 " "
+        PIPE_GT@172..174 "|>"
+        WHITESPACE@174..175 " "
+        CALL_EXPR@175..179
+          NAME_REF@175..176
+            LNAME@175..176 "f"
+          ARG_LIST@176..179
+            L_PAREN@176..177 "("
+            NAME_REF@177..178
+              LNAME@177..178 "b"
+            R_PAREN@178..179 ")"
+    NEWLINE@179..180 "\n"
+    ASSIGN_STMT@180..195
+      NAME_REF@180..181
+        LNAME@180..181 "x"
+      WHITESPACE@181..182 " "
+      EQ@182..183 "="
+      WHITESPACE@183..184 " "
+      PIPE_EXPR@184..195
+        NAME_REF@184..185
+          LNAME@184..185 "a"
+        WHITESPACE@185..186 " "
+        PIPE_GT@186..188 "|>"
+        WHITESPACE@188..189 " "
+        METHOD_CALL@189..195
+          NAME_REF@189..190
+            LNAME@189..190 "x"
+          COLON@190..191 ":"
+          LNAME@191..192 "m"
+          ARG_LIST@192..195
+            L_PAREN@192..193 "("
+            NAME_REF@193..194
+              LNAME@193..194 "b"
+            R_PAREN@194..195 ")"
+    NEWLINE@195..196 "\n"
+    ASSIGN_STMT@196..218
+      NAME_REF@196..197
+        LNAME@196..197 "x"
+      WHITESPACE@197..198 " "
+      EQ@198..199 "="
+      WHITESPACE@199..200 " "
+      PIPE_EXPR@200..218
+        NAME_REF@200..201
+          LNAME@200..201 "a"
+        WHITESPACE@201..202 " "
+        PIPE_GT@202..204 "|>"
+        WHITESPACE@204..205 " "
+        LUA_PATH@205..218
+          COLON@205..206 ":"
+          LNAME@206..212 "string"
+          LUA_FIELD@212..218
+            DOT@212..213 "."
+            LNAME@213..218 "upper"
+    NEWLINE@218..219 "\n"
+    ASSIGN_STMT@219..243
+      NAME_REF@219..220
+        LNAME@219..220 "x"
+      WHITESPACE@220..221 " "
+      EQ@221..222 "="
+      WHITESPACE@222..223 " "
+      PIPE_EXPR@223..243
+        NAME_REF@223..224
+          LNAME@223..224 "a"
+        WHITESPACE@224..225 " "
+        PIPE_GT@225..227 "|>"
+        WHITESPACE@227..228 " "
+        FIELD_EXPR@228..243
+          FIELD_EXPR@228..235
+            NAME_REF@228..231
+              CNAME@228..231 "Mod"
+            DOT@231..232 "."
+            LNAME@232..235 "sub"
+          DOT@235..236 "."
+          LNAME@236..243 "fn_name"
+    NEWLINE@243..244 "\n"
+    ASSIGN_STMT@244..280
+      NAME_REF@244..245
+        LNAME@244..245 "x"
+      WHITESPACE@245..246 " "
+      EQ@246..247 "="
+      WHITESPACE@247..248 " "
+      PIPE_EXPR@248..280
+        NAME_REF@248..253
+          LNAME@248..253 "items"
+        WHITESPACE@253..254 " "
+        PIPE_GT@254..256 "|>"
+        WHITESPACE@256..257 " "
+        CALL_EXPR@257..280
+          NAME_REF@257..261
+            LNAME@257..261 "each"
+          WHITESPACE@261..262 " "
+          TRAILING_BLOCK@262..280
+            DO_KW@262..264 "do"
+            WHITESPACE@264..265 " "
+            BLOCK_PARAMS@265..268
+              PIPE@265..266 "|"
+              PARAM@266..267
+                BIND_PAT@266..267
+                  NAME@266..267
+                    LNAME@266..267 "i"
+              PIPE@267..268 "|"
+            BLOCK@268..277
+              WHITESPACE@268..269 " "
+              EXPR_STMT@269..276
+                COMMAND_CALL@269..276
+                  NAME_REF@269..274
+                    LNAME@269..274 "print"
+                  WHITESPACE@274..275 " "
+                  COMMAND_ARGS@275..276
+                    NAME_REF@275..276
+                      LNAME@275..276 "i"
+              WHITESPACE@276..277 " "
+            END_KW@277..280 "end"
+    NEWLINE@280..281 "\n"
+    ASSIGN_STMT@281..323
+      NAME_REF@281..282
+        LNAME@281..282 "x"
+      WHITESPACE@282..283 " "
+      EQ@283..284 "="
+      WHITESPACE@284..285 " "
+      PIPE_EXPR@285..323
+        PIPE_EXPR@285..307
+          NAME_REF@285..290
+            LNAME@285..290 "items"
+          WHITESPACE@290..291 " "
+          PIPE_GT@291..293 "|>"
+          WHITESPACE@293..294 " "
+          CALL_EXPR@294..307
+            NAME_REF@294..300
+              LNAME@294..300 "filter"
+            ARG_LIST@300..307
+              L_PAREN@300..301 "("
+              NAME_REF@301..306
+                LNAME@301..306 "alive"
+              R_PAREN@306..307 ")"
+        WHITESPACE@307..308 " "
+        PIPE_GT@308..310 "|>"
+        WHITESPACE@310..311 " "
+        CALL_EXPR@311..323
+          NAME_REF@311..314
+            LNAME@311..314 "map"
+          ARG_LIST@314..323
+            L_PAREN@314..315 "("
+            NAME_REF@315..322
+              LNAME@315..322 "name_of"
+            R_PAREN@322..323 ")"
+    NEWLINE@323..324 "\n"
+  EOF@324..324 ""

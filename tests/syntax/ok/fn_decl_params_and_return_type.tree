@@ -1,0 +1,76 @@
+SOURCE_FILE@0..108
+  BLOCK@0..108
+    COMMENT@0..31 "# Parameters and a return type."
+    NEWLINE@31..32 "\n"
+    FN_DECL@32..81
+      FN_KW@32..34 "fn"
+      WHITESPACE@34..35 " "
+      NAME@35..39
+        LNAME@35..39 "area"
+      PARAM_LIST@39..61
+        L_PAREN@39..40 "("
+        PARAM@40..49
+          TYPED_PAT@40..49
+            BIND_PAT@40..41
+              NAME@40..41
+                LNAME@40..41 "w"
+            COLON@41..42 ":"
+            WHITESPACE@42..43 " "
+            NAMED_TYPE@43..49
+              QUAL_NAME@43..49
+                CNAME@43..49 "Number"
+        COMMA@49..50 ","
+        WHITESPACE@50..51 " "
+        PARAM@51..60
+          TYPED_PAT@51..60
+            BIND_PAT@51..52
+              NAME@51..52
+                LNAME@51..52 "h"
+            COLON@52..53 ":"
+            WHITESPACE@53..54 " "
+            NAMED_TYPE@54..60
+              QUAL_NAME@54..60
+                CNAME@54..60 "Number"
+        R_PAREN@60..61 ")"
+      RETURN_TYPE@61..69
+        COLON@61..62 ":"
+        WHITESPACE@62..63 " "
+        NAMED_TYPE@63..69
+          QUAL_NAME@63..69
+            CNAME@63..69 "Number"
+      BLOCK@69..78
+        NEWLINE@69..70 "\n"
+        WHITESPACE@70..72 "  "
+        EXPR_STMT@72..77
+          BIN_EXPR@72..77
+            NAME_REF@72..73
+              LNAME@72..73 "w"
+            WHITESPACE@73..74 " "
+            STAR@74..75 "*"
+            WHITESPACE@75..76 " "
+            NAME_REF@76..77
+              LNAME@76..77 "h"
+        NEWLINE@77..78 "\n"
+      END_KW@78..81 "end"
+    NEWLINE@81..82 "\n"
+    FN_DECL@82..107
+      FN_KW@82..84 "fn"
+      WHITESPACE@84..85 " "
+      NAME@85..90
+        LNAME@85..90 "ready"
+      RETURN_TYPE@90..96
+        COLON@90..91 ":"
+        WHITESPACE@91..92 " "
+        NAMED_TYPE@92..96
+          QUAL_NAME@92..96
+            CNAME@92..96 "Bool"
+      BLOCK@96..104
+        NEWLINE@96..97 "\n"
+        WHITESPACE@97..99 "  "
+        EXPR_STMT@99..103
+          LITERAL@99..103
+            TRUE_KW@99..103 "true"
+        NEWLINE@103..104 "\n"
+      END_KW@104..107 "end"
+    NEWLINE@107..108 "\n"
+  EOF@108..108 ""

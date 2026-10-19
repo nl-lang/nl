@@ -1,0 +1,50 @@
+SOURCE_FILE@0..166
+  BLOCK@0..166
+    COMMENT@0..75 "# Recovery: an `fn` lacks its `end`; the indentation of the next `fn` shows"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..130 "# where it was missing, and that `fn` parses normally."
+    NEWLINE@130..131 "\n"
+    FN_DECL@131..147
+      FN_KW@131..133 "fn"
+      WHITESPACE@133..134 " "
+      NAME@134..135
+        LNAME@134..135 "a"
+      PARAM_LIST@135..137
+        L_PAREN@135..136 "("
+        R_PAREN@136..137 ")"
+      BLOCK@137..147
+        NEWLINE@137..138 "\n"
+        WHITESPACE@138..140 "  "
+        EXPR_STMT@140..145
+          CALL_EXPR@140..145
+            NAME_REF@140..143
+              LNAME@140..143 "foo"
+            ARG_LIST@143..145
+              L_PAREN@143..144 "("
+              R_PAREN@144..145 ")"
+        NEWLINE@145..146 "\n"
+        NEWLINE@146..147 "\n"
+    FN_DECL@147..165
+      FN_KW@147..149 "fn"
+      WHITESPACE@149..150 " "
+      NAME@150..151
+        LNAME@150..151 "b"
+      PARAM_LIST@151..153
+        L_PAREN@151..152 "("
+        R_PAREN@152..153 ")"
+      BLOCK@153..162
+        NEWLINE@153..154 "\n"
+        WHITESPACE@154..156 "  "
+        EXPR_STMT@156..161
+          CALL_EXPR@156..161
+            NAME_REF@156..159
+              LNAME@156..159 "bar"
+            ARG_LIST@159..161
+              L_PAREN@159..160 "("
+              R_PAREN@160..161 ")"
+        NEWLINE@161..162 "\n"
+      END_KW@162..165 "end"
+    NEWLINE@165..166 "\n"
+  EOF@166..166 ""
+---
+error@147..149 6:1: the `fn` on line 3 has no `end`: by its indentation, it ends before this line

@@ -1,0 +1,33 @@
+SOURCE_FILE@0..67
+  BLOCK@0..67
+    COMMENT@0..47 "# A destructuring pattern needs an initializer."
+    NEWLINE@47..48 "\n"
+    LET_DECL@48..58
+      LET_KW@48..51 "let"
+      WHITESPACE@51..52 " "
+      BRACE_PAT@52..58
+        L_CURLY@52..53 "{"
+        PAT_FIELD@53..54
+          NAME@53..54
+            LNAME@53..54 "a"
+        COMMA@54..55 ","
+        WHITESPACE@55..56 " "
+        PAT_FIELD@56..57
+          NAME@56..57
+            LNAME@56..57 "b"
+        R_CURLY@57..58 "}"
+    NEWLINE@58..59 "\n"
+    LET_DECL@59..66
+      LET_KW@59..62 "let"
+      WHITESPACE@62..63 " "
+      BRACKET_PAT@63..66
+        L_BRACK@63..64 "["
+        BIND_PAT@64..65
+          NAME@64..65
+            LNAME@64..65 "c"
+        R_BRACK@65..66 "]"
+    NEWLINE@66..67 "\n"
+  EOF@67..67 ""
+---
+error@52..58 2:5: a destructuring pattern needs a value: write `let {a, b} = value`; without `=`, `let` declares plain names
+error@63..66 3:5: a destructuring pattern needs a value: write `let {a, b} = value`; without `=`, `let` declares plain names

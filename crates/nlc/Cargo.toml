@@ -1,0 +1,34 @@
+[package]
+name = "nlc"
+description = "The NL command-line tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "nlc"
+path = "src/main.rs"
+
+[dependencies]
+nl_syntax = { path = "../nl_syntax" }
+nl_capi = { path = "../nl_capi" }
+# Stock LuaJIT for `nlc run`: mlua builds it from
+# crates.io's luajit-src. The fork is not used here on purpose.
+mlua = { version = "0.12", features = ["luajit", "vendored"] }
+
+[dev-dependencies]
+# The differential-fuzzing smoke test (tests/differential.rs).
+nl_fuzz = { path = "../nl_fuzz" }
+
+[lints]
+workspace = true
+
+# The conformance suite of tests/run/ (README there). A plain program, not
+# a libtest harness, so that its table is always printed. Run a subset with
+# NL_CONFORMANCE_FILTER=name,name (substrings).
+[[test]]
+name = "conformance"
+path = "tests/conformance.rs"
+harness = false

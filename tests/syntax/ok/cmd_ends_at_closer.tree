@@ -1,0 +1,63 @@
+SOURCE_FILE@0..88
+  BLOCK@0..88
+    COMMENT@0..47 "# A command call ends at `end`, `else` and `)`."
+    NEWLINE@47..48 "\n"
+    EXPR_STMT@48..71
+      IF_EXPR@48..71
+        IF_KW@48..50 "if"
+        WHITESPACE@50..51 " "
+        NAME_REF@51..52
+          LNAME@51..52 "a"
+        BLOCK@52..59
+          NEWLINE@52..53 "\n"
+          WHITESPACE@53..55 "  "
+          EXPR_STMT@55..58
+            COMMAND_CALL@55..58
+              NAME_REF@55..56
+                LNAME@55..56 "f"
+              WHITESPACE@56..57 " "
+              COMMAND_ARGS@57..58
+                NAME_REF@57..58
+                  LNAME@57..58 "x"
+          WHITESPACE@58..59 " "
+        ELSE_CLAUSE@59..68
+          ELSE_KW@59..63 "else"
+          BLOCK@63..68
+            WHITESPACE@63..64 " "
+            EXPR_STMT@64..67
+              COMMAND_CALL@64..67
+                NAME_REF@64..65
+                  LNAME@64..65 "g"
+                WHITESPACE@65..66 " "
+                COMMAND_ARGS@66..67
+                  NAME_REF@66..67
+                    LNAME@66..67 "y"
+            WHITESPACE@67..68 " "
+        END_KW@68..71 "end"
+    NEWLINE@71..72 "\n"
+    EXPR_STMT@72..87
+      CALL_EXPR@72..87
+        NAME_REF@72..73
+          LNAME@72..73 "h"
+        ARG_LIST@73..87
+          L_PAREN@73..74 "("
+          FN_EXPR@74..86
+            FN_KW@74..76 "fn"
+            PARAM_LIST@76..78
+              L_PAREN@76..77 "("
+              R_PAREN@77..78 ")"
+            BLOCK@78..83
+              WHITESPACE@78..79 " "
+              EXPR_STMT@79..82
+                COMMAND_CALL@79..82
+                  NAME_REF@79..80
+                    LNAME@79..80 "f"
+                  WHITESPACE@80..81 " "
+                  COMMAND_ARGS@81..82
+                    NAME_REF@81..82
+                      LNAME@81..82 "x"
+              WHITESPACE@82..83 " "
+            END_KW@83..86 "end"
+          R_PAREN@86..87 ")"
+    NEWLINE@87..88 "\n"
+  EOF@88..88 ""

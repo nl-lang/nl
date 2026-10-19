@@ -1,0 +1,64 @@
+SOURCE_FILE@0..160
+  BLOCK@0..160
+    COMMENT@0..58 "# After `,` the next item is read from the next line, in a"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..109 "# value list, a target list and command arguments."
+    NEWLINE@109..110 "\n"
+    LET_DECL@110..128
+      LET_KW@110..113 "let"
+      WHITESPACE@113..114 " "
+      BIND_PAT@114..115
+        NAME@114..115
+          LNAME@114..115 "a"
+      COMMA@115..116 ","
+      WHITESPACE@116..117 " "
+      BIND_PAT@117..118
+        NAME@117..118
+          LNAME@117..118 "b"
+      WHITESPACE@118..119 " "
+      EQ@119..120 "="
+      NEWLINE@120..121 "\n"
+      WHITESPACE@121..123 "  "
+      EXPR_LIST@123..128
+        CALL_EXPR@123..128
+          NAME_REF@123..126
+            LNAME@123..126 "pos"
+          ARG_LIST@126..128
+            L_PAREN@126..127 "("
+            R_PAREN@127..128 ")"
+    NEWLINE@128..129 "\n"
+    EXPR_STMT@129..145
+      COMMAND_CALL@129..145
+        NAME_REF@129..134
+          LNAME@129..134 "print"
+        WHITESPACE@134..135 " "
+        COMMAND_ARGS@135..145
+          LITERAL@135..138
+            STRING@135..138 "\"a\""
+          COMMA@138..139 ","
+          NEWLINE@139..140 "\n"
+          WHITESPACE@140..142 "  "
+          LITERAL@142..145
+            STRING@142..145 "\"b\""
+    NEWLINE@145..146 "\n"
+    MULTI_ASSIGN_STMT@146..159
+      TARGET_LIST@146..150
+        NAME_REF@146..147
+          LNAME@146..147 "x"
+        COMMA@147..148 ","
+        WHITESPACE@148..149 " "
+        NAME_REF@149..150
+          LNAME@149..150 "y"
+      WHITESPACE@150..151 " "
+      EQ@151..152 "="
+      NEWLINE@152..153 "\n"
+      WHITESPACE@153..155 "  "
+      EXPR_LIST@155..159
+        NAME_REF@155..156
+          LNAME@155..156 "y"
+        COMMA@156..157 ","
+        WHITESPACE@157..158 " "
+        NAME_REF@158..159
+          LNAME@158..159 "x"
+    NEWLINE@159..160 "\n"
+  EOF@160..160 ""

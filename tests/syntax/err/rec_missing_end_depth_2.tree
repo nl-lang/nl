@@ -1,0 +1,61 @@
+SOURCE_FILE@0..192
+  BLOCK@0..192
+    COMMENT@0..75 "# Recovery: an `if` inside an `fn` lacks its `end`; the `end` at the `fn`'s"
+    NEWLINE@75..76 "\n"
+    COMMENT@76..143 "# column closes the `fn`, and the next declaration parses normally."
+    NEWLINE@143..144 "\n"
+    FN_DECL@144..171
+      FN_KW@144..146 "fn"
+      WHITESPACE@146..147 " "
+      NAME@147..148
+        LNAME@147..148 "a"
+      PARAM_LIST@148..150
+        L_PAREN@148..149 "("
+        R_PAREN@149..150 ")"
+      BLOCK@150..168
+        NEWLINE@150..151 "\n"
+        WHITESPACE@151..153 "  "
+        EXPR_STMT@153..168
+          IF_EXPR@153..168
+            IF_KW@153..155 "if"
+            WHITESPACE@155..156 " "
+            NAME_REF@156..157
+              LNAME@156..157 "x"
+            BLOCK@157..168
+              NEWLINE@157..158 "\n"
+              WHITESPACE@158..162 "    "
+              EXPR_STMT@162..167
+                CALL_EXPR@162..167
+                  NAME_REF@162..165
+                    LNAME@162..165 "foo"
+                  ARG_LIST@165..167
+                    L_PAREN@165..166 "("
+                    R_PAREN@166..167 ")"
+              NEWLINE@167..168 "\n"
+      END_KW@168..171 "end"
+    NEWLINE@171..172 "\n"
+    NEWLINE@172..173 "\n"
+    FN_DECL@173..191
+      FN_KW@173..175 "fn"
+      WHITESPACE@175..176 " "
+      NAME@176..177
+        LNAME@176..177 "b"
+      PARAM_LIST@177..179
+        L_PAREN@177..178 "("
+        R_PAREN@178..179 ")"
+      BLOCK@179..188
+        NEWLINE@179..180 "\n"
+        WHITESPACE@180..182 "  "
+        EXPR_STMT@182..187
+          CALL_EXPR@182..187
+            NAME_REF@182..185
+              LNAME@182..185 "bar"
+            ARG_LIST@185..187
+              L_PAREN@185..186 "("
+              R_PAREN@186..187 ")"
+        NEWLINE@187..188 "\n"
+      END_KW@188..191 "end"
+    NEWLINE@191..192 "\n"
+  EOF@192..192 ""
+---
+error@168..171 6:1: the `if` on line 4 has no `end`: by its indentation, this `end` closes an enclosing block

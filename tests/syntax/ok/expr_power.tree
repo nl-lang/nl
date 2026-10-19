@@ -1,0 +1,79 @@
+SOURCE_FILE@0..159
+  BLOCK@0..159
+    COMMENT@0..47 "# `**` is right-associative, binds tighter than"
+    NEWLINE@47..48 "\n"
+    COMMENT@48..106 "# a unary operator on its left and takes one on its right."
+    NEWLINE@106..107 "\n"
+    ASSIGN_STMT@107..122
+      NAME_REF@107..108
+        LNAME@107..108 "x"
+      WHITESPACE@108..109 " "
+      EQ@109..110 "="
+      WHITESPACE@110..111 " "
+      BIN_EXPR@111..122
+        NAME_REF@111..112
+          LNAME@111..112 "a"
+        WHITESPACE@112..113 " "
+        STAR2@113..115 "**"
+        WHITESPACE@115..116 " "
+        BIN_EXPR@116..122
+          NAME_REF@116..117
+            LNAME@116..117 "b"
+          WHITESPACE@117..118 " "
+          STAR2@118..120 "**"
+          WHITESPACE@120..121 " "
+          NAME_REF@121..122
+            LNAME@121..122 "c"
+    NEWLINE@122..123 "\n"
+    ASSIGN_STMT@123..134
+      NAME_REF@123..124
+        LNAME@123..124 "x"
+      WHITESPACE@124..125 " "
+      EQ@125..126 "="
+      WHITESPACE@126..127 " "
+      PREFIX_EXPR@127..134
+        MINUS@127..128 "-"
+        BIN_EXPR@128..134
+          NAME_REF@128..129
+            LNAME@128..129 "x"
+          WHITESPACE@129..130 " "
+          STAR2@130..132 "**"
+          WHITESPACE@132..133 " "
+          LITERAL@133..134
+            NUMBER@133..134 "2"
+    NEWLINE@134..135 "\n"
+    ASSIGN_STMT@135..146
+      NAME_REF@135..136
+        LNAME@135..136 "x"
+      WHITESPACE@136..137 " "
+      EQ@137..138 "="
+      WHITESPACE@138..139 " "
+      BIN_EXPR@139..146
+        LITERAL@139..140
+          NUMBER@139..140 "2"
+        WHITESPACE@140..141 " "
+        STAR2@141..143 "**"
+        WHITESPACE@143..144 " "
+        PREFIX_EXPR@144..146
+          MINUS@144..145 "-"
+          LITERAL@145..146
+            NUMBER@145..146 "1"
+    NEWLINE@146..147 "\n"
+    ASSIGN_STMT@147..158
+      NAME_REF@147..148
+        LNAME@147..148 "x"
+      WHITESPACE@148..149 " "
+      EQ@149..150 "="
+      WHITESPACE@150..151 " "
+      PREFIX_EXPR@151..158
+        MINUS@151..152 "-"
+        BIN_EXPR@152..158
+          LITERAL@152..153
+            NUMBER@152..153 "2"
+          WHITESPACE@153..154 " "
+          STAR2@154..156 "**"
+          WHITESPACE@156..157 " "
+          LITERAL@157..158
+            NUMBER@157..158 "2"
+    NEWLINE@158..159 "\n"
+  EOF@159..159 ""

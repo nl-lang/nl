@@ -1,0 +1,147 @@
+SOURCE_FILE@0..273
+  BLOCK@0..273
+    COMMENT@0..58 "# `Function` with a signature whose `(` touches it; named,"
+    NEWLINE@58..59 "\n"
+    COMMENT@59..101 "# bare and rest parameters; a return type."
+    NEWLINE@101..102 "\n"
+    LET_DECL@102..117
+      LET_KW@102..105 "let"
+      WHITESPACE@105..106 " "
+      TYPED_PAT@106..117
+        BIND_PAT@106..107
+          NAME@106..107
+            LNAME@106..107 "a"
+        COLON@107..108 ":"
+        WHITESPACE@108..109 " "
+        NAMED_TYPE@109..117
+          QUAL_NAME@109..117
+            CNAME@109..117 "Function"
+    NEWLINE@117..118 "\n"
+    LET_DECL@118..160
+      LET_KW@118..121 "let"
+      WHITESPACE@121..122 " "
+      TYPED_PAT@122..160
+        BIND_PAT@122..123
+          NAME@122..123
+            LNAME@122..123 "b"
+        COLON@123..124 ":"
+        WHITESPACE@124..125 " "
+        FN_TYPE@125..160
+          CNAME@125..133 "Function"
+          FN_TYPE_PARAMS@133..155
+            L_PAREN@133..134 "("
+            FN_TYPE_PARAM@134..143
+              NAME@134..135
+                LNAME@134..135 "a"
+              COLON@135..136 ":"
+              WHITESPACE@136..137 " "
+              NAMED_TYPE@137..143
+                QUAL_NAME@137..143
+                  CNAME@137..143 "Number"
+            COMMA@143..144 ","
+            WHITESPACE@144..145 " "
+            FN_TYPE_PARAM@145..154
+              NAME@145..146
+                LNAME@145..146 "b"
+              COLON@146..147 ":"
+              WHITESPACE@147..148 " "
+              NAMED_TYPE@148..154
+                QUAL_NAME@148..154
+                  CNAME@148..154 "String"
+            R_PAREN@154..155 ")"
+          RETURN_TYPE@155..160
+            COLON@155..156 ":"
+            WHITESPACE@156..157 " "
+            NAMED_TYPE@157..160
+              NIL_KW@157..160 "nil"
+    NEWLINE@160..161 "\n"
+    LET_DECL@161..192
+      LET_KW@161..164 "let"
+      WHITESPACE@164..165 " "
+      TYPED_PAT@165..192
+        BIND_PAT@165..166
+          NAME@165..166
+            LNAME@165..166 "c"
+        COLON@166..167 ":"
+        WHITESPACE@167..168 " "
+        FN_TYPE@168..192
+          CNAME@168..176 "Function"
+          FN_TYPE_PARAMS@176..192
+            L_PAREN@176..177 "("
+            FN_TYPE_PARAM@177..183
+              NAMED_TYPE@177..183
+                QUAL_NAME@177..183
+                  CNAME@177..183 "Number"
+            COMMA@183..184 ","
+            WHITESPACE@184..185 " "
+            FN_TYPE_PARAM@185..191
+              NAMED_TYPE@185..191
+                QUAL_NAME@185..191
+                  CNAME@185..191 "String"
+            R_PAREN@191..192 ")"
+    NEWLINE@192..193 "\n"
+    LET_DECL@193..237
+      LET_KW@193..196 "let"
+      WHITESPACE@196..197 " "
+      TYPED_PAT@197..237
+        BIND_PAT@197..198
+          NAME@197..198
+            LNAME@197..198 "d"
+        COLON@198..199 ":"
+        WHITESPACE@199..200 " "
+        FN_TYPE@200..237
+          CNAME@200..208 "Function"
+          FN_TYPE_PARAMS@208..231
+            L_PAREN@208..209 "("
+            FN_TYPE_PARAM@209..215
+              NAMED_TYPE@209..215
+                QUAL_NAME@209..215
+                  CNAME@209..215 "Number"
+            COMMA@215..216 ","
+            WHITESPACE@216..217 " "
+            FN_TYPE_PARAM@217..230
+              STAR@217..218 "*"
+              NAME@218..222
+                LNAME@218..222 "rest"
+              COLON@222..223 ":"
+              WHITESPACE@223..224 " "
+              NAMED_TYPE@224..230
+                QUAL_NAME@224..230
+                  CNAME@224..230 "Number"
+            R_PAREN@230..231 ")"
+          RETURN_TYPE@231..237
+            COLON@231..232 ":"
+            WHITESPACE@232..233 " "
+            NAMED_TYPE@233..237
+              QUAL_NAME@233..237
+                CNAME@233..237 "Bool"
+    NEWLINE@237..238 "\n"
+    LET_DECL@238..272
+      LET_KW@238..241 "let"
+      WHITESPACE@241..242 " "
+      TYPED_PAT@242..272
+        BIND_PAT@242..243
+          NAME@242..243
+            LNAME@242..243 "e"
+        COLON@243..244 ":"
+        WHITESPACE@244..245 " "
+        FN_TYPE@245..272
+          CNAME@245..253 "Function"
+          FN_TYPE_PARAMS@253..255
+            L_PAREN@253..254 "("
+            R_PAREN@254..255 ")"
+          RETURN_TYPE@255..272
+            COLON@255..256 ":"
+            WHITESPACE@256..257 " "
+            FN_TYPE@257..272
+              CNAME@257..265 "Function"
+              FN_TYPE_PARAMS@265..267
+                L_PAREN@265..266 "("
+                R_PAREN@266..267 ")"
+              RETURN_TYPE@267..272
+                COLON@267..268 ":"
+                WHITESPACE@268..269 " "
+                NAMED_TYPE@269..272
+                  NIL_KW@269..272 "nil"
+    NEWLINE@272..273 "\n"
+  EOF@273..273 ""

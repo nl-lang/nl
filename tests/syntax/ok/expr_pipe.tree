@@ -1,0 +1,74 @@
+SOURCE_FILE@0..134
+  BLOCK@0..134
+    COMMENT@0..44 "# `|>` is left-associative, below ranges and"
+    NEWLINE@44..45 "\n"
+    COMMENT@45..77 "# arithmetic, above comparisons."
+    NEWLINE@77..78 "\n"
+    ASSIGN_STMT@78..97
+      NAME_REF@78..79
+        LNAME@78..79 "x"
+      WHITESPACE@79..80 " "
+      EQ@80..81 "="
+      WHITESPACE@81..82 " "
+      PIPE_EXPR@82..97
+        PIPE_EXPR@82..92
+          BIN_EXPR@82..87
+            NAME_REF@82..83
+              LNAME@82..83 "a"
+            WHITESPACE@83..84 " "
+            PLUS@84..85 "+"
+            WHITESPACE@85..86 " "
+            NAME_REF@86..87
+              LNAME@86..87 "b"
+          WHITESPACE@87..88 " "
+          PIPE_GT@88..90 "|>"
+          WHITESPACE@90..91 " "
+          NAME_REF@91..92
+            LNAME@91..92 "f"
+        WHITESPACE@92..93 " "
+        PIPE_GT@93..95 "|>"
+        WHITESPACE@95..96 " "
+        NAME_REF@96..97
+          LNAME@96..97 "g"
+    NEWLINE@97..98 "\n"
+    ASSIGN_STMT@98..113
+      NAME_REF@98..99
+        LNAME@98..99 "x"
+      WHITESPACE@99..100 " "
+      EQ@100..101 "="
+      WHITESPACE@101..102 " "
+      BIN_EXPR@102..113
+        PIPE_EXPR@102..108
+          NAME_REF@102..103
+            LNAME@102..103 "a"
+          WHITESPACE@103..104 " "
+          PIPE_GT@104..106 "|>"
+          WHITESPACE@106..107 " "
+          NAME_REF@107..108
+            LNAME@107..108 "f"
+        WHITESPACE@108..109 " "
+        EQ2@109..111 "=="
+        WHITESPACE@111..112 " "
+        NAME_REF@112..113
+          LNAME@112..113 "c"
+    NEWLINE@113..114 "\n"
+    ASSIGN_STMT@114..133
+      NAME_REF@114..115
+        LNAME@114..115 "x"
+      WHITESPACE@115..116 " "
+      EQ@116..117 "="
+      WHITESPACE@117..118 " "
+      PIPE_EXPR@118..133
+        BIN_EXPR@118..122
+          LITERAL@118..119
+            NUMBER@118..119 "1"
+          DOT2@119..121 ".."
+          NAME_REF@121..122
+            LNAME@121..122 "n"
+        WHITESPACE@122..123 " "
+        PIPE_GT@123..125 "|>"
+        WHITESPACE@125..126 " "
+        NAME_REF@126..133
+          LNAME@126..133 "collect"
+    NEWLINE@133..134 "\n"
+  EOF@134..134 ""

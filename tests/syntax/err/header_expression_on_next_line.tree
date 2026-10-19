@@ -1,0 +1,44 @@
+SOURCE_FILE@0..112
+  BLOCK@0..112
+    COMMENT@0..51 "# The first token of a header expression must be on"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..78 "# the line of the keyword."
+    NEWLINE@78..79 "\n"
+    EXPR_STMT@79..95
+      IF_EXPR@79..95
+        IF_KW@79..81 "if"
+        NEWLINE@81..82 "\n"
+        WHITESPACE@82..84 "  "
+        NAME_REF@84..85
+          LNAME@84..85 "x"
+        BLOCK@85..92
+          NEWLINE@85..86 "\n"
+          WHITESPACE@86..88 "  "
+          EXPR_STMT@88..91
+            CALL_EXPR@88..91
+              NAME_REF@88..89
+                LNAME@88..89 "y"
+              ARG_LIST@89..91
+                L_PAREN@89..90 "("
+                R_PAREN@90..91 ")"
+          NEWLINE@91..92 "\n"
+        END_KW@92..95 "end"
+    NEWLINE@95..96 "\n"
+    WHILE_STMT@96..111
+      WHILE_KW@96..101 "while"
+      NEWLINE@101..102 "\n"
+      WHITESPACE@102..104 "  "
+      CALL_EXPR@104..107
+        NAME_REF@104..105
+          LNAME@104..105 "z"
+        ARG_LIST@105..107
+          L_PAREN@105..106 "("
+          R_PAREN@106..107 ")"
+      BLOCK@107..108
+        NEWLINE@107..108 "\n"
+      END_KW@108..111 "end"
+    NEWLINE@111..112 "\n"
+  EOF@112..112 ""
+---
+error@84..85 4:3: the header of `if` must be on one line: put what follows `if` on the same line as `if`
+error@104..105 8:3: the header of `while` must be on one line: put what follows `while` on the same line as `while`

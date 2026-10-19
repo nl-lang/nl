@@ -1,0 +1,105 @@
+SOURCE_FILE@0..248
+  BLOCK@0..248
+    COMMENT@0..64 "# After `interface` and a type reference, `for` on the same line"
+    NEWLINE@64..65 "\n"
+    COMMENT@65..122 "# makes an implementation; otherwise it is a declaration."
+    NEWLINE@122..123 "\n"
+    INTERFACE_DECL@123..166
+      INTERFACE_KW@123..132 "interface"
+      WHITESPACE@132..133 " "
+      NAME@133..137
+        CNAME@133..137 "From"
+      TYPE_PARAMS@137..140
+        LT@137..138 "<"
+        TYPE_PARAM@138..139
+          NAME@138..139
+            CNAME@138..139 "T"
+        GT@139..140 ">"
+      NEWLINE@140..141 "\n"
+      WHITESPACE@141..143 "  "
+      IFACE_METHOD@143..162
+        FN_KW@143..145 "fn"
+        WHITESPACE@145..146 " "
+        NAME@146..150
+          LNAME@146..150 "from"
+        PARAM_LIST@150..156
+          L_PAREN@150..151 "("
+          PARAM@151..155
+            TYPED_PAT@151..155
+              BIND_PAT@151..152
+                NAME@151..152
+                  LNAME@151..152 "v"
+              COLON@152..153 ":"
+              WHITESPACE@153..154 " "
+              NAMED_TYPE@154..155
+                QUAL_NAME@154..155
+                  CNAME@154..155 "T"
+          R_PAREN@155..156 ")"
+        RETURN_TYPE@156..162
+          COLON@156..157 ":"
+          WHITESPACE@157..158 " "
+          NAMED_TYPE@158..162
+            SELF_TYPE_KW@158..162 "Self"
+      NEWLINE@162..163 "\n"
+      END_KW@163..166 "end"
+    NEWLINE@166..167 "\n"
+    INTERFACE_IMPL@167..247
+      INTERFACE_KW@167..176 "interface"
+      WHITESPACE@176..177 " "
+      NAMED_TYPE@177..189
+        QUAL_NAME@177..181
+          CNAME@177..181 "From"
+        TYPE_ARGS@181..189
+          LT@181..182 "<"
+          NAMED_TYPE@182..188
+            QUAL_NAME@182..188
+              CNAME@182..188 "String"
+          GT@188..189 ">"
+      WHITESPACE@189..190 " "
+      FOR_KW@190..193 "for"
+      WHITESPACE@193..194 " "
+      NAMED_TYPE@194..198
+        QUAL_NAME@194..198
+          CNAME@194..198 "Name"
+      NEWLINE@198..199 "\n"
+      WHITESPACE@199..201 "  "
+      FN_DECL@201..243
+        FN_KW@201..203 "fn"
+        WHITESPACE@203..204 " "
+        NAME@204..208
+          LNAME@204..208 "from"
+        PARAM_LIST@208..219
+          L_PAREN@208..209 "("
+          PARAM@209..218
+            TYPED_PAT@209..218
+              BIND_PAT@209..210
+                NAME@209..210
+                  LNAME@209..210 "v"
+              COLON@210..211 ":"
+              WHITESPACE@211..212 " "
+              NAMED_TYPE@212..218
+                QUAL_NAME@212..218
+                  CNAME@212..218 "String"
+          R_PAREN@218..219 ")"
+        RETURN_TYPE@219..225
+          COLON@219..220 ":"
+          WHITESPACE@220..221 " "
+          NAMED_TYPE@221..225
+            SELF_TYPE_KW@221..225 "Self"
+        BLOCK@225..240
+          NEWLINE@225..226 "\n"
+          WHITESPACE@226..230 "    "
+          EXPR_STMT@230..237
+            STRUCT_LIT@230..237
+              NAME_REF@230..234
+                CNAME@230..234 "Name"
+              WHITESPACE@234..235 " "
+              L_CURLY@235..236 "{"
+              R_CURLY@236..237 "}"
+          NEWLINE@237..238 "\n"
+          WHITESPACE@238..240 "  "
+        END_KW@240..243 "end"
+      NEWLINE@243..244 "\n"
+      END_KW@244..247 "end"
+    NEWLINE@247..248 "\n"
+  EOF@248..248 ""

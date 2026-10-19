@@ -1,0 +1,98 @@
+SOURCE_FILE@0..128
+  BLOCK@0..128
+    COMMENT@0..52 "# `or`/`||` below `and`/`&&`, both left-associative."
+    NEWLINE@52..53 "\n"
+    ASSIGN_STMT@53..69
+      NAME_REF@53..54
+        LNAME@53..54 "x"
+      WHITESPACE@54..55 " "
+      EQ@55..56 "="
+      WHITESPACE@56..57 " "
+      BIN_EXPR@57..69
+        NAME_REF@57..58
+          LNAME@57..58 "a"
+        WHITESPACE@58..59 " "
+        OR_KW@59..61 "or"
+        WHITESPACE@61..62 " "
+        BIN_EXPR@62..69
+          NAME_REF@62..63
+            LNAME@62..63 "b"
+          WHITESPACE@63..64 " "
+          AND_KW@64..67 "and"
+          WHITESPACE@67..68 " "
+          NAME_REF@68..69
+            LNAME@68..69 "c"
+    NEWLINE@69..70 "\n"
+    ASSIGN_STMT@70..90
+      NAME_REF@70..71
+        LNAME@70..71 "x"
+      WHITESPACE@71..72 " "
+      EQ@72..73 "="
+      WHITESPACE@73..74 " "
+      BIN_EXPR@74..90
+        BIN_EXPR@74..85
+          NAME_REF@74..75
+            LNAME@74..75 "a"
+          WHITESPACE@75..76 " "
+          PIPE2@76..78 "||"
+          WHITESPACE@78..79 " "
+          BIN_EXPR@79..85
+            NAME_REF@79..80
+              LNAME@79..80 "b"
+            WHITESPACE@80..81 " "
+            AMP2@81..83 "&&"
+            WHITESPACE@83..84 " "
+            NAME_REF@84..85
+              LNAME@84..85 "c"
+        WHITESPACE@85..86 " "
+        PIPE2@86..88 "||"
+        WHITESPACE@88..89 " "
+        NAME_REF@89..90
+          LNAME@89..90 "d"
+    NEWLINE@90..91 "\n"
+    ASSIGN_STMT@91..109
+      NAME_REF@91..92
+        LNAME@91..92 "x"
+      WHITESPACE@92..93 " "
+      EQ@93..94 "="
+      WHITESPACE@94..95 " "
+      BIN_EXPR@95..109
+        PREFIX_EXPR@95..100
+          NOT_KW@95..98 "not"
+          WHITESPACE@98..99 " "
+          NAME_REF@99..100
+            LNAME@99..100 "a"
+        WHITESPACE@100..101 " "
+        OR_KW@101..103 "or"
+        WHITESPACE@103..104 " "
+        PREFIX_EXPR@104..109
+          NOT_KW@104..107 "not"
+          WHITESPACE@107..108 " "
+          NAME_REF@108..109
+            LNAME@108..109 "b"
+    NEWLINE@109..110 "\n"
+    ASSIGN_STMT@110..127
+      NAME_REF@110..111
+        LNAME@110..111 "x"
+      WHITESPACE@111..112 " "
+      EQ@112..113 "="
+      WHITESPACE@113..114 " "
+      BIN_EXPR@114..127
+        PAREN_EXPR@114..122
+          L_PAREN@114..115 "("
+          BIN_EXPR@115..121
+            NAME_REF@115..116
+              LNAME@115..116 "a"
+            WHITESPACE@116..117 " "
+            PIPE2@117..119 "||"
+            WHITESPACE@119..120 " "
+            NAME_REF@120..121
+              LNAME@120..121 "b"
+          R_PAREN@121..122 ")"
+        WHITESPACE@122..123 " "
+        AMP2@123..125 "&&"
+        WHITESPACE@125..126 " "
+        NAME_REF@126..127
+          LNAME@126..127 "c"
+    NEWLINE@127..128 "\n"
+  EOF@128..128 ""

@@ -1,0 +1,2 @@
+TypeError	variable 'n' expects {next: Node?, value: Number}, got Table
+1

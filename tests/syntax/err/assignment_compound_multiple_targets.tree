@@ -1,0 +1,22 @@
+SOURCE_FILE@0..58
+  BLOCK@0..58
+    COMMENT@0..47 "# A compound assignment has exactly one target."
+    NEWLINE@47..48 "\n"
+    MULTI_ASSIGN_STMT@48..57
+      TARGET_LIST@48..52
+        NAME_REF@48..49
+          LNAME@48..49 "a"
+        COMMA@49..50 ","
+        WHITESPACE@50..51 " "
+        NAME_REF@51..52
+          LNAME@51..52 "b"
+      WHITESPACE@52..53 " "
+      PLUS_EQ@53..55 "+="
+      WHITESPACE@55..56 " "
+      EXPR_LIST@56..57
+        LITERAL@56..57
+          NUMBER@56..57 "1"
+    NEWLINE@57..58 "\n"
+  EOF@58..58 ""
+---
+error@53..55 2:6: a compound assignment has exactly one target

@@ -1,0 +1,31 @@
+SOURCE_FILE@0..123
+  BLOCK@0..123
+    COMMENT@0..54 "# Comments and blank lines between an operator and its"
+    NEWLINE@54..55 "\n"
+    COMMENT@55..80 "# operand change nothing."
+    NEWLINE@80..81 "\n"
+    LET_DECL@81..122
+      LET_KW@81..84 "let"
+      WHITESPACE@84..85 " "
+      BIND_PAT@85..90
+        NAME@85..90
+          LNAME@85..90 "total"
+      WHITESPACE@90..91 " "
+      EQ@91..92 "="
+      WHITESPACE@92..93 " "
+      EXPR_LIST@93..122
+        BIN_EXPR@93..122
+          NAME_REF@93..97
+            LNAME@93..97 "base"
+          WHITESPACE@97..98 " "
+          PLUS@98..99 "+"
+          NEWLINE@99..100 "\n"
+          WHITESPACE@100..102 "  "
+          COMMENT@102..113 "# the bonus"
+          NEWLINE@113..114 "\n"
+          NEWLINE@114..115 "\n"
+          WHITESPACE@115..117 "  "
+          NAME_REF@117..122
+            LNAME@117..122 "bonus"
+    NEWLINE@122..123 "\n"
+  EOF@123..123 ""

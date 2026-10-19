@@ -1,0 +1,8 @@
+await chain: 100000
+after resolve
+failed chain: root failed
+Task.all chain: Table
+callback chain: 100000
+a, a done, callback, b, b done
+unhandled: Exception: callback failed
+second callback: ok

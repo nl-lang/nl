@@ -1,0 +1,122 @@
+SOURCE_FILE@0..207
+  BLOCK@0..207
+    COMMENT@0..51 "# `|a, b| -> expr` and `|| -> expr`; the parameters"
+    NEWLINE@51..52 "\n"
+    COMMENT@52..112 "# are block parameters, a trailing comma and `| |` included."
+    NEWLINE@112..113 "\n"
+    LET_DECL@113..138
+      LET_KW@113..116 "let"
+      WHITESPACE@116..117 " "
+      BIND_PAT@117..120
+        NAME@117..120
+          LNAME@117..120 "mul"
+      WHITESPACE@120..121 " "
+      EQ@121..122 "="
+      WHITESPACE@122..123 " "
+      EXPR_LIST@123..138
+        LAMBDA_EXPR@123..138
+          BLOCK_PARAMS@123..129
+            PIPE@123..124 "|"
+            PARAM@124..125
+              BIND_PAT@124..125
+                NAME@124..125
+                  LNAME@124..125 "a"
+            COMMA@125..126 ","
+            WHITESPACE@126..127 " "
+            PARAM@127..128
+              BIND_PAT@127..128
+                NAME@127..128
+                  LNAME@127..128 "b"
+            PIPE@128..129 "|"
+          WHITESPACE@129..130 " "
+          ARROW@130..132 "->"
+          WHITESPACE@132..133 " "
+          BLOCK@133..138
+            EXPR_STMT@133..138
+              BIN_EXPR@133..138
+                NAME_REF@133..134
+                  LNAME@133..134 "a"
+                WHITESPACE@134..135 " "
+                STAR@135..136 "*"
+                WHITESPACE@136..137 " "
+                NAME_REF@137..138
+                  LNAME@137..138 "b"
+    NEWLINE@138..139 "\n"
+    LET_DECL@139..159
+      LET_KW@139..142 "let"
+      WHITESPACE@142..143 " "
+      BIND_PAT@143..146
+        NAME@143..146
+          LNAME@143..146 "yes"
+      WHITESPACE@146..147 " "
+      EQ@147..148 "="
+      WHITESPACE@148..149 " "
+      EXPR_LIST@149..159
+        LAMBDA_EXPR@149..159
+          BLOCK_PARAMS@149..151
+            PIPE2@149..151 "||"
+          WHITESPACE@151..152 " "
+          ARROW@152..154 "->"
+          WHITESPACE@154..155 " "
+          BLOCK@155..159
+            EXPR_STMT@155..159
+              LITERAL@155..159
+                TRUE_KW@155..159 "true"
+    NEWLINE@159..160 "\n"
+    LET_DECL@160..181
+      LET_KW@160..163 "let"
+      WHITESPACE@163..164 " "
+      BIND_PAT@164..168
+        NAME@164..168
+          LNAME@164..168 "none"
+      WHITESPACE@168..169 " "
+      EQ@169..170 "="
+      WHITESPACE@170..171 " "
+      EXPR_LIST@171..181
+        LAMBDA_EXPR@171..181
+          BLOCK_PARAMS@171..174
+            PIPE@171..172 "|"
+            WHITESPACE@172..173 " "
+            PIPE@173..174 "|"
+          WHITESPACE@174..175 " "
+          ARROW@175..177 "->"
+          WHITESPACE@177..178 " "
+          BLOCK@178..181
+            EXPR_STMT@178..181
+              LITERAL@178..181
+                NIL_KW@178..181 "nil"
+    NEWLINE@181..182 "\n"
+    LET_DECL@182..206
+      LET_KW@182..185 "let"
+      WHITESPACE@185..186 " "
+      BIND_PAT@186..191
+        NAME@186..191
+          LNAME@186..191 "first"
+      WHITESPACE@191..192 " "
+      EQ@192..193 "="
+      WHITESPACE@193..194 " "
+      EXPR_LIST@194..206
+        LAMBDA_EXPR@194..206
+          BLOCK_PARAMS@194..201
+            PIPE@194..195 "|"
+            PARAM@195..196
+              BIND_PAT@195..196
+                NAME@195..196
+                  LNAME@195..196 "a"
+            COMMA@196..197 ","
+            WHITESPACE@197..198 " "
+            PARAM@198..199
+              BIND_PAT@198..199
+                NAME@198..199
+                  LNAME@198..199 "b"
+            COMMA@199..200 ","
+            PIPE@200..201 "|"
+          WHITESPACE@201..202 " "
+          ARROW@202..204 "->"
+          WHITESPACE@204..205 " "
+          BLOCK@205..206
+            EXPR_STMT@205..206
+              NAME_REF@205..206
+                LNAME@205..206 "a"
+    NEWLINE@206..207 "\n"
+  EOF@207..207 ""

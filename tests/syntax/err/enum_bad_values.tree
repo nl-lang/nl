@@ -1,0 +1,47 @@
+SOURCE_FILE@0..105
+  BLOCK@0..105
+    COMMENT@0..57 "# An enum value is a number, a negative number or a plain"
+    NEWLINE@57..58 "\n"
+    COMMENT@58..67 "# string."
+    NEWLINE@67..68 "\n"
+    ENUM_DECL@68..104
+      ENUM_KW@68..72 "enum"
+      WHITESPACE@72..73 " "
+      NAME@73..74
+        CNAME@73..74 "E"
+      NEWLINE@74..75 "\n"
+      WHITESPACE@75..77 "  "
+      VARIANT@77..80
+        NAME@77..78
+          CNAME@77..78 "A"
+        WHITESPACE@78..79 " "
+        EQ@79..80 "="
+      WHITESPACE@80..81 " "
+      ERROR_NODE@81..82
+        LNAME@81..82 "x"
+      NEWLINE@82..83 "\n"
+      WHITESPACE@83..85 "  "
+      VARIANT@85..96
+        NAME@85..86
+          CNAME@85..86 "B"
+        WHITESPACE@86..87 " "
+        EQ@87..88 "="
+        WHITESPACE@88..89 " "
+        INTERP_STRING@89..96
+          STR_BEGIN@89..93 "\"a#{"
+          NAME_REF@93..94
+            LNAME@93..94 "b"
+          STR_END@94..96 "}\""
+      NEWLINE@96..97 "\n"
+      WHITESPACE@97..99 "  "
+      VARIANT@99..100
+        NAME@99..100
+          LNAME@99..100 "c"
+      NEWLINE@100..101 "\n"
+      END_KW@101..104 "end"
+    NEWLINE@104..105 "\n"
+  EOF@105..105 ""
+---
+error@81..82 4:7: expected a number or a string as the variant's value, found `x`
+error@89..93 5:7: an enum value is a plain string, without interpolation
+error@99..100 6:3: a variant name is capitalized: write `C`

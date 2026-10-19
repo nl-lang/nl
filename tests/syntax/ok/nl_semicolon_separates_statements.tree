@@ -1,0 +1,42 @@
+SOURCE_FILE@0..139
+  BLOCK@0..139
+    COMMENT@0..61 "# `;` stands for a significant line break; any number of them"
+    NEWLINE@61..62 "\n"
+    COMMENT@62..112 "# may appear between, before and after statements."
+    NEWLINE@112..113 "\n"
+    SEMI@113..114 ";"
+    SEMI@114..115 ";"
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..121
+      NAME_REF@116..117
+        LNAME@116..117 "a"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      LITERAL@120..121
+        NUMBER@120..121 "1"
+    SEMI@121..122 ";"
+    WHITESPACE@122..123 " "
+    ASSIGN_STMT@123..128
+      NAME_REF@123..124
+        LNAME@123..124 "b"
+      WHITESPACE@124..125 " "
+      EQ@125..126 "="
+      WHITESPACE@126..127 " "
+      LITERAL@127..128
+        NUMBER@127..128 "2"
+    SEMI@128..129 ";"
+    SEMI@129..130 ";"
+    WHITESPACE@130..131 " "
+    ASSIGN_STMT@131..136
+      NAME_REF@131..132
+        LNAME@131..132 "c"
+      WHITESPACE@132..133 " "
+      EQ@133..134 "="
+      WHITESPACE@134..135 " "
+      LITERAL@135..136
+        NUMBER@135..136 "3"
+    NEWLINE@136..137 "\n"
+    SEMI@137..138 ";"
+    NEWLINE@138..139 "\n"
+  EOF@139..139 ""

@@ -1,0 +1,82 @@
+SOURCE_FILE@0..197
+  BLOCK@0..197
+    COMMENT@0..123 "# A nil-safe member or method is a callee like any other; command arguments and a trailing block follow the ordinary rules."
+    NEWLINE@123..124 "\n"
+    EXPR_STMT@124..133
+      COMMAND_CALL@124..133
+        FIELD_EXPR@124..128
+          NAME_REF@124..125
+            LNAME@124..125 "a"
+          QUESTION_DOT@125..127 "?."
+          LNAME@127..128 "m"
+        WHITESPACE@128..129 " "
+        COMMAND_ARGS@129..133
+          NAME_REF@129..130
+            LNAME@129..130 "x"
+          COMMA@130..131 ","
+          WHITESPACE@131..132 " "
+          NAME_REF@132..133
+            LNAME@132..133 "y"
+    NEWLINE@133..134 "\n"
+    EXPR_STMT@134..141
+      COMMAND_CALL@134..141
+        METHOD_CALL@134..139
+          NAME_REF@134..135
+            LNAME@134..135 "o"
+          QUESTION_DOT@135..137 "?."
+          COLON@137..138 ":"
+          LNAME@138..139 "m"
+        WHITESPACE@139..140 " "
+        COMMAND_ARGS@140..141
+          NAME_REF@140..141
+            LNAME@140..141 "x"
+    NEWLINE@141..142 "\n"
+    EXPR_STMT@142..174
+      CALL_EXPR@142..174
+        FIELD_EXPR@142..153
+          NAME_REF@142..147
+            LNAME@142..147 "items"
+          QUESTION_DOT@147..149 "?."
+          LNAME@149..153 "each"
+        WHITESPACE@153..154 " "
+        TRAILING_BLOCK@154..174
+          DO_KW@154..156 "do"
+          WHITESPACE@156..157 " "
+          BLOCK_PARAMS@157..160
+            PIPE@157..158 "|"
+            PARAM@158..159
+              BIND_PAT@158..159
+                NAME@158..159
+                  LNAME@158..159 "v"
+            PIPE@159..160 "|"
+          BLOCK@160..171
+            NEWLINE@160..161 "\n"
+            WHITESPACE@161..163 "  "
+            EXPR_STMT@163..170
+              COMMAND_CALL@163..170
+                NAME_REF@163..168
+                  LNAME@163..168 "print"
+                WHITESPACE@168..169 " "
+                COMMAND_ARGS@169..170
+                  NAME_REF@169..170
+                    LNAME@169..170 "v"
+            NEWLINE@170..171 "\n"
+          END_KW@171..174 "end"
+    NEWLINE@174..175 "\n"
+    EXPR_STMT@175..196
+      COMMAND_CALL@175..196
+        LUA_PATH@175..191
+          COLON@175..176 ":"
+          LNAME@176..179 "hud"
+          LUA_FIELD@179..186
+            QUESTION_DOT@179..181 "?."
+            LNAME@181..186 "panel"
+          LUA_METHOD@186..191
+            COLON@186..187 ":"
+            LNAME@187..191 "show"
+        WHITESPACE@191..192 " "
+        COMMAND_ARGS@192..196
+          LITERAL@192..196
+            TRUE_KW@192..196 "true"
+    NEWLINE@196..197 "\n"
+  EOF@197..197 ""

@@ -1,0 +1,76 @@
+SOURCE_FILE@0..168
+  BLOCK@0..168
+    COMMENT@0..28 "# The three forms of import."
+    NEWLINE@28..29 "\n"
+    IMPORT_DECL@29..50
+      IMPORT_KW@29..35 "import"
+      WHITESPACE@35..36 " "
+      NAME@36..39
+        LNAME@36..39 "foo"
+      WHITESPACE@39..40 " "
+      FROM_KW@40..44 "from"
+      WHITESPACE@44..45 " "
+      STRING@45..50 "'lib'"
+    NEWLINE@50..51 "\n"
+    IMPORT_DECL@51..78
+      IMPORT_KW@51..57 "import"
+      WHITESPACE@57..58 " "
+      NAME@58..62
+        CNAME@58..62 "Mode"
+      WHITESPACE@62..63 " "
+      FROM_KW@63..67 "from"
+      WHITESPACE@67..68 " "
+      STRING@68..78 "\"lib/mode\""
+    NEWLINE@78..79 "\n"
+    IMPORT_DECL@79..117
+      IMPORT_KW@79..85 "import"
+      WHITESPACE@85..86 " "
+      IMPORT_LIST@86..106
+        L_CURLY@86..87 "{"
+        WHITESPACE@87..88 " "
+        NAME@88..91
+          LNAME@88..91 "foo"
+        COMMA@91..92 ","
+        WHITESPACE@92..93 " "
+        NAME@93..97
+          CNAME@93..97 "Mode"
+        COMMA@97..98 ","
+        WHITESPACE@98..99 " "
+        NAME@99..104
+          LNAME@99..104 "limit"
+        WHITESPACE@104..105 " "
+        R_CURLY@105..106 "}"
+      WHITESPACE@106..107 " "
+      FROM_KW@107..111 "from"
+      WHITESPACE@111..112 " "
+      STRING@112..117 "'lib'"
+    NEWLINE@117..118 "\n"
+    IMPORT_DECL@118..142
+      IMPORT_KW@118..124 "import"
+      WHITESPACE@124..125 " "
+      IMPORT_LIST@125..131
+        L_CURLY@125..126 "{"
+        WHITESPACE@126..127 " "
+        NAME@127..128
+          LNAME@127..128 "a"
+        COMMA@128..129 ","
+        WHITESPACE@129..130 " "
+        R_CURLY@130..131 "}"
+      WHITESPACE@131..132 " "
+      FROM_KW@132..136 "from"
+      WHITESPACE@136..137 " "
+      STRING@137..142 "'lib'"
+    NEWLINE@142..143 "\n"
+    IMPORT_DECL@143..167
+      IMPORT_KW@143..149 "import"
+      WHITESPACE@149..150 " "
+      FROM_KW@150..154 "from"
+      WHITESPACE@154..155 " "
+      STRING@155..160 "'lib'"
+      WHITESPACE@160..161 " "
+      AS_KW@161..163 "as"
+      WHITESPACE@163..164 " "
+      NAME@164..167
+        CNAME@164..167 "Lib"
+    NEWLINE@167..168 "\n"
+  EOF@168..168 ""

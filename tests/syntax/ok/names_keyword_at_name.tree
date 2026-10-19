@@ -1,0 +1,23 @@
+SOURCE_FILE@0..60
+  BLOCK@0..60
+    COMMENT@0..40 "# `@` takes any word, keywords included."
+    NEWLINE@40..41 "\n"
+    ASSIGN_STMT@41..50
+      NAME_REF@41..42
+        LNAME@41..42 "x"
+      WHITESPACE@42..43 " "
+      EQ@43..44 "="
+      WHITESPACE@44..45 " "
+      AT_EXPR@45..50
+        AT_NAME@45..50 "@type"
+    NEWLINE@50..51 "\n"
+    ASSIGN_STMT@51..59
+      AT_EXPR@51..55
+        AT_NAME@51..55 "@end"
+      WHITESPACE@55..56 " "
+      EQ@56..57 "="
+      WHITESPACE@57..58 " "
+      LITERAL@58..59
+        NUMBER@58..59 "1"
+    NEWLINE@59..60 "\n"
+  EOF@60..60 ""

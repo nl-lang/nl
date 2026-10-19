@@ -1,0 +1,33 @@
+SOURCE_FILE@0..86
+  BLOCK@0..86
+    COMMENT@0..60 "# The opening `|` of block parameters must be on the line of"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..68 "# `do`."
+    NEWLINE@68..69 "\n"
+    EXPR_STMT@69..85
+      CALL_EXPR@69..85
+        NAME_REF@69..70
+          LNAME@69..70 "f"
+        WHITESPACE@70..71 " "
+        TRAILING_BLOCK@71..85
+          DO_KW@71..73 "do"
+          NEWLINE@73..74 "\n"
+          WHITESPACE@74..76 "  "
+          BLOCK_PARAMS@76..79
+            PIPE@76..77 "|"
+            PARAM@77..78
+              BIND_PAT@77..78
+                NAME@77..78
+                  LNAME@77..78 "x"
+            PIPE@78..79 "|"
+          BLOCK@79..82
+            WHITESPACE@79..80 " "
+            EXPR_STMT@80..81
+              NAME_REF@80..81
+                LNAME@80..81 "x"
+            NEWLINE@81..82 "\n"
+          END_KW@82..85 "end"
+    NEWLINE@85..86 "\n"
+  EOF@86..86 ""
+---
+error@76..77 4:3: block parameters go on the line of `do`: write `do |x|`

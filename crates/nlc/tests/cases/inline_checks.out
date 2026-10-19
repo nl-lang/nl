@@ -1,0 +1,48 @@
+num ok: ok 1a
+num bad a: TypeError: parameter 'a' of num expects Number, got String
+num bad b: TypeError: parameter 'b' of num expects String, got Number
+num kw: TypeError: num takes no keyed arguments, got k
+num kw first: TypeError: num takes no keyed arguments, got k
+num bad+kw: TypeError: num takes no keyed arguments, got k
+mixed kw: TypeError: mixed takes no keyed arguments, got k
+mixed kw2: TypeError: mixed takes no keyed arguments, got k
+default c
+mixed ok: ok 12nil
+mixed bad: TypeError: parameter 'b' of mixed expects Number, got String
+defs kw: TypeError: defs takes no keyed arguments, got k
+defs bad: TypeError: parameter 'b' of defs expects Number, got String
+st ok: ok 1
+st child: ok 2
+st bad: TypeError: parameter 'p' of st expects P, got Table
+st nil: TypeError: parameter 'p' of st expects P, got nil
+en ok: ok 2
+en bad: TypeError: parameter 'd' of en expects Dir, got Number
+en nil: TypeError: parameter 'd' of en expects Dir, got nil
+opt ok: ok nils
+opt bad: TypeError: parameter 'b' of opt expects Number | String, got Bool
+opt bad a: TypeError: parameter 'a' of opt expects Number?, got String
+tbl ok: ok 2
+tbl kw: TypeError: tbl takes no keyed arguments, got k
+tbl kw2: TypeError: tbl takes no keyed arguments, got k
+tbl bad: TypeError: parameter 't' of tbl expects Table, got Number
+rest: ok 2
+rest kw: TypeError: withrest takes no keyed arguments, got k
+rest bad: TypeError: withrest takes no keyed arguments, got k
+opts: ok 3
+ret1: ok 1
+ret1 bad: TypeError: return value of ret1 expects Number, got String
+ret2: ok 1
+ret2 bad: TypeError: return value 1 of ret2 expects Number, got String
+ret3 bad: TypeError: return value 2 of ret3 expects String, got nil
+ret4: ok 1 two nil
+ret5: ok 1
+ret5 bad: TypeError: return value of ret5 expects P?, got Number
+ret6: ok 7
+ret6 bad: TypeError: return value of ret6 expects Number, got String
+anon: ok 4
+anon bad: TypeError: parameter 'x' of anonymous function expects Number, got String
+anon kw: TypeError: parameter 'x' of anonymous function expects Number, got nil
+let bad: TypeError: variable 'z' expects String, got Number
+let opt: ok nil
+kw not last: TypeError: num takes no keyed arguments, got a
+kw middle: TypeError: mixed takes no keyed arguments, got a

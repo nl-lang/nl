@@ -1,0 +1,33 @@
+SOURCE_FILE@0..74
+  BLOCK@0..74
+    COMMENT@0..24 "# Variants one per line."
+    NEWLINE@24..25 "\n"
+    ENUM_DECL@25..73
+      ENUM_KW@25..29 "enum"
+      WHITESPACE@29..30 " "
+      NAME@30..39
+        CNAME@30..39 "Direction"
+      NEWLINE@39..40 "\n"
+      WHITESPACE@40..42 "  "
+      VARIANT@42..47
+        NAME@42..47
+          CNAME@42..47 "North"
+      NEWLINE@47..48 "\n"
+      WHITESPACE@48..50 "  "
+      VARIANT@50..55
+        NAME@50..55
+          CNAME@50..55 "South"
+      NEWLINE@55..56 "\n"
+      WHITESPACE@56..58 "  "
+      VARIANT@58..62
+        NAME@58..62
+          CNAME@58..62 "East"
+      NEWLINE@62..63 "\n"
+      WHITESPACE@63..65 "  "
+      VARIANT@65..69
+        NAME@65..69
+          CNAME@65..69 "West"
+      NEWLINE@69..70 "\n"
+      END_KW@70..73 "end"
+    NEWLINE@73..74 "\n"
+  EOF@74..74 ""

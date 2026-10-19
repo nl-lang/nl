@@ -1,0 +1,57 @@
+SOURCE_FILE@0..142
+  BLOCK@0..142
+    COMMENT@0..62 "# `while`, `until` and `loop`; the body of `loop` may start on"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..74 "# its line."
+    NEWLINE@74..75 "\n"
+    WHILE_STMT@75..101
+      WHILE_KW@75..80 "while"
+      WHITESPACE@80..81 " "
+      NAME_REF@81..88
+        LNAME@81..88 "running"
+      BLOCK@88..98
+        NEWLINE@88..89 "\n"
+        WHITESPACE@89..91 "  "
+        EXPR_STMT@91..97
+          CALL_EXPR@91..97
+            NAME_REF@91..95
+              LNAME@91..95 "tick"
+            ARG_LIST@95..97
+              L_PAREN@95..96 "("
+              R_PAREN@96..97 ")"
+        NEWLINE@97..98 "\n"
+      END_KW@98..101 "end"
+    NEWLINE@101..102 "\n"
+    UNTIL_STMT@102..125
+      UNTIL_KW@102..107 "until"
+      WHITESPACE@107..108 " "
+      NAME_REF@108..112
+        LNAME@108..112 "done"
+      BLOCK@112..122
+        NEWLINE@112..113 "\n"
+        WHITESPACE@113..115 "  "
+        EXPR_STMT@115..121
+          CALL_EXPR@115..121
+            NAME_REF@115..119
+              LNAME@115..119 "tick"
+            ARG_LIST@119..121
+              L_PAREN@119..120 "("
+              R_PAREN@120..121 ")"
+        NEWLINE@121..122 "\n"
+      END_KW@122..125 "end"
+    NEWLINE@125..126 "\n"
+    LOOP_STMT@126..141
+      LOOP_KW@126..130 "loop"
+      BLOCK@130..138
+        WHITESPACE@130..131 " "
+        EXPR_STMT@131..137
+          CALL_EXPR@131..137
+            NAME_REF@131..135
+              LNAME@131..135 "tick"
+            ARG_LIST@135..137
+              L_PAREN@135..136 "("
+              R_PAREN@136..137 ")"
+        WHITESPACE@137..138 " "
+      END_KW@138..141 "end"
+    NEWLINE@141..142 "\n"
+  EOF@142..142 ""

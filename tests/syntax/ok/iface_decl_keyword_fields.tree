@@ -1,0 +1,45 @@
+SOURCE_FILE@0..176
+  BLOCK@0..176
+    COMMENT@0..56 "# A field requirement may be named by a keyword, closers"
+    NEWLINE@56..57 "\n"
+    COMMENT@57..112 "# included; `fn` followed by `:` is a field named `fn`."
+    NEWLINE@112..113 "\n"
+    INTERFACE_DECL@113..175
+      INTERFACE_KW@113..122 "interface"
+      WHITESPACE@122..123 " "
+      NAME@123..127
+        CNAME@123..127 "Node"
+      NEWLINE@127..128 "\n"
+      WHITESPACE@128..130 "  "
+      IFACE_FIELD@130..142
+        NAME@130..134
+          LNAME@130..134 "type"
+        COLON@134..135 ":"
+        WHITESPACE@135..136 " "
+        NAMED_TYPE@136..142
+          QUAL_NAME@136..142
+            CNAME@136..142 "String"
+      NEWLINE@142..143 "\n"
+      WHITESPACE@143..145 "  "
+      IFACE_FIELD@145..157
+        NAME@145..147
+          LNAME@145..147 "fn"
+        COLON@147..148 ":"
+        WHITESPACE@148..149 " "
+        NAMED_TYPE@149..157
+          QUAL_NAME@149..157
+            CNAME@149..157 "Function"
+      NEWLINE@157..158 "\n"
+      WHITESPACE@158..160 "  "
+      IFACE_FIELD@160..171
+        NAME@160..163
+          LNAME@160..163 "end"
+        COLON@163..164 ":"
+        WHITESPACE@164..165 " "
+        NAMED_TYPE@165..171
+          QUAL_NAME@165..171
+            CNAME@165..171 "Number"
+      NEWLINE@171..172 "\n"
+      END_KW@172..175 "end"
+    NEWLINE@175..176 "\n"
+  EOF@176..176 ""

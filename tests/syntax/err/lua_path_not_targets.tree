@@ -1,0 +1,69 @@
+SOURCE_FILE@0..159
+  BLOCK@0..159
+    COMMENT@0..55 "# A Lua path that is its first name alone, or ends in a"
+    NEWLINE@55..56 "\n"
+    COMMENT@56..114 "# call, a `:name` or a block, is not an assignment target."
+    NEWLINE@114..115 "\n"
+    ASSIGN_STMT@115..121
+      LUA_PATH@115..117
+        COLON@115..116 ":"
+        LNAME@116..117 "x"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      LITERAL@120..121
+        NUMBER@120..121 "1"
+    NEWLINE@121..122 "\n"
+    ASSIGN_STMT@122..130
+      LUA_PATH@122..126
+        COLON@122..123 ":"
+        LNAME@123..124 "f"
+        LUA_CALL@124..126
+          ARG_LIST@124..126
+            L_PAREN@124..125 "("
+            R_PAREN@125..126 ")"
+      WHITESPACE@126..127 " "
+      EQ@127..128 "="
+      WHITESPACE@128..129 " "
+      LITERAL@129..130
+        NUMBER@129..130 "1"
+    NEWLINE@130..131 "\n"
+    ASSIGN_STMT@131..139
+      LUA_PATH@131..135
+        COLON@131..132 ":"
+        LNAME@132..133 "t"
+        LUA_METHOD@133..135
+          COLON@133..134 ":"
+          LNAME@134..135 "m"
+      WHITESPACE@135..136 " "
+      EQ@136..137 "="
+      WHITESPACE@137..138 " "
+      LITERAL@138..139
+        NUMBER@138..139 "1"
+    NEWLINE@139..140 "\n"
+    ASSIGN_STMT@140..158
+      LUA_PATH@140..154
+        COLON@140..141 ":"
+        LNAME@141..142 "t"
+        LUA_FIELD@142..147
+          DOT@142..143 "."
+          LNAME@143..147 "each"
+        WHITESPACE@147..148 " "
+        LUA_CALL@148..154
+          TRAILING_BLOCK@148..154
+            DO_KW@148..150 "do"
+            BLOCK@150..151
+              WHITESPACE@150..151 " "
+            END_KW@151..154 "end"
+      WHITESPACE@154..155 " "
+      EQ@155..156 "="
+      WHITESPACE@156..157 " "
+      LITERAL@157..158
+        NUMBER@157..158 "1"
+    NEWLINE@158..159 "\n"
+  EOF@159..159 ""
+---
+error@115..117 3:1: a Lua path without a step cannot be assigned to: to set a Lua global, write `:_G.name = value`
+error@122..126 4:1: a Lua path that ends in a call cannot be assigned to: a path is a target when it ends in `.name` or `[expr]`
+error@131..135 5:1: a Lua path that ends in a call cannot be assigned to: a path is a target when it ends in `.name` or `[expr]`
+error@140..154 6:1: a Lua path that ends in a call cannot be assigned to: a path is a target when it ends in `.name` or `[expr]`

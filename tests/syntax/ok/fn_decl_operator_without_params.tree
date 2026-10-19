@@ -1,0 +1,43 @@
+SOURCE_FILE@0..126
+  BLOCK@0..126
+    COMMENT@0..62 "# `fn Vec.-` with no parameters is negation; a return type may"
+    NEWLINE@62..63 "\n"
+    COMMENT@63..89 "# touch the operator name."
+    NEWLINE@89..90 "\n"
+    FN_DECL@90..106
+      FN_KW@90..92 "fn"
+      WHITESPACE@92..93 " "
+      QUAL_NAME@93..96
+        CNAME@93..96 "Vec"
+      DOT@96..97 "."
+      OP_NAME@97..98
+        MINUS@97..98 "-"
+      RETURN_TYPE@98..102
+        COLON@98..99 ":"
+        NAMED_TYPE@99..102
+          QUAL_NAME@99..102
+            CNAME@99..102 "Vec"
+      BLOCK@102..103
+        NEWLINE@102..103 "\n"
+      END_KW@103..106 "end"
+    NEWLINE@106..107 "\n"
+    FN_DECL@107..125
+      FN_KW@107..109 "fn"
+      WHITESPACE@109..110 " "
+      QUAL_NAME@110..113
+        CNAME@110..113 "Vec"
+      DOT@113..114 "."
+      OP_NAME@114..115
+        MINUS@114..115 "-"
+      WHITESPACE@115..116 " "
+      RETURN_TYPE@116..121
+        COLON@116..117 ":"
+        WHITESPACE@117..118 " "
+        NAMED_TYPE@118..121
+          QUAL_NAME@118..121
+            CNAME@118..121 "Vec"
+      BLOCK@121..122
+        NEWLINE@121..122 "\n"
+      END_KW@122..125 "end"
+    NEWLINE@125..126 "\n"
+  EOF@126..126 ""

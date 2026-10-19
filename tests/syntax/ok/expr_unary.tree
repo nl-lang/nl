@@ -1,0 +1,87 @@
+SOURCE_FILE@0..101
+  BLOCK@0..101
+    COMMENT@0..44 "# The prefix operators `-`, `!`, `not`, `~`."
+    NEWLINE@44..45 "\n"
+    ASSIGN_STMT@45..51
+      NAME_REF@45..46
+        LNAME@45..46 "x"
+      WHITESPACE@46..47 " "
+      EQ@47..48 "="
+      WHITESPACE@48..49 " "
+      PREFIX_EXPR@49..51
+        MINUS@49..50 "-"
+        NAME_REF@50..51
+          LNAME@50..51 "a"
+    NEWLINE@51..52 "\n"
+    ASSIGN_STMT@52..63
+      NAME_REF@52..53
+        LNAME@52..53 "x"
+      WHITESPACE@53..54 " "
+      EQ@54..55 "="
+      WHITESPACE@55..56 " "
+      BIN_EXPR@56..63
+        PREFIX_EXPR@56..58
+          BANG@56..57 "!"
+          NAME_REF@57..58
+            LNAME@57..58 "a"
+        WHITESPACE@58..59 " "
+        AMP2@59..61 "&&"
+        WHITESPACE@61..62 " "
+        NAME_REF@62..63
+          LNAME@62..63 "b"
+    NEWLINE@63..64 "\n"
+    ASSIGN_STMT@64..73
+      NAME_REF@64..65
+        LNAME@64..65 "x"
+      WHITESPACE@65..66 " "
+      EQ@66..67 "="
+      WHITESPACE@67..68 " "
+      PREFIX_EXPR@68..73
+        NOT_KW@68..71 "not"
+        WHITESPACE@71..72 " "
+        NAME_REF@72..73
+          LNAME@72..73 "a"
+    NEWLINE@73..74 "\n"
+    ASSIGN_STMT@74..80
+      NAME_REF@74..75
+        LNAME@74..75 "x"
+      WHITESPACE@75..76 " "
+      EQ@76..77 "="
+      WHITESPACE@77..78 " "
+      PREFIX_EXPR@78..80
+        TILDE@78..79 "~"
+        NAME_REF@79..80
+          LNAME@79..80 "a"
+    NEWLINE@80..81 "\n"
+    ASSIGN_STMT@81..89
+      NAME_REF@81..82
+        LNAME@81..82 "x"
+      WHITESPACE@82..83 " "
+      EQ@83..84 "="
+      WHITESPACE@84..85 " "
+      PREFIX_EXPR@85..89
+        MINUS@85..86 "-"
+        WHITESPACE@86..87 " "
+        PREFIX_EXPR@87..89
+          MINUS@87..88 "-"
+          NAME_REF@88..89
+            LNAME@88..89 "a"
+    NEWLINE@89..90 "\n"
+    ASSIGN_STMT@90..100
+      NAME_REF@90..91
+        LNAME@90..91 "x"
+      WHITESPACE@91..92 " "
+      EQ@92..93 "="
+      WHITESPACE@93..94 " "
+      BIN_EXPR@94..100
+        PREFIX_EXPR@94..96
+          MINUS@94..95 "-"
+          NAME_REF@95..96
+            LNAME@95..96 "a"
+        WHITESPACE@96..97 " "
+        STAR@97..98 "*"
+        WHITESPACE@98..99 " "
+        NAME_REF@99..100
+          LNAME@99..100 "b"
+    NEWLINE@100..101 "\n"
+  EOF@101..101 ""

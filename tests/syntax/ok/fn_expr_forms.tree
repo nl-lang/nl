@@ -1,0 +1,163 @@
+SOURCE_FILE@0..269
+  BLOCK@0..269
+    COMMENT@0..60 "# Anonymous functions: with and without parameters, a return"
+    NEWLINE@60..61 "\n"
+    COMMENT@61..115 "# type, a body on the same line, an empty body, async."
+    NEWLINE@115..116 "\n"
+    ASSIGN_STMT@116..135
+      NAME_REF@116..117
+        LNAME@116..117 "a"
+      WHITESPACE@117..118 " "
+      EQ@118..119 "="
+      WHITESPACE@119..120 " "
+      FN_EXPR@120..135
+        FN_KW@120..122 "fn"
+        PARAM_LIST@122..125
+          L_PAREN@122..123 "("
+          PARAM@123..124
+            BIND_PAT@123..124
+              NAME@123..124
+                LNAME@123..124 "x"
+          R_PAREN@124..125 ")"
+        BLOCK@125..132
+          WHITESPACE@125..126 " "
+          EXPR_STMT@126..131
+            BIN_EXPR@126..131
+              NAME_REF@126..127
+                LNAME@126..127 "x"
+              WHITESPACE@127..128 " "
+              STAR@128..129 "*"
+              WHITESPACE@129..130 " "
+              LITERAL@130..131
+                NUMBER@130..131 "2"
+          WHITESPACE@131..132 " "
+        END_KW@132..135 "end"
+    NEWLINE@135..136 "\n"
+    ASSIGN_STMT@136..158
+      NAME_REF@136..137
+        LNAME@136..137 "b"
+      WHITESPACE@137..138 " "
+      EQ@138..139 "="
+      WHITESPACE@139..140 " "
+      FN_EXPR@140..158
+        FN_KW@140..142 "fn"
+        BLOCK@142..155
+          WHITESPACE@142..143 " "
+          EXPR_STMT@143..154
+            CALL_EXPR@143..154
+              NAME_REF@143..148
+                LNAME@143..148 "print"
+              ARG_LIST@148..154
+                L_PAREN@148..149 "("
+                LITERAL@149..153
+                  STRING@149..153 "\"hi\""
+                R_PAREN@153..154 ")"
+          WHITESPACE@154..155 " "
+        END_KW@155..158 "end"
+    NEWLINE@158..159 "\n"
+    ASSIGN_STMT@159..206
+      NAME_REF@159..160
+        LNAME@159..160 "c"
+      WHITESPACE@160..161 " "
+      EQ@161..162 "="
+      WHITESPACE@162..163 " "
+      FN_EXPR@163..206
+        FN_KW@163..165 "fn"
+        PARAM_LIST@165..176
+          L_PAREN@165..166 "("
+          PARAM@166..175
+            TYPED_PAT@166..175
+              BIND_PAT@166..167
+                NAME@166..167
+                  LNAME@166..167 "a"
+              COLON@167..168 ":"
+              WHITESPACE@168..169 " "
+              NAMED_TYPE@169..175
+                QUAL_NAME@169..175
+                  CNAME@169..175 "Number"
+          R_PAREN@175..176 ")"
+        RETURN_TYPE@176..181
+          COLON@176..177 ":"
+          WHITESPACE@177..178 " "
+          NAMED_TYPE@178..181
+            NIL_KW@178..181 "nil"
+        BLOCK@181..203
+          WHITESPACE@181..182 " "
+          EXPR_STMT@182..202
+            CALL_EXPR@182..202
+              NAME_REF@182..187
+                LNAME@182..187 "print"
+              ARG_LIST@187..202
+                L_PAREN@187..188 "("
+                LITERAL@188..201
+                  STRING@188..201 "'hello world'"
+                R_PAREN@201..202 ")"
+          WHITESPACE@202..203 " "
+        END_KW@203..206 "end"
+    NEWLINE@206..207 "\n"
+    ASSIGN_STMT@207..217
+      NAME_REF@207..208
+        LNAME@207..208 "d"
+      WHITESPACE@208..209 " "
+      EQ@209..210 "="
+      WHITESPACE@210..211 " "
+      FN_EXPR@211..217
+        FN_KW@211..213 "fn"
+        BLOCK@213..214
+          WHITESPACE@213..214 " "
+        END_KW@214..217 "end"
+    NEWLINE@217..218 "\n"
+    ASSIGN_STMT@218..247
+      NAME_REF@218..219
+        LNAME@218..219 "e"
+      WHITESPACE@219..220 " "
+      EQ@220..221 "="
+      WHITESPACE@221..222 " "
+      FN_EXPR@222..247
+        ASYNC_KW@222..227 "async"
+        WHITESPACE@227..228 " "
+        FN_KW@228..230 "fn"
+        PARAM_LIST@230..234
+          L_PAREN@230..231 "("
+          PARAM@231..233
+            BIND_PAT@231..233
+              NAME@231..233
+                LNAME@231..233 "id"
+          R_PAREN@233..234 ")"
+        BLOCK@234..244
+          WHITESPACE@234..235 " "
+          EXPR_STMT@235..243
+            CALL_EXPR@235..243
+              NAME_REF@235..239
+                LNAME@235..239 "load"
+              ARG_LIST@239..243
+                L_PAREN@239..240 "("
+                NAME_REF@240..242
+                  LNAME@240..242 "id"
+                R_PAREN@242..243 ")"
+          WHITESPACE@243..244 " "
+        END_KW@244..247 "end"
+    NEWLINE@247..248 "\n"
+    ASSIGN_STMT@248..268
+      NAME_REF@248..249
+        LNAME@248..249 "g"
+      WHITESPACE@249..250 " "
+      EQ@250..251 "="
+      WHITESPACE@251..252 " "
+      FN_EXPR@252..268
+        FN_KW@252..254 "fn"
+        RETURN_TYPE@254..262
+          COLON@254..255 ":"
+          WHITESPACE@255..256 " "
+          NAMED_TYPE@256..262
+            QUAL_NAME@256..262
+              CNAME@256..262 "Number"
+        BLOCK@262..265
+          WHITESPACE@262..263 " "
+          EXPR_STMT@263..264
+            LITERAL@263..264
+              NUMBER@263..264 "1"
+          WHITESPACE@264..265 " "
+        END_KW@265..268 "end"
+    NEWLINE@268..269 "\n"
+  EOF@269..269 ""

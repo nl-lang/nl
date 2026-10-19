@@ -1,0 +1,6 @@
+closure as callee: SendError
+closure in an argument: SendError
+task in an argument: SendError
+coroutine in an argument: SendError
+unregistered metatable: SendError
+closure in the result: SendError

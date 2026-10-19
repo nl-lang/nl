@@ -1,0 +1,66 @@
+SOURCE_FILE@0..106
+  BLOCK@0..106
+    COMMENT@0..52 "# `_` must stand between two digits of the same run."
+    NEWLINE@52..53 "\n"
+    ASSIGN_STMT@53..61
+      NAME_REF@53..54
+        LNAME@53..54 "a"
+      WHITESPACE@54..55 " "
+      EQ@55..56 "="
+      WHITESPACE@56..57 " "
+      LITERAL@57..61
+        NUMBER@57..61 "1__0"
+    NEWLINE@61..62 "\n"
+    ASSIGN_STMT@62..68
+      NAME_REF@62..63
+        LNAME@62..63 "b"
+      WHITESPACE@63..64 " "
+      EQ@64..65 "="
+      WHITESPACE@65..66 " "
+      LITERAL@66..68
+        NUMBER@66..68 "1_"
+    NEWLINE@68..69 "\n"
+    ASSIGN_STMT@69..77
+      NAME_REF@69..70
+        LNAME@69..70 "c"
+      WHITESPACE@70..71 " "
+      EQ@71..72 "="
+      WHITESPACE@72..73 " "
+      LITERAL@73..77
+        NUMBER@73..77 "1_.5"
+    NEWLINE@77..78 "\n"
+    ASSIGN_STMT@78..86
+      NAME_REF@78..79
+        LNAME@78..79 "d"
+      WHITESPACE@79..80 " "
+      EQ@80..81 "="
+      WHITESPACE@81..82 " "
+      LITERAL@82..86
+        NUMBER@82..86 "1._5"
+    NEWLINE@86..87 "\n"
+    ASSIGN_STMT@87..95
+      NAME_REF@87..88
+        LNAME@87..88 "e"
+      WHITESPACE@88..89 " "
+      EQ@89..90 "="
+      WHITESPACE@90..91 " "
+      LITERAL@91..95
+        NUMBER@91..95 "1e_5"
+    NEWLINE@95..96 "\n"
+    ASSIGN_STMT@96..105
+      NAME_REF@96..97
+        LNAME@96..97 "f"
+      WHITESPACE@97..98 " "
+      EQ@98..99 "="
+      WHITESPACE@99..100 " "
+      LITERAL@100..105
+        NUMBER@100..105 "0x_ff"
+    NEWLINE@105..106 "\n"
+  EOF@106..106 ""
+---
+error@59..60 2:7: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
+error@67..68 3:6: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
+error@74..75 4:6: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
+error@84..85 5:7: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
+error@93..94 6:7: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
+error@102..103 7:7: misplaced `_` in a number: `_` may only stand between two digits, as in `1_000_000`
