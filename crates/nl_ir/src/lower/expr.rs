@@ -418,6 +418,13 @@ impl Lowerer<'_> {
             }
             return Expr::intrinsic_call("len", vec![r]);
         }
+        // A member of a primitive type's library named directly is read,
+        // never called with the library as `self`: `String.shout` is the
+        // function, as `String.upcase` is.
+        if self.res.plain_primitive_member(&recv, &name).is_some() {
+            let key = self.opts.hints.member(node.text_range()).map_or(name, |h| h.key().to_string());
+            return Expr::index(r, Expr::str(&key));
+        }
         // A member the analyzer resolved from the receiver's declared
         // type, or a declared member with a Lua key.
         match self.opts.hints.member(node.text_range()).cloned() {

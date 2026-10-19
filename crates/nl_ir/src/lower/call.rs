@@ -251,6 +251,19 @@ impl Lowerer<'_> {
         self.push_args(&mut vals, args, block, 0);
         let mut it = vals.into_iter();
         let r = it.next().unwrap_or(Expr::Nil);
+        // `String.shout(s)`: a member of a primitive type's library, named
+        // directly, is called as a plain function, also when it is a
+        // method; `s` is its `self`.
+        if self.res.plain_primitive_member(&recv, &name).is_some() {
+            let f = match self.preset(field) {
+                Some(f) => f,
+                None => {
+                    let key = self.opts.hints.member(field.text_range()).map_or(name, |h| h.key().to_string());
+                    Expr::index(r, Expr::str(&key))
+                }
+            };
+            return Expr::call(f, it.collect());
+        }
         // `x.m?.(args)` (nilsafe.rs): the guard holds the member it tested,
         // which is called, not read again.
         if let Some(f) = self.preset(field) {

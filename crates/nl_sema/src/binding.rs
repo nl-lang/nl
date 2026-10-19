@@ -228,6 +228,32 @@ impl Resolution {
         self.self_refs.get(&range)
     }
 
+    /// The primitive type when the member `name` of the receiver `recv` is
+    /// a plain function: `recv` names a primitive type's library directly
+    /// (the prelude's `Number` or `String`, not shadowed, or `Self` in a
+    /// method defined on `Number`, `String` or `Bool`). A method read
+    /// from it is not bound to the table: `String.shout(s)` passes `s` as
+    /// `self`. `from`, which `From<T>` defines, is the exception: it is
+    /// called on the type, which is its `self` (`Number.from(x)`).
+    pub fn plain_primitive_member(&self, recv: &SyntaxNode, name: &str) -> Option<&'static Prelude> {
+        if name == "from" {
+            return None;
+        }
+        use nl_syntax::SyntaxKind::{NAME_REF, SELF_EXPR, SELF_TYPE_KW};
+        let p = match recv.kind() {
+            NAME_REF => match self.reference(recv.text_range())? {
+                Ref::Prelude(p) => *p,
+                _ => return None,
+            },
+            SELF_EXPR if crate::util::has_token(recv, SELF_TYPE_KW) => match self.self_target(recv.text_range())? {
+                SelfTarget::Prelude(p) => *p,
+                _ => return None,
+            },
+            _ => return None,
+        };
+        p.is_primitive().then_some(p)
+    }
+
     /// The hidden `self` binding of the method declared by the node at
     /// `range` (an `FN_DECL` of a method, or of a module function).
     pub fn method_self(&self, range: TextRange) -> Option<BindingId> {

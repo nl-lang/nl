@@ -396,6 +396,7 @@ impl Analyzer<'_> {
         }
         self.check_enum_member(&recv_node, &recv, &name, node.text_range());
         let lookup = self.lookup_member(&recv, &name, node.text_range());
+        let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
         self.record_member_hint(node, &recv, &lookup, &name);
         match lookup {
             Lookup::Field(t, _) => Ty::uncertain(t),
@@ -697,6 +698,23 @@ impl Analyzer<'_> {
         }
     }
 
+    /// `String.shout` with the library of a primitive type named directly
+    /// (`Resolution::plain_primitive_member`): a method defined on the type is
+    /// a plain function there, whose first parameter is `self`. `None` for
+    /// any other member, which is looked up as usual.
+    fn primitive_library_member(&self, recv: &SyntaxNode, name: &str) -> Option<Lookup> {
+        let p = self.res.plain_primitive_member(recv, name)?;
+        let sig = self.prim_methods.get(p.name)?.get(name)?;
+        let ty = match p.name {
+            "Number" => Type::Number,
+            "String" => Type::String,
+            _ => Type::Bool,
+        };
+        let mut params = vec![Param { name: "self".into(), ty, optional: false }];
+        params.extend(sig.params.iter().cloned());
+        Some(Lookup::Function(Rc::new(FnType { params, is_method: false, ..(**sig).clone() }), None))
+    }
+
     /// A member of a number, string or boolean: a method defined in this
     /// file, else a function of the type's library.
     fn lookup_primitive_member(&mut self, t: &Type, name: &str) -> Lookup {
@@ -884,6 +902,7 @@ impl Analyzer<'_> {
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
+                let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
                 self.record_member_hint(callee, &recv, &lookup, &name);
                 let desc = format!("{}.{name}", self.show(&recv.t));
                 match lookup {
@@ -1488,6 +1507,7 @@ impl Analyzer<'_> {
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
+                let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
                 match lookup {
                     Lookup::Method(sig, _) | Lookup::Function(sig, _) => {
                         let desc = format!("{}.{name}", self.show(&recv.t));

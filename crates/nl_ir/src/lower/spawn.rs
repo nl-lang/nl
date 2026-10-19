@@ -6,7 +6,7 @@
 //! Both forms become one call of `rt.spawn` (runtime/nl_64_worker.lua):
 //!
 //! ```lua
-//! __rt.spawn(nil, f, args…)                 -- spawn f(args)
+//! __rt.spawn(nil, f, args…)                 -- spawn f(args), and spawn String.shout(s) with f = String.shout
 //! __rt.spawn(false, f, M, args…)            -- spawn f(args), f a function of module M called by its bare name
 //! __rt.spawn("m", x, args…)                 -- spawn x.m(args), member-call rule
 //! __rt.spawn({"file", "<spawn do at L:C>", "n", "list"}, function(n, list) … end, n, list)
@@ -79,8 +79,15 @@ impl Lowerer<'_> {
             FIELD_EXPR if !is_len(&callee) => {
                 let Some(recv) = expr_child(&callee) else { return self.internal(&callee, "`spawn` member callee") };
                 let name = field_name(&callee).map(|t| t.text().to_string()).unwrap_or_default();
-                vals.push(Expr::str(&name));
-                self.push_operand(&mut vals, |l| l.expr1(&recv));
+                if self.res.plain_primitive_member(&recv, &name).is_some() {
+                    // `spawn String.shout(s)`: a plain call, as outside `spawn`.
+                    vals.push(Expr::Nil);
+                    let lib = self.expr1(&recv);
+                    vals.push(Expr::index(lib, Expr::str(&name)));
+                } else {
+                    vals.push(Expr::str(&name));
+                    self.push_operand(&mut vals, |l| l.expr1(&recv));
+                }
             }
             NAME_REF => {
                 // A module function called by its bare name inside its

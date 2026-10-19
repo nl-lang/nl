@@ -202,6 +202,18 @@ fn lints() {
 }
 
 #[test]
+fn primitive_method_through_its_type() {
+    // `String.shout(s)`: the first argument is `self`, checked against the type.
+    let decl = "fn String.wrap(l: String, r: String): String\n  l <> self <> r\nend\n";
+    assert!(analyzer_errors(&format!("{decl}let s: String = String.wrap(\"x\", \"<\", \">\")\nprint s\n")).is_empty());
+    assert!(has_code(&format!("{decl}print String.wrap(5, \"<\", \">\")\n"), 4, "type-mismatch"));
+    assert!(has_code(&format!("{decl}print String.wrap(\"x\", \"<\")\n"), 4, "missing-argument"));
+    assert!(has_code(&format!("{decl}let n: Number = String.wrap(\"x\", \"<\", \">\")\nprint n\n"), 4, "type-mismatch"));
+    // Read without a call, it is the function.
+    assert!(analyzer_errors(&format!("{decl}let f = String.wrap\nprint f(\"x\", \"<\", \">\")\n")).is_empty());
+}
+
+#[test]
 fn declared_names_and_members() {
     let decl = "declare module Foo = :foo\n  coolness_factor: Number as 'coolnessFactor'\n  const limit: Number\n  fn return_largest(a: Number, b: Number): Number as 'ReturnLargest'\n  fn each(list: [Number], callback: Function)\nend\ndeclare fn local_player(): String = :LocalPlayer\n";
     let parse = nl_syntax::parse_decl_file(decl);

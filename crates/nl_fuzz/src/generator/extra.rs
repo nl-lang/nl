@@ -160,8 +160,13 @@ impl Gen {
                 let m = self.rng.pick_ref(&self.prim_num.clone())?;
                 let recv = self.int_within(ctx, d.saturating_sub(1), 1000.0);
                 let k = self.int_within(ctx, d.saturating_sub(1), 1000.0);
-                // `7.m(k)`, `x.m(k)`, or the plain function `Number.m!(x, k)`.
-                let code = if self.rng.chance(25) { format!("(Number.{m}!)({}, {})", recv.code, k.code) } else { format!("{}.{m}({})", recv.operand(), k.code) };
+                // `7.m(k)`, `x.m(k)`, or the plain function, `Number.m(x, k)`
+                // or `(Number.m!)(x, k)`.
+                let code = match self.rng.below(8) {
+                    0 => format!("Number.{m}({}, {})", recv.code, k.code),
+                    1 => format!("(Number.{m}!)({}, {})", recv.code, k.code),
+                    _ => format!("{}.{m}({})", recv.operand(), k.code),
+                };
                 Some(Ex::new(code, Ty::Int, 1000.0).atom())
             }
             1 => {
@@ -199,7 +204,11 @@ impl Gen {
             0 => {
                 let m = self.rng.pick_ref(&self.prim_str.clone())?;
                 let s = self.str_(ctx, d.saturating_sub(1));
-                let code = if self.rng.chance(25) { format!("(String.{m}!)({})", s.code) } else { format!("{}.{m}", s.operand()) };
+                let code = match self.rng.below(8) {
+                    0 => format!("String.{m}({})", s.code),
+                    1 => format!("(String.{m}!)({})", s.code),
+                    _ => format!("{}.{m}", s.operand()),
+                };
                 Some(Ex::new(code, Ty::Str, s.bound + 2.0).ascii(s.ascii).atom())
             }
             1 => {
