@@ -14,6 +14,8 @@
 #    target/vm/fake-{jit,nojit,assert}.
 # 2. For each: test_capi (C API), test_events.lua (event library; for the JIT
 #    build also with -joff and with -Ohotloop=1), test_threads.
+#    Also test_jit.lua (faults of the trace compiler and of bytecode dumps,
+#    in plain Lua; it forces traces with hotloop=1 itself).
 # 3. An AddressSanitizer + UndefinedBehaviorSanitizer build (JIT off, the
 #    system allocator, assertions and API checks) and test_capi,
 #    test_events.lua and test_threads under it. Any report fails.
@@ -139,6 +141,9 @@ for v in jit nojit assert; do
   fi
   echo "== test_threads ($v)"
   [ -x "$T/test_threads-$v" ] && { "$T/test_threads-$v" || fail "test_threads ($v)"; }
+  echo "== test_jit.lua ($v)"
+  "$B/luajit" "$ROOT/tests/vm/test_jit.lua" >"$T/jit-$v.out" 2>&1 ||
+    { grep -v '^ok - ' "$T/jit-$v.out"; fail "test_jit.lua ($v)"; }
 done
 
 if [ $ASAN = 1 ]; then
@@ -162,6 +167,10 @@ if [ $ASAN = 1 ]; then
     "$B/luajit" "$ROOT/tests/vm/test_events.lua" >"$T/asan-events.out" 2>&1
     st=$?; grep -v '^ok' "$T/asan-events.out" | head -40
     { [ $st = 0 ] && ! grep -q 'runtime error\|Sanitizer' "$T/asan-events.out"; } || fail "test_events.lua (ASan+UBSan)"
+    echo "== test_jit.lua (ASan+UBSan)"
+    "$B/luajit" "$ROOT/tests/vm/test_jit.lua" >"$T/asan-jit.out" 2>&1
+    st=$?; grep -v '^ok' "$T/asan-jit.out" | head -40
+    { [ $st = 0 ] && ! grep -q 'runtime error\|Sanitizer' "$T/asan-jit.out"; } || fail "test_jit.lua (ASan+UBSan)"
     echo "== test_threads (ASan+UBSan)"
     "$T/test_threads-asan" >"$T/asan-threads.out" 2>&1
     st=$?; grep -v '^ok' "$T/asan-threads.out" | head -40

@@ -802,6 +802,108 @@ static void test_pcall_errmem(void)
   lua_close(L);
 }
 
+/* An allocator that keeps the true size of each block in a header, fails
+** the failat-th growing allocation, and counts the bytes it holds. It
+** draws on the allocator of another state (base_alloc), for the same
+** reason as limited_alloc.
+*/
+typedef struct SizedAlloc { long n, failat; size_t live; } SizedAlloc;
+#define SIZED_HDR	16
+
+static void *sized_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
+{
+  SizedAlloc *sa = (SizedAlloc *)ud;
+  char *b = ptr ? (char *)ptr - SIZED_HDR : NULL;
+  size_t real = b ? *(size_t *)b : 0;
+  (void)osize;
+  if (nsize == 0) {
+    if (b) { sa->live -= real; base_alloc(base_ud, b, real + SIZED_HDR, 0); }
+    return NULL;
+  }
+  if (nsize > real && ++sa->n == sa->failat) return NULL;
+  b = (char *)base_alloc(base_ud, b, b ? real + SIZED_HDR : 0, nsize + SIZED_HDR);
+  if (!b) return NULL;
+  *(size_t *)b = nsize;
+  sa->live = sa->live - real + nsize;
+  return b + SIZED_HDR;
+}
+
+static int dumpbuf_writer(lua_State *L, const void *p, size_t sz, void *ud)
+{
+  luaL_Buffer *b = (luaL_Buffer *)ud;
+  (void)L;
+  luaL_addlstring(b, (const char *)p, sz);
+  return 0;
+}
+
+/* Closures are made after their upvalues: when making an upvalue runs out
+** of memory, no closure that counts none of them is left to the collector,
+** which would free it with a smaller size than it has. Each growing
+** allocation fails in turn while closures with upvalues are made, by FNEW
+** and by lua_load of bytecode whose main function has upvalues; the GC's
+** count of bytes must then match what the allocator holds. (An assertion
+** build also checks it when the state closes.)
+*/
+static void test_closure_oom(void)
+{
+  static const char code[] =
+    "local a, b, r = {}, {}, {}\n"
+    "for i = 1, 20 do local c = i; r[i] = function() return a, b, c end end\n"
+    "return r[20]";
+  lua_State *L0 = luaL_newstate(), *L;
+  const char *bc;
+  size_t bclen;
+  int load, failed = 0;
+  CHECK(L0 != NULL);
+  if (!L0) return;
+  base_alloc = lua_getallocf(L0, &base_ud);
+  {
+    luaL_Buffer b;
+    CHECK(luaL_loadstring(L0, code) == 0 && lua_pcall(L0, 0, 1, 0) == 0);
+    luaL_buffinit(L0, &b);
+    CHECK(lua_dump(L0, dumpbuf_writer, &b) == 0);
+    luaL_pushresult(&b);
+    bc = lua_tolstring(L0, -1, &bclen);
+  }
+  for (load = 0; load <= 1; load++) {
+    long k;
+    for (k = 1; k < 100000; k++) {
+      SizedAlloc sa;
+      int st;
+      size_t total;
+      sa.n = 0; sa.failat = 0; sa.live = 0;
+      L = lua_newstate(sized_alloc, &sa);
+      CHECK(L != NULL);
+      if (!L) break;
+      luaL_openlibs(L);
+      if (!load) CHECK(luaL_loadstring(L, code) == 0);
+      sa.failat = sa.n + k;
+      st = load ? luaL_loadbuffer(L, bc, bclen, "=bc") : lua_pcall(L, 0, 0, 0);
+      sa.failat = 0;
+      lua_settop(L, 0);
+      lua_gc(L, LUA_GCCOLLECT, 0);
+      total = (size_t)lua_gc(L, LUA_GCCOUNT, 0) * 1024 +
+	      (size_t)lua_gc(L, LUA_GCCOUNTB, 0);
+      if (total != sa.live) {
+	fprintf(stderr, "%s, allocation %ld failing: GC count %lu, allocator %lu\n",
+		load ? "lua_load" : "FNEW", k, (unsigned long)total,
+		(unsigned long)sa.live);
+	CHECK(total == sa.live);
+	lua_close(L);
+	break;
+      }
+      lua_close(L);
+      CHECK(sa.live == 0);
+      if (st == 0) break;  /* Nothing failed: every point was tried. */
+      CHECK(st == LUA_ERRMEM);
+      failed++;
+    }
+  }
+  printf("# closures with upvalues, each allocation failing in turn: %d failed cleanly\n", failed);
+  CHECK(failed > 0);
+  lua_close(L0);
+}
+
 /* -- Events (C side; tests/vm/test_events.lua has the Lua side) ---------- */
 
 static int handler_a(lua_State *L)
@@ -1377,6 +1479,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_pcall_and_raise);
   RUN_TEST(test_translator);
   RUN_TEST(test_pcall_errmem);
+  RUN_TEST(test_closure_oom);
   RUN_TEST(test_events_c);
   RUN_TEST(test_tasks);
   RUN_TEST(test_unhandled);
