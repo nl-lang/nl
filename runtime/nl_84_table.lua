@@ -996,12 +996,19 @@ do
     return deep_merge(a, b)
   end
 
+  -- A copy of a table with a count (a rest table, `Table.pack`'s; see
+  -- rt.spread) has the count too, so that `f(*Table.copy(args))` passes
+  -- the trailing nils as `f(*args)` does.
+  local rest_counts = I.rest_counts
+
   function Table.copy(t)
     tbl(t, "copy")
     local out = {}
     for k, v in next, t do out[k] = v end
     local mt = getmetatable(t)
     if mt ~= nil then setmetatable(out, mt) end
+    local n = rest_counts[t]
+    if n ~= nil then rest_counts[out] = n end
     return out
   end
 
@@ -1019,6 +1026,8 @@ do
     end
     local mt = getmetatable(t)
     if mt ~= nil then setmetatable(out, mt) end
+    local n = rest_counts[t]
+    if n ~= nil then rest_counts[out] = n end
     return out
   end
 
@@ -1182,8 +1191,13 @@ do
     return out
   end
 
+  -- `n` for Lua 5.2-style readers; the count NL's spreads read is
+  -- recorded as a rest table's (rt.spread).
   function Table.pack(...)
-    return { n = select("#", ...), ... }
+    local n = select("#", ...)
+    local t = { n = n, ... }
+    if #t ~= n then rest_counts[t] = n end
+    return t
   end
 
   function Table.unpack(t, i, j)

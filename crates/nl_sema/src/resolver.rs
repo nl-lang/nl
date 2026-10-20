@@ -304,16 +304,23 @@ impl<'a> Resolver<'a> {
     }
 
     /// Whether a local `name` hides a declared value worth a
-    /// `shadows-declared` lint: a declared `let` or `const`, or for any
-    /// local but a parameter a declared module. Not a declared function:
-    /// a host declares hundreds of lowercase ones (`player`, `color`,
-    /// `entity` under gmod), whose names are the natural names of the
-    /// values a function works on.
+    /// `shadows-declared` lint: a declared `let` or `const`, or a declared
+    /// module for any local but a parameter or a definition. Not a
+    /// declared function: a host declares hundreds of lowercase ones
+    /// (`player`, `color`, `entity` under gmod), whose names are the
+    /// natural names of the values a function works on. Not a module for
+    /// a definition (`enum`, `struct`, `module`, `interface`, a type
+    /// alias): a host's module of helpers is often named like a type a
+    /// script defines for itself (gmod's `team` library is `Team`, and a
+    /// script's `enum Team` is plainly its own).
     fn shadows_declared_value(&self, name: &str, decl: DeclKind) -> bool {
         let Some(item) = self.decls.lookup(name).and_then(|id| self.decls.get(id)) else { return false };
         match item.kind {
             DeclItemKind::Let | DeclItemKind::Const => true,
-            DeclItemKind::Module => !matches!(decl, DeclKind::Param | DeclKind::RestParam | DeclKind::KeyedParam),
+            DeclItemKind::Module => !matches!(
+                decl,
+                DeclKind::Param | DeclKind::RestParam | DeclKind::KeyedParam | DeclKind::Enum | DeclKind::Struct | DeclKind::Module | DeclKind::Interface | DeclKind::TypeAlias
+            ),
             _ => false,
         }
     }

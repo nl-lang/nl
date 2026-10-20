@@ -70,3 +70,11 @@ end
 fn Rect.area
   @w * @h
 end
+
+pub fn spread_count(t)
+  :select("#", *t)
+end
+
+pub fn arg_count(*args)
+  args.len
+end

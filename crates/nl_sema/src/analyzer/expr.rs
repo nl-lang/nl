@@ -46,10 +46,20 @@ fn receiver_ty(types: &TypeTable, recv: &Ty, table_fn: bool) -> Ty {
 }
 
 /// A receiver as a diagnostic writes it: its text when it is short and
-/// on one line, else `x`.
-fn receiver_text(node: &SyntaxNode) -> String {
+/// on one line.
+fn receiver_text(node: &SyntaxNode) -> Option<String> {
     let t = node.text().to_string();
-    if t.len() <= 24 && !t.contains(char::is_whitespace) { t } else { "x".to_string() }
+    (t.len() <= 24 && !t.contains(char::is_whitespace)).then_some(t)
+}
+
+/// How to read the key `name` of a receiver: "as t["name"]" with the
+/// receiver's text, or, when the receiver is too long to repeat, "with
+/// brackets, `["name"]`" (a name made up for it would be wrong advice).
+fn bracket_key(node: &SyntaxNode, name: &str) -> String {
+    match receiver_text(node) {
+        Some(x) => format!("as {x}[\"{name}\"]"),
+        None => format!("with brackets, `[\"{name}\"]`"),
+    }
 }
 
 /// One argument of a call, typed.
@@ -974,7 +984,7 @@ impl Analyzer<'_> {
     ///   of `Table` (the library's, this file's `fn Table.name` or an
     ///   imported file's) has the name (`unknown-table-member`). `n` too:
     ///   a rest table keeps its count outside it, and what `Table.pack`
-    ///   makes, which has its count in `n`, is a `Table`, not a list.
+    ///   makes, which has a key `n` for Lua code, is a `Table`, not a list.
     ///
     /// On a `Table` or a map, another name is a key, read as one.
     fn unresolved_table_member(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
@@ -988,12 +998,12 @@ impl Analyzer<'_> {
             let (t, o) = (self.show(&table), self.show(&other));
             self.error(at, "ambiguous-member", format!("`{name}` is a function of the Table library on a `{t}` but not on a `{o}`, and this value may be either: narrow it with `is` first, or call `Table.{name}` on the table"));
         } else if others.is_empty() && tables.iter().all(|t| matches!(t, Type::Array(_))) {
-            let x = receiver_text(recv_node);
+            let key = bracket_key(recv_node, name);
             let in_library = self.prelude_type_id("Table").is_some_and(|lib| matches!(self.types.kind(lib), Some(NamedKind::Module { members }) if members.contains_key(name)));
             if in_library {
                 self.error(at, "unknown-table-member", format!("`{name}` is a function of the Table library that does not take a table first, so it is not a method of one: call `Table.{name}(…)`"));
             } else {
-                self.error(at, "unknown-table-member", format!("`{name}` is not a function of the Table library; a table has no methods of its own: define `fn Table.{name}` in this file or a file it imports, or read the key as {x}[\"{name}\"]"));
+                self.error(at, "unknown-table-member", format!("`{name}` is not a function of the Table library; a table has no methods of its own: define `fn Table.{name}` in this file or a file it imports, or read the key {key}"));
             }
         }
     }
@@ -1012,10 +1022,32 @@ impl Analyzer<'_> {
         }
         let lookup = self.lookup_member(recv, name, at);
         if let Lookup::TableFn(_) = self.table_member_of_name(recv_node, name, lookup) {
-            let shown = self.show(&self.types.union_all(&[tables, others].concat()));
-            let x = receiver_text(recv_node);
-            self.error(at, "table-method-assign", format!("`{name}` is a function of the Table library on a value typed `{shown}`; write {x}[\"{name}\"] to use it as a key"));
+            let shown = self.table_receiver_text(recv_node, &[tables, others].concat());
+            let advice = match receiver_text(recv_node) {
+                Some(x) => format!("write {x}[\"{name}\"]"),
+                None => format!("index the key with brackets, `[\"{name}\"]`,"),
+            };
+            self.error(at, "table-method-assign", format!("`{name}` is a function of the Table library on {shown}; {advice} to use it as a key"));
         }
+    }
+
+    /// A table receiver's type as a diagnostic names it: "a value typed
+    /// `T`", except that `[never]`, the type of an empty list literal,
+    /// says nothing to the reader: a name declared with a type shows that
+    /// type, and another receiver is "a list".
+    fn table_receiver_text(&self, recv_node: &SyntaxNode, parts: &[Type]) -> String {
+        let empty_list = |t: &Type| matches!(self.types.expand(t), Type::Array(e) if matches!(*e, Type::Never));
+        if !parts.is_empty() && parts.iter().all(empty_list) {
+            if let (NAME_REF, Some(Ref::Binding(id))) = (recv_node.kind(), self.res.reference(recv_node.text_range())) {
+                if self.binding(*id).is_some_and(|b| b.annotation.is_some()) {
+                    if let Some(d) = self.binding_types.get(id) {
+                        return format!("a value typed `{}`", self.show(&d.t));
+                    }
+                }
+            }
+            return "a list".to_string();
+        }
+        format!("a value typed `{}`", self.show(&self.types.union_all(parts)))
     }
 
     fn lookup_task_member(&mut self, result: &Type, name: &str) -> Lookup {

@@ -676,13 +676,18 @@ let a = 1...10 # a range from 1 to 9
 fn foo(a, b, *args) # Lua: function foo(a, b, ...) local args, n = {...}, select("#", ...)
   args.len # how many arguments there were, nils included: n
   bar(*args) # passes them all on, nils included: unpack(args, 1, n)
-end             # args holds only the arguments; the count goes with it wherever it goes.
+end             # args holds only the arguments; its count is kept beside it, for every
+                # spread of it in this state, and Table.copy and deep_copy copy it too.
                 # the count is the number of arguments the call passed, or #args when
                 # items were appended. one that items were removed from may keep the
-                # old count: to shrink it, make a list of it first (`let rest = [*args]`).
+                # old count: to shrink it, make a list of it first (`let rest = [*args]`),
+                # a plain list, whose trailing nils are cut as in a literal.
+                # sent to a worker (`spawn f(args)`) it arrives as a plain list too, its
+                # trailing nils cut; `spawn f(*args)` passes each argument, nils included.
                 # iterating (`for x in args`) still stops at the first nil.
-                # a spread of any table with a number `n` uses it: Table.pack(1, nil)
-                # has n = 2, while its `.len` is #t, 1
+                # Table.pack(1, nil) has a count, 2, the same way (and n = 2 for Lua
+                # code); a table Lua made with a field `n` spreads by #t. `.len` of
+                # either is #t, 1
 
 fn foo(a: any, b: any, callback: Function, *args: any) # *args is always last; `foo 1, 2 do ... end` puts the block in callback
 end

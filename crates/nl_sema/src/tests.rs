@@ -491,6 +491,49 @@ print r.count, f(), t.color
     assert!(analyzer_errors(fine).is_empty());
 }
 
+/// A variable declared `Table` or a map keeps its declared type when it is
+/// given a list, record or map literal: the declaration says how the table
+/// is used, so its keys are keys (`t.foo`), not list members.
+#[test]
+fn declared_table_type_wins_over_a_literal() {
+    let src = "\
+let t: Table = [1, 2]
+t.foo = 1
+print t.foo, t.count
+let r: Table = {a: 1}
+r.foo = 2
+print r.foo
+let maybe: Table? = [1]
+maybe.foo = 1
+print maybe.foo
+";
+    assert_eq!(analyzer_errors(src), []);
+    // An empty list given to a `Table` is a `Table` in the messages too;
+    // undeclared, it is a list (not `[never]`).
+    let msgs: Vec<String> = analyzer_diagnostics("let w: Table = []\nw.count = 1\nlet u = []\nu.count = 0\n").into_iter().filter(|d| d.1 == "table-method-assign").map(|d| d.2).collect();
+    assert_eq!(msgs.len(), 2, "{msgs:?}");
+    assert!(msgs[0].contains("on a value typed `Table`; write w[\"count\"]"), "{msgs:?}");
+    assert!(msgs[1].contains("on a list; write u[\"count\"]"), "{msgs:?}");
+    assert!(!msgs.iter().any(|m| m.contains("never")), "{msgs:?}");
+}
+
+/// A receiver too long to repeat is not given a made-up name in the
+/// advice: the brackets alone.
+#[test]
+fn table_member_advice_for_long_receivers() {
+    let src = "\
+let lists_of_numbers_by_name: {[String]: [Number]} = {}
+lists_of_numbers_by_name[\"a\"] = [1]
+lists_of_numbers_by_name[\"a\"].count = 1
+print lists_of_numbers_by_name[\"a\"].foo
+";
+    let msgs: Vec<(u32, &str, String)> = analyzer_diagnostics(src).into_iter().filter(|d| d.3).map(|d| (d.0, d.1, d.2)).collect();
+    assert_eq!(msgs.iter().map(|m| (m.0, m.1)).collect::<Vec<_>>(), [(3, "table-method-assign"), (4, "unknown-table-member")], "{msgs:?}");
+    assert!(msgs[0].2.contains("index the key with brackets, `[\"count\"]`, to use it as a key"), "{msgs:?}");
+    assert!(msgs[1].2.contains("read the key with brackets, `[\"foo\"]`"), "{msgs:?}");
+    assert!(!msgs.iter().any(|m| m.2.contains("x[")), "{msgs:?}");
+}
+
 /// `fn Number.round` and the like: a name the library already has (or an
 /// imported file defines) is refused at load time, so it is an error here.
 #[test]
@@ -1511,6 +1554,38 @@ print describe(1, 2, 3), moved(4), kept(5)
     let shadows: Vec<u32> = codes.iter().filter(|(_, c)| *c == "shadows-declared").map(|(l, _)| *l).collect();
     assert_eq!(shadows, [5, 10], "{codes:?}");
     assert!(has_code("import { helper } from 'x'\nfn f\n  let helper = 2\n  helper\nend\nprint f\n", 3, "shadows-declared"));
+}
+
+/// A definition named like a declared module (gmod's `team` library is
+/// `Team`, and a script's `enum Team` is its own) does not shadow it in
+/// the lint's sense; a `const` of that name still does.
+#[test]
+fn definitions_named_like_a_declared_module() {
+    let host = "declare module Team = :team\n  fn get_name(i: Number): String as 'GetName'\nend\n";
+    let src = "\
+enum Team
+  Red
+  Blue
+end
+fn f
+  struct Player
+    team: Team
+  end
+  interface Named
+    fn name: String
+  end
+  Player { team: Team.Red }
+end
+print f
+";
+    let (codes, _) = with_decl(host, src);
+    assert!(!codes.iter().any(|(_, c)| *c == "shadows-declared"), "{codes:?}");
+    for kind in ["struct Team\n  a: Number\nend\nprint Team { a: 1 }\n", "module Team\n  fn a\n    1\n  end\nend\nprint Team.a\n", "interface Team\n  fn a: Number\nend\n"] {
+        let (codes, _) = with_decl(host, kind);
+        assert!(!codes.iter().any(|(_, c)| *c == "shadows-declared"), "{kind}: {codes:?}");
+    }
+    let (codes, _) = with_decl(host, "const Team = 1\nprint Team\n");
+    assert!(codes.contains(&(1, "shadows-declared")), "{codes:?}");
 }
 
 /// Methods and operators that an imported file defines on primitives are

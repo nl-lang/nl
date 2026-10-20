@@ -22,7 +22,8 @@ print forward()
 print count(nil)
 
 # The count goes with the rest table, outside it: the table holds only the
-# arguments. A spread of any table that has a numeric `n` (Table.pack) uses it.
+# arguments. Table.pack's count is kept the same way; a field `n` of a table
+# NL did not count is only a key, and the table spreads by #t.
 fn rest_of(*args)
   args
 end
@@ -30,6 +31,9 @@ let packed: any = rest_of("a", nil)
 print Table.size(packed), count(*packed)
 print count(*Table.pack(nil, nil, nil))
 print count(*[1, 2])
+let made: any = {n: 3}
+made[1] = "x"
+print count(*made), Table.unpack(made)
 
 # In a list.
 fn listed(*args)

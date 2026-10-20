@@ -539,27 +539,34 @@ do
   -- (where a `To<String>` implementation goes).
   rt.tostring = tostring
 
-  -- `f(*t)`, `[a, *t]`: the items of t (rt.spread). A rest table
-  -- (`*args`) gives the items 1 to the count of arguments the call passed,
-  -- nils included, so forwarding `f(*args)` passes exactly the arguments
-  -- received; so does a table with a numeric `n` (what `Table.pack`
-  -- makes). Any other table gives 1 to #t, as Lua's unpack.
-  -- The count of a rest table is kept outside it, so that the table
-  -- holds only the arguments (`pairs`, `Table.keys` and Lua code see
-  -- nothing else). A function whose rest table goes nowhere keeps the
-  -- count in a hidden local and spreads it with `rt.unpack(args, 1, n)`,
-  -- Lua's unpack itself. One whose table escapes records the count in
-  -- I.rest_counts, weak-keyed, but only when the last argument is nil:
-  -- otherwise #t is the count already (the last slot of `{...}` is
-  -- set), and the call pays nothing for it.
-  -- The count of a rest table that items were appended to is #t: the
-  -- count is the larger of the two. Unspecified: the count of one that
-  -- items were removed from, which may keep the old count, and of one
-  -- with a nil among its items that was appended to, where #t may not
-  -- reach the new items.
-  -- Unspecified: the count is `n` whenever t has a numeric `n`, which Lua
-  -- 5.2's `table.unpack` does not read. A value that is not a table raises
-  -- at the NL line, as Lua's unpack would there.
+  -- `f(*t)`, `[a, *t]`: the items of t (rt.spread). A table that NL
+  -- made with a count, a rest table (`*args`) or what `Table.pack` makes,
+  -- gives the items 1 to its count, nils included, so forwarding
+  -- `f(*args)` passes exactly the arguments received. Any other table
+  -- gives 1 to #t, as Lua's unpack: a table Lua code made with a field
+  -- `n` too (the field is not read, which keeps a spread to one table
+  -- lookup before unpack).
+  -- The count is kept outside the table, in I.rest_counts (weak-keyed),
+  -- so that a rest table holds only the arguments (`pairs`, `Table.keys`
+  -- and Lua code see nothing else). A function whose rest table goes
+  -- nowhere keeps the count in a hidden local and spreads it with
+  -- `rt.unpack(args, 1, n)`, Lua's unpack itself. One whose table escapes
+  -- records the count, but only when the last argument is nil: otherwise
+  -- #t is the count already (the last slot of `{...}` is set), and the
+  -- call pays nothing for it. The count belongs to that table: spreads
+  -- of it anywhere in this state use it, and `Table.copy` and
+  -- `Table.deep_copy` record it on the copy. A list made from it
+  -- (`[*args]`) is a plain list, its trailing nils cut as in a literal;
+  -- so is a rest table sent to a worker or a `spawn`: the copy that
+  -- arrives has no count, on the stand-in of stock LuaJIT as on the
+  -- fork's encoder.
+  -- The count of a table that items were appended to is #t: the count is
+  -- the larger of the two. Unspecified: the count of one that items were
+  -- removed from, which may keep the old count, and of one with a nil
+  -- among its items that was appended to, where #t may not reach the new
+  -- items.
+  -- A value that is not a table raises at the NL line, as Lua's unpack
+  -- would there.
   -- `rt.select("#", ...)` is the count (generated code keeps it in a
   -- hidden local, as it does rt.getmetatable).
   rt.select = select
@@ -576,8 +583,6 @@ do
       if m > n then return m end
       return n
     end
-    n = rawget(t, "n")
-    if type(n) == "number" then return n end
     return #t
   end
   I.count = count
@@ -590,11 +595,7 @@ do
     end
     -- count(t), inline: a spread is a hot path in the interpreter.
     local n = rest_counts[t]
-    if n == nil then
-      n = rawget(t, "n")
-      if type(n) == "number" then return unpack(t, 1, n) end
-      return unpack(t)
-    end
+    if n == nil then return unpack(t) end
     local m = #t
     if m > n then n = m end
     return unpack(t, 1, n)
@@ -699,8 +700,8 @@ do
 
   -- `[a, *list, b]`: the items of each part, in order. A
   -- part is a table; its items are 1 to #part, so a nil inside a part
-  -- is kept and a trailing nil is cut, as in a literal; a rest table, or
-  -- a part with a numeric `n`, gives 1 to its count, as rt.spread.
+  -- is kept and a trailing nil is cut, as in a literal; a table with a
+  -- count (a rest table, `Table.pack`'s) gives 1 to it, as rt.spread.
   function rt.listcat(...)
     local out, n = {}, 0
     for i = 1, select("#", ...) do

@@ -179,9 +179,11 @@ impl Lowerer<'_> {
         // (the function only reads its items and its length and spreads
         // it), the count is a hidden local that `args.len` and `f(*args)`
         // read. When it escapes, the runtime records the count beside the
-        // table (rt.restcount, nl_40_ops.lua) for every spread anywhere the
-        // table goes, but only when the last argument is nil, since `#args`
-        // is the count otherwise:
+        // table (rt.restcount, nl_40_ops.lua), which every spread of that
+        // table in this state reads and Table.copy carries to a copy (a
+        // list made from it, or a copy sent to a worker, has none), but
+        // only when the last argument is nil, since `#args` is the count
+        // otherwise:
         //
         // ```lua
         // local args, n = {...}, rt.select("#", ...); if #args ~= n then rt.restcount(args, n) end
@@ -442,7 +444,10 @@ pub(crate) fn can_fall_off(stmts: &[Stmt]) -> bool {
 /// or spreads it (`f(*args)`, `[*args]`): the table goes nowhere and is
 /// not changed, so its count stays the local's. A store `args[i] = v`
 /// counts as an escape, so that `args.len` sees an item appended there
-/// as it would one appended by any other code (rt.restlen).
+/// as it would one appended by any other code: rt.restlen, the larger of
+/// the count and `#args`. That is exact only when no nil sits among the
+/// items, since `#args` may stop short of the new item otherwise (an
+/// Unspecified count, nl_40_ops.lua).
 fn rest_stays_local(node: &SyntaxNode, res: &nl_sema::Resolution, id: BindingId) -> bool {
     node.descendants().filter(|n| n.kind() == NAME_REF && res.reference(n.text_range()) == Some(&nl_sema::Ref::Binding(id))).all(|r| {
         let Some(p) = r.parent() else { return false };

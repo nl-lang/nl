@@ -710,15 +710,18 @@ impl Analyzer<'_> {
     }
 
     /// The flow type of a variable declared `declared` after it is given a
-    /// value of type `value`: the value's, except that a record stored in a
-    /// variable declared a map (`let m: {[String]: [Number]} = {a: [1]}`)
-    /// keeps the map type. The record knows only the keys the literal
-    /// wrote; the map type knows every key's value (`m["b"]`, `m[k]`) and
-    /// gives the functions of `Table`.
+    /// value of type `value`: the value's, except that a list, record or
+    /// map stored in a variable declared `Table` or a map (`let m:
+    /// {[String]: [Number]} = {a: [1]}`, `let t: Table = [1, 2]`) keeps
+    /// the declared type. The declaration says how the table is used: a
+    /// record knows only the keys the literal wrote, where the map type
+    /// knows every key's value (`m["b"]`, `m[k]`) and gives the functions
+    /// of `Table`; a list has no string keys, where a `Table` has any
+    /// (`t.foo = 1`).
     fn stored_flow(&self, value: &Type, declared: &Type) -> Type {
-        if matches!(self.types.expand(value), Type::Record(_)) {
+        if matches!(self.types.expand(value), Type::Record(_) | Type::Array(_) | Type::Map(..)) {
             let d = self.types.non_nil(declared);
-            if matches!(self.types.expand(&d), Type::Map(..)) {
+            if matches!(self.types.expand(&d), Type::Map(..) | Type::Table) {
                 return d;
             }
         }
