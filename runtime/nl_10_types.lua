@@ -11,6 +11,11 @@
 -- Intrinsics: rt.T, rt.check, rt.ret, rt.isa, rt.optional, rt.union,
 -- rt.negate, rt.record, rt.lazy, rt.typeof, rt.typename; rt.type,
 -- rt.getmetatable, rt.setmetatable (for inline checks).
+--
+-- `getmetatable` in these files is the runtime's local of nl.lua, the raw
+-- `debug.getmetatable` where the host has it, not the global: a class or
+-- host type whose metatable sets `__metatable` is still recognized by
+-- its metatable (rt.luaclass, the built-in and host-type tests).
 do
   local T = {}
   rt.T = T

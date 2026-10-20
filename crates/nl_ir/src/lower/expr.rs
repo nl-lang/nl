@@ -414,10 +414,15 @@ impl Lowerer<'_> {
         let Some(recv) = expr_child(node) else { return self.internal(node, "member access") };
         let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
         // `args.len` of a rest parameter is the count of arguments it
-        // received, nils included.
+        // received, nils included: the hidden local, or for a table that
+        // escapes rt.restlen.
         if name == "len" {
             if let Some((_, n)) = self.counted_rest(&recv) {
                 return n;
+            }
+            if self.rest_param(&recv).is_some() {
+                let r = self.expr1(&recv);
+                return Expr::intrinsic_call("restlen", vec![r]);
             }
         }
         let r = self.expr1(&recv);
@@ -450,24 +455,23 @@ impl Lowerer<'_> {
         }
     }
 
-    /// The local of a rest parameter (`*args`) named by `node`, when no
-    /// assignment replaces it, and the count of arguments it received: a
-    /// hidden local, or the table's `n` (func.rs).
-    pub(crate) fn counted_rest(&mut self, node: &SyntaxNode) -> Option<(LocalId, Expr)> {
+    /// The rest parameter (`*args`) named by `node`, when no assignment
+    /// replaces it.
+    pub(crate) fn rest_param(&self, node: &SyntaxNode) -> Option<nl_sema::BindingId> {
         if node.kind() != NAME_REF {
             return None;
         }
         let Some(Ref::Binding(id)) = self.res.reference(node.text_range()).cloned() else { return None };
         let b = self.res.binding(id)?;
-        if b.decl != DeclKind::RestParam || self.res.reassigned(id) {
-            return None;
-        }
-        let l = self.local_of(id);
-        let n = match self.rest_counts.get(&id) {
-            Some(c) => Expr::Local(*c),
-            None => Expr::index(Expr::Local(l), Expr::str("n")),
-        };
-        Some((l, n))
+        (b.decl == DeclKind::RestParam && !self.res.reassigned(id)).then_some(id)
+    }
+
+    /// The local of a rest parameter named by `node` whose count is a
+    /// hidden local (func.rs), and that local.
+    pub(crate) fn counted_rest(&mut self, node: &SyntaxNode) -> Option<(LocalId, Expr)> {
+        let id = self.rest_param(node)?;
+        let c = *self.rest_counts.get(&id)?;
+        Some((self.local_of(id), Expr::Local(c)))
     }
 
     /// `t.len` at level 0 when `t` is certain to be a table
@@ -539,7 +543,17 @@ impl Lowerer<'_> {
                     _ => Expr::intrinsic_call("bound", vec![r, Expr::str(&name)]),
                 }
             }
-            AT_EXPR => self.at_expr(&inner),
+            // `@m!` as `self.m!`: a method the analyzer found on the
+            // struct is bound; otherwise the runtime decides, which binds a
+            // method and leaves a field's value as it is.
+            AT_EXPR => {
+                let name = token(&inner, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+                let this = self.name_raw(&inner);
+                match self.opts.hints.member(inner.text_range()) {
+                    Some(MemberHint::Method { .. }) => Expr::intrinsic_call("bound", vec![this, Expr::str(&name), Expr::Bool(true)]),
+                    _ => Expr::intrinsic_call("bound", vec![this, Expr::str(&name)]),
+                }
+            }
             _ => self.expr(&inner),
         }
     }

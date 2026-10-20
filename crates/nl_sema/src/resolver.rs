@@ -229,7 +229,7 @@ impl<'a> Resolver<'a> {
                     // `import-clash`.
                     self.lint(range, "shadows-declared", format!("`{name}` shadows the imported `{name}`; below this, `{name}` is this one"));
                 }
-            } else if decl != DeclKind::SelfParam && prelude::lookup(name).is_none() && self.decls.lookup(name).is_some() {
+            } else if decl != DeclKind::SelfParam && prelude::lookup(name).is_none() && self.shadows_declared_value(name, decl) {
                 // A name of the declaration files (looked up after the
                 // prelude, so one with a prelude name is not reachable
                 // anyway): the local hides the host's value from here on.
@@ -301,6 +301,21 @@ impl<'a> Resolver<'a> {
             named: false,
         });
         id
+    }
+
+    /// Whether a local `name` hides a declared value worth a
+    /// `shadows-declared` lint: a declared `let` or `const`, or for any
+    /// local but a parameter a declared module. Not a declared function:
+    /// a host declares hundreds of lowercase ones (`player`, `color`,
+    /// `entity` under gmod), whose names are the natural names of the
+    /// values a function works on.
+    fn shadows_declared_value(&self, name: &str, decl: DeclKind) -> bool {
+        let Some(item) = self.decls.lookup(name).and_then(|id| self.decls.get(id)) else { return false };
+        match item.kind {
+            DeclItemKind::Let | DeclItemKind::Const => true,
+            DeclItemKind::Module => !matches!(decl, DeclKind::Param | DeclKind::RestParam | DeclKind::KeyedParam),
+            _ => false,
+        }
     }
 
     fn lookup_binding(&self, name: &str) -> Option<BindingId> {
@@ -1626,6 +1641,32 @@ impl<'a> Resolver<'a> {
         }
     }
 
+    /// The count of a rest parameter of an enclosing function, read in a
+    /// `spawn do` block (`args.len`, `*args`): the block takes a copy of
+    /// the table, which does not carry the count (the lowering keeps it in
+    /// a hidden local, or beside the table), so a trailing nil would be
+    /// lost. An error that names the parameter.
+    fn check_spawn_rest_count(&mut self, id: BindingId, node: &SyntaxNode) {
+        let Some(b) = self.binding(id) else { return };
+        if b.decl != DeclKind::RestParam || !self.fns.iter().any(|f| f.kind == FnKind::Spawn && f.index > b.function) {
+            return;
+        }
+        let Some(p) = node.parent() else { return };
+        let reads_count = match p.kind() {
+            FIELD_EXPR => expr_child(&p).is_some_and(|e| &e == node) && field_name(&p).is_some_and(|t| t.text() == "len"),
+            SPREAD_ARG => true,
+            _ => false,
+        };
+        if reads_count {
+            let name = b.name.clone();
+            self.error(
+                node.text_range(),
+                "spawn-rest-count",
+                format!("this `spawn do` block reads the count of the rest parameter `{name}`, which the block does not take along with its items: make a list of the arguments outside the block (`let items = [*{name}]`) and read that"),
+            );
+        }
+    }
+
     // ---- names --------------------------------------------------------------
 
     fn walk_name_ref(&mut self, node: &SyntaxNode) {
@@ -1635,6 +1676,7 @@ impl<'a> Resolver<'a> {
             Some(r) => {
                 if let Ref::Binding(id) = r {
                     self.check_const_order(id, &name, range);
+                    self.check_spawn_rest_count(id, node);
                 }
                 self.res.refs.insert(range, r);
             }

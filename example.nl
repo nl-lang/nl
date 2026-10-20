@@ -409,8 +409,9 @@ end
 # a method taken with `!` comes bound to its receiver, so whoever calls it
 # passes only the arguments: `Foo.some_func!` of a module passes Foo as self,
 # and Lua code can call it (`:table.sort(list, Sorter.by_name!)`).
-# `obj.method!` binds obj the same way. a field, a plain function and a
-# library's function stay what they are: `"x".upcase!` takes a string
+# `obj.method!` and `@method!` bind obj (self) the same way. a field, a plain
+# function and a library's function stay what they are: `"x".upcase!` takes
+# a string. the raw method, which takes self first, is `M["f"]`
 let f = Foo.some_func!
 f() # Foo.some_func()
 
@@ -672,11 +673,16 @@ let a = 1...10 # a range from 1 to 9
 
 # rest arguments: *args collects the remaining arguments into a table. there are no `...` varargs
 
-fn foo(a, b, *args) # Lua: function foo(a, b, ...) local args = {n = select("#", ...), ...}
-  args.len # how many arguments there were, nils included: args.n
-  bar(*args) # passes them all on, nils included: unpack(args, 1, args.n)
-end             # a spread of any table with a number `n` (Table.pack) uses it.
-                # iterating (`for x in args`) still stops at the first nil
+fn foo(a, b, *args) # Lua: function foo(a, b, ...) local args, n = {...}, select("#", ...)
+  args.len # how many arguments there were, nils included: n
+  bar(*args) # passes them all on, nils included: unpack(args, 1, n)
+end             # args holds only the arguments; the count goes with it wherever it goes.
+                # the count is the number of arguments the call passed, or #args when
+                # items were appended. one that items were removed from may keep the
+                # old count: to shrink it, make a list of it first (`let rest = [*args]`).
+                # iterating (`for x in args`) still stops at the first nil.
+                # a spread of any table with a number `n` uses it: Table.pack(1, nil)
+                # has n = 2, while its `.len` is #t, 1
 
 fn foo(a: any, b: any, callback: Function, *args: any) # *args is always last; `foo 1, 2 do ... end` puts the block in callback
 end
@@ -1019,7 +1025,7 @@ now.utc.hour # a UTC view of the same instant (== now): its calendar is in UTC
 now.strftime "%H:%M"
 Time.at(0).humanize # "almost 57 years ago", from now
 Time.parse "2026-10-20T14:03:00+02:00"
-Time.new 2026, 10, 20, utc: true
+Time.new 2026, 10, 20, utc: true # components in UTC, and a UTC view (as Time.parse s, utc: true)
 
 # exceptions
 

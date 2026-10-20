@@ -15,8 +15,11 @@ print u.hour(utc: true), u.iso(utc: true) == u.iso, t.iso(utc: true) == u.iso
 let wall = t + t.utc_offset
 print u.hour(utc: false) == wall.hour(utc: true), u.local.clock == wall.clock(utc: true)
 print u.local.to_s == t.to_s, u.local.utc_offset == t.utc_offset
-# constructors give local views
+# constructors give local views, but Time.new and Time.parse given utc: true give UTC ones
 print Time.at(0).is_utc, Time.new(2026, 1, 1, utc: true).is_utc, Time.parse("2026-01-01T00:00:00Z").is_utc
+let made = Time.new(2020, 1, 1, utc: true)
+print made.hour, made.iso, Time.parse("2020-01-01T00:00:00+02:00", utc: true).iso
+print Time.parse("2020-01-01", utc: true).is_utc, Time.new(2020, utc: false).is_utc, Time.parse("2020-01-01", utc: false).is_utc
 print Time.parse("2026-01-01T00:00:00Z").utc, Time.new(2026, 10, 20, 14, 3, utc: true).utc == u.floor_to(1.minutes)
 let view: any = Time.at(86_400).utc
 print view.is_utc, view.date, view.local.is_utc

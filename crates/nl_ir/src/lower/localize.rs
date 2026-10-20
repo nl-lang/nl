@@ -293,11 +293,31 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
     }
     // `fn Util.name` on a declared module or class whose Lua path is a
     // global: it assigns that global's field.
+    // `fn Number.name` and the other primitives: the runtime stores the
+    // function in the library table that Lua code reaches it by (rt.primmethod
+    // and the prelude): `math` for Number, `String` and the `string` it is
+    // behind for String, `Table` for Table. Bool's has no global.
     for f in root.descendants().filter(|n| n.kind() == FN_DECL) {
-        let Some(MethodOwner::Declared(id)) = res.method_owner(f.text_range()) else { continue };
-        let (Some(path), Some(name)) = (res.declared_path(*id), child(&f, NAME).and_then(|n| name_text(&n))) else { continue };
-        if path.steps.is_empty() {
-            assigned_paths.insert((path.global.clone(), name));
+        let Some(name) = child(&f, NAME).and_then(|n| name_text(&n)) else { continue };
+        match res.method_owner(f.text_range()) {
+            Some(MethodOwner::Declared(id)) => {
+                let Some(path) = res.declared_path(*id) else { continue };
+                if path.steps.is_empty() {
+                    assigned_paths.insert((path.global.clone(), name));
+                }
+            }
+            Some(MethodOwner::Primitive(p)) => {
+                let globals: &[&str] = match p.name {
+                    "Number" => &["math"],
+                    "String" => &["String", "string"],
+                    "Table" => &["Table"],
+                    _ => &[],
+                };
+                for g in globals {
+                    assigned_paths.insert(((*g).to_string(), name.clone()));
+                }
+            }
+            _ => {}
         }
     }
     for (global, first) in reads {

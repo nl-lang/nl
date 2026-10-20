@@ -173,23 +173,45 @@ impl Lowerer<'_> {
         // arguments, so they are the last item of the rest table, or the
         // last parameter that received a value. Found before defaults and
         // checks run, since the slot they landed in is not theirs.
-        // The rest table carries its count, `{n = select("#", ...), ...}`,
-        // so that a nil among the arguments is kept by `f(*args)`,
-        // `args.len` and a spread anywhere the table goes (rt.spread). When
-        // the table goes nowhere (the function only reads its items, its
-        // length and spreads it), the count is a hidden local instead,
-        // which spares the table its hash part, as costly as the table.
+        // The rest table is `{...}`, the arguments alone; its count, which
+        // keeps a nil among the arguments for `f(*args)` and `args.len`,
+        // is `select("#", ...)` held outside it. When the table goes nowhere
+        // (the function only reads its items and its length and spreads
+        // it), the count is a hidden local that `args.len` and `f(*args)`
+        // read. When it escapes, the runtime records the count beside the
+        // table (rt.restcount, nl_40_ops.lua) for every spread anywhere the
+        // table goes, but only when the last argument is nil, since `#args`
+        // is the count otherwise:
+        //
+        // ```lua
+        // local args, n = {...}, rt.select("#", ...); if #args ~= n then rt.restcount(args, n) end
+        // ```
+        //
+        // With `**opts`, rt.kwpop takes the count and records it.
+        let mut rest_count: Option<Expr> = None;
+        let mut rest_count_local: Option<LocalId> = None;
         if let Some((l, _, _)) = &rest {
             let select = self.rt_cached("select");
             let n = Expr::call(select, vec![Expr::str("#"), Expr::Vararg]);
-            let local_count = keyed.is_none() && rest_id.is_some_and(|id| !self.res.reassigned(id) && rest_stays_local(node, self.res, id));
-            match rest_id.filter(|_| local_count) {
-                Some(id) => {
-                    let c = self.new_local("n");
-                    self.emit(StmtKind::Local { locals: vec![*l, c], values: vec![Expr::Table(vec![TableEntry::Item(Expr::Vararg)]), n] });
-                    self.rest_counts.insert(id, c);
+            let args = Expr::Table(vec![TableEntry::Item(Expr::Vararg)]);
+            if keyed.is_some() {
+                self.emit(StmtKind::Local { locals: vec![*l], values: vec![args] });
+                rest_count = Some(n);
+            } else {
+                let c = self.new_local("n");
+                self.emit(StmtKind::Local { locals: vec![*l, c], values: vec![args, n] });
+                rest_count_local = Some(c);
+                match rest_id.filter(|id| !self.res.reassigned(*id) && rest_stays_local(node, self.res, *id)) {
+                    Some(id) => {
+                        self.rest_counts.insert(id, c);
+                    }
+                    None => {
+                        let cond = Expr::binary(BinOp::Ne, Expr::Unary(UnOp::Len, Box::new(Expr::Local(*l))), Expr::Local(c));
+                        let record = Expr::intrinsic_call("restcount", vec![Expr::Local(*l), Expr::Local(c)]);
+                        let then = Block::new(vec![Stmt { line: self.line, kind: StmtKind::Expr(record) }]);
+                        self.emit(StmtKind::If { cond, then, otherwise: None });
+                    }
                 }
-                None => self.emit(StmtKind::Local { locals: vec![*l], values: vec![Expr::Table(vec![TableEntry::Pair(Expr::str("n"), n), TableEntry::Item(Expr::Vararg)])] }),
             }
         }
         let written: Vec<LocalId> = entry.iter().map(|e| e.local).collect();
@@ -199,7 +221,7 @@ impl Lowerer<'_> {
                 // Without `*rest` the function still takes the arguments
                 // beyond its parameters, since the keyed table may be there.
                 let first = match &rest {
-                    Some((r, _, _)) => Expr::intrinsic_call("kwpop", vec![Expr::Local(*r)]),
+                    Some((r, _, _)) => Expr::intrinsic_call("kwpop", vec![Expr::Local(*r), rest_count.take().unwrap_or(Expr::Nil)]),
                     None => {
                         vararg = true;
                         Expr::intrinsic_call("kwlast", vec![Expr::Vararg])
@@ -223,7 +245,7 @@ impl Lowerer<'_> {
                 self.emit(StmtKind::Assign { targets: vec![Place::Local(opts)], values: vec![Expr::intrinsic_call("kwtake", vec![Expr::Local(opts)])] });
             }
             None if self.opts.checks => {
-                let rest_local = rest.as_ref().map(|(r, _, _)| *r);
+                let rest_local = rest.as_ref().map(|(r, _, _)| (*r, rest_count_local));
                 self.refuse_keyed(&spec.name, &mut entry, rest_local);
             }
             None => {}
@@ -311,7 +333,7 @@ impl Lowerer<'_> {
     /// ```
     ///
     /// With a rest table the run is empty and `rt.nokwrest` follows.
-    fn refuse_keyed(&mut self, name: &str, entry: &mut [ParamEntry], rest: Option<LocalId>) {
+    fn refuse_keyed(&mut self, name: &str, entry: &mut [ParamEntry], rest: Option<(LocalId, Option<LocalId>)>) {
         let (getmetatable, kw) = if entry.is_empty() { (Expr::Nil, Expr::Nil) } else { (self.rt_cached("getmetatable"), self.rt_cached("KW")) };
         let marked = |l: LocalId| Expr::binary(BinOp::Eq, Expr::call(getmetatable.clone(), vec![Expr::Local(l)]), kw.clone());
         let mut run = 0;
@@ -375,9 +397,9 @@ impl Lowerer<'_> {
         for e in entry.iter_mut().take(run) {
             e.ty = None;
         }
-        if let Some(r) = rest {
+        if let Some((r, count)) = rest {
             let mut args = vec![Expr::str(name), Expr::Local(r)];
-            if let Some(c) = self.rest_counts.iter().find(|(id, _)| self.bindings.get(id) == Some(&r)).map(|(_, c)| *c) {
+            if let Some(c) = count {
                 args.push(Expr::Local(c));
             }
             self.emit(StmtKind::Expr(Expr::intrinsic_call("nokwrest", args)));
@@ -417,21 +439,34 @@ pub(crate) fn can_fall_off(stmts: &[Stmt]) -> bool {
 
 /// True when every use of the rest parameter `id` in the function `node`
 /// reads its items (`args[i]`, `for x in args`), its length (`args.len`)
-/// or spreads it (`f(*args)`, `[*args]`): the table goes nowhere that
-/// needs its count in `n`.
+/// or spreads it (`f(*args)`, `[*args]`): the table goes nowhere and is
+/// not changed, so its count stays the local's. A store `args[i] = v`
+/// counts as an escape, so that `args.len` sees an item appended there
+/// as it would one appended by any other code (rt.restlen).
 fn rest_stays_local(node: &SyntaxNode, res: &nl_sema::Resolution, id: BindingId) -> bool {
     node.descendants().filter(|n| n.kind() == NAME_REF && res.reference(n.text_range()) == Some(&nl_sema::Ref::Binding(id))).all(|r| {
         let Some(p) = r.parent() else { return false };
         let first = expr_child(&p).is_some_and(|e| e == r);
         match p.kind() {
             FIELD_EXPR => first && field_name(&p).is_some_and(|t| t.text() == "len"),
-            INDEX_EXPR => first,
+            INDEX_EXPR => first && !is_store_target(&p),
             // A spread in a call; in a list it goes through rt.listcat.
             SPREAD_ARG => p.parent().is_some_and(|a| matches!(a.kind(), ARG_LIST | COMMAND_ARGS)),
             FOR_STMT => true,
             _ => false,
         }
     })
+}
+
+/// True when `node` is the target of an assignment (`x = v`, `x += v`,
+/// `a, x = …`).
+fn is_store_target(node: &SyntaxNode) -> bool {
+    let Some(p) = node.parent() else { return false };
+    match p.kind() {
+        ASSIGN_STMT | COMPOUND_ASSIGN_STMT => expr_child(&p).is_some_and(|t| &t == node),
+        TARGET_LIST => true,
+        _ => false,
+    }
 }
 
 /// A parameter or `let` pattern that is a plain name, possibly annotated:

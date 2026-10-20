@@ -539,32 +539,65 @@ do
   -- (where a `To<String>` implementation goes).
   rt.tostring = tostring
 
-  -- `f(*t)`, `[a, *t]`: the items of t (rt.spread). A table that carries
-  -- its count in a numeric `n` gives the items 1 to n, nils included: a
-  -- rest table (`*args` is `{n = select("#", ...), ...}`) and what
-  -- `Table.pack` makes, so forwarding `f(*args)` passes exactly the
-  -- arguments received. Any other table gives 1 to #t, as Lua's unpack.
+  -- `f(*t)`, `[a, *t]`: the items of t (rt.spread). A rest table
+  -- (`*args`) gives the items 1 to the count of arguments the call passed,
+  -- nils included, so forwarding `f(*args)` passes exactly the arguments
+  -- received; so does a table with a numeric `n` (what `Table.pack`
+  -- makes). Any other table gives 1 to #t, as Lua's unpack.
+  -- The count of a rest table is kept outside it, so that the table
+  -- holds only the arguments (`pairs`, `Table.keys` and Lua code see
+  -- nothing else). A function whose rest table goes nowhere keeps the
+  -- count in a hidden local and spreads it with `rt.unpack(args, 1, n)`,
+  -- Lua's unpack itself. One whose table escapes records the count in
+  -- I.rest_counts, weak-keyed, but only when the last argument is nil:
+  -- otherwise #t is the count already (the last slot of `{...}` is
+  -- set), and the call pays nothing for it.
+  -- The count of a rest table that items were appended to is #t: the
+  -- count is the larger of the two. Unspecified: the count of one that
+  -- items were removed from, which may keep the old count, and of one
+  -- with a nil among its items that was appended to, where #t may not
+  -- reach the new items.
   -- Unspecified: the count is `n` whenever t has a numeric `n`, which Lua
   -- 5.2's `table.unpack` does not read. A value that is not a table raises
-  -- at the NL line, as Lua's unpack would there. The spread of a rest
-  -- parameter is `rt.unpack(args, 1, args.n)`, Lua's unpack itself.
-  -- The count of a rest table, `rt.select("#", ...)` (generated code
-  -- keeps it in a hidden local, as it does rt.getmetatable).
+  -- at the NL line, as Lua's unpack would there.
+  -- `rt.select("#", ...)` is the count (generated code keeps it in a
+  -- hidden local, as it does rt.getmetatable).
   rt.select = select
+  local rest_counts = setmetatable({}, { __mode = "k" })
+  I.rest_counts = rest_counts
+  -- `if #args ~= n then rt.restcount(args, n) end`, after `{...}`.
+  function rt.restcount(t, n)
+    rest_counts[t] = n
+  end
   local function count(t)
-    local n = rawget(t, "n")
+    local n = rest_counts[t]
+    if n ~= nil then
+      local m = #t
+      if m > n then return m end
+      return n
+    end
+    n = rawget(t, "n")
     if type(n) == "number" then return n end
     return #t
   end
   I.count = count
+  -- `args.len` of a rest table that escapes.
+  rt.restlen = count
   rt.unpack = unpack
   function rt.spread(t)
     if type(t) ~= "table" then
       error("bad argument #1 to 'unpack' (table expected, got " .. type(t) .. ")", 2)
     end
-    local n = rawget(t, "n")
-    if type(n) == "number" then return unpack(t, 1, n) end
-    return unpack(t)
+    -- count(t), inline: a spread is a hot path in the interpreter.
+    local n = rest_counts[t]
+    if n == nil then
+      n = rawget(t, "n")
+      if type(n) == "number" then return unpack(t, 1, n) end
+      return unpack(t)
+    end
+    local m = #t
+    if m > n then n = m end
+    return unpack(t, 1, n)
   end
 
   -- Keyed arguments. `f a, k: v` passes the keyed
@@ -613,15 +646,20 @@ do
 
   -- The last item of the rest table when it is the keyed table, removed
   -- from the table; nil otherwise.
-  function rt.kwpop(rest)
-    local n = count(rest)
+  -- `n` is the count of arguments in it, which is recorded as for any
+  -- rest table that escapes (a function with `**opts` does not keep the
+  -- count in a local).
+  function rt.kwpop(rest, n)
+    n = n or count(rest)
     local last = rest[n]
     if iskw(last) then
       rest[n] = nil
-      if rawget(rest, "n") ~= nil then rest.n = n - 1 end
-      return last
+      n = n - 1
+    else
+      last = nil
     end
-    return nil
+    if #rest ~= n then rest_counts[rest] = n end
+    return last
   end
 
   -- The last of the arguments beyond the parameters, when it is the keyed
@@ -655,14 +693,14 @@ do
     end
   end
   function rt.nokwrest(fname, rest, n)
-    local last = rest[n or rest.n or #rest]
+    local last = rest[n or count(rest)]
     if iskw(last) then refuse(fname, last) end
   end
 
   -- `[a, *list, b]`: the items of each part, in order. A
   -- part is a table; its items are 1 to #part, so a nil inside a part
-  -- is kept and a trailing nil is cut, as in a literal; a part that
-  -- carries its count in `n` (a rest table) gives 1 to n, as rt.unpack.
+  -- is kept and a trailing nil is cut, as in a literal; a rest table, or
+  -- a part with a numeric `n`, gives 1 to its count, as rt.spread.
   function rt.listcat(...)
     local out, n = {}, 0
     for i = 1, select("#", ...) do

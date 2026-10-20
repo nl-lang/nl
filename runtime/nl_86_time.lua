@@ -9,10 +9,13 @@
 -- `strftime`, `date`, `clock`, `beginning_of_day`) is read: in local time,
 -- or in UTC for the Time `t.utc` gives (`t.local` gives the local one
 -- back, `t.is_utc` says which). The keyed argument `utc: true` (or
--- `utc: false`) reads one call in UTC (or local time) whatever the view;
--- `Time.new` and `Time.parse` take it too, for reading their components.
--- Every constructor (`Time.at`, `Time.new`, `Time.parse`, `Time.now`,
--- `ago`, `from_now`) gives a local view, and what is computed from a
+-- `utc: false`) reads one call in UTC (or local time) whatever the view.
+-- `Time.new` and `Time.parse` take it too, for reading their components,
+-- and give the view it names: `Time.new(2020, 1, 1, utc: true)` is a UTC
+-- view, so that its `hour` is the 0 it was made with. Every other
+-- constructor (`Time.at`, `Time.now`, `ago`, `from_now`), and these two
+-- without the option, give a local view (a zone in the string parsed
+-- does not decide it), and what is computed from a
 -- Time (`+`, `-`, `floor_to`, `beginning_of_day`) keeps its view. The
 -- view is not part of the value: `==`, `<` and `since` compare epochs
 -- only, so `t.utc == t`. A view is the value's index 2 (true for UTC), so
@@ -504,7 +507,7 @@ do
     h = int(h == nil and 0 or h, "Time.new argument 4 (hour)")
     mi = int(mi == nil and 0 or mi, "Time.new argument 5 (min)")
     s = num(s == nil and 0 or s, "Time.new argument 6 (sec)")
-    if utc_opt(kw, "Time.new") then return mktime(utc_epoch(y, mo, d, h, mi, s)) end
+    if utc_opt(kw, "Time.new") then return mktime(utc_epoch(y, mo, d, h, mi, s), true) end
     -- An epoch out of range is so in local time too (the offset is small).
     mktime(utc_epoch(y, mo, d, h, mi, s))
     -- mktime takes a month in range; the years it carries are counted here.
@@ -521,7 +524,7 @@ do
   -- then optionally `T` (or `t`, or a space) and `HH:MM`, `:SS`, a
   -- fraction of a second after `.` or `,`, and a zone: `Z`, `±HH:MM`,
   -- `±HHMM` or `±HH`. Without a zone the time is local, or UTC with
-  -- `utc: true`.
+  -- `utc: true`. The view is UTC with `utc: true`, local otherwise.
   function Time.parse(s, kw)
     if type(s) ~= "string" then bad("Time.parse argument 1", "String", s) end
     local utc = utc_opt(kw, "Time.parse") == true
@@ -563,7 +566,7 @@ do
     if d < 1 or d > days_in_month(y, mo) then parse_error(s, "the day is out of range") end
     if h > 23 or mi > 59 or sec > 59 then parse_error(s, "the time of day is out of range") end
     if off == nil and not utc then return mktime(local_epoch(y, mo, d, h, mi, sec + frac)) end
-    return mktime(utc_epoch(y, mo, d, h, mi, sec) + frac - (off or 0))
+    return mktime(utc_epoch(y, mo, d, h, mi, sec) + frac - (off or 0), utc or nil)
   end
 
   function TimeM.epoch(t) return recv(t, Time, "epoch") end

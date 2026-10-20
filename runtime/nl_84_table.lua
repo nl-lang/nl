@@ -105,8 +105,11 @@
 --   range(a, b, step?)           [a, a + step, ...] up to b
 --   fill(n, v)                   n copies of v, or f(i) for a function
 --   from_iter(f, s, c)           the first values of a generic for
---   pack(...)                    the arguments, with n = their count
---   unpack(t, i?, j?)            t[i], ..., t[j]; j is t.n when present
+--   pack(...)                    the arguments, with n = their count; the
+--                                count is `t.n`, while `t.len` is #t,
+--                                which a nil among them may cut short
+--   unpack(t, i?, j?)            t[i], ..., t[j]; j is the count of a rest
+--                                table, t.n when present, else #t
 --
 -- Used by the core: I.Table.
 do
@@ -1185,7 +1188,7 @@ do
 
   function Table.unpack(t, i, j)
     tbl(t, "unpack")
-    if j == nil then j = t.n or #t end
+    if j == nil then j = I.count(t) end
     return unpack(t, i or 1, j)
   end
 end

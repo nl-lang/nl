@@ -11,6 +11,8 @@ return {
   register = function(name)
     local c = {}
     c.__index = c
+    -- What getmetatable says of its objects; NL tests them by the real one.
+    c.__metatable = "locked"
     classes[name] = c
   end,
   new = function(name, x)

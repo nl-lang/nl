@@ -21,13 +21,13 @@ print forward(nil, nil)
 print forward()
 print count(nil)
 
-# The rest table holds the count in `n`, as Table.pack does; a spread of
-# any table that has a numeric `n` uses it.
+# The count goes with the rest table, outside it: the table holds only the
+# arguments. A spread of any table that has a numeric `n` (Table.pack) uses it.
 fn rest_of(*args)
   args
 end
 let packed: any = rest_of("a", nil)
-print packed.n, count(*packed)
+print Table.size(packed), count(*packed)
 print count(*Table.pack(nil, nil, nil))
 print count(*[1, 2])
 

@@ -270,7 +270,8 @@ end
 
 ## Points in time (runtime/nl_86_time.lua): an immutable number of
 ## seconds since the Unix epoch, without a time zone, and a view: local
-## (what every constructor gives) or UTC (`t.utc`). What reads the
+## (what the constructors give) or UTC (`t.utc`, and `Time.new` or
+## `Time.parse` given `utc: true`). What reads the
 ## calendar reads it in the view, or as `utc: true` / `utc: false` says.
 ## `==` and `<` compare the epochs alone.
 declare module Time

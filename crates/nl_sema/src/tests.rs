@@ -447,15 +447,18 @@ fn unresolved_table_members() {
     assert!(has_code("let xs = [1, 2]\nprint xs.second\n", 2, "unknown-table-member"));
     assert!(has_code("fn f(xs: [Number]?) xs?.second end\nprint f(nil)\n", 1, "unknown-table-member"));
     assert!(has_code("let xs: [Number] = [1]\nprint xs.range\n", 2, "unknown-table-member"));
+    // `n` of a rest table, whose count is not a key of it.
+    assert!(has_code("fn f(*a: [Number]) a.n end\nprint f(1)\n", 1, "unknown-table-member"));
     // Defined in the file, it is known.
     assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nlet xs: [Number] = [1]\nprint xs.second\n").is_empty());
-    // On a `Table` or a map another name is a key; `n` is a list's count;
-    // the options of `**opts` and a record's fields are their keys.
+    // On a `Table` or a map another name is a key (`n` of what
+    // `Table.pack` makes); the options of `**opts` and a record's fields
+    // are their keys.
     let keys = "\
 let t: Table = {}
 let m: {[String]: Number} = {}
 print t.second, m.second
-fn f(*a: [Number]) a.n end
+fn f(*a) Table.pack(*a).n end
 fn g(**opts) opts.sum end
 let r = {sum: 1}
 print f(1), g(sum: 2), r.sum
@@ -1317,6 +1320,37 @@ fn imported_extensions() {
     assert_eq!(extension_codes(again, &ExtendingImport), [(2, "declared-member-redefined")]);
 }
 
+/// A `spawn do` block that reads the count of an enclosing function's
+/// rest parameter (`args.len`, `*args`) is refused, naming the parameter;
+/// its items, and a rest parameter of a function inside the block, are not.
+#[test]
+fn spawn_block_rest_count() {
+    let codes = |body: &str| analyzer_codes(&format!("fn f(*args)\n  let t = spawn do\n    {body}\n  end\n  t\nend\nprint f(1)\n"));
+    assert!(codes("args.len").contains(&(3, "spawn-rest-count")));
+    assert!(codes(":print(*args)").contains(&(3, "spawn-rest-count")));
+    assert!(codes("[0, *args].len").contains(&(3, "spawn-rest-count")));
+    assert!(!codes("args[1]").iter().any(|(_, c)| *c == "spawn-rest-count"));
+    assert!(!codes("(fn(*b) b.len end)(*[1])").iter().any(|(_, c)| *c == "spawn-rest-count"));
+    let errs = analyzer_errors("fn f(*rest)\n  let t = spawn do\n    rest.len\n  end\n  t\nend\nprint f(1)\n");
+    assert!(errs.iter().any(|(_, m)| m.contains("rest parameter `rest`")), "{errs:?}");
+}
+
+/// `@m!` in a method is `self.m!`: a method of the struct comes bound,
+/// with a hint for the lowering and a type that takes no `self`; a field
+/// is its value.
+#[test]
+fn at_bang_binds_methods() {
+    let src = "struct Box\n  v: Number\n  cb: Function?\nend\nfn Box.get(x: Number): String\n  \"#{@v}:#{x}\"\nend\nfn Box.both\n  let f = @get!\n  let c = @cb!\n  print c\n  f(1)\nend\nlet b = Box { v: 1 }\nprint b.both\n";
+    assert!(analyzer_errors(src).is_empty(), "{:?}", analyzer_errors(src));
+    let parse = nl_syntax::parse(src);
+    let root = parse.syntax();
+    let res = resolve(&root, &AnyImports);
+    let analysis = analyze(&root, &res, &AnalyzeOptions { static_resolution: true, ..Default::default() });
+    let hinted: Vec<MemberHint> = root.descendants().filter(|n| n.kind() == nl_syntax::SyntaxKind::AT_EXPR).filter_map(|n| analysis.hints.member(n.text_range()).cloned()).collect();
+    assert_eq!(hinted, [MemberHint::Method { key: "get".into() }]);
+    assert!(has_code(&src.replace("f(1)", "f(\"x\")"), 12, "type-mismatch"));
+}
+
 /// `global fn`, `global module` and `global struct` are exports, and no
 /// lint calls them a use of a global.
 #[test]
@@ -1443,12 +1477,39 @@ fn duplicate_declared_members() {
     assert_eq!(got, [(3, "duplicate-member"), (6, "duplicate-member"), (13, "duplicate-member")]);
 }
 
-/// A local named like a declared name or an import hides it: a lint. A
-/// prelude name has its own rules and is not reported here.
+/// A local named like a declared value or module, or an import, hides
+/// it: a lint. A prelude name has its own rules and is not reported here,
+/// nor is a declared function (a host declares many lowercase ones, as
+/// gmod does `player` and `color`), nor a parameter unless it hides a
+/// declared value.
 #[test]
 fn shadowing_declared_and_imported_names() {
-    let (codes, _) = with_decl("declare fn player(i: Number): Table = :Player\n", "fn f(i)\n  let player = i\n  player\nend\nlet print_it = 1\nprint f(print_it)\n");
+    let (codes, _) = with_decl("declare const t: Table = :t\n", "fn f(i)\n  let t = i\n  t\nend\nlet print_it = 1\nprint f(print_it)\n");
     assert_eq!(codes, [(2, "shadows-declared")]);
+    let host = "\
+declare fn player(i: Number): Table = :Player
+declare fn color(r: Number, g: Number, b: Number): Table = :Color
+declare fn entity(i: Number): Table = :Entity
+declare const vector_origin: Table = :vector_origin
+";
+    let src = "\
+fn describe(player, color, entity)
+  let sound = player
+  \"#{player} #{color} #{entity} #{sound}\"
+end
+fn moved(vector_origin)
+  let player = vector_origin
+  player
+end
+fn kept(v)
+  let vector_origin = v
+  vector_origin
+end
+print describe(1, 2, 3), moved(4), kept(5)
+";
+    let (codes, _) = with_decl(host, src);
+    let shadows: Vec<u32> = codes.iter().filter(|(_, c)| *c == "shadows-declared").map(|(l, _)| *l).collect();
+    assert_eq!(shadows, [5, 10], "{codes:?}");
     assert!(has_code("import { helper } from 'x'\nfn f\n  let helper = 2\n  helper\nend\nprint f\n", 3, "shadows-declared"));
 }
 

@@ -972,8 +972,9 @@ impl Analyzer<'_> {
     ///   `is` (`ambiguous-member`).
     /// - The receiver is a list, which has no string keys, and no function
     ///   of `Table` (the library's, this file's `fn Table.name` or an
-    ///   imported file's) has the name (`unknown-table-member`). `n` is
-    ///   left alone: a rest table and `Table.pack` keep their count there.
+    ///   imported file's) has the name (`unknown-table-member`). `n` too:
+    ///   a rest table keeps its count outside it, and what `Table.pack`
+    ///   makes, which has its count in `n`, is a `Table`, not a list.
     ///
     /// On a `Table` or a map, another name is a key, read as one.
     fn unresolved_table_member(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
@@ -986,7 +987,7 @@ impl Analyzer<'_> {
             }
             let (t, o) = (self.show(&table), self.show(&other));
             self.error(at, "ambiguous-member", format!("`{name}` is a function of the Table library on a `{t}` but not on a `{o}`, and this value may be either: narrow it with `is` first, or call `Table.{name}` on the table"));
-        } else if others.is_empty() && name != "n" && tables.iter().all(|t| matches!(t, Type::Array(_))) {
+        } else if others.is_empty() && tables.iter().all(|t| matches!(t, Type::Array(_))) {
             let x = receiver_text(recv_node);
             let in_library = self.prelude_type_id("Table").is_some_and(|lib| matches!(self.types.kind(lib), Some(NamedKind::Module { members }) if members.contains_key(name)));
             if in_library {
@@ -1114,7 +1115,24 @@ impl Analyzer<'_> {
                     _ => Ty::any(),
                 }
             }
-            AT_EXPR => self.at_expr(&inner),
+            // `@m!` is `self.m!`: a method of the struct comes bound, so it
+            // takes the arguments without `self`.
+            AT_EXPR => {
+                let name = token(&inner, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+                let method = match self.self_type().map(|t| self.types.expand(&t)) {
+                    Some(Type::Named(nid)) if self.types.is_struct(nid) && self.types.field(nid, &name).is_none() => self.types.method(nid, &name),
+                    _ => None,
+                };
+                match method {
+                    Some(sig) => {
+                        if self.opts.static_resolution {
+                            self.hints.members.insert(inner.text_range(), MemberHint::Method { key: name });
+                        }
+                        Ty::uncertain(Type::Fn(Rc::new(FnType { is_method: false, ..(*sig).clone() })))
+                    }
+                    None => self.at_expr(&inner),
+                }
+            }
             _ => self.expr(&inner),
         }
     }
