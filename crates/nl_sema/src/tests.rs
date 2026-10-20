@@ -43,14 +43,16 @@ fn suite_errors(src: &str) -> Vec<(u32, String)> {
 
 /// The files of tests/run, for the analyzer: an import path is found
 /// beside the importing file, then in tests/run (where the entry programs
-/// are); exports are what the file's resolver gives, and the primitive
-/// methods are followed through the files' imports, as the driver does.
+/// are), then in tests/run/reject (where the rejected ones are); exports
+/// are what the file's resolver gives, and the primitive methods are
+/// followed through the files' imports, as the driver does.
 struct RunImports;
 
 impl RunImports {
     fn find(from: Option<&str>, path: &str) -> Option<String> {
         let near = from.and_then(|f| Path::new(f).parent().map(|d| d.join(format!("{path}.nl"))));
-        near.into_iter().chain(std::iter::once(run_dir().join(format!("{path}.nl")))).find(|c| c.is_file()).map(|c| c.to_string_lossy().into_owned())
+        let top = [run_dir().join(format!("{path}.nl")), run_dir().join("reject").join(format!("{path}.nl"))];
+        near.into_iter().chain(top).find(|c| c.is_file()).map(|c| c.to_string_lossy().into_owned())
     }
 }
 
@@ -80,7 +82,8 @@ fn errors(src: &str) -> Vec<(u32, String)> {
 }
 
 /// The resolver's errors, then the analyzer's when the resolver found
-/// none (the pipeline's order), with the built-in declarations.
+/// none (the pipeline's order), with the built-in declarations; imports
+/// are the files of tests/run ([`RunImports`]).
 fn analyzer_diagnostics(src: &str) -> Vec<(u32, &'static str, String, bool)> {
     analyzer_diagnostics_with(src, &prelude_declarations())
 }
@@ -89,7 +92,7 @@ fn analyzer_diagnostics_with(src: &str, decls: &Declarations) -> Vec<(u32, &'sta
     let parse = nl_syntax::parse(src);
     assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
     let root = parse.syntax();
-    let res = resolve_with(&root, &AnyImports, decls);
+    let res = resolve_with(&root, &RunImports, decls);
     let index = nl_syntax::LineIndex::new(src);
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
     let mut out: Vec<(u32, &'static str, String, bool)> = res.diagnostics.iter().filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code, d.message.clone(), d.error)).collect();
@@ -403,14 +406,102 @@ print u.map(fn(x) x end)
     let want: Vec<(u32, String)> = [(2, "filter"), (2, "map"), (4, "keys"), (6, "size"), (16, "first"), (16, "second"), (16, "sum")].iter().map(|(l, k)| (*l, k.to_string())).collect();
     assert_eq!(table_fns(src, true), want);
     assert_eq!(table_fns(src, false), want);
-    // A member assigned, also by a compound assignment, is the key.
+    // A member assigned, also by a compound assignment, names the function
+    // as a read does, so the store is refused; a key is written in brackets.
     let place = "let t: Table = {}\nt.count = 1\nt.count += 1\nt.map ??= 2\n";
     assert!(table_fns(place, true).is_empty());
-    assert!(analyzer_errors(place).is_empty());
+    let refused: Vec<u32> = analyzer_codes(place).into_iter().filter(|(_, c)| *c == "table-method-assign").map(|(l, _)| l).collect();
+    assert_eq!(refused, vec![2, 3, 4]);
+    assert!(analyzer_errors("let t: Table = {}\nt[\"count\"] = 1\nt[\"count\"] += 1\nprint t[\"count\"]\n").is_empty());
     // The arguments are checked against the function, receiver first.
     assert!(has_code("let xs: [Number] = [1]\nprint xs.take(\"2\")\n", 2, "type-mismatch"));
     assert!(has_code("fn Table.second\n  self[2]\nend\nprint Table.second(5)\n", 4, "type-mismatch"));
     assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nprint Table.second([1, 2]), [1, 2].second\n").is_empty());
+}
+
+/// A member of a receiver typed `[T]`, `{[K]: V}` or `Table` that names a
+/// function of `Table` is that function wherever the type comes from: an
+/// index of a map, a union whose table parts agree. When the parts of a
+/// union disagree, or a list member names no function of `Table`, nothing
+/// would work at runtime (a table has no members but its keys), so it is an
+/// error instead of a `nil` read.
+#[test]
+fn unresolved_table_members() {
+    // `m["a"]` and `m.b` are the map's values: a record literal stored in
+    // a variable declared a map keeps the map type.
+    let src = "let m: {[String]: [Number]} = {a: [1, 2]}\nprint m[\"a\"].sum, m.a.sum, m.b.sum\n";
+    assert_eq!(table_fns(src, true), vec![(2, "sum".to_string()); 3]);
+    assert!(analyzer_errors(src).is_empty());
+    // A union with a part that has no such function, or another one.
+    assert!(has_code("fn r(v: [Number] | String) v.reverse end\nprint r([1])\n", 1, "ambiguous-member"));
+    assert!(has_code("fn r(v: [Number] | String) v.reverse() end\nprint r([1])\n", 1, "ambiguous-member"));
+    assert!(has_code("struct P\n  x: Number\nend\nfn r(v: [Number] | P) v.sum end\nprint r([1])\n", 4, "ambiguous-member"));
+    // Narrowed, or table parts that agree: resolved.
+    assert!(analyzer_errors("fn r(v: [Number] | String)\n  if v is String\n    v.reverse\n  else\n    v.reverse\n  end\nend\nprint r([1])\n").is_empty());
+    assert!(analyzer_errors("fn r(v: [Number] | {[String]: Number}) v.size end\nprint r([1])\n").is_empty());
+    // A name no function of `Table` has, on a list: reads, calls, `!`,
+    // inferred lists; a function of `Table` that makes a table.
+    assert!(has_code("let xs: [Number] = [1]\nprint xs.second\n", 2, "unknown-table-member"));
+    assert!(has_code("let xs: [Number] = [1]\nprint xs.second(1)\n", 2, "unknown-table-member"));
+    assert!(has_code("let xs: [Number] = [1]\nprint xs.second!\n", 2, "unknown-table-member"));
+    assert!(has_code("let xs = [1, 2]\nprint xs.second\n", 2, "unknown-table-member"));
+    assert!(has_code("fn f(xs: [Number]?) xs?.second end\nprint f(nil)\n", 1, "unknown-table-member"));
+    assert!(has_code("let xs: [Number] = [1]\nprint xs.range\n", 2, "unknown-table-member"));
+    // Defined in the file, it is known.
+    assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nlet xs: [Number] = [1]\nprint xs.second\n").is_empty());
+    // On a `Table` or a map another name is a key; `n` is a list's count;
+    // the options of `**opts` and a record's fields are their keys.
+    let keys = "\
+let t: Table = {}
+let m: {[String]: Number} = {}
+print t.second, m.second
+fn f(*a: [Number]) a.n end
+fn g(**opts) opts.sum end
+let r = {sum: 1}
+print f(1), g(sum: 2), r.sum
+";
+    assert!(analyzer_errors(keys).is_empty());
+}
+
+/// An assignment to a member of a table-typed receiver that names a
+/// function of `Table` is refused, as a read of it is the function.
+#[test]
+fn table_method_assignments() {
+    assert!(has_code("let m: {[String]: Number} = {}\nm.count = 1\n", 2, "table-method-assign"));
+    assert!(has_code("let xs: [Number] = []\nxs.map = 1\n", 2, "table-method-assign"));
+    assert!(has_code("let c: Table = {}\nc.count ??= 1\n", 2, "table-method-assign"));
+    assert!(has_code("let xs: [Number]? = []\nxs?.sum = 1\n", 2, "table-method-assign"));
+    // A record's field, a `**opts` option, a key that names no function.
+    let fine = "\
+let r = {count: 1}
+r.count = 2
+r.count += 1
+fn f(**opts)
+  opts.count ??= 1
+  opts.count
+end
+let t: Table = {}
+t.color = 1
+t.color += 1
+print r.count, f(), t.color
+";
+    assert!(analyzer_errors(fine).is_empty());
+}
+
+/// `fn Number.round` and the like: a name the library already has (or an
+/// imported file defines) is refused at load time, so it is an error here.
+#[test]
+fn library_methods_are_not_redefined() {
+    assert!(has_code("fn Number.round\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn Number.floor\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn Number.minutes\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn Number.pi\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn String.wrap\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn String.upcase\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("fn Table.map\n  1\nend\n", 1, "library-method-redefined"));
+    assert!(has_code("interface Loud\n  fn upcase\nend\ninterface Loud for String\n  fn upcase\n    self\n  end\nend\n", 5, "library-method-redefined"));
+    // New names, and operators, are fine.
+    assert!(analyzer_errors("fn Number.is_cool\n  self == 7\nend\nfn String.shout\n  self\nend\nfn Table.second\n  self[2]\nend\nfn Bool.flip\n  !self\nend\nfn String.+(o)\n  self\nend\n").is_empty());
 }
 
 /// The hints of a source in a mode, and the lines of the given ranges.
@@ -1397,3 +1488,4 @@ fn primitive_methods_of_imports() {
     let names: Vec<&str> = found.iter().map(|m| m.name.as_str()).collect();
     assert_eq!(names, ["one", "two"]);
 }
+

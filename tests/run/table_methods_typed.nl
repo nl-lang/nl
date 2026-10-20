@@ -39,10 +39,10 @@ print maybe?.first, maybe?.map(x -> x).len
 let names: {[String]: String} = {first: "Ada", last: "Lovelace"}
 print names["first"], names["last"], names.size
 
-# a member assignment stores the key, and a compound one reads it too
+# so is one that is stored: `counters.count = 1` would be an error
 let counters: Table = {}
-counters.count = 1
-counters.count += 1
+counters["count"] = 1
+counters["count"] += 1
 print counters["count"], counters.count
 
 # a record's members are its fields, also a field set later

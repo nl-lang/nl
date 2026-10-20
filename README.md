@@ -59,8 +59,12 @@ print describe(ayla)                 # a player with a long name
 - **Optional types that mean something.** A declared type is checked at
   runtime and also tells the compiler what a value is, so it can emit direct
   code instead of dynamic tests. Types that are only inferred never change
-  what a line does. The analyzer reports type errors and lints, both in the
-  compiler and in the editor.
+  what a line does, with one exception: on a list, a map or a `Table`,
+  inferred or declared, a member named like a function of the `Table`
+  library is that function (`ys.map(f)` is `Table.map(ys, f)`), since a
+  plain table has no such member and the read could never work. The
+  analyzer reports type errors and lints, both in the compiler and in the
+  editor.
 - **Full Lua compatibility.** The fork runs unmodified Lua source and stock
   LuaJIT 2.1 bytecode with unchanged behavior. NL calls Lua functions,
   libraries and host APIs directly, and Lua code can `require` an `.nl` file.

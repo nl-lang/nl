@@ -237,8 +237,11 @@ pub(crate) struct Analyzer<'a> {
     /// libraries: the top-level declared items and the modules, structs
     /// and types nested in declared modules, at any depth.
     pub(crate) decl_types: HashSet<NamedId>,
-    /// Methods defined on `Number`, `String` and `Bool` in this file.
+    /// Methods defined on `Number`, `String`, `Bool` and `Table` in this
+    /// file and in the files it imports.
     pub(crate) prim_methods: HashMap<&'static str, HashMap<String, Rc<FnType>>>,
+    /// The ones of `prim_methods` that come from imported files.
+    pub(crate) imported_prim_methods: HashSet<(&'static str, String)>,
     /// The signature of each function node, by the node's range, with the
     /// declared return type (or `any` before inference).
     pub(crate) fn_sigs: HashMap<TextRange, Rc<FnType>>,
@@ -256,8 +259,9 @@ pub(crate) struct Analyzer<'a> {
     /// members are their keys, never functions of `Table`.
     pub(crate) keyed_params: HashSet<BindingId>,
     /// The `FIELD_EXPR` target of a compound assignment while its current
-    /// value is typed: a place, so `t.count += 1` reads the key `count`,
-    /// never `Table.count`.
+    /// value is typed: a place, whose store reports a function of `Table`
+    /// (`t.count += 1` on a `Table` is refused, as `t.count = 1` is), so
+    /// its read reports nothing.
     pub(crate) place_read: Option<TextRange>,
     /// The function node each binding belongs to.
     pub(crate) binding_fn: HashMap<BindingId, Option<TextRange>>,
@@ -281,6 +285,9 @@ pub(crate) struct Analyzer<'a> {
     /// Methods that replace one of the same name, reported
     /// in pass 2.
     pub(crate) pending_replacements: Vec<(TextRange, String, String)>,
+    /// Errors found while the file's declarations are collected, reported
+    /// in pass 2.
+    pub(crate) pending_errors: Vec<(TextRange, &'static str, String)>,
     /// The signatures of top-level `declare fn`s, by name.
     pub(crate) decl_fn_sigs: HashMap<String, Rc<FnType>>,
     /// The types of top-level `declare let`/`const`, by name.
@@ -309,6 +316,7 @@ impl<'a> Analyzer<'a> {
             decl_named: HashMap::new(),
             decl_types: HashSet::new(),
             prim_methods: HashMap::new(),
+            imported_prim_methods: HashSet::new(),
             fn_sigs: HashMap::new(),
             binding_sigs: HashMap::new(),
             inferred_ret: HashMap::new(),
@@ -329,6 +337,7 @@ impl<'a> Analyzer<'a> {
             module_of_binding: HashMap::new(),
             decl_nested: HashMap::new(),
             pending_replacements: Vec::new(),
+            pending_errors: Vec::new(),
             decl_fn_sigs: HashMap::new(),
             decl_value_types: HashMap::new(),
             decl_keys: HashMap::new(),
@@ -731,6 +740,7 @@ impl<'a> Analyzer<'a> {
                     _ => Type::Any,
                 };
                 let sig = FnType { params: Vec::new(), rest: Some(Type::Any), keyed: Some(None), ret, is_method: true, is_async: false, named: true, declared: true };
+                self.imported_prim_methods.insert((m.owner, m.name.clone()));
                 self.prim_methods.entry(m.owner).or_default().entry(m.name).or_insert_with(|| Rc::new(sig));
             }
         }
@@ -994,6 +1004,9 @@ impl<'a> Analyzer<'a> {
                         Type::Table => "Table",
                         _ => "Bool",
                     };
+                    if let Some(name) = &name {
+                        self.check_prim_redefinition(key, name, name_range);
+                    }
                     let member = name.or(op).unwrap_or_default();
                     // For tools, a primitive's methods belong to its library
                     // table (`Number` is `math`), where they are looked up.
@@ -1126,7 +1139,17 @@ impl<'a> Analyzer<'a> {
                     Type::String => "String",
                     _ => "Bool",
                 };
+                // The slot of a conversion (`to` of `To<U>`, `from` of
+                // `From<S>`) is a dispatcher every file's conversions share.
+                let slot = match iface_name.as_str() {
+                    "To" => "to",
+                    "From" => "from",
+                    _ => "",
+                };
                 for (name, sig, range) in methods {
+                    if name != slot {
+                        self.check_prim_redefinition(key, &name, range);
+                    }
                     if let Some(lib) = self.prelude_type_id(key) {
                         self.record_member_decl(lib, &name, range);
                     }
@@ -1134,6 +1157,23 @@ impl<'a> Analyzer<'a> {
                 }
             }
             _ => {}
+        }
+    }
+
+    /// `fn Number.round`, `fn String.wrap`, `fn Table.map`: a method of a
+    /// primitive type under a name its library already has (Lua's
+    /// functions, NL's own and the Number helpers of `Duration`, all
+    /// declared in the prelude's modules), or that a file this one imports
+    /// defines. The runtime refuses the definition when the file loads
+    /// (`rt.primmethod`, runtime/nl_30_member.lua), since a library method
+    /// is global and the first definition stays; this says so at compile
+    /// time.
+    fn check_prim_redefinition(&mut self, key: &'static str, name: &str, at: TextRange) {
+        let in_library = self.prelude_type_id(key).is_some_and(|lib| matches!(self.types.kind(lib), Some(NamedKind::Module { members }) if members.contains_key(name)));
+        if in_library {
+            self.pending_errors.push((at, "library-method-redefined", format!("`{key}.{name}` is already defined by the standard library, and a method of {key} cannot be redefined: give this one another name")));
+        } else if self.imported_prim_methods.contains(&(key, name.to_string())) {
+            self.pending_errors.push((at, "library-method-redefined", format!("`{key}.{name}` is already defined by a file this one imports, and a method of {key} cannot be redefined: give this one another name")));
         }
     }
 
@@ -1203,6 +1243,9 @@ impl<'a> Analyzer<'a> {
             let pending = std::mem::take(&mut self.pending_replacements);
             for (range, name, owner) in pending {
                 self.warn(range, "method-replaced", format!("`{name}` replaces a method of the same name on `{owner}`"));
+            }
+            for (range, code, message) in std::mem::take(&mut self.pending_errors) {
+                self.error(range, code, message);
             }
         }
     }

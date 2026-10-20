@@ -45,6 +45,13 @@ fn receiver_ty(types: &TypeTable, recv: &Ty, table_fn: bool) -> Ty {
     if table_fn { Ty::uncertain(Type::Table) } else { Ty::new(types.non_nil(&recv.t), recv.certain) }
 }
 
+/// A receiver as a diagnostic writes it: its text when it is short and
+/// on one line, else `x`.
+fn receiver_text(node: &SyntaxNode) -> String {
+    let t = node.text().to_string();
+    if t.len() <= 24 && !t.contains(char::is_whitespace) { t } else { "x".to_string() }
+}
+
 /// One argument of a call, typed.
 pub(crate) struct ArgTy {
     pub ty: Ty,
@@ -420,8 +427,16 @@ impl Analyzer<'_> {
         let lookup = self.lookup_member(&recv, &name, node.text_range());
         let lookup = self.table_member_of_name(&recv_node, &name, lookup);
         let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
+        // The read of a compound assignment's target (`c.count += 1`):
+        // the store refuses a function of `Table` (`table_method_assign`),
+        // so the read resolves to nothing and reports nothing.
+        let place = self.place_read == Some(node.text_range());
         let lookup = match lookup {
-            Lookup::TableFn(_) if self.place_read == Some(node.text_range()) => Lookup::Unknown,
+            Lookup::TableFn(_) if place => Lookup::Unknown,
+            Lookup::Unknown if !place => {
+                self.unresolved_table_member(&recv_node, &recv, &name, node.text_range());
+                Lookup::Unknown
+            }
             other => other,
         };
         self.record_member_hint(node, &recv, &lookup, &name);
@@ -547,7 +562,12 @@ impl Analyzer<'_> {
             }
         }
         match &t {
-            Type::Table | Type::Map(..) | Type::Array(_) => self.lookup_table_member(name),
+            // A map's other members are its keys, when they are strings.
+            Type::Map(k, v) => match self.lookup_table_member(name) {
+                Lookup::Unknown if self.types.assignable(&Type::String, k) => Lookup::Field((**v).clone(), None),
+                other => other,
+            },
+            Type::Table | Type::Array(_) => self.lookup_table_member(name),
             Type::Any | Type::Unknown | Type::Function | Type::Fn(_) | Type::Userdata | Type::Thread | Type::Range => Lookup::Unknown,
             Type::Nil => {
                 if recv.certain {
@@ -912,6 +932,91 @@ impl Analyzer<'_> {
         );
     }
 
+    /// The parts of a receiver's type that are tables whose members are
+    /// the functions of `Table` (`[T]`, `{[K]: V}`, `Table`), and its other
+    /// parts, `nil` left out. A name receiver whose flow type has no such
+    /// part is the table type it is declared with, as in
+    /// [`Self::table_member_of_name`]; a `**opts` table has none, since its
+    /// members are the options' keys.
+    fn table_parts(&self, recv_node: &SyntaxNode, recv: &Ty) -> (Vec<Type>, Vec<Type>) {
+        let mut tables = Vec::new();
+        let mut others = Vec::new();
+        for m in self.types.members(&recv.t) {
+            match self.types.expand(&m) {
+                Type::Nil => {}
+                t @ (Type::Table | Type::Map(..) | Type::Array(_)) => tables.push(t),
+                t => others.push(t),
+            }
+        }
+        if let (NAME_REF, Some(Ref::Binding(id))) = (recv_node.kind(), self.res.reference(recv_node.text_range())) {
+            if self.keyed_params.contains(id) {
+                return (Vec::new(), Vec::new());
+            }
+            if tables.is_empty() {
+                if let Some(d) = self.binding_types.get(id).map(|t| self.types.expand(&t.t)).filter(|d| matches!(d, Type::Table | Type::Map(..) | Type::Array(_))) {
+                    return (vec![d], Vec::new());
+                }
+            }
+        }
+        (tables, others)
+    }
+
+    /// A member of a table-typed receiver that nothing resolved. A table
+    /// has no members of its own at runtime, only keys, so such a read is
+    /// never a working method; two cases are certain mistakes and refused:
+    ///
+    /// - The name is a function of `Table`, but the receiver may also be
+    ///   something that has no such function, or has another one (`v:
+    ///   [Number] | String`, `v.reverse`): no one call fits both, and
+    ///   there is no runtime dispatch, so the value must be narrowed with
+    ///   `is` (`ambiguous-member`).
+    /// - The receiver is a list, which has no string keys, and no function
+    ///   of `Table` (the library's, this file's `fn Table.name` or an
+    ///   imported file's) has the name (`unknown-table-member`). `n` is
+    ///   left alone: a rest table and `Table.pack` keep their count there.
+    ///
+    /// On a `Table` or a map, another name is a key, read as one.
+    fn unresolved_table_member(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
+        let (tables, others) = self.table_parts(recv_node, recv);
+        let Some(table) = tables.first().cloned() else { return };
+        if matches!(self.lookup_table_member(name), Lookup::TableFn(_)) {
+            let Some(other) = others.first().cloned() else { return };
+            if others.iter().any(|o| matches!(o, Type::Any | Type::Unknown)) {
+                return;
+            }
+            let (t, o) = (self.show(&table), self.show(&other));
+            self.error(at, "ambiguous-member", format!("`{name}` is a function of the Table library on a `{t}` but not on a `{o}`, and this value may be either: narrow it with `is` first, or call `Table.{name}` on the table"));
+        } else if others.is_empty() && name != "n" && tables.iter().all(|t| matches!(t, Type::Array(_))) {
+            let x = receiver_text(recv_node);
+            let in_library = self.prelude_type_id("Table").is_some_and(|lib| matches!(self.types.kind(lib), Some(NamedKind::Module { members }) if members.contains_key(name)));
+            if in_library {
+                self.error(at, "unknown-table-member", format!("`{name}` is a function of the Table library that does not take a table first, so it is not a method of one: call `Table.{name}(…)`"));
+            } else {
+                self.error(at, "unknown-table-member", format!("`{name}` is not a function of the Table library; a table has no methods of its own: define `fn Table.{name}` in this file or a file it imports, or read the key as {x}[\"{name}\"]"));
+            }
+        }
+    }
+
+    /// `x.name = v`, `x.name += v`, `x.name ??= v`: on a receiver typed
+    /// `[T]`, `{[K]: V}` or `Table`, a member that names a function of
+    /// `Table` is that function when it is read (`x.count` is
+    /// `Table.count(x)`), so storing a key under that name would make the
+    /// two directions disagree; the store is refused. A `**opts` table
+    /// keeps its keys, and a record its fields (neither resolves to a
+    /// function of `Table`).
+    pub(crate) fn table_method_assign(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
+        let (tables, others) = self.table_parts(recv_node, recv);
+        if tables.is_empty() {
+            return;
+        }
+        let lookup = self.lookup_member(recv, name, at);
+        if let Lookup::TableFn(_) = self.table_member_of_name(recv_node, name, lookup) {
+            let shown = self.show(&self.types.union_all(&[tables, others].concat()));
+            let x = receiver_text(recv_node);
+            self.error(at, "table-method-assign", format!("`{name}` is a function of the Table library on a value typed `{shown}`; write {x}[\"{name}\"] to use it as a key"));
+        }
+    }
+
     fn lookup_task_member(&mut self, result: &Type, name: &str) -> Lookup {
         let method = |params: Vec<Param>, ret: Type| Lookup::Method(Rc::new(FnType { params, rest: None, keyed: None, ret, is_method: true, is_async: false, named: false, declared: false }), None);
         match name {
@@ -993,6 +1098,9 @@ impl Analyzer<'_> {
                 self.check_enum_member(&recv_node, &recv, &name, inner.text_range());
                 let lookup = self.lookup_member(&recv, &name, inner.text_range());
                 let lookup = self.table_member_of_name(&recv_node, &name, lookup);
+                if let Lookup::Unknown = lookup {
+                    self.unresolved_table_member(&recv_node, &recv, &name, inner.text_range());
+                }
                 self.record_member_hint(&inner, &recv, &lookup, &name);
                 // A method comes bound to the receiver, so its value takes
                 // the arguments without `self`; on a string, number or
@@ -1169,7 +1277,10 @@ impl Analyzer<'_> {
                         }
                         Ty::uncertain(Type::Task(Rc::new(Type::Any)))
                     }
-                    Lookup::Unknown => Ty::any(),
+                    Lookup::Unknown => {
+                        self.unresolved_table_member(&recv_node, &recv, &name, callee.text_range());
+                        Ty::any()
+                    }
                 }
             }
             METHOD_CALL if child(callee, ARG_LIST).is_none() && child(callee, TRAILING_BLOCK).is_none() => self.method_call(callee, args),
@@ -1775,6 +1886,10 @@ impl Analyzer<'_> {
                     }
                     Lookup::TableFn(_) => {
                         self.error(callee.text_range(), "spawn-callee", format!("`{name}` is a function of the Table library, not a named function, so a worker cannot look it up"));
+                        Ty::any()
+                    }
+                    Lookup::Unknown => {
+                        self.unresolved_table_member(&recv_node, &recv, &name, callee.text_range());
                         Ty::any()
                     }
                     _ => Ty::any(),

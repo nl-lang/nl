@@ -300,7 +300,8 @@ impl Analyzer<'_> {
                             // Along the flow the variable holds the value,
                             // unless the annotation opts out of checking.
                             if self.flow_narrows(&ty) && self.types.assignable(&value.t, &ty) && value.t != Type::Any {
-                                self.set_flow(id, value.t.clone());
+                                let flow = self.stored_flow(&value.t, &ty);
+                                self.set_flow(id, flow);
                             }
                         }
                     }
@@ -708,6 +709,22 @@ impl Analyzer<'_> {
         !matches!(self.types.expand(declared), Type::Any | Type::Unknown)
     }
 
+    /// The flow type of a variable declared `declared` after it is given a
+    /// value of type `value`: the value's, except that a record stored in a
+    /// variable declared a map (`let m: {[String]: [Number]} = {a: [1]}`)
+    /// keeps the map type. The record knows only the keys the literal
+    /// wrote; the map type knows every key's value (`m["b"]`, `m[k]`) and
+    /// gives the functions of `Table`.
+    fn stored_flow(&self, value: &Type, declared: &Type) -> Type {
+        if matches!(self.types.expand(value), Type::Record(_)) {
+            let d = self.types.non_nil(declared);
+            if matches!(self.types.expand(&d), Type::Map(..)) {
+                return d;
+            }
+        }
+        value.clone()
+    }
+
     /// The current type of an assignment target, read.
     fn target_type(&mut self, target: &SyntaxNode) -> Ty {
         match target.kind() {
@@ -763,7 +780,8 @@ impl Analyzer<'_> {
                         self.hints.proven.insert(target.text_range());
                     }
                     if self.flow_narrows(&ty) && self.types.assignable(&value.t, &ty) && value.t != Type::Any {
-                        self.set_flow(id, value.t.clone());
+                        let flow = self.stored_flow(&value.t, &ty);
+                        self.set_flow(id, flow);
                     } else {
                         self.env.remove(&id);
                     }
@@ -775,6 +793,7 @@ impl Analyzer<'_> {
                 let Some(recv_node) = expr_child(target) else { return };
                 let name = field_name(target).map(|t| t.text().to_string()).unwrap_or_default();
                 let recv = self.expr1(&recv_node);
+                self.table_method_assign(&recv_node, &recv, &name, target.text_range());
                 self.store_field(&recv, &name, target, value);
             }
             AT_EXPR => {

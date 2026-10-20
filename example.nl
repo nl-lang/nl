@@ -15,7 +15,9 @@ import from 'filename' as File # everything the file exports, as File.foo, File.
 let a
 const a = 1 # constants cannot be modified, so they must be given a value
             # like fn, a const is visible in its whole block: functions above it can use it
-            # (it holds nil until its line runs), while code above it in the same block cannot
+            # (it holds nil until its line runs), while code above it in the same block cannot.
+            # so a `const X` in an inner block shadows an outer X in the whole block: a
+            # function defined above it in that block reads the inner X (nil until it is set)
 global C # globals must follow PascalCase
          # globals are generally discouraged and will raise an analyzer warning
 let d: Number # variable with type binding
@@ -128,15 +130,25 @@ let c = [
 
 let nums: [Number] = [3, 1, 2]
 nums.map(x -> x * 2) # [6, 2, 4]: on a value typed as a list, a map or Table,
-                     # the functions are methods, as Table.map(nums, x -> x * 2)
+                     # the functions are methods, as Table.map(nums, x -> x * 2).
+                     # an inferred type counts too: [3, 1, 2].map(f) is the same call
 nums.sorted.first # 1: without arguments, a method is called
 nums |> Table.sum # 6
 let ages: {[String]: Number} = {ann: 30, bob: 25}
 ages.sorted_keys # ["ann", "bob"]
-ages["size"] # a key named like a function is read with brackets
+ages.ann # 30: on a map or a Table, another name is a key
+ages["size"] = 2 # a key named like a function is read and stored with brackets
+                 # (`ages.size = 2` is an error: ages.size is Table.size(ages))
+
+# a list has no string keys, so on a list a name that no function of
+# Table has is an error (nums.second), as is a function of Table on a value
+# that may also be something else (`v: [Number] | String`, then v.reverse):
+# narrow it with `is` first
 
 # on a value of no known type they are not methods (a plain table has none at
-# runtime): write Table.map(x, f) or x |> Table.map(f). `fn Table.name` adds one
+# runtime): write Table.map(x, f) or x |> Table.map(f). `fn Table.name` adds one,
+# which this file and the files that import it know (not the files it imports:
+# they run first, before it exists)
 
 # length
 # .len works on anything that has a length (Lua's # operator)
@@ -982,7 +994,9 @@ print 100.is_multiple_of(10) # true
 
 # methods also work on literals and on the built-in string and number functions.
 # they are global once the file that defines them has run: a file that imports it
-# (directly or through other imports) can use them, operators included
+# (directly or through other imports) can use them, operators included.
+# a name the type's library has (fn Number.round), or that an imported file
+# defines, cannot be defined again
 
 print "hello".upcase # HELLO
 

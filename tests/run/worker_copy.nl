@@ -10,7 +10,7 @@ async fn main
   let data = [1, 2]
   let size = spawn mutate(data).await
   print size
-  print data.changed == nil
+  print data["changed"] == nil
   let shared = {}
   let same = spawn same_table({a: shared, b: shared}).await
   print same
