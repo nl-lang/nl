@@ -1,6 +1,6 @@
 -- The prelude: the global functions `typeof`, `raise`,
--- `include`, `add_path`, `load_nl`, `keyed`, NL's `String` library as the
--- global `String`, and the worker library as the global `worker` (also
+-- `include`, `add_path`, `load_nl`, `keyed`, NL's `String` and `Table`
+-- libraries as the globals `String` and `Table`, and the worker library as the global `worker` (also
 -- `package.loaded.worker`); the standard file-handle methods marked as
 -- methods; NL's String library behind Lua's `string` table; `math` as the
 -- `__index` of numbers. A global named in host.skip_globals is left as it
@@ -11,6 +11,7 @@ do
     if not skip[name] then rawset(_G, name, v) end
   end
   global("String", rt.String)
+  global("Table", rt.Table)
   global("worker", rt.Worker)
   if type(package) == "table" and type(package.loaded) == "table" and not skip.worker then
     package.loaded.worker = rt.Worker

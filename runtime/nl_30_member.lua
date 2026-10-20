@@ -178,7 +178,7 @@ do
     return #x
   end
 
-  -- `fn Number.name`, `fn String.name`, `fn Bool.name`.
+  -- `fn Number.name`, `fn String.name`, `fn Bool.name`, `fn Table.name`.
   -- Redefining a method that exists and came from a different file is an
   -- error; the first definition stays. The error has no type
   -- of its own; it is a plain Exception.
@@ -186,8 +186,14 @@ do
   -- `file` is the owner of the defining chunk (rt.owner, nl_70_module.lua):
   -- a file's canonical name, or a value of its own for a chunk that is not
   -- a file.
+  --
+  -- A function of `Table` is not marked: nothing finds it through a
+  -- receiver at runtime (the compiler calls `Table.name(t, …)` itself), and
+  -- unmarked it stays a plain function of the library table, as the
+  -- library's own are, however `Table` is reached.
   local owners = {}
   local targets = { Number = math, Bool = I.Bool }
+  I.prim_targets = targets
   -- The message of the error that defining `tname.name` from `file` would
   -- raise, or nil when the definition is allowed.
   function I.primmethod_refusal(tname, name, file)
@@ -204,7 +210,7 @@ do
     local refusal = I.primmethod_refusal(tname, name, file)
     if refusal ~= nil then I.throw("Exception", refusal, 2) end
     owners[key] = file
-    I.mark(f)
+    if tname ~= "Table" then I.mark(f) end
     target[name] = f
     if tname == "Bool" and I.setmetatable_bool then I.setmetatable_bool() end
   end

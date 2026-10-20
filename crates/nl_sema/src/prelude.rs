@@ -55,6 +55,13 @@ impl Prelude {
     pub fn is_primitive(&self) -> bool {
         matches!(self.name, "Number" | "String" | "Bool")
     }
+
+    /// A library that `fn Owner.name` extends: the primitives', and
+    /// `Table`, whose functions are methods of the values typed as tables
+    /// (resolved from the type: plain tables share no metatable).
+    pub fn takes_methods(&self) -> bool {
+        self.is_primitive() || self.name == "Table"
+    }
 }
 
 use Access::*;
@@ -67,11 +74,12 @@ macro_rules! prelude {
 }
 
 prelude! {
-    // NL names of Lua's library tables. `String` is NL's own
-    // string library, a new Lua global the runtime installs.
+    // NL names of Lua's library tables. `String` and `Table` are NL's
+    // own string and table libraries, new Lua globals the runtime
+    // installs; `Table` holds Lua's `table` functions too.
     "Number" => LuaGlobal("math"), ValueAndType;
     "String" => Runtime("String"), ValueAndType;
-    "Table" => LuaGlobal("table"), ValueAndType;
+    "Table" => Runtime("Table"), ValueAndType;
     "IO" => LuaGlobal("io"), Value;
     "OS" => LuaGlobal("os"), Value;
     "Coroutine" => LuaGlobal("coroutine"), Value;

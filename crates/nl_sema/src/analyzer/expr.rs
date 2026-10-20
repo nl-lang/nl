@@ -24,9 +24,23 @@ pub(crate) enum Lookup {
     /// A library function on a primitive receiver: a method whose first
     /// parameter is the receiver.
     LibraryMethod(Rc<FnType>),
+    /// A function of the `Table` library on a receiver typed as a table
+    /// (the library's or a `fn Table.name` of this file), whose first
+    /// parameter is the receiver. Unlike a primitive's library, nothing
+    /// finds it at runtime: the call is resolved here, in every mode
+    /// ([`MemberHint::TableFn`]).
+    TableFn(Rc<FnType>),
     /// A method of a worker handle: a call returns a task.
     WorkerCall,
     Unknown,
+}
+
+/// The type a method's receiver is checked as. For a function of `Table`
+/// it is a table, which is all the resolution relies on: which kind of
+/// table is not checked (a list function on a map goes by its list part,
+/// as Lua's table functions do), nor a record against `[T]`.
+fn receiver_ty(recv: &Ty, table_fn: bool) -> Ty {
+    if table_fn { Ty::uncertain(Type::Table) } else { recv.clone() }
 }
 
 /// One argument of a call, typed.
@@ -396,16 +410,22 @@ impl Analyzer<'_> {
         }
         self.check_enum_member(&recv_node, &recv, &name, node.text_range());
         let lookup = self.lookup_member(&recv, &name, node.text_range());
+        let lookup = self.table_member_of_name(&recv_node, &name, lookup);
         let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
+        let lookup = match lookup {
+            Lookup::TableFn(_) if self.place_read == Some(node.text_range()) => Lookup::Unknown,
+            other => other,
+        };
         self.record_member_hint(node, &recv, &lookup, &name);
+        let is_table_fn = matches!(lookup, Lookup::TableFn(_));
         match lookup {
             Lookup::Field(t, _) => Ty::uncertain(t),
             Lookup::Method(sig, _) => {
                 self.check_call(&sig, &format!("{}.{name}", self.show(&recv.t)), &[], None, node.text_range(), true);
                 self.call_result(&sig)
             }
-            Lookup::LibraryMethod(sig) => {
-                let args = [ArgTy { ty: recv.clone(), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+            Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
+                let args = [ArgTy { ty: receiver_ty(&recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
                 self.check_call(&sig, &name, &args, None, node.text_range(), false);
                 self.call_result(&sig)
             }
@@ -442,6 +462,14 @@ impl Analyzer<'_> {
     /// Records how a member is resolved when the receiver's type decides
     /// it, and the Lua key of a declared member.
     fn record_member_hint(&mut self, node: &SyntaxNode, recv: &Ty, lookup: &Lookup, name: &str) {
+        // A function of `Table`: the runtime has no way to find it, so it
+        // is resolved whatever the mode, and whether or not the receiver's
+        // type is certain (the type comes from a declaration, a literal or
+        // a declared function's result, as for the declared members below).
+        if let Lookup::TableFn(_) = lookup {
+            self.hints.members_declared.insert(node.text_range(), MemberHint::TableFn { key: name.to_string() });
+            return;
+        }
         let key = match lookup {
             Lookup::Field(_, k) | Lookup::Method(_, k) | Lookup::Function(_, k) => k.clone(),
             _ => None,
@@ -497,6 +525,7 @@ impl Analyzer<'_> {
                 Type::String => self.prelude_type_id("String"),
                 Type::Bool => self.prelude_type_id("Bool"),
                 Type::Regex => self.prelude_type_id("Regex"),
+                Type::Table | Type::Map(..) | Type::Array(_) => self.prelude_type_id("Table"),
                 _ => None,
             };
             if let Some(owner) = owner {
@@ -504,7 +533,8 @@ impl Analyzer<'_> {
             }
         }
         match &t {
-            Type::Any | Type::Unknown | Type::Table | Type::Map(..) | Type::Array(_) | Type::Function | Type::Fn(_) | Type::Userdata | Type::Thread | Type::Range => Lookup::Unknown,
+            Type::Table | Type::Map(..) | Type::Array(_) => self.lookup_table_member(name),
+            Type::Any | Type::Unknown | Type::Function | Type::Fn(_) | Type::Userdata | Type::Thread | Type::Range => Lookup::Unknown,
             Type::Nil => {
                 if recv.certain {
                     self.error(at, "index-nil", format!("`{name}` is read from a value that is `nil` here"));
@@ -513,6 +543,9 @@ impl Analyzer<'_> {
             }
             Type::Named(nid) => self.lookup_named_member(*nid, name),
             Type::Static(nid) => self.lookup_static_member(*nid, name),
+            // A record's members are its fields, also the ones it does not
+            // list (`let hooks = {}`, then `hooks.reject = f`): it is not
+            // a collection, and gets no functions of `Table`.
             Type::Record(fields) => match fields.iter().find(|(k, _)| k == name) {
                 Some((_, ft)) => Lookup::Field(ft.clone(), None),
                 None => Lookup::Unknown,
@@ -540,8 +573,12 @@ impl Analyzer<'_> {
                 // Every member must know the name the same way; otherwise
                 // the runtime decides.
                 let mut found: Option<Type> = None;
-                for m in members.iter() {
+                let mut table_fn: Option<Rc<FnType>> = None;
+                for (i, m) in members.iter().enumerate() {
                     match self.lookup_member(&Ty::new(m.clone(), false), name, at) {
+                        // The same function of `Table` for every member.
+                        Lookup::TableFn(sig) if i == 0 || table_fn.is_some() => table_fn = Some(sig),
+                        _ if table_fn.is_some() => return Lookup::Unknown,
                         Lookup::Field(t, None) => found = Some(match found { Some(f) => self.types.union(&f, &t), None => t }),
                         Lookup::Method(sig, None) | Lookup::LibraryMethod(sig) => {
                             let r = sig.ret.clone();
@@ -549,6 +586,9 @@ impl Analyzer<'_> {
                         }
                         _ => return Lookup::Unknown,
                     }
+                }
+                if let Some(sig) = table_fn {
+                    return Lookup::TableFn(sig);
                 }
                 match found {
                     Some(t) => Lookup::Field(t, None),
@@ -708,6 +748,7 @@ impl Analyzer<'_> {
         let ty = match p.name {
             "Number" => Type::Number,
             "String" => Type::String,
+            "Table" => Type::Table,
             _ => Type::Bool,
         };
         let mut params = vec![Param { name: "self".into(), ty, optional: false }];
@@ -736,6 +777,86 @@ impl Analyzer<'_> {
             },
             _ => Lookup::Unknown,
         }
+    }
+
+    /// `Table`, `[T]`, `{[K]: V}`, a record, or a union of these: a
+    /// parameter of a `Table` function that takes a table first.
+    pub(crate) fn is_table_type(&self, t: &Type) -> bool {
+        match self.types.expand(t) {
+            Type::Table | Type::Map(..) | Type::Array(_) | Type::Record(_) => true,
+            Type::Union(m) => m.iter().all(|x| self.is_table_type(x)),
+            _ => false,
+        }
+    }
+
+    /// A member of a table: a `fn Table.name` of this file, else a function
+    /// of the `Table` library whose first parameter takes a table (not
+    /// `range`, `fill`, `from_iter`, `pack`, which make one). Either is
+    /// called with the receiver as its first argument.
+    pub(crate) fn lookup_table_member(&mut self, name: &str) -> Lookup {
+        if let Some(sig) = self.prim_methods.get("Table").and_then(|m| m.get(name)) {
+            let mut params = vec![Param { name: "self".into(), ty: Type::Table, optional: false }];
+            params.extend(sig.params.iter().cloned());
+            return Lookup::TableFn(Rc::new(FnType { params, is_method: false, ..(**sig).clone() }));
+        }
+        let Some(lib) = self.prelude_type_id("Table") else { return Lookup::Unknown };
+        let f = match self.types.kind(lib) {
+            Some(NamedKind::Module { members }) => match members.get(name) {
+                Some(Member::Function(f)) => f.clone(),
+                _ => return Lookup::Unknown,
+            },
+            _ => return Lookup::Unknown,
+        };
+        match f.params.first() {
+            Some(p) if !f.is_method && self.is_table_type(&p.ty) => Lookup::TableFn(f),
+            _ => Lookup::Unknown,
+        }
+    }
+
+    /// What the declared type of a name receiver says beyond its flow type:
+    /// a variable declared a table type keeps the functions of `Table`
+    /// for the names its value's type does not know (`let t: Table = {a:
+    /// 1}` has the record type `{a: Number}` here, and `t.keys` is still
+    /// `Table.keys`); a `**opts` table holds the options a caller passed by
+    /// name, so its members are its keys (`opts.max` is the option).
+    fn table_member_of_name(&mut self, recv: &SyntaxNode, name: &str, lookup: Lookup) -> Lookup {
+        let id = match self.res.reference(recv.text_range()) {
+            Some(Ref::Binding(id)) if recv.kind() == NAME_REF => *id,
+            _ => return lookup,
+        };
+        match lookup {
+            Lookup::TableFn(_) if self.keyed_params.contains(&id) => Lookup::Unknown,
+            Lookup::Unknown => {
+                let declared = self.binding_types.get(&id).map(|t| self.types.expand(&t.t));
+                if matches!(declared, Some(Type::Table | Type::Map(..) | Type::Array(_))) && !self.keyed_params.contains(&id) {
+                    self.lookup_table_member(name)
+                } else {
+                    Lookup::Unknown
+                }
+            }
+            other => other,
+        }
+    }
+
+    /// `x.map(f)` on a value of no known type, where `map` is a function of
+    /// `Table`: the call is a member call at runtime, and a plain table
+    /// has no members but its own keys. A name that a string, number or
+    /// boolean also has as a method (`reverse`, `index`) is left alone,
+    /// since the value may be one.
+    fn untyped_table_method(&mut self, name: &str, at: TextRange) {
+        if !matches!(self.lookup_table_member(name), Lookup::TableFn(_)) {
+            return;
+        }
+        for t in [Type::String, Type::Number, Type::Bool] {
+            if !matches!(self.lookup_primitive_member(&t, name), Lookup::Unknown) {
+                return;
+            }
+        }
+        self.lint(
+            at,
+            "table-method-untyped",
+            format!("`{name}` is a function of the Table library; it is only a method of a value typed `[T]`, `{{[K]: V}}` or `Table` (write `Table.{name}(x, …)` or `x |> Table.{name}(…)`)"),
+        );
     }
 
     fn lookup_task_member(&mut self, result: &Type, name: &str) -> Lookup {
@@ -808,10 +929,11 @@ impl Analyzer<'_> {
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, inner.text_range());
                 let lookup = self.lookup_member(&recv, &name, inner.text_range());
+                let lookup = self.table_member_of_name(&recv_node, &name, lookup);
                 self.record_member_hint(&inner, &recv, &lookup, &name);
                 match lookup {
                     Lookup::Field(t, _) => Ty::uncertain(t),
-                    Lookup::Method(sig, _) | Lookup::Function(sig, _) | Lookup::LibraryMethod(sig) => Ty::uncertain(Type::Fn(sig)),
+                    Lookup::Method(sig, _) | Lookup::Function(sig, _) | Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => Ty::uncertain(Type::Fn(sig)),
                     _ => Ty::any(),
                 }
             }
@@ -902,19 +1024,25 @@ impl Analyzer<'_> {
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
+                let lookup = self.table_member_of_name(&recv_node, &name, lookup);
                 let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
                 self.record_member_hint(callee, &recv, &lookup, &name);
                 let desc = format!("{}.{name}", self.show(&recv.t));
+                let is_table_fn = matches!(lookup, Lookup::TableFn(_));
                 match lookup {
                     Lookup::Method(sig, _) => {
                         self.check_call(&sig, &desc, &args, block_ty, callee.text_range(), false);
                         self.call_result(&sig)
                     }
-                    Lookup::LibraryMethod(sig) => {
-                        let mut all = vec![ArgTy { ty: recv.clone(), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+                    Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
+                        let mut all = vec![ArgTy { ty: receiver_ty(&recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
                         all.extend(args);
                         self.check_call(&sig, &desc, &all, block_ty, callee.text_range(), false);
                         self.call_result(&sig)
+                    }
+                    Lookup::Unknown if matches!(self.types.expand(&recv.t), Type::Any | Type::Unknown) => {
+                        self.untyped_table_method(&name, callee.text_range());
+                        Ty::any()
                     }
                     Lookup::Function(sig, _) => {
                         self.check_call(&sig, &desc, &args, block_ty, callee.text_range(), false);
@@ -1518,6 +1646,7 @@ impl Analyzer<'_> {
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
+                let lookup = self.table_member_of_name(&recv_node, &name, lookup);
                 let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
                 match lookup {
                     Lookup::Method(sig, _) | Lookup::Function(sig, _) => {
@@ -1531,6 +1660,10 @@ impl Analyzer<'_> {
                             Type::Task(inner) => (*inner).clone(),
                             other => self.types.first(&other),
                         })
+                    }
+                    Lookup::TableFn(_) => {
+                        self.error(callee.text_range(), "spawn-callee", format!("`{name}` is a function of the Table library, not a named function, so a worker cannot look it up"));
+                        Ty::any()
                     }
                     _ => Ty::any(),
                 }

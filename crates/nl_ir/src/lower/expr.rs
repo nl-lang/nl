@@ -430,6 +430,7 @@ impl Lowerer<'_> {
         match self.opts.hints.member(node.text_range()).cloned() {
             Some(MemberHint::Field { key } | MemberHint::Function { key }) => Expr::index(r, Expr::str(&key)),
             Some(MemberHint::Method { key }) => Expr::MethodCall(Box::new(r), key, Vec::new()),
+            Some(MemberHint::TableFn { key }) => Expr::call(table_fn(&key), vec![r]),
             None => Expr::AutoGet { receiver: Box::new(r), key: Box::new(Expr::str(&name)) },
         }
     }
@@ -446,6 +447,14 @@ impl Lowerer<'_> {
                     None => field_name(&inner).map(|t| t.text().to_string()).unwrap_or_default(),
                 };
                 let r = self.expr1(&recv);
+                // `xs.map!` on a table is the library's function, as
+                // `s.upcase!` is String's; the receiver is still evaluated.
+                if let Some(MemberHint::TableFn { key }) = self.opts.hints.member(inner.text_range()).cloned() {
+                    if !r.is_constant() && !matches!(r, Expr::Local(_)) {
+                        self.fresh_temp(r, "s");
+                    }
+                    return table_fn(&key);
+                }
                 self.index_read(r, Expr::str(&name))
             }
             AT_EXPR => self.at_expr(&inner),
@@ -484,6 +493,12 @@ fn concat_chain(parts: Vec<Expr>) -> Expr {
         acc = Expr::binary(BinOp::Concat, p, acc);
     }
     acc
+}
+
+/// The function `key` of NL's `Table` library (`rt.Table`), which a
+/// [`MemberHint::TableFn`] calls with the receiver first.
+pub(crate) fn table_fn(key: &str) -> Expr {
+    Expr::index(Expr::Intrinsic("Table"), Expr::str(key))
 }
 
 /// True for a `FIELD_EXPR` naming `len`.

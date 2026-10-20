@@ -288,6 +288,76 @@ fn library_keyed_options() {
     assert!(has_code("let p = \"a,b\".split(\",\", limit: \"2\")\nprint p\n", 1, "type-mismatch"));
     assert!(analyzer_errors("let s = \"{a}\".fmt(a: 1, b: 2)\nprint s\n").is_empty());
     assert!(has_code("let n: Number = \"{a}\".fmt(a: 1)\nprint n\n", 1, "type-mismatch"));
+/// The members resolved to functions of `Table` ([`MemberHint::TableFn`]),
+/// by line, with the hints the lowering gets in the mode.
+fn table_fns(src: &str, static_resolution: bool) -> Vec<(u32, String)> {
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    let decls = prelude_declarations();
+    let root = parse.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let opts = AnalyzeOptions { static_resolution, decls: Some(&decls), lints: true, imports: None, record: false };
+    let analysis = analyze(&root, &res, &opts);
+    let hints = if static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
+    let index = nl_syntax::LineIndex::new(src);
+    let mut out: Vec<(u32, String)> = hints
+        .members_declared
+        .iter()
+        .filter_map(|(r, h)| match h {
+            MemberHint::TableFn { key } => Some((index.line_col(src, r.start()).line, key.clone())),
+            _ => None,
+        })
+        .collect();
+    out.sort();
+    out
+}
+
+#[test]
+fn table_functions_are_methods_of_tables() {
+    let src = "\
+let xs: [Number] = [3, 1, 2]
+print xs.map(fn(x) x end).filter(fn(x) true end)
+let m: {[String]: Number} = {a: 1}
+print m.keys
+let t: Table = {a: 1}
+print t.size, t.a
+fn f(**opts)
+  opts.max
+end
+let r = {count: 1}
+print r.count, r.size
+print xs.range, xs.len
+fn Table.second
+  self[2]
+end
+print xs.second, xs.sum!, [1].first
+let u: any = xs
+print u.map(fn(x) x end)
+";
+    // Typed lists, maps and tables, a chain on a declared function's result,
+    // a function defined in the file, `!` and a literal; not the options
+    // of `**opts`, a record, a constructor (`range`), `len` or an untyped
+    // value. The same in both modes: nothing else finds them at runtime.
+    let want: Vec<(u32, String)> = [(2, "filter"), (2, "map"), (4, "keys"), (6, "size"), (16, "first"), (16, "second"), (16, "sum")].iter().map(|(l, k)| (*l, k.to_string())).collect();
+    assert_eq!(table_fns(src, true), want);
+    assert_eq!(table_fns(src, false), want);
+    // A member assigned, also by a compound assignment, is the key.
+    let place = "let t: Table = {}\nt.count = 1\nt.count += 1\nt.map ??= 2\n";
+    assert!(table_fns(place, true).is_empty());
+    assert!(analyzer_errors(place).is_empty());
+    // The arguments are checked against the function, receiver first.
+    assert!(has_code("let xs: [Number] = [1]\nprint xs.take(\"2\")\n", 2, "type-mismatch"));
+    assert!(has_code("fn Table.second\n  self[2]\nend\nprint Table.second(5)\n", 4, "type-mismatch"));
+    assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nprint Table.second([1, 2]), [1, 2].second\n").is_empty());
+}
+
+#[test]
+fn table_methods_of_untyped_values_are_linted() {
+    let codes = analyzer_codes("fn f(u)\n  u.map(fn(x) x end)\n  u.reverse()\n  u.frobnicate()\n  Table.map(u, fn(x) x end)\nend\n");
+    assert_eq!(codes, vec![(2, "table-method-untyped")]);
+    // An operator of `Table` has nowhere to live.
+    assert!(has_code("fn Table.+(other)\n  self\nend\n", 1, "operator-owner"));
 }
 
 #[test]

@@ -325,7 +325,10 @@ pub fn builtin_library_keys() -> BTreeMap<String, BTreeSet<String>> {
     let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for item in nl_sema::prelude_declarations().items {
         let Some(root) = item.root.as_ref().filter(|r| r.steps.is_empty()) else { continue };
-        let keys = out.entry(root.global.clone()).or_default();
+        // NL's `Table` holds Lua's `table` functions, and reaches the
+        // others (gmod's) through its `__index`: it describes `table`.
+        let global = if root.global == "Table" { "table".to_string() } else { root.global.clone() };
+        let keys = out.entry(global).or_default();
         for m in item.node.children() {
             let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else { continue };
             let key = child(&m, LUA_KEY)

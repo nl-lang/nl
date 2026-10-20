@@ -732,17 +732,18 @@ impl<'a> Resolver<'a> {
                 if path.is_empty() { Some(SelfTarget::Binding(id)) } else { Some(SelfTarget::Member { id, path }) }
             }
             None => match prelude::lookup(&name) {
-                Some(p) if p.is_primitive() && path.is_empty() => {
+                Some(p) if p.takes_methods() && path.is_empty() => {
+                    // Plain tables share no metatable, so an operator of
+                    // `Table` would have nowhere to live.
+                    if p.name == "Table" && child(node, OP_NAME).is_some() {
+                        self.error(owner.text_range(), "operator-owner", "operators cannot be defined on `Table`: plain tables share no metatable; define them on a struct");
+                    }
                     self.res.type_refs.insert(owner.text_range(), Ref::Prelude(p));
                     self.res.method_owner.insert(node.text_range(), MethodOwner::Primitive(p));
                     Some(SelfTarget::Prelude(p))
                 }
-                Some(p) if p.name == "Table" => {
-                    self.error(owner.text_range(), "table-method", "`Table` cannot have methods: plain tables have no shared metatable; use a function and the pipe, or a struct");
-                    None
-                }
                 Some(p) => {
-                    self.error(owner.text_range(), "bad-method-owner", format!("`{}` cannot have methods; methods are defined on structs, modules, `Number`, `String` and `Bool`", p.name));
+                    self.error(owner.text_range(), "bad-method-owner", format!("`{}` cannot have methods; methods are defined on structs, modules, `Number`, `String`, `Bool` and `Table`", p.name));
                     None
                 }
                 None => {

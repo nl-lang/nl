@@ -13,7 +13,7 @@ Small NL programs, one feature each, with the exact output they must print. They
 
 A `.nl` file is an entry program exactly when a `.out` file of the same name sits beside it.
 
-Area prefixes name the part of the language: `lex_` (lexical structure), `var_` (declarations and scope), `type_` (types and runtime checks), `expr_` (expressions), `fn_` and `call_` (functions and calls), `ctrl_` and `pattern_` (control flow and patterns), `err_` (exceptions), `struct_`, `iface_`, `conv_`, `enum_`, `op_`, `prim_` (structs, interfaces, conversions, enums, operators, primitive methods), `module_`, `import_` (modules and files), `event_` (events), `lua_` (Lua interop and Lua's libraries), `task_` (tasks), `regex_` (regular expressions), `string_` (the string library), `time_` (`Time` and `Duration`), `worker_` (`spawn` and workers).
+Area prefixes name the part of the language: `lex_` (lexical structure), `var_` (declarations and scope), `type_` (types and runtime checks), `expr_` (expressions), `fn_` and `call_` (functions and calls), `ctrl_` and `pattern_` (control flow and patterns), `err_` (exceptions), `struct_`, `iface_`, `conv_`, `enum_`, `op_`, `prim_` (structs, interfaces, conversions, enums, operators, primitive methods), `module_`, `import_` (modules and files), `event_` (events), `lua_` (Lua interop and Lua's libraries), `task_` (tasks), `regex_` (regular expressions), `string_` (the string library), `table_` (the table library), `time_` (`Time` and `Duration`), `worker_` (`spawn` and workers).
 
 ## Running a program
 

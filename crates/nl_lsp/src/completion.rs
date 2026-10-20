@@ -135,11 +135,13 @@ pub fn members_of_type(info: &TypeInfo, ty: &Type) -> Vec<CompletionItem> {
     match types.expand(ty) {
         Type::Static(nid) => static_members(info, nid, &mut out),
         Type::Named(nid) => instance_members(info, nid, &mut out),
-        Type::Number | Type::String | Type::Bool => {
+        // A table typed as one has the functions of `Table` as methods.
+        Type::Number | Type::String | Type::Bool | Type::Table | Type::Map(..) | Type::Array(_) => {
             let key = match types.expand(ty) {
                 Type::Number => "Number",
                 Type::String => "String",
-                _ => "Bool",
+                Type::Bool => "Bool",
+                _ => "Table",
             };
             if let Some(ms) = info.prim_methods.get(key) {
                 for (name, sig) in ms {

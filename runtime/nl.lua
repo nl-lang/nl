@@ -205,6 +205,7 @@
 --   nl_80_string.lua   NL's `String` library (host.text on the fork, a Lua stand-in otherwise)
 --   nl_81_number.lua   NL's own Number methods, in `math`
 --   nl_82_regex.lua    NL's `Regex` (host.regex on the fork; `Regex.new` raises otherwise)
+--   nl_84_table.lua    NL's `Table`: Lua's `table` functions and the collection library
 --   nl_86_time.lua     NL's `Time` and `Duration`
 --   nl_90_prelude.lua  prelude globals, file-handle methods, primitive metatables
 --   nl_99_return.lua   returns `rt`

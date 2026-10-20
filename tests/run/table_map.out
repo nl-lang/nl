@@ -1,0 +1,17 @@
+apple,fig,pear
+0,3,12
+apple=3 fig=12 pear=0
+0	0
+true	15
+apple:6 fig:24 pear:0
+APPLE:3 FIG:12 PEAR:0
+apples:4 figs:13 pears:1
+apple:3 fig:12
+fig:12
+apple:3 fig:12 pear:0
+a	b
+x:true y:true	true	nil
+apple	3
+fig	12
+pear	0
+fig,pear,apple

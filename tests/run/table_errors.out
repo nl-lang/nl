@@ -1,0 +1,7 @@
+map of a number: TypeError
+filter with a string: TypeError
+take of 1.5: TypeError
+zip with a number: TypeError
+3,6
+untyped.map: LuaError
+2,4,6	3

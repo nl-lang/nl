@@ -1,5 +1,5 @@
-# NL's own standard library: the string library, tasks, regexes, events,
-# workers and the prelude functions, for the analyzer. Built into the
+# NL's own standard library: the string and table libraries, tasks,
+# regexes, events, workers and the prelude functions, for the analyzer. Built into the
 # compiler; the names are prelude names, so the Lua paths here repeat
 # what the prelude emits.
 #
@@ -100,6 +100,110 @@ declare module Regex
   fn replace(self, s: String, rep: String | Function): String
   fn replace_all(self, s: String, rep: String | Function): String
   fn split(self, s: String, **opts: {keep_empty: Bool?, limit: Number?}): [String]
+end
+
+## NL's table library (runtime/nl_84_table.lua): Lua's `table`
+## functions, and a collection library. A function whose first
+## parameter is a table is a method of a value typed `[T]`, `{[K]: V}`
+## or `Table` (not a record): `xs.map(f)` is `Table.map(xs, f)`, resolved by
+## the analyzer. Type parameters are not checked: `T` is `any`.
+declare module Table = :Table
+  # Lua's, copied from `table`.
+  fn insert(t: Table, pos_or_value: any, value: any?)
+  fn remove(t: Table, pos: Number?): any
+  fn concat(t: Table, sep: String?, i: Number?, j: Number?): String
+  fn sort(t: Table, comp: Function?)
+  fn maxn(t: Table): Number
+  fn getn(t: Table): Number
+  # Lists. Callbacks get the value and its index.
+  fn map<T, U>(list: [T], f: Function): [U]
+  fn filter<T>(list: [T], f: Function): [T]
+  fn select<T>(list: [T], f: Function): [T]
+  fn reject<T>(list: [T], f: Function): [T]
+  fn reduce<T, A>(list: [T], init: any, f: Function?): A
+  fn fold<T, A>(list: [T], init: any, f: Function?): A
+  fn each<T>(list: [T], f: Function): [T]
+  fn each_with_index<T>(list: [T], f: Function): [T]
+  fn find<T>(list: [T], f: Function): T?
+  fn find_index<T>(list: [T], f_or_value: any): Number?
+  fn index_of<T>(list: [T], value: any, from: Number?): Number?
+  fn includes<T>(list: [T], value: any): Bool
+  fn include<T>(list: [T], value: any): Bool
+  fn any<T>(list: [T], f: Function?): Bool
+  fn all<T>(list: [T], f: Function?): Bool
+  fn none<T>(list: [T], f: Function?): Bool
+  fn one<T>(list: [T], f: Function?): Bool
+  fn count<T>(list: [T], f_or_value: any?): Number
+  fn partition<T>(list: [T], f: Function): ([T], [T])
+  fn group_by<T, K>(list: [T], f: Function): {[K]: [T]}
+  fn tally<T>(list: [T]): {[T]: Number}
+  fn sort_by<T>(list: [T], f: Function): [T]
+  fn sorted<T>(list: [T], lt: Function?): [T]
+  fn min<T>(list: [T], lt: Function?): T?
+  fn max<T>(list: [T], lt: Function?): T?
+  fn min_by<T>(list: [T], f: Function): T?
+  fn max_by<T>(list: [T], f: Function): T?
+  fn sum<T>(list: [T], f: Function?): Number
+  fn uniq<T>(list: [T], by: Function?): [T]
+  fn flatten(list: [any], depth: Number?): [any]
+  fn flat_map<T, U>(list: [T], f: Function): [U]
+  fn slice<T>(list: [T], from: any, to: Number?): [T]
+  fn take<T>(list: [T], n: Number): [T]
+  fn drop<T>(list: [T], n: Number): [T]
+  fn take_while<T>(list: [T], f: Function): [T]
+  fn drop_while<T>(list: [T], f: Function): [T]
+  fn first<T>(list: [T], n: Number?): any
+  fn last<T>(list: [T], n: Number?): any
+  fn reverse<T>(list: [T]): [T]
+  fn zip<T>(list: [T], *others: [any]): [[any]]
+  fn each_slice<T>(list: [T], n: Number): [[T]]
+  fn chunks<T>(list: [T], n: Number): [[T]]
+  fn each_cons<T>(list: [T], n: Number): [[T]]
+  fn join<T>(list: [T], sep: String?): String
+  fn compact<T>(list: [T]): [T]
+  fn push<T>(list: [T], *values: any): [T]
+  fn pop<T>(list: [T]): T?
+  fn shift<T>(list: [T]): T?
+  fn unshift<T>(list: [T], *values: any): [T]
+  fn append<T>(a: [T], b: [T]): [T]
+  fn extend<T>(a: [T], b: [T]): [T]
+  fn shuffle<T>(list: [T], rng: Function?): [T]
+  fn sample<T>(list: [T], rng: Function?): T?
+  # Maps. Callbacks get the key and the value.
+  fn keys<K, V>(t: {[K]: V}): [K]
+  fn values<K, V>(t: {[K]: V}): [V]
+  fn entries<K, V>(t: {[K]: V}): [[any]]
+  fn sorted_keys<K, V>(t: {[K]: V}, lt: Function?): [K]
+  fn each_sorted<K, V>(t: {[K]: V}, f: Function): {[K]: V}
+  fn each_kv<K, V>(t: {[K]: V}, f: Function): {[K]: V}
+  fn map_values<K, V>(t: {[K]: V}, f: Function): {[K]: any}
+  fn map_keys<K, V>(t: {[K]: V}, f: Function): {[any]: V}
+  fn map_kv<K, V>(t: {[K]: V}, f: Function): Table
+  fn filter_kv<K, V>(t: {[K]: V}, f: Function): {[K]: V}
+  fn reject_kv<K, V>(t: {[K]: V}, f: Function): {[K]: V}
+  fn invert<K, V>(t: {[K]: V}): {[V]: K}
+  fn to_set<T>(list: [T]): {[T]: Bool}
+  fn merge(a: Table, *more: Table): Table
+  fn merge_into(a: Table, *more: Table): Table
+  fn deep_merge(a: Table, b: Table): Table
+  fn copy(t: Table): Table
+  fn deep_copy(t: Table): Table
+  fn equal(a: Table, b: Table): Bool
+  fn deep_equal(a: Table, b: any): Bool
+  fn is_empty(t: Table): Bool
+  fn size(t: Table): Number
+  fn has_key(t: Table, key: any): Bool
+  fn get(t: Table, key: any, default: any?): any
+  fn dig(t: Table, *keys: any): any
+  fn pick(t: Table, keys: [any]): Table
+  fn omit(t: Table, keys: [any]): Table
+  fn clear(t: Table): Table
+  # Making tables: not methods.
+  fn range(first: Number, last: Number, step: Number?): [Number]
+  fn fill(n: Number, value: any): [any]
+  fn from_iter(f: Function, s: any?, c: any?): [any]
+  fn pack(*values: any): Table
+  fn unpack(t: Table, i: Number?, j: Number?): any
 end
 
 ## Tasks. `task.await`, `on_done` and `on_error` are typed

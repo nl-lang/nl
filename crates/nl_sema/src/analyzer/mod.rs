@@ -246,6 +246,13 @@ pub(crate) struct Analyzer<'a> {
     pub(crate) binding_types: HashMap<BindingId, Ty>,
     /// Bindings assigned somewhere after their declaration.
     pub(crate) assigned: HashSet<BindingId>,
+    /// `**opts` parameters: tables of options passed by name, whose
+    /// members are their keys, never functions of `Table`.
+    pub(crate) keyed_params: HashSet<BindingId>,
+    /// The `FIELD_EXPR` target of a compound assignment while its current
+    /// value is typed: a place, so `t.count += 1` reads the key `count`,
+    /// never `Table.count`.
+    pub(crate) place_read: Option<TextRange>,
     /// The function node each binding belongs to.
     pub(crate) binding_fn: HashMap<BindingId, Option<TextRange>>,
     pub(crate) env: Env,
@@ -300,6 +307,8 @@ impl<'a> Analyzer<'a> {
             inferred_ret: HashMap::new(),
             binding_types: HashMap::new(),
             assigned: HashSet::new(),
+            keyed_params: HashSet::new(),
+            place_read: None,
             binding_fn: HashMap::new(),
             env: HashMap::new(),
             fns: Vec::new(),
@@ -890,10 +899,11 @@ impl<'a> Analyzer<'a> {
                     self.record_member_decl(nid, &name, name_range);
                     self.add_member(nid, &name, Member::Function(sig));
                 }
-                (Some(prim @ (Type::Number | Type::String | Type::Bool)), name, op) => {
+                (Some(prim @ (Type::Number | Type::String | Type::Bool | Type::Table)), name, op) => {
                     let key = match prim {
                         Type::Number => "Number",
                         Type::String => "String",
+                        Type::Table => "Table",
                         _ => "Bool",
                     };
                     let member = name.or(op).unwrap_or_default();
@@ -952,6 +962,7 @@ impl<'a> Analyzer<'a> {
             MethodOwner::Primitive(p) => Some(match p.name {
                 "Number" => Type::Number,
                 "String" => Type::String,
+                "Table" => Type::Table,
                 _ => Type::Bool,
             }),
         }

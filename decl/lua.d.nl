@@ -7,6 +7,7 @@
 # parameter or result is `any`: the analyzer accepts, and the runtime
 # decides. Functions of `Number` and `String` are also methods
 # of numbers and strings: the receiver is the first argument.
+# Lua's `table` functions are in NL's own `Table` library (nl.d.nl).
 
 declare module Number = :math
   const pi: Number
@@ -73,15 +74,6 @@ declare module Number = :math
   fn times(n: Number, f: Function)
   fn up_to(a: Number, b: Number, f: Function)
   fn down_to(a: Number, b: Number, f: Function)
-end
-
-declare module Table = :table
-  fn insert(t: Table, pos_or_value: any, value: any?)
-  fn remove(t: Table, pos: Number?): any
-  fn concat(t: Table, sep: String?, i: Number?, j: Number?): String
-  fn sort(t: Table, comp: Function?)
-  fn maxn(t: Table): Number
-  fn getn(t: Table): Number
 end
 
 ## A Lua file handle (`io.open`, `IO.stdout`), a host type the runtime

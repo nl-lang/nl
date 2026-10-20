@@ -46,6 +46,8 @@ fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
         ("pattern_let_mismatch", &["unused-binding"; 9]),
         ("pattern_struct", &["shadowing"]),
         ("string_encoding", &["unused-binding", "unused-binding"]),
+        // A member call of a Table function on an untyped value, caught.
+        ("table_errors", &["table-method-untyped"]),
         ("struct_basic", &["unused-binding"]),
         ("type_checks", &["unused-binding"]),
         ("var_const_hoist", &["shadowing"]),

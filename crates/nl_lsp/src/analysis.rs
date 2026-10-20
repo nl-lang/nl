@@ -435,9 +435,10 @@ pub fn member_name(m: &SyntaxNode) -> Option<String> {
 /// files of `decl/` are embedded in the compiler: they are found in a
 /// workspace root or the working directory when the editor works in the
 /// NL repository, and otherwise in a per-user cache, where `write` puts a
-/// copy once per version of the server (atomically, so that two servers
-/// cannot leave a half-written file) so that go-to-definition has a file
-/// to open. Without `write`, `None` when no copy exists.
+/// copy per version of the server, again when the copy there is not this
+/// server's text (atomically, so that two servers cannot leave a
+/// half-written file) so that go-to-definition has a file to open.
+/// Without `write`, `None` when no current copy exists.
 pub fn decl_file_path(files: &Files, name: &str, write: bool) -> Option<PathBuf> {
     let embedded = nl_sema::decl::PRELUDE_SOURCES.iter().find(|(n, _)| *n == name);
     let Some((_, source)) = embedded else { return Some(PathBuf::from(name)) };
@@ -448,7 +449,9 @@ pub fn decl_file_path(files: &Files, name: &str, write: bool) -> Option<PathBuf>
         }
     }
     let p = cache_dir().join("nl-lsp").join(env!("CARGO_PKG_VERSION")).join(name);
-    if p.is_file() {
+    // A copy is used only while it is this server's text: builds of one
+    // version can differ in their declarations.
+    if std::fs::read_to_string(&p).is_ok_and(|text| text == *source) {
         return Some(p);
     }
     if !write {

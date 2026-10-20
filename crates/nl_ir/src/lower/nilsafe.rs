@@ -161,6 +161,8 @@ impl Lowerer<'_> {
                     // A member of a declared struct, module or Lua
                     // class: a plain read, as after `.`.
                     Some(MemberHint::Field { key } | MemberHint::Function { key } | MemberHint::Method { key }) => Expr::index(r, Expr::str(key)),
+                    // A function of `Table`: called with the receiver.
+                    Some(MemberHint::TableFn { key }) => super::expr::table_fn(key),
                     None => {
                         let key = field_name(callee).map(|t| t.text().to_string()).unwrap_or_default();
                         self.index_read(r, Expr::str(&key))

@@ -131,7 +131,7 @@ pub enum MethodOwner {
     /// `fn Inventory.Filters.add` has the binding of `Inventory` and the
     /// path `["Filters"]`).
     Binding { id: BindingId, path: Vec<String> },
-    /// `Number`, `String` or `Bool`.
+    /// `Number`, `String`, `Bool` or `Table` ([`Prelude::takes_methods`]).
     Primitive(&'static Prelude),
 }
 
@@ -238,8 +238,8 @@ impl Resolution {
 
     /// The primitive type when the member `name` of the receiver `recv` is
     /// a plain function: `recv` names a primitive type's library directly
-    /// (the prelude's `Number` or `String`, not shadowed, or `Self` in a
-    /// method defined on `Number`, `String` or `Bool`). A method read
+    /// (the prelude's `Number`, `String` or `Table`, not shadowed, or `Self`
+    /// in a method defined on `Number`, `String`, `Bool` or `Table`). A method read
     /// from it is not bound to the table: `String.shout(s)` passes `s` as
     /// `self`. `from`, which `From<T>` defines, is the exception: it is
     /// called on the type, which is its `self` (`Number.from(x)`).
@@ -259,7 +259,7 @@ impl Resolution {
             },
             _ => return None,
         };
-        p.is_primitive().then_some(p)
+        p.takes_methods().then_some(p)
     }
 
     /// The hidden `self` binding of the method declared by the node at

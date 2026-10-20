@@ -120,6 +120,24 @@ let c = [
   ["table inside table"]
 ]
 
+# collections
+# Table is NL's table library: Lua's table functions (insert, remove, concat, sort)
+# and collection functions named like Ruby's (map, filter, reduce, sort_by,
+# group_by, keys, merge, deep_copy, ...). callbacks get (value, index) for a
+# list and (key, value) for a map
+
+let nums: [Number] = [3, 1, 2]
+nums.map(x -> x * 2) # [6, 2, 4]: on a value typed as a list, a map or Table,
+                     # the functions are methods, as Table.map(nums, x -> x * 2)
+nums.sorted.first # 1: without arguments, a method is called
+nums |> Table.sum # 6
+let ages: {[String]: Number} = {ann: 30, bob: 25}
+ages.sorted_keys # ["ann", "bob"]
+ages["size"] # a key named like a function is read with brackets
+
+# on a value of no known type they are not methods (a plain table has none at
+# runtime): write Table.map(x, f) or x |> Table.map(f). `fn Table.name` adds one
+
 # length
 # .len works on anything that has a length (Lua's # operator)
 # for a string, it counts bytes

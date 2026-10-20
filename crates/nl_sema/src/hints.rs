@@ -12,7 +12,10 @@
 //!
 //! The member hints also carry the Lua key of a member declared in a
 //! declaration file (`as 'luaName'`), which the lowering needs
-//! whether or not static resolution is on.
+//! whether or not static resolution is on, and the calls of `Table`
+//! functions as methods of tables (`xs.map(f)`), which have no runtime
+//! path to fall back on: a declared type decides what such a line does,
+//! in every mode.
 
 use std::collections::{HashMap, HashSet};
 
@@ -28,13 +31,18 @@ pub enum MemberHint {
     /// A function held as data (a library function, a `declare fn` member
     /// without `self`): called as written, read as a value.
     Function { key: String },
+    /// A function of NL's `Table` library on a receiver typed as a table:
+    /// `Table.key(x, args)`, also when read bare (auto-call); `x.key!` is
+    /// the function. Recorded in every mode: at runtime a plain table has
+    /// no such member.
+    TableFn { key: String },
 }
 
 impl MemberHint {
     /// The Lua key of the member.
     pub fn key(&self) -> &str {
         match self {
-            MemberHint::Field { key } | MemberHint::Method { key } | MemberHint::Function { key } => key,
+            MemberHint::Field { key } | MemberHint::Method { key } | MemberHint::Function { key } | MemberHint::TableFn { key } => key,
         }
     }
 }
@@ -88,7 +96,8 @@ pub struct Hints {
     /// `AS_EXPR` nodes, by range.
     pub conversions: HashMap<TextRange, AsHint>,
     /// `FIELD_EXPR` nodes of members of declaration files,
-    /// with their Lua keys; needed whatever the mode.
+    /// with their Lua keys, and of `Table` functions called as methods
+    /// ([`MemberHint::TableFn`]); needed whatever the mode.
     pub members_declared: HashMap<TextRange, MemberHint>,
 }
 

@@ -164,12 +164,13 @@ fn member(doc: &Doc, owner: NamedId, name: &str) -> Option<(String, Option<Strin
     Some((header, docs))
 }
 
-/// `Number`, `String` or `Bool` for the library table of a primitive.
+/// `Number`, `String`, `Bool` or `Table` for the library table that `fn Owner.name` extends.
 fn prim_key(name: &str) -> Option<&'static str> {
     match name {
         "Number" => Some("Number"),
         "String" => Some("String"),
         "Bool" => Some("Bool"),
+        "Table" => Some("Table"),
         _ => None,
     }
 }

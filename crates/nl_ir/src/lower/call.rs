@@ -7,7 +7,7 @@ use nl_sema::{BindingKind, DeclKind, MemberHint, Ref};
 use nl_syntax::{SyntaxKind, SyntaxNode};
 
 use super::Lowerer;
-use super::expr::{is_len, single};
+use super::expr::{is_len, single, table_fn};
 use crate::ir::*;
 
 use SyntaxKind::*;
@@ -268,7 +268,7 @@ impl Lowerer<'_> {
         // which is called, not read again.
         if let Some(f) = self.preset(field) {
             return match self.opts.hints.member(field.text_range()) {
-                Some(MemberHint::Method { .. }) => Expr::call(f, std::iter::once(r).chain(it).collect()),
+                Some(MemberHint::Method { .. } | MemberHint::TableFn { .. }) => Expr::call(f, std::iter::once(r).chain(it).collect()),
                 Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => Expr::call(f, it.collect()),
                 None => Expr::MemberApply { func: Box::new(f), receiver: Box::new(r), args: it.collect() },
             };
@@ -278,6 +278,7 @@ impl Lowerer<'_> {
         match self.opts.hints.member(field.text_range()).cloned() {
             Some(MemberHint::Field { key } | MemberHint::Function { key }) => Expr::call(Expr::index(r, Expr::str(&key)), it.collect()),
             Some(MemberHint::Method { key }) => Expr::MethodCall(Box::new(r), key, it.collect()),
+            Some(MemberHint::TableFn { key }) => Expr::call(table_fn(&key), std::iter::once(r).chain(it).collect()),
             None => Expr::MemberCall { receiver: Box::new(r), key: Box::new(Expr::str(&name)), args: it.collect() },
         }
     }

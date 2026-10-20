@@ -442,6 +442,7 @@ impl Analyzer<'_> {
                                 _ => Ty::certain(Type::Table),
                             };
                             self.declare_type(id, t);
+                            self.keyed_params.insert(id);
                         }
                     }
                     _ => {}
@@ -669,6 +670,12 @@ impl Analyzer<'_> {
                 Some(Ref::Binding(id)) => self.type_of_binding(id),
                 _ => Ty::any(),
             },
+            FIELD_EXPR => {
+                self.place_read = Some(target.text_range());
+                let t = self.expr1(target);
+                self.place_read = None;
+                t
+            }
             _ => self.expr1(target),
         }
     }
