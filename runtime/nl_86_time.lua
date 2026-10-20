@@ -1,13 +1,22 @@
 -- NL's `Time` and `Duration`, the built-in types of a point in time and of
 -- a length of time.
 --
--- A Duration is an immutable number of seconds (any number but NaN,
+-- A Duration is an immutable number of seconds (any finite number,
 -- fractions and negatives included). A Time is an immutable number of
 -- seconds since the Unix epoch (1970-01-01T00:00:00Z), possibly
--- fractional, and nothing else: no time zone is stored. Reading the
--- calendar (the accessors, the formatting, `beginning_of_day`) is in
--- local time, or in UTC with the keyed argument `utc: true`; `Time.new`
--- and `Time.parse` take it too.
+-- fractional, and a view: local or UTC. No time zone is stored; the view
+-- says how the calendar (the accessors, `wday`, `yday`, `iso`, `to_s`,
+-- `strftime`, `date`, `clock`, `beginning_of_day`) is read: in local time,
+-- or in UTC for the Time `t.utc` gives (`t.local` gives the local one
+-- back, `t.is_utc` says which). The keyed argument `utc: true` (or
+-- `utc: false`) reads one call in UTC (or local time) whatever the view;
+-- `Time.new` and `Time.parse` take it too, for reading their components.
+-- Every constructor (`Time.at`, `Time.new`, `Time.parse`, `Time.now`,
+-- `ago`, `from_now`) gives a local view, and what is computed from a
+-- Time (`+`, `-`, `floor_to`, `beginning_of_day`) keeps its view. The
+-- view is not part of the value: `==`, `<` and `since` compare epochs
+-- only, so `t.utc == t`. A view is the value's index 2 (true for UTC), so
+-- it crosses to workers with the epoch.
 --
 -- Each type is a table that is three things at once, as `Regex` is: the
 -- library (`Time.at`, `Duration.minutes`), the metatable of its values
@@ -64,7 +73,15 @@
 --       seconds below 45 counted (see `humanize`), a month of 30 days and
 --       a year of 365;
 --   operands of the wrong type raise TypeError; `Duration + Time` is one
---       (`Time + Duration` is not).
+--       (`Time + Duration` is not);
+--   NaN and ±inf are not times or durations: a constructor or an
+--       operator given one, and a Duration divided by 0 or by a zero
+--       Duration, raise TypeError;
+--   the range of a Time: an epoch below 1e15 seconds either way (about
+--       31.7 million years), where the calendar's arithmetic is exact to
+--       the second; of a Duration: below 2e15 seconds either way (the
+--       distance between any two Times). A value beyond, made or
+--       computed, raises ConversionError.
 do
   local abs = math.abs
   local KW = I.KW
@@ -89,26 +106,50 @@ do
   end
   Time.__newindex, Duration.__newindex = frozen, frozen
 
-  local function mkdur(s) return setmetatable({ s }, Duration) end
-  local function mktime(e) return setmetatable({ e }, Time) end
+  -- What a value is called in a message: its type, or for a number that
+  -- is not finite what it is ("NaN", "inf", "-inf"), as rt.typeof says
+  -- Number.
+  local function desc(v)
+    if type(v) == "number" and v - v ~= 0 then
+      if v ~= v then return "NaN" end
+      return v > 0 and "inf" or "-inf"
+    end
+    return rt.typeof(v)
+  end
+
+  local LIMIT, DLIMIT = 1e15, 2e15
+  local function mkdur(s)
+    if not (s > -DLIMIT and s < DLIMIT) then
+      I.throw("ConversionError", "the Duration of " .. tostring(s) .. " seconds is out of range (below 2e15 seconds either way)", 3)
+    end
+    return setmetatable({ s }, Duration)
+  end
+  -- `utc`: true for a UTC view, nil for local.
+  local function mktime(e, utc)
+    if not (e > -LIMIT and e < LIMIT) then
+      I.throw("ConversionError", "the Time " .. tostring(e) .. " is out of range (an epoch below 1e15 seconds either way)", 3)
+    end
+    return setmetatable({ e, utc }, Time)
+  end
   local function isdur(v) return getmetatable(v) == Duration end
   local function istime(v) return getmetatable(v) == Time end
 
   -- An operator applied to operands it does not take.
   local function operands(sym, a, b)
-    I.throw("TypeError", "cannot apply '" .. sym .. "' to " .. rt.typeof(a) .. " and " .. rt.typeof(b), 3)
+    I.throw("TypeError", "cannot apply '" .. sym .. "' to " .. desc(a) .. " and " .. desc(b), 3)
   end
 
   local function bad(what, expected, v)
-    I.throw("TypeError", what .. " expects " .. expected .. ", got " .. rt.typeof(v), 3)
+    I.throw("TypeError", what .. " expects " .. expected .. ", got " .. desc(v), 3)
   end
   local function num(v, what)
-    if type(v) ~= "number" or v ~= v then bad(what, "Number", v) end
+    if type(v) ~= "number" then bad(what, "Number", v) end
+    if v - v ~= 0 then bad(what, "a finite Number", v) end
     return v
   end
   local function int(v, what)
     if type(v) ~= "number" or v ~= floor(v) or v == huge or v == -huge then
-      I.throw("TypeError", what .. " expects an integer, got " .. (type(v) == "number" and tostring(v) or rt.typeof(v)), 3)
+      I.throw("TypeError", what .. " expects an integer, got " .. (type(v) == "number" and v - v == 0 and tostring(v) or desc(v)), 3)
     end
     return v
   end
@@ -117,15 +158,24 @@ do
     return v[1]
   end
 
-  -- The keyed arguments `utc: Bool?` (nl_40_ops.lua, KW): true for UTC.
+  -- The keyed arguments `utc: Bool?` (nl_40_ops.lua, KW): true for UTC,
+  -- false for local time, nil when not given.
   local function utc_opt(kw, fname)
-    if kw == nil then return false end
+    if kw == nil then return nil end
     if getmetatable(kw) ~= KW then bad(fname .. " keyed arguments", "{utc: Bool?}", kw) end
     for k, v in pairs(kw) do
       if k ~= "utc" then I.throw("TypeError", fname .. " takes no keyed argument '" .. tostring(k) .. "'", 3) end
       if type(v) ~= "boolean" then bad("keyed argument 'utc' of " .. fname, "Bool", v) end
     end
-    return kw.utc == true
+    return kw.utc
+  end
+
+  -- Whether a call on Time `t` reads the calendar in UTC: its `utc:`
+  -- argument when given, else the view.
+  local function utc_of(t, kw, fname)
+    local u = utc_opt(kw, fname)
+    if u == nil then return t[2] == true end
+    return u
   end
 
   -- Splits a keyed table off the end of `...`: the table (or nil) and the
@@ -353,7 +403,7 @@ do
     if not (isdur(a) and isdur(b)) then operands(sym, a, b) end
     return a[1], b[1]
   end
-  local function isnum(v) return type(v) == "number" and v == v end
+  local function isnum(v) return type(v) == "number" and v - v == 0 end
 
   function Duration.__add(a, b)
     local x, y = both("+", a, b)
@@ -370,12 +420,18 @@ do
   end
   function Duration.__div(a, b)
     if isdur(a) then
-      if isdur(b) then return a[1] / b[1] end
-      if isnum(b) then return mkdur(a[1] / b) end
+      if isdur(b) then
+        if b[1] == 0 then I.throw("TypeError", "cannot divide a Duration by a zero Duration", 2) end
+        return a[1] / b[1]
+      end
+      if isnum(b) then
+        if b == 0 then I.throw("TypeError", "cannot divide a Duration by 0", 2) end
+        return mkdur(a[1] / b)
+      end
     end
     operands("/", a, b)
   end
-  function Duration.__unm(a) return mkdur(-a[1]) end
+  function Duration.__unm(a) return setmetatable({ -a[1] }, Duration) end
   function Duration.__eq(a, b) return a[1] == b[1] end
   function Duration.__lt(a, b)
     local x, y = both("<", a, b)
@@ -398,7 +454,7 @@ do
     else
       I.throw("Exception", "Time.now needs a clock: the os library is not open here and the host gives no host.now", 3)
     end
-    if type(e) ~= "number" then I.throw("Exception", "the clock gave " .. rt.typeof(e) .. ", not a Number", 3) end
+    if type(e) ~= "number" or e - e ~= 0 then I.throw("Exception", "the clock gave " .. desc(e) .. ", not a finite Number", 3) end
     return e
   end
 
@@ -420,7 +476,9 @@ do
   -- instant near a change of offset gets the offset in force there.
   local function local_epoch(y, mo, d, h, mi, s)
     local whole = floor(s)
-    if os_time ~= nil then
+    -- os.time's fields are C ints, which a field this large would wrap:
+    -- such a date is found by the offset instead.
+    if os_time ~= nil and abs(y) < 1e8 and abs(d) < 1e8 and abs(h) < 1e8 and abs(mi) < 1e8 and abs(whole) < 1e8 then
       local ok, e = pcall(os_time, { year = y, month = mo, day = d, hour = h, min = mi, sec = whole })
       if ok and type(e) == "number" then return e + (s - whole) end
     end
@@ -447,6 +505,8 @@ do
     mi = int(mi == nil and 0 or mi, "Time.new argument 5 (min)")
     s = num(s == nil and 0 or s, "Time.new argument 6 (sec)")
     if utc_opt(kw, "Time.new") then return mktime(utc_epoch(y, mo, d, h, mi, s)) end
+    -- An epoch out of range is so in local time too (the offset is small).
+    mktime(utc_epoch(y, mo, d, h, mi, s))
     -- mktime takes a month in range; the years it carries are counted here.
     y = y + floor((mo - 1) / 12)
     mo = (mo - 1) % 12 + 1
@@ -464,7 +524,7 @@ do
   -- `utc: true`.
   function Time.parse(s, kw)
     if type(s) ~= "string" then bad("Time.parse argument 1", "String", s) end
-    local utc = utc_opt(kw, "Time.parse")
+    local utc = utc_opt(kw, "Time.parse") == true
     local y, mo, d, rest = smatch(s, "^(%d%d%d%d)%-(%d%d)%-(%d%d)(.*)$")
     if y == nil then parse_error(s, "expected YYYY-MM-DD") end
     y, mo, d = tonumber(y), tonumber(mo), tonumber(d)
@@ -508,12 +568,28 @@ do
 
   function TimeM.epoch(t) return recv(t, Time, "epoch") end
 
+  -- The views (see the header): the same instant, read in UTC or local.
+  function TimeM.utc(t)
+    local e = recv(t, Time, "utc")
+    if t[2] then return t end
+    return mktime(e, true)
+  end
+  TimeM["local"] = function(t)
+    local e = recv(t, Time, "local")
+    if not t[2] then return t end
+    return mktime(e, nil)
+  end
+  function TimeM.is_utc(t)
+    recv(t, Time, "is_utc")
+    return t[2] == true
+  end
+
   -- The accessors: one field of the calendar each.
   do
     local function accessor(name, pick)
       TimeM[name] = function(t, kw)
         local e = recv(t, Time, name)
-        local r = pick(fields(e, utc_opt(kw, "Time." .. name)))
+        local r = pick(fields(e, utc_of(t, kw, "Time." .. name)))
         return r
       end
     end
@@ -529,6 +605,7 @@ do
 
   function TimeM.utc_offset(t)
     local e = recv(t, Time, "utc_offset")
+    if t[2] then return mkdur(0) end
     return mkdur(offset_at(floor(floor(e * 1000 + 0.5) / 1000)))
   end
 
@@ -585,7 +662,7 @@ do
   function TimeM.strftime(t, fmt, kw)
     local e = recv(t, Time, "strftime")
     if type(fmt) ~= "string" then bad("Time.strftime argument 1", "String", fmt) end
-    return format(fmt, e, utc_opt(kw, "Time.strftime"))
+    return format(fmt, e, utc_of(t, kw, "Time.strftime"))
   end
 
   -- "2026-10-20T14:03:00Z" in UTC, "2026-10-20T16:03:00+02:00" in local
@@ -596,31 +673,32 @@ do
       .. (ms ~= 0 and sformat(".%03d", ms) or "") .. zone(off, utc, true, true)
   end
 
-  function TimeM.iso(t, kw) return iso(recv(t, Time, "iso"), utc_opt(kw, "Time.iso")) end
-  function TimeM.to_s(t) return iso(recv(t, Time, "to_s"), false) end
+  function TimeM.iso(t, kw) return iso(recv(t, Time, "iso"), utc_of(t, kw, "Time.iso")) end
+  function TimeM.to_s(t) return iso(recv(t, Time, "to_s"), t[2] == true) end
   Time.__tostring = TimeM.to_s
 
   function TimeM.date(t, kw)
-    local y, mo, d = fields(recv(t, Time, "date"), utc_opt(kw, "Time.date"))
+    local y, mo, d = fields(recv(t, Time, "date"), utc_of(t, kw, "Time.date"))
     return sformat("%04d-%02d-%02d", y, mo, d)
   end
   function TimeM.clock(t, kw)
-    local _, _, _, h, mi, s = fields(recv(t, Time, "clock"), utc_opt(kw, "Time.clock"))
+    local _, _, _, h, mi, s = fields(recv(t, Time, "clock"), utc_of(t, kw, "Time.clock"))
     return sformat("%02d:%02d:%02d", h, mi, s)
   end
 
   function TimeM.beginning_of_day(t, kw)
-    local utc = utc_opt(kw, "Time.beginning_of_day")
-    local y, mo, d = fields(recv(t, Time, "beginning_of_day"), utc)
-    if utc then return mktime(utc_epoch(y, mo, d, 0, 0, 0)) end
-    return mktime(local_epoch(y, mo, d, 0, 0, 0))
+    local e = recv(t, Time, "beginning_of_day")
+    local utc = utc_of(t, kw, "Time.beginning_of_day")
+    local y, mo, d = fields(e, utc)
+    if utc then return mktime(utc_epoch(y, mo, d, 0, 0, 0), t[2]) end
+    return mktime(local_epoch(y, mo, d, 0, 0, 0), t[2])
   end
 
   function TimeM.floor_to(t, step)
     local e = recv(t, Time, "floor_to")
     local s = check_dur(step, "Time.floor_to argument 1")
     if s <= 0 then I.throw("TypeError", "Time.floor_to argument 1 expects a positive Duration, got " .. tostring(step), 2) end
-    return mktime(floor(e / s) * s)
+    return mktime(floor(e / s) * s, t[2])
   end
 
   function TimeM.since(t, earlier)
@@ -660,14 +738,17 @@ do
 
   function Time.__add(a, b)
     if not (istime(a) and isdur(b)) then operands("+", a, b) end
-    return mktime(a[1] + b[1])
+    return mktime(a[1] + b[1], a[2])
   end
   function Time.__sub(a, b)
     if istime(a) then
       if istime(b) then return mkdur(a[1] - b[1]) end
-      if isdur(b) then return mktime(a[1] - b[1]) end
+      if isdur(b) then return mktime(a[1] - b[1], a[2]) end
     end
     operands("-", a, b)
+  end
+  function Time.__unm(a)
+    I.throw("TypeError", "cannot apply '-' to " .. rt.typeof(a), 2)
   end
   function Time.__eq(a, b) return a[1] == b[1] end
   function Time.__lt(a, b)

@@ -5,6 +5,8 @@ async fn main
   let t = Time.at(1_792_504_980)
   let back = spawn identity(t).await
   print typeof(back), back == t, back.iso(utc: true)
+  let view = spawn identity(t.utc).await
+  print view.is_utc, view.iso
   let d = spawn identity(90.minutes).await
   print typeof(d), d, d == 90.minutes
   print spawn describe(t).await, spawn describe(2.days).await

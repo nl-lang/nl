@@ -189,7 +189,7 @@ declare module Table = :Table
   fn copy(t: Table): Table
   fn deep_copy(t: Table): Table
   fn equal(a: Table, b: Table): Bool
-  fn deep_equal(a: Table, b: any): Bool
+  fn deep_equal(a: Table, b: Table): Bool
   fn is_empty(t: Table): Bool
   fn size(t: Table): Number
   fn has_key(t: Table, key: any): Bool
@@ -269,8 +269,10 @@ declare module Duration
 end
 
 ## Points in time (runtime/nl_86_time.lua): an immutable number of
-## seconds since the Unix epoch, without a time zone. What reads the
-## calendar takes `utc: true` for UTC, and is in local time otherwise.
+## seconds since the Unix epoch, without a time zone, and a view: local
+## (what every constructor gives) or UTC (`t.utc`). What reads the
+## calendar reads it in the view, or as `utc: true` / `utc: false` says.
+## `==` and `<` compare the epochs alone.
 declare module Time
   now: Time
   fn at(seconds: Number): Time
@@ -279,6 +281,10 @@ declare module Time
   ## `±HH:MM`; without a zone, local time (or UTC with `utc: true`).
   fn parse(s: String, **opts: {utc: Bool?}): Time
   fn epoch(self): Number
+  ## The same instant, read in UTC; `local` reads it in local time.
+  fn utc(self): Time
+  fn local(self): Time
+  fn is_utc(self): Bool
   fn year(self, **opts: {utc: Bool?}): Number
   fn month(self, **opts: {utc: Bool?}): Number
   fn day(self, **opts: {utc: Bool?}): Number

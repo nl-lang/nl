@@ -1,0 +1,20 @@
+Time.at argument 1 expects a finite Number, got inf
+Time.at argument 1 expects a finite Number, got -inf
+Time.at argument 1 expects a finite Number, got NaN
+Duration.new argument 1 expects a finite Number, got NaN
+Duration.minutes argument 1 expects a finite Number, got inf
+Time.new argument 6 (sec) expects a finite Number, got inf
+cannot apply '*' to Duration and inf
+cannot apply '*' to NaN and Duration
+cannot divide a Duration by 0
+cannot divide a Duration by a zero Duration
+cannot divide a Duration by a zero Duration
+cannot apply '-' to Time
+31690708-07-05T01:46:39Z	-31686769-06-29
+ConversionError
+ConversionError
+ConversionError
+ConversionError
+ConversionError
+ConversionError
+2m 30s	30	1970-01-02T00:00:00Z

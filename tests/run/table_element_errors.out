@@ -1,0 +1,15 @@
+Table.sum expects numbers, got String at index 2
+Table.sum expects numbers, got String from the function for index 2
+Table.min cannot compare element 2 (String) with element 1 (Number)
+Table.max cannot compare element 2 (Number) with element 1 (String)
+Table.sorted cannot compare element 2 (String) with element 1 (Number)
+Table.sorted cannot compare element 2 (Table) with element 1 (Table)
+Table.sorted cannot compare element 2 (Time) with element 1 (Duration)
+Table.min_by cannot compare the key of element 2 (String) with the key of element 1 (Number)
+Table.max_by cannot compare the key of element 2 (Number) with the key of element 1 (String)
+Table.sort_by cannot compare the key of element 3 (String) with the key of element 1 (Number)
+3.5	0	3
+1	c	7	nil
+1m 2m 3m	9
+a bb ccc	1
+1

@@ -33,6 +33,9 @@ print Table.deep_equal(config, copy), Table.deep_equal([], {})
 print Table.size({a: 1, b: nil, 1: 2}), Table.size([]), Table.is_empty({}), Table.is_empty([0])
 print Table.has_key(base, "a"), Table.has_key(base, "q"), Table.has_key({f: false}, "f")
 print Table.get(base, "a", 0), Table.get(base, "q", 0), Table.get(base, "q"), Table.get({f: false}, "f", true)
+# Unspecified: has_key and get read the table's own pairs, not its __index
+let defaulted = setmetatable({own: 1}, {__index: {inherited: 2}})
+print Table.get(defaulted, "own", 0), Table.get(defaulted, "inherited", 0), Table.has_key(defaulted, "inherited"), defaulted.inherited
 
 let tree = {user: {address: {city: "Oslo"}, tags: ["x", "y"]}}
 print Table.dig(tree, "user", "address", "city"), Table.dig(tree, "user", "tags", 2)

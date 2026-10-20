@@ -946,6 +946,7 @@ let later = now + d # a Time; `later - now` is d again
 later > now # true
 now.hour # read in local time
 now.iso(utc: true) # "2026-10-20T14:03:00Z": what reads the calendar takes `utc: true`
+now.utc.hour # a UTC view of the same instant (== now): its calendar is in UTC
 now.strftime "%H:%M"
 Time.at(0).humanize # "almost 57 years ago", from now
 Time.parse "2026-10-20T14:03:00+02:00"

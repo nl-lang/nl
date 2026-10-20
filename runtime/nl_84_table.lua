@@ -27,7 +27,15 @@
 -- whatever `#` makes of it, as in Lua's table library (`compact` alone
 -- reads up to `maxn`). Maps are every key `next` gives, in `next`'s
 -- order, which is unspecified: `sorted_keys` and `each_sorted` give an
--- order (see `key_lt`).
+-- order (see `key_lt`). Unspecified: `has_key` and `get` read a key
+-- with rawget, as the map functions read `next`: a table is its own
+-- pairs, and an `__index` (a struct's methods, a default) is not one.
+--
+-- Errors name the function: an argument of the wrong type, and an element
+-- the function cannot use: `sum` takes numbers (and `sum(t, f)` numbers
+-- from f); `min`, `max`, `sorted` without `lt`, and `min_by`, `max_by`,
+-- `sort_by` on their keys, compare with `<`, so the values must be all
+-- numbers, all strings, or values with the same `__lt` (Durations, Times).
 --
 --   LISTS                        RESULT
 --   map(t, f)                    [f(v, i)]; a nil result leaves a hole
@@ -89,7 +97,7 @@
 --   equal(a, b), deep_equal      the same keys and equal (==) values
 --   is_empty(t), size(t)         no keys; how many keys
 --   has_key(t, k)                rawget(t, k) ~= nil
---   get(t, k, default?)          t[k], or default when it is nil
+--   get(t, k, default?)          rawget(t, k), or default when it is nil
 --   dig(t, k1, k2, ...)          t[k1][k2]..., nil where a step is missing
 --   pick(t, keys), omit(t, keys) a copy with only, without, those keys
 --   clear(t)                     every key removed; returns t
@@ -245,14 +253,26 @@ do
     return out
   end
 
+  local function not_number(fname, what, i, v)
+    I.throw("TypeError", "Table." .. fname .. " expects numbers, got " .. rt.typeof(v) .. " " .. what .. i)
+  end
+
   function Table.sum(t, f)
     tbl(t, "sum")
     local s = 0
     if f == nil then
-      for i = 1, #t do s = s + t[i] end
+      for i = 1, #t do
+        local v = t[i]
+        if type(v) ~= "number" then not_number("sum", "at index ", i, v) end
+        s = s + v
+      end
     else
       fn(f, "sum")
-      for i = 1, #t do s = s + f(t[i], i) end
+      for i = 1, #t do
+        local v = f(t[i], i)
+        if type(v) ~= "number" then not_number("sum", "from the function for index ", i, v) end
+        s = s + v
+      end
     end
     return s
   end
@@ -545,9 +565,47 @@ do
 
   local function lt_default(a, b) return a < b end
 
+  -- Whether `<` takes a and b: two numbers, two strings, or two values
+  -- with the same `__lt`, as Lua 5.1 and LuaJIT have it.
+  local function comparable(a, b)
+    local ta = type(a)
+    if ta ~= type(b) then return false end
+    if ta == "number" or ta == "string" then return true end
+    local ma, mb = getmetatable(a), getmetatable(b)
+    if type(ma) ~= "table" or type(mb) ~= "table" then return false end
+    local f = ma.__lt
+    return f ~= nil and f == mb.__lt
+  end
+
+  -- `what` is "" for the values, "the key of " for keys.
+  local function incomparable(fname, what, i, a, j, b)
+    I.throw("TypeError", "Table." .. fname .. " cannot compare " .. what .. "element " .. i .. " (" .. rt.typeof(a)
+      .. ") with " .. what .. "element " .. j .. " (" .. rt.typeof(b) .. ")")
+  end
+
+  -- Before `<` is used on list[1..n]: every value comparable with the
+  -- first (and so with each other), numbers first since they are most.
+  local function check_lt(list, n, fname, what)
+    local first = list[1]
+    if type(first) == "number" then
+      for i = 2, n do
+        if type(list[i]) ~= "number" then incomparable(fname, what, i, list[i], 1, first) end
+      end
+      return
+    end
+    for i = 2, n do
+      if not comparable(first, list[i]) then incomparable(fname, what, i, list[i], 1, first) end
+    end
+  end
+
   local function extreme(t, lt, fname, greatest)
     tbl(t, fname)
-    if lt ~= nil then fn(lt, fname) else lt = lt_default end
+    if lt ~= nil then
+      fn(lt, fname)
+    else
+      check_lt(t, #t, fname, "")
+      lt = lt_default
+    end
     local best = t[1]
     for i = 2, #t do
       local v = t[i]
@@ -570,9 +628,16 @@ do
     local n = #t
     if n == 0 then return nil end
     local best, bk = t[1], f(t[1], 1)
+    local k1 = bk
+    local nums = type(k1) == "number"
     for i = 2, n do
       local v = t[i]
       local k = f(v, i)
+      if nums then
+        if type(k) ~= "number" then incomparable(fname, "the key of ", i, k, 1, k1) end
+      elseif not comparable(k1, k) then
+        incomparable(fname, "the key of ", i, k, 1, k1)
+      end
       if (greatest and bk < k) or (not greatest and k < bk) then best, bk = v, k end
     end
     return best
@@ -643,9 +708,14 @@ do
 
   function Table.sorted(t, lt)
     tbl(t, "sorted")
-    if lt ~= nil then fn(lt, "sorted") else lt = lt_default end
     local out, n = {}, #t
     for i = 1, n do out[i] = t[i] end
+    if lt ~= nil then
+      fn(lt, "sorted")
+    else
+      check_lt(out, n, "sorted", "")
+      lt = lt_default
+    end
     return msort(out, n, lt)
   end
 
@@ -658,6 +728,7 @@ do
       keys[i] = f(t[i], i)
       idx[i] = i
     end
+    check_lt(keys, n, "sort_by", "the key of ")
     msort(idx, n, function(a, b) return keys[a] < keys[b] end)
     local out = {}
     for i = 1, n do out[i] = t[idx[i]] end
@@ -1014,7 +1085,7 @@ do
 
   function Table.get(t, k, default)
     tbl(t, "get")
-    local v = t[k]
+    local v = rawget(t, k)
     if v == nil then return default end
     return v
   end

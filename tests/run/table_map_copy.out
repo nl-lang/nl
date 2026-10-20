@@ -11,6 +11,7 @@ true	true
 2	0	true	false
 true	false	true
 1	0	nil	false
+1	0	false	2
 Oslo	y
 nil	nil
 a:1 d:40	b:20 c:30

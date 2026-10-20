@@ -57,6 +57,16 @@ do
     return places < -q
   end
 
+  -- x scaled for `places` digits, the scale, and what to divide the
+  -- result by after. Past 308 places 10^places is inf, and an x that
+  -- `keeps` has not kept is tiny (below 1e-263): it is multiplied by
+  -- 10^300 first, which leaves it a normal number, and the scale is the
+  -- rest of 10^places.
+  local function prescale(x, places)
+    if places > 308 then return x * 1e300, 10 ^ (places - 300), 1e300 end
+    return x, 10 ^ places, 1
+  end
+
   -- `x.round(places = 0)`: to `places` digits after the point (before it
   -- when negative). Unspecified: halfway cases go away from zero (Ruby's
   -- default, not Lua's or C's banker's rounding), and a decimal halfway
@@ -72,14 +82,15 @@ do
     end
     if keeps(x, places) then return x end
     if x ~= 0 and vanishes(x, places) then return 0 end
-    local s = 10 ^ places
+    local s, post
+    x, s, post = prescale(x, places)
     local f = round0(x * s)
     if x > 0 then
       if (f + 0.5) / s <= x then f = f + 1 end
     elseif x < 0 then
       if (f - 0.5) / s >= x then f = f - 1 end
     end
-    return f / s
+    return f / s / post
   end
 
   -- `x.truncate(places = 0)`: toward zero, to `places` digits (Ruby's,
@@ -93,11 +104,12 @@ do
     end
     if keeps(x, places) then return x end
     if vanishes(x, places) then return 0 end
-    local s = 10 ^ places
+    local s, post
+    x, s, post = prescale(x, places)
     local m = floor(x * s)
     local r = (m + 1) / s
     if r > x then r = m / s end
-    return r
+    return r / post
   end
 
   function math.truncate(x, places)

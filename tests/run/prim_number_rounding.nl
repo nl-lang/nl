@@ -3,9 +3,12 @@ print 2.5.round, (-2.5).round, 2.4.round, 0.5.round, 0.49999999999999994.round
 print 2.675.round(2), 1.005.round(2), 1234.5678.round(2), (-1234.5678).round(1)
 print 1250.round(-2), 1249.round(-2), (-1250).round(-2)
 print 3.round(5), 1e300.round(2), (1 / 0).round
+# past 308 places, where 10^places is inf
+print 5e-324.round(323), 1e-310.round(310), 1.2345678901234567e-300.round(309), 5e-324.round(400)
 
 print 2.7.truncate, (-2.7).truncate, 2.675.truncate(2), 0.29.truncate(2)
 print 1299.truncate(-2), (-1299).truncate(-2), (-1.239).truncate(2)
+print 1.2345678901234567e-300.truncate(309), (-1.99e-309).truncate(309), 5e-324.truncate(323)
 
 print 5.sign, (-3.5).sign, 0.sign
 
