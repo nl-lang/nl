@@ -550,7 +550,7 @@ impl<'a> Analyzer<'a> {
             from: Vec::new(),
         });
         self.prelude_named.insert("Exception", exception);
-        for name in ["LuaError", "TypeError", "MatchError", "ConversionError", "RegexError", "EncodingError", "SendError", "WorkerError"] {
+        for name in ["LuaError", "TypeError", "MatchError", "ConversionError", "RegexError", "EncodingError", "KeyError", "SendError", "WorkerError"] {
             let fields = if name == "LuaError" { vec![Field { name: "value".into(), ty: Type::Any, has_default: true }] } else { Vec::new() };
             let id = self.types.add(name, NamedKind::Struct { parent: Some(exception), fields, methods: HashMap::new(), operators: HashMap::new(), interfaces: Vec::new(), type_params: Vec::new(), to: Vec::new(), from: Vec::new() });
             self.prelude_named.insert(name, id);

@@ -1,0 +1,17 @@
+false	11
+false	true	true	false
+1	8	false	false
+9	11	9	9	11
+[abc,déf  ]	9
+12	12
+2	[déf  ]	1	1
+13	11
+abc [éf  ]
+true	1
+index: EncodingError
+length: EncodingError
+chop: EncodingError
+split by chars: EncodingError
+count of the empty string: EncodingError
+snake_case: EncodingError
+split by comma: no error

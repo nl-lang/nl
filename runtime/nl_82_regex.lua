@@ -23,7 +23,8 @@
 --       on, and an empty match right where the previous match ended is
 --       skipped;
 --   `re.split(s)` is `s.split(re)`, with the Ruby rules of
---       String.split: trailing empty fields are dropped, and an empty
+--       String.split and its options (keep_empty, limit): trailing
+--       empty fields are dropped without them, and an empty
 --       match ends a field only when the field is not empty, so the empty
 --       pattern splits into characters without a leading "";
 --   tostring(re) is "Regex(pattern)".
@@ -246,12 +247,25 @@ do
   end
 
   -- `re.split(s)`: the pieces of `s` between the matches (see the header).
-  function Regex.split(re, s)
+  -- `keep_empty` and `limit` as String.split's: every field kept (the
+  -- empty string gives [""]), and at most `limit` fields.
+  local split_opts = { keep_empty = true, limit = true }
+  function Regex.split(re, s, opts)
     subject(re, s, "split")
+    opts = I.string_opts(opts, "split", split_opts)
+    local keep, limit = false, nil
+    if opts ~= nil then
+      keep = opts.keep_empty == true
+      limit = I.string_limit(opts.limit, "split")
+    end
     local out, k = {}, 0
+    if s == "" then
+      if keep then out[1] = "" end
+      return out
+    end
     local beg = 1
     local nextm = matches(re, s)
-    while true do
+    while limit == nil or k < limit - 1 do
       local t = nextm()
       if t == nil then break end
       local a, e = t[1], t[2]
@@ -261,13 +275,15 @@ do
         beg = e
       end
     end
-    if beg <= #s then
+    if beg <= #s or keep or limit ~= nil then
       k = k + 1
       out[k] = bsub(s, beg)
     end
-    while k > 0 and out[k] == "" do
-      out[k] = nil
-      k = k - 1
+    if not keep and limit == nil then
+      while k > 0 and out[k] == "" do
+        out[k] = nil
+        k = k - 1
+      end
     end
     return out
   end

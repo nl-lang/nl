@@ -16,17 +16,29 @@ declare fn keyed(t: Table): Table
 
 ## NL's string library: every function is a method of a
 ## string, `s.upcase`, with the string as its first argument.
+## runtime/nl_80_string.lua says which ones work on any bytes.
 declare module String = :String
   fn length(s: String): Number
   fn upcase(s: String): String
   fn downcase(s: String): String
   fn capitalize(s: String): String
   fn swapcase(s: String): String
+  fn upcase_first(s: String): String
+  fn downcase_first(s: String): String
+  fn snake_case(s: String): String
+  fn kebab_case(s: String): String
+  fn camel_case(s: String): String
+  fn pascal_case(s: String): String
+  fn title_case(s: String): String
+  fn parameterize(s: String, **opts: {sep: String?}): String
+  fn fold(s: String): String
+  fn casecmp(s: String, other: String): Number
+  fn equal_ignoring_case(s: String, other: String): Bool
   fn reverse(s: String): String
   fn chars(s: String): [String]
   fn codepoints(s: String): [Number]
   fn as_bytes(s: String): [Number]
-  fn byteslice(s: String, i: Number, j: Number?): String
+  fn byteslice(s: String, i: Number | Range, j: Number?): String
   fn ord(s: String): Number
   fn index(s: String, sub: String, init: Number?): Number?
   fn start_with(s: String, prefix: String): Bool
@@ -35,10 +47,40 @@ declare module String = :String
   fn gsub(s: String, pattern: String | Regex, rep: String | Function): String
   fn match(s: String, re: Regex | String, init: Number?): Table?
   fn scan(s: String, re: Regex | String): Function
-  fn split(s: String, sep: String | Regex | nil): [String]
+  fn split(s: String, sep: String | Regex | nil, **opts: {keep_empty: Bool?, limit: Number?}): [String]
   fn strip(s: String): String
   fn lstrip(s: String): String
   fn rstrip(s: String): String
+  fn squish(s: String): String
+  fn is_empty(s: String): Bool
+  fn is_blank(s: String): Bool
+  fn include(s: String, sub: String): Bool
+  fn contains(s: String, sub: String): Bool
+  ## Non-overlapping occurrences of a substring (not Ruby's character set).
+  fn count(s: String, sub: String): Number
+  fn remove(s: String, sub: String): String
+  fn insert(s: String, i: Number, other: String): String
+  fn delete_prefix(s: String, prefix: String): String
+  fn delete_suffix(s: String, suffix: String): String
+  fn ensure_prefix(s: String, prefix: String): String
+  fn ensure_suffix(s: String, suffix: String): String
+  fn chomp(s: String, suffix: String?): String
+  fn chop(s: String): String
+  ## The lines without their line endings.
+  fn lines(s: String): [String]
+  fn each_line(s: String, f: Function)
+  fn each_char(s: String, f: Function)
+  fn indent(s: String, n: Number, pad: String?): String
+  fn dedent(s: String): String
+  fn truncate(s: String, n: Number, **opts: {omission: String?, separator: String?}): String
+  ## A greedy word wrap; `measure` gives the width of a text.
+  fn wrap(s: String, width: Number, **opts: {measure: Function?}): [String]
+  fn tr(s: String, from: String, to: String): String
+  fn squeeze(s: String, set: String?): String
+  ## `{name}` from keyed arguments or a table, `{1}` from positional ones.
+  fn fmt(s: String, *args: any, **values: Table): String
+  fn to_number(s: String, base: Number?): Number?
+  fn scrub(s: String, replacement: String?): String
   fn center(s: String, width: Number, pad: String?): String
   fn ljust(s: String, width: Number, pad: String?): String
   fn rjust(s: String, width: Number, pad: String?): String
@@ -57,7 +99,7 @@ declare module Regex
   fn scan(self, s: String): Function
   fn replace(self, s: String, rep: String | Function): String
   fn replace_all(self, s: String, rep: String | Function): String
-  fn split(self, s: String): [String]
+  fn split(self, s: String, **opts: {keep_empty: Bool?, limit: Number?}): [String]
 end
 
 ## Tasks. `task.await`, `on_done` and `on_error` are typed

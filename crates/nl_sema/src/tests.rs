@@ -223,15 +223,25 @@ fn lua_path_to_own_function() {
 }
 
 #[test]
+fn library_keyed_options() {
+    // The String library declares its keyed options as records.
+    assert!(analyzer_errors("let p = \"a,b\".split(\",\", keep_empty: true, limit: 2)\nprint p\n").is_empty());
+    assert!(has_code("let p = \"a,b\".split(\",\", keep: true)\nprint p\n", 1, "unknown-keyed-arg"));
+    assert!(has_code("let p = \"a,b\".split(\",\", limit: \"2\")\nprint p\n", 1, "type-mismatch"));
+    assert!(analyzer_errors("let s = \"{a}\".fmt(a: 1, b: 2)\nprint s\n").is_empty());
+    assert!(has_code("let n: Number = \"{a}\".fmt(a: 1)\nprint n\n", 1, "type-mismatch"));
+}
+
+#[test]
 fn primitive_method_through_its_type() {
     // `String.shout(s)`: the first argument is `self`, checked against the type.
-    let decl = "fn String.wrap(l: String, r: String): String\n  l <> self <> r\nend\n";
-    assert!(analyzer_errors(&format!("{decl}let s: String = String.wrap(\"x\", \"<\", \">\")\nprint s\n")).is_empty());
-    assert!(has_code(&format!("{decl}print String.wrap(5, \"<\", \">\")\n"), 4, "type-mismatch"));
-    assert!(has_code(&format!("{decl}print String.wrap(\"x\", \"<\")\n"), 4, "missing-argument"));
-    assert!(has_code(&format!("{decl}let n: Number = String.wrap(\"x\", \"<\", \">\")\nprint n\n"), 4, "type-mismatch"));
+    let decl = "fn String.surround(l: String, r: String): String\n  l <> self <> r\nend\n";
+    assert!(analyzer_errors(&format!("{decl}let s: String = String.surround(\"x\", \"<\", \">\")\nprint s\n")).is_empty());
+    assert!(has_code(&format!("{decl}print String.surround(5, \"<\", \">\")\n"), 4, "type-mismatch"));
+    assert!(has_code(&format!("{decl}print String.surround(\"x\", \"<\")\n"), 4, "missing-argument"));
+    assert!(has_code(&format!("{decl}let n: Number = String.surround(\"x\", \"<\", \">\")\nprint n\n"), 4, "type-mismatch"));
     // Read without a call, it is the function.
-    assert!(analyzer_errors(&format!("{decl}let f = String.wrap\nprint f(\"x\", \"<\", \">\")\n")).is_empty());
+    assert!(analyzer_errors(&format!("{decl}let f = String.surround\nprint f(\"x\", \"<\", \">\")\n")).is_empty());
 }
 
 #[test]

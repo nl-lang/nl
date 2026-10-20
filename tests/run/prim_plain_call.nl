@@ -3,7 +3,7 @@ fn String.shout
   self.upcase <> "!"
 end
 
-fn String.wrap(left: String, right: String): String
+fn String.surround(left: String, right: String): String
   left <> self <> right
 end
 
@@ -20,7 +20,7 @@ fn Bool.nor(other)
 end
 
 print String.shout("hey")
-print String.wrap("x", "[", "]")
+print String.surround("x", "[", "]")
 print Number.plus(40, 2)
 print false.nor(false)
 print true.nor(false)

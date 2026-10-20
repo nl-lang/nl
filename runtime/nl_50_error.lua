@@ -59,6 +59,8 @@ do
   sub("ConversionError")
   sub("RegexError")
   sub("EncodingError")
+  -- A name with no value (String.fmt), as Ruby's KeyError.
+  sub("KeyError")
   sub("SendError")
   sub("WorkerError")
 

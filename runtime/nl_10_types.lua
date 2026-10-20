@@ -371,7 +371,7 @@ do
   -- Their values are set by the files that define them.
   local builtin_names = {
     Exception = true, LuaError = true, TypeError = true, MatchError = true, ConversionError = true,
-    RegexError = true, EncodingError = true, SendError = true, WorkerError = true,
+    RegexError = true, EncodingError = true, KeyError = true, SendError = true, WorkerError = true,
     Range = true, Task = true, Regex = true, Time = true, Duration = true,
   }
   local function builtin_type(name)

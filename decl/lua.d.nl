@@ -49,6 +49,30 @@ declare module Number = :math
   fn days(n: Number): Duration
   fn weeks(n: Number): Duration
   fn ms(n: Number): Duration
+  ## NL's own, also in `math` (runtime/nl_81_number.lua).
+  fn clamp(x: Number, lo: Number, hi: Number): Number
+  fn round(x: Number, places: Number?): Number
+  fn truncate(x: Number, places: Number?): Number
+  fn sign(x: Number): Number
+  fn lerp(a: Number, b: Number, t: Number): Number
+  fn remap(x: Number, a1: Number, b1: Number, a2: Number, b2: Number): Number
+  fn approach(x: Number, target: Number, step: Number): Number
+  fn approach_angle(x: Number, target: Number, step: Number): Number
+  fn angle_difference(a: Number, b: Number): Number
+  fn normalize_angle(x: Number): Number
+  fn even(x: Number): Bool
+  fn odd(x: Number): Bool
+  fn divisible_by(x: Number, n: Number): Bool
+  fn between(x: Number, a: Number, b: Number): Bool
+  fn is_integer(x: Number): Bool
+  fn is_nan(x: Number): Bool
+  fn is_finite(x: Number): Bool
+  fn hypot(x: Number, y: Number): Number
+  fn to_s(x: Number, base: Number?): String
+  fn to_hex(x: Number, width: Number?): String
+  fn times(n: Number, f: Function)
+  fn up_to(a: Number, b: Number, f: Function)
+  fn down_to(a: Number, b: Number, f: Function)
 end
 
 declare module Table = :table

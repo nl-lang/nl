@@ -1,5 +1,5 @@
 # Methods on Number, String and Bool; library functions as methods
-fn Number.divisible_by(n)
+fn Number.is_multiple_of(n)
   self % n == 0
 end
 
@@ -15,8 +15,8 @@ fn Bool.flip
   !self
 end
 
-print 100.divisible_by(10)
-print 100.divisible_by(7)
+print 100.is_multiple_of(10)
+print 100.is_multiple_of(7)
 print 7.is_cool
 print 2.5.floor
 print(-5.abs)

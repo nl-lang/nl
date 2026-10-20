@@ -135,6 +135,7 @@ prelude! {
     "ConversionError" => Runtime("ConversionError"), Struct;
     "RegexError" => Runtime("RegexError"), Struct;
     "EncodingError" => Runtime("EncodingError"), Struct;
+    "KeyError" => Runtime("KeyError"), Struct;
     "SendError" => Runtime("SendError"), Struct;
     "WorkerError" => Runtime("WorkerError"), Struct;
     // `To<T>` and `From<T>` are taken to be prelude interfaces

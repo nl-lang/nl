@@ -1,0 +1,7 @@
+ff	00ff	-00ff	00	1000
+1010	z	-10	0	10000000000
+3.5	3	1e+20
+3.5 in base 2: TypeError
+base 37: TypeError
+1 2 3 20 30 40 -4 -3 -2
+5	3	00ff	true

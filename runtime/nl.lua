@@ -74,6 +74,13 @@
 --       runtime leaves alone: the environment has its own (`include` in
 --       Garry's Mod), or they cannot work there (`load_nl`, `add_path`).
 --       NL code reaches the prelude through `rt` and is not affected.
+--   host.string_methods                         (optional)
+--       false keeps Lua's `string` table without the metatable the
+--       prelude gives it (nl_90_prelude.lua), through which Lua code finds
+--       the functions of NL's String library that Lua's `string` lacks
+--       (`s:snake_case()`, a `fn String.name` of NL code). Lua code that
+--       tests for a missing `string` function (`string.split or …`)
+--       finds NL's; a host whose scripts do that can turn it off.
 --   host.event                                  (optional)
 --       The event library to use, a table with `run`, `on_run` and
 --       `remove` (nl_62_event.lua): Garry's Mod's host builds it over the
@@ -196,6 +203,7 @@
 --   nl_64_worker.lua   workers and the `spawn` stand-in
 --   nl_70_module.lua   imports, `load_nl`, `include`, `add_path`, the package searcher
 --   nl_80_string.lua   NL's `String` library (host.text on the fork, a Lua stand-in otherwise)
+--   nl_81_number.lua   NL's own Number methods, in `math`
 --   nl_82_regex.lua    NL's `Regex` (host.regex on the fork; `Regex.new` raises otherwise)
 --   nl_86_time.lua     NL's `Time` and `Duration`
 --   nl_90_prelude.lua  prelude globals, file-handle methods, primitive metatables

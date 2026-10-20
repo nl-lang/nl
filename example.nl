@@ -148,7 +148,25 @@ for byte in s.as_bytes # goes through the bytes
 end
 
 # a string that is not valid UTF-8 raises an EncodingError in these functions.
-# .len, as_bytes and valid_encoding work on any bytes
+# .len, as_bytes and valid_encoding work on any bytes, and so do the ones
+# that give the same answer on bytes: start_with, include, strip, split(","), ...
+let clean = raw_bytes.scrub # invalid sequences become U+FFFD (or scrub("?"))
+
+# more of the library, Ruby and Rails names
+"UsableItem".snake_case # "usable_item" (also camel_case, pascal_case, kebab_case, title_case)
+"Héllo Wörld!".parameterize # "héllo-wörld"
+"usableItem".upcase_first # "UsableItem"
+"a,,b,".split(",") # ["a", "", "b"]: Ruby's rules drop trailing empty fields
+"a,,b,".split(",", keep_empty: true) # ["a", "", "b", ""]: keyed options
+"k=v=w".split("=", limit: 2) # ["k", "v=w"]
+"{name} has {n}".fmt(name: "Ayla", n: 3) # named placeholders; {{ and }} are braces
+"long text here".truncate(8) # "long ..."
+"some long line of text".wrap(10) # ["some long", "line of", "text"]; wrap(w, measure: f)
+"  a   b ".squish # "a b"
+"x\r\ny\n".lines # ["x", "y"]
+"straße".equal_ignoring_case("STRASSE") # true (also casecmp and fold)
+"hello".tr("el", "ip") # "hippo"
+"ff".to_number(16) # 255
 
 # functions
 
@@ -284,6 +302,14 @@ let res = Event.run "EventName", 123, "abc"
 # their functions are called the same way Lua calls them
 print Number.floor(2.5)
 print 2.5.floor # the same thing: Lua's math functions are methods of numbers
+print 7.clamp(0, 5) # NL adds its own: round(places), truncate, sign, lerp, remap,
+print 2.675.round(2) # approach, normalize_angle, even, odd, divisible_by, between,
+print 255.to_hex(4) # is_integer, is_nan, to_s(base), times, up_to, hypot...
+3.times do |i| # i is 1, 2, 3
+end
+
+# Lua code sees NL's methods too: ("UsableItem"):snake_case(), (7):clamp(0, 5),
+# and a method NL code defines with `fn String.name`
 
 # the Lua names themselves are not known to NL
 # math.floor(2.5) would be an error, because there is no variable named math
@@ -852,12 +878,12 @@ end
 print 6.is_cool # false
 print 7.is_cool # true
 
-fn Number.divisible_by(n)
+fn Number.is_multiple_of(n)
   self % n == 0
 end
 
-print 100.divisible_by(7) # false
-print 100.divisible_by(10) # true
+print 100.is_multiple_of(7) # false
+print 100.is_multiple_of(10) # true
 
 # methods also work on literals and on the built-in string and number functions
 
