@@ -288,6 +288,8 @@ fn library_keyed_options() {
     assert!(has_code("let p = \"a,b\".split(\",\", limit: \"2\")\nprint p\n", 1, "type-mismatch"));
     assert!(analyzer_errors("let s = \"{a}\".fmt(a: 1, b: 2)\nprint s\n").is_empty());
     assert!(has_code("let n: Number = \"{a}\".fmt(a: 1)\nprint n\n", 1, "type-mismatch"));
+}
+
 /// The members resolved to functions of `Table` ([`MemberHint::TableFn`]),
 /// by line, with the hints the lowering gets in the mode.
 fn table_fns(src: &str, static_resolution: bool) -> Vec<(u32, String)> {
