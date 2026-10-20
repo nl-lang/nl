@@ -380,6 +380,87 @@ print u.map(fn(x) x end)
     assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nprint Table.second([1, 2]), [1, 2].second\n").is_empty());
 }
 
+/// The hints of a source in a mode, and the lines of the given ranges.
+fn hints_of(src: &str, static_resolution: bool) -> Hints {
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    let decls = prelude_declarations();
+    let root = parse.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let opts = AnalyzeOptions { static_resolution, decls: Some(&decls), lints: true, imports: None, record: false };
+    let analysis = analyze(&root, &res, &opts);
+    if static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() }
+}
+
+fn lines_of<'a>(src: &str, ranges: impl Iterator<Item = &'a nl_syntax::TextRange>) -> Vec<u32> {
+    let index = nl_syntax::LineIndex::new(src);
+    let mut out: Vec<u32> = ranges.map(|r| index.line_col(src, r.start()).line).collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Reads whose receiver is certain to be a table (`Hints::table_reads`):
+/// declared tables, lists, maps and records, not an untyped value or a
+/// string; none without static resolution.
+#[test]
+fn table_reads_of_certain_tables() {
+    let src = "\
+fn f(t: Table, xs: [Number], m: {[String]: Number}, r: {a: Number}, o: Table?, u: any, s: String)
+  print t.a, xs[1], xs.len, m[\"k\"], m.k, r.a
+  print o?.a, u.a, u[1], s.len, s[1]
+  print t.a!
+end
+";
+    assert_eq!(lines_of(src, hints_of(src, true).table_reads.iter()), vec![2, 3, 4]);
+    let h = hints_of(src, true);
+    // Six reads on line 2, `o?.a` (under its guard `o` is a table) on
+    // line 3, `t.a!` on line 4.
+    assert_eq!(h.table_reads.len(), 8, "{:?}", h.table_reads);
+    assert!(hints_of(src, false).table_reads.is_empty());
+}
+
+/// A return of a call of an NL function declared to return a type whose
+/// check implies the caller's is proven; an inferred return type, a
+/// record that checks its fields more strictly, or a reassigned function
+/// is not.
+#[test]
+fn returned_checked_calls_are_proven() {
+    let src = "\
+fn half(x: Number): Number
+  x / 2
+end
+fn loose(x)
+  x
+end
+fn any_x(v: any): {x: any}
+  v
+end
+fn a(x: Number): Number
+  half(x)
+end
+fn b(x: Number): Number | String
+  return half(x)
+end
+fn c(x: Number): Number
+  loose(x)
+end
+fn d(v: any): {x: Number}
+  any_x(v)
+end
+fn e(v: any): {x: any}
+  any_x(v)
+end
+";
+    // The tail of `a`, the return of `b`, the tail of `e` (the same type);
+    // `half`'s own `x / 2` is proven too.
+    let proven = lines_of(src, hints_of(src, true).proven.iter());
+    assert!(proven.contains(&11) && proven.contains(&14) && proven.contains(&23), "{proven:?}");
+    assert!(!proven.contains(&17) && !proven.contains(&20), "{proven:?}");
+    assert!(hints_of(src, false).proven.is_empty());
+}
+
 #[test]
 fn table_methods_of_untyped_values_are_linted() {
     let codes = analyzer_codes("fn f(u)\n  u.map(fn(x) x end)\n  u.reverse()\n  u.frobnicate()\n  Table.map(u, fn(x) x end)\nend\n");

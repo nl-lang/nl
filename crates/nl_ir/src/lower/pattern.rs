@@ -115,7 +115,7 @@ impl Lowerer<'_> {
     }
 
     /// A value that can be read several times: a local or a constant.
-    fn stable(&mut self, v: Expr) -> Expr {
+    pub(crate) fn stable(&mut self, v: Expr) -> Expr {
         match v {
             Expr::Local(_) => v,
             v if v.is_constant() => v,

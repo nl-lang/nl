@@ -431,29 +431,30 @@ impl Lowerer<'_> {
     /// class table its `lua_root` names; a `declare type` by the host type
     /// registered under its name (`rt.gettype`), looked up when a value is
     /// first tested, since the host registers it after the file loads.
+    ///
+    /// Both are combinations, built once in the main pool. A class is
+    /// `rt.luaclass(name, get, keep)` (runtime/nl_10_types.lua): `get`
+    /// reads the path when a value is tested, so a class that does not
+    /// exist yet when the file loads is still found; with `keep` (a path
+    /// that makes a call, `:FindMetaTable('Color')`) the class found first
+    /// is kept, and tested inline ([`Self::declared_inline_test`]).
     fn declared_type_value(&mut self, id: nl_sema::DeclId) -> Option<Expr> {
-        let name = self.res.declared_path(id).map(|r| r.global.clone());
         match self.res.declared_kind(id)? {
             nl_sema::decl::DeclItemKind::Struct => {
                 let root = self.res.declared_path(id)?.clone();
                 let line = self.line;
                 let class = self.lua_root_value(&root);
-                let v = self.new_local("v");
-                let test = Function {
+                let get = Function {
                     method: false,
                     transient: false,
-                    params: vec![v],
+                    params: Vec::new(),
                     vararg: false,
-                    body: Block::new(vec![Stmt { line, kind: StmtKind::Return(vec![Expr::binary(BinOp::Eq, Expr::call(Expr::Global("getmetatable".to_string()), vec![Expr::Local(v)]), class)]) }]),
+                    body: Block::new(vec![Stmt { line, kind: StmtKind::Return(vec![class]) }]),
                     line,
                     name: None,
                 };
-                let shown = root.steps.iter().fold(root.global.clone(), |acc, s| match s {
-                    nl_sema::LuaStep::Field(f) => format!("{acc}.{f}"),
-                    _ => acc,
-                });
-                let _ = name;
-                Some(Expr::Table(vec![TableEntry::Pair(Expr::str("name"), Expr::str(&shown)), TableEntry::Pair(Expr::str("test"), Expr::Function(Box::new(test)))]))
+                let name = self.declared_name(id);
+                Some(Expr::intrinsic_call("luaclass", vec![Expr::str(&name), Expr::Function(Box::new(get)), Expr::Bool(keeps_class(&root))]))
             }
             nl_sema::decl::DeclItemKind::HostType => {
                 let type_name = self.declared_name(id);
@@ -662,6 +663,25 @@ impl Lowerer<'_> {
                 }
                 _ => self.binding_inline_test(id),
             },
+            Ref::Declared(id) => self.declared_inline_test(ty, id),
+            _ => None,
+        }
+    }
+
+    /// The test of a `declare struct`: its metatable is the class. The
+    /// class is the path read in place, or, for a path that makes a call,
+    /// the class its pooled value kept (`types[k].class`, nil until a value
+    /// was first tested by `rt.check`, which then finds it).
+    fn declared_inline_test(&mut self, ty: &SyntaxNode, id: nl_sema::DeclId) -> Option<Inline> {
+        if self.res.declared_kind(id)? != nl_sema::decl::DeclItemKind::Struct {
+            return None;
+        }
+        let root = self.res.declared_path(id)?.clone();
+        if !keeps_class(&root) {
+            return Some(Inline::Struct(self.lua_root_value(&root)));
+        }
+        match self.type_value(ty)? {
+            slot @ Expr::Index(..) => Some(Inline::Struct(Expr::index(slot, Expr::str("class")))),
             _ => None,
         }
     }
@@ -852,6 +872,15 @@ impl Inline {
         }
     }
 
+    /// True when the test rejects `nil`.
+    pub(crate) fn excludes_nil(&self) -> bool {
+        match self {
+            Inline::LuaType(_) | Inline::Struct(_) | Inline::Enum(_) => true,
+            Inline::Nil => false,
+            Inline::Any(parts) => parts.iter().all(Inline::excludes_nil),
+        }
+    }
+
 }
 
 /// The inline test of a descriptor of `rt.T`, by its key.
@@ -871,7 +900,16 @@ fn lua_type_test(name: &[u8]) -> Option<Inline> {
 
 /// True for a type value that is built by a call (and so worth building
 /// once): `rt.optional(…)`, `rt.union(…)`, `rt.negate(…)`, `rt.record(…)`,
-/// `rt.lazy(…)`.
+/// `rt.lazy(…)`, `rt.luaclass(…)`.
 fn is_combination(e: &Expr) -> bool {
-    matches!(e, Expr::Call(f, _) if matches!(**f, Expr::Intrinsic("optional" | "union" | "negate" | "record" | "lazy")))
+    matches!(e, Expr::Call(f, _) if matches!(**f, Expr::Intrinsic("optional" | "union" | "negate" | "record" | "lazy" | "luaclass")))
+}
+
+/// Whether the class of a `declare struct` is kept once found: its path
+/// makes a call (`:FindMetaTable('Color')`, a C function in Garry's Mod,
+/// which the JIT does not compile and which returns the same registered
+/// table every time). A path of fields is read at every test, so that a
+/// class table the file's Lua replaces is seen.
+fn keeps_class(root: &nl_sema::LuaRoot) -> bool {
+    root.steps.iter().any(|s| matches!(s, nl_sema::LuaStep::Call(_)))
 }

@@ -14,3 +14,11 @@ end
 
 declare fn player_by_id(userid: Number): Player = :Player
 declare fn entity_by_index(index: Number): Entity = :Entity
+
+## gmod's class `Color`, a Lua class over tables.
+declare struct Color = :FindMetaTable('Color')
+  r: Number
+  g: Number
+  b: Number
+  a: Number
+end

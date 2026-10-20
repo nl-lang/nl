@@ -254,18 +254,40 @@ impl Lowerer<'_> {
     /// refuses keyed arguments that reach a parameter or its rest
     /// table, before any default or check runs.
     ///
+    /// A call passes its keyed arguments as one marked table after the
+    /// positional ones (runtime/nl_40_ops.lua, `KW`), so a keyed table
+    /// that lands in a parameter is in the last one that is not `nil`:
+    /// that is the only parameter tested (`rt.getmetatable(p) == rt.KW`),
+    /// found by comparing the later ones with `nil`. A call with every
+    /// argument costs one `getmetatable` whatever the number of
+    /// parameters, and a call that leaves the last ones out one more
+    /// comparison per missing argument. A marked table passed in the
+    /// middle of positional arguments (`f(keyed(t), 1)`, which no call
+    /// with `k: v` makes) is a positional table here.
+    ///
     /// `rt.nokw(name, params…)` runs only when a test inline says it may
-    /// raise: a parameter holds a table marked as keyed arguments
-    /// (`rt.getmetatable(p) == rt.KW`), or a parameter of the leading run
-    /// fails its inline check. The run is the parameters from the first
-    /// that have no default and no pattern, and either no runtime check or
-    /// one with an inline test ([`super::types::Inline`]); their checks
-    /// are made in the same branch, after `rt.nokw`, which is where they
-    /// came before, and not again afterwards. So `fn f(x: Number, y)` is
+    /// raise: the last parameter that is not `nil` holds a marked table,
+    /// or a parameter of the leading run fails its inline check. The run
+    /// is the parameters from the first that have no default and no
+    /// pattern, and either no runtime check or one with an inline test
+    /// ([`super::types::Inline`]); their checks are made in the same
+    /// branch, after `rt.nokw`, which is where they came before, and not
+    /// again afterwards. A parameter of the run whose test rejects a
+    /// marked table (`rt.type(x) ~= "number"`) is not tested for the mark.
+    /// So `fn f(a, b)` is
     ///
     /// ```lua
-    /// if rt.type(x) ~= "number" or rt.getmetatable(y) == rt.KW then
-    ///   rt.nokw("f", x, y); rt.check(x, rt.T.Number, "parameter 'x' of f")
+    /// if b ~= nil and rt.getmetatable(b) == rt.KW or b == nil and rt.getmetatable(a) == rt.KW then
+    ///   rt.nokw("f", a, b)
+    /// end
+    /// ```
+    ///
+    /// and `fn f(x: Number, t: Table)`, where `x` holds no marked table
+    /// once its test passes, and a `nil` in it fails the test, is
+    ///
+    /// ```lua
+    /// if rt.type(x) ~= "number" or rt.type(t) ~= "table" or rt.getmetatable(t) == rt.KW then
+    ///   rt.nokw("f", x, t); rt.check(x, rt.T.Number, …); rt.check(t, rt.T.Table, …)
     /// end
     /// ```
     ///
@@ -276,8 +298,11 @@ impl Lowerer<'_> {
         let mut run = 0;
         let mut conds = Vec::new();
         let mut checks = Vec::new();
+        // The parameters whose inline test rejects a marked table, and
+        // whether it also rejects `nil`.
+        let mut rejects_mark: Vec<Option<bool>> = vec![None; entry.len()];
         if rest.is_none() {
-            for e in entry.iter() {
+            for (i, e) in entry.iter().enumerate() {
                 if e.default.is_some() || e.pattern.is_some() {
                     break;
                 }
@@ -286,24 +311,38 @@ impl Lowerer<'_> {
                     Some(ty) => self.type_value(ty).map(|t| (ty.clone(), t)),
                     None => None,
                 };
-                match typed {
-                    // Nothing to check: only the mark is tested.
-                    None => conds.push(marked(e.local)),
-                    Some((ty, t)) => {
-                        let Some(test) = self.inline_test(&ty) else { break };
-                        let fails = self.inline_fails(&test, &v);
-                        // `rt.type(p) ~= "table"` lets a marked table pass.
-                        conds.push(if test.excludes_keyed() { fails } else { Expr::binary(BinOp::Or, fails, marked(e.local)) });
-                        let what = format!("parameter '{}' of {name}", e.name);
-                        checks.push(Expr::intrinsic_call("check", vec![v, t, Expr::str(&what)]));
+                if let Some((ty, t)) = typed {
+                    let Some(test) = self.inline_test(&ty) else { break };
+                    conds.push(self.inline_fails(&test, &v));
+                    if let Some(r) = rejects_mark.get_mut(i) {
+                        *r = test.excludes_keyed().then(|| test.excludes_nil());
                     }
+                    let what = format!("parameter '{}' of {name}", e.name);
+                    checks.push(Expr::intrinsic_call("check", vec![v, t, Expr::str(&what)]));
                 }
                 run += 1;
             }
         }
-        for e in entry.iter().skip(run) {
-            conds.push(marked(e.local));
+        // The mark of the last parameter that is not `nil`, from the first
+        // parameter on: `p ~= nil and marked(p) or p == nil and <before>`.
+        // A parameter whose test rejects the mark adds only `p == nil and
+        // <before>`, and nothing when the test rejects `nil` too: either
+        // it holds a value, which is not marked, or its test fails.
+        let mut last: Option<Expr> = None;
+        for (e, rejects) in entry.iter().zip(&rejects_mark) {
+            let p = Expr::Local(e.local);
+            last = match (last, *rejects) {
+                (_, Some(true)) => None,
+                (before, Some(false)) => before.map(|b| Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, p, Expr::Nil), b)),
+                (None, None) => Some(marked(e.local)),
+                (Some(b), None) => Some(Expr::binary(
+                    BinOp::Or,
+                    Expr::binary(BinOp::And, Expr::binary(BinOp::Ne, p.clone(), Expr::Nil), marked(e.local)),
+                    Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, p, Expr::Nil), b),
+                )),
+            };
         }
+        conds.extend(last);
         let mut conds = conds.into_iter();
         if let Some(first) = conds.next() {
             let cond = conds.fold(first, |acc, c| Expr::binary(BinOp::Or, acc, c));

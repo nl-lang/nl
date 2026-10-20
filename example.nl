@@ -348,6 +348,13 @@ print :type(a) # Lua's type function. plain `type` is an NL keyword
 :GetPlayerName(1)
 let max = :config.maxPlayers # reading works as well as calling
 
+# a file reads the fields Lua's libraries have (:string.format, :math.floor, and
+# the ones the declarations list) once, when it loads. a field that a file adds
+# (:string.shout = ...) is read where it stands, so a file that loads later can
+# add or replace it. a comment `#!localize none` among the comments at the top of
+# a file reads every path where it stands; `#!localize all` reads every Lua
+# global and field once
+
 # there are no raw Lua blocks. Lua code goes into .lua files
 
 # calling functions

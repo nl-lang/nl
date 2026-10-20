@@ -37,7 +37,7 @@ use crate::ir::*;
 
 use SyntaxKind::*;
 
-pub use localize::{Localize, STD_LIBRARIES, declared_globals};
+pub use localize::{LUA_LIBRARY_FIELDS, Localize, STD_LIBRARIES, declared_globals, directive};
 
 /// Options of one lowering.
 #[derive(Clone, Debug)]
@@ -65,6 +65,10 @@ pub struct LowerOptions {
     /// The names of the `global` declarations of the files this file
     /// imports, which `Localize::All` leaves alone.
     pub imported_globals: Vec<String>,
+    /// The fields of Lua's libraries that the declarations list
+    /// (`nl_sema::Declarations::library_fields`), which `Localize::Std`
+    /// reads once besides Lua's own (localize.rs).
+    pub library_fields: std::collections::HashSet<(String, String)>,
     /// The profile the file is compiled for. In a realm of Garry's Mod, a
     /// branch whose condition realm constants decide (`if SERVER`) is
     /// lowered only if it runs, and the code that never runs is left out
@@ -106,7 +110,15 @@ pub fn lower(root: &SyntaxNode, source: &str, res: &Resolution, opts: &LowerOpti
 fn lower_once(root: &SyntaxNode, source: &str, res: &Resolution, opts: &LowerOptions, packed_try: bool) -> LowerOutput {
     let mut l = Lowerer::new(source, res, opts);
     l.packed_try = packed_try;
-    l.localize = localize::plan(root, res, opts.localize, &opts.imported_globals);
+    // A file's `#!localize` directive overrides the option.
+    let mode = match localize::directive(root) {
+        Ok(found) => found.unwrap_or(opts.localize),
+        Err(range) => {
+            l.diags.push(LowerDiagnostic { range, code: "localize-directive", message: "a `#!localize` directive names `none`, `std` or `all`".to_string() });
+            opts.localize
+        }
+    };
+    l.localize = localize::plan(root, res, mode, &opts.imported_globals, &opts.library_fields);
     l.collect_decl_names(root);
     l.collect_aliases(root);
     l.collect_registry_names(root);

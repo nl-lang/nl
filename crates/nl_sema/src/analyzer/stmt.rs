@@ -460,7 +460,7 @@ impl Analyzer<'_> {
             let t = tail.clone();
             let last = block(node).and_then(|b| statements(&b).last());
             let site = last.as_ref().map(|s| s.text_range());
-            let single = last.as_ref().and_then(|s| if s.kind() == EXPR_STMT { expr_child(s) } else { None }).is_some_and(|e| self.single_valued(&e));
+            let single = last.as_ref().and_then(|s| if s.kind() == EXPR_STMT { expr_child(s) } else { None }).is_some_and(|e| self.single_valued(&e) || self.checked_call(&e));
             self.record_return(&t, site, true, single);
         } else if !diverged && !tail_used && declared_ret.as_ref().is_some_and(|t| *t != Type::Nil) {
             // A `: nil` function returns nothing; a handler's tail is
@@ -527,6 +527,51 @@ impl Analyzer<'_> {
         match e.kind() {
             LITERAL | INTERP_STRING | PAREN_EXPR | TABLE_EXPR | LIST_EXPR | STRUCT_LIT | FN_EXPR | LAMBDA_EXPR | PREFIX_EXPR | BIN_EXPR | IS_EXPR | AS_EXPR | SELF_EXPR => true,
             NAME_REF => matches!(self.res.reference(e.text_range()), Some(Ref::Binding(id)) if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Variable)),
+            _ => false,
+        }
+    }
+
+    /// True for a call of an NL function whose declared return type is
+    /// checked at its own return and implies this function's: its result
+    /// needs no second check. The callee is a `fn` that nothing assigns
+    /// ([`Self::checked_fn_name`]) with a written return type (an inferred
+    /// one is not checked there), of one value, not `async`; the two types
+    /// are the same, or this function's is tested as shallowly as Lua's
+    /// `type` and a metatable ([`Self::shallow_check`]), so that a value
+    /// that passed the callee's check passes this one whenever its type is
+    /// assignable. The count is not changed either: `rt.ret` returns every
+    /// value of the call, as the call returns them.
+    fn checked_call(&self, e: &SyntaxNode) -> bool {
+        if !matches!(e.kind(), CALL_EXPR | COMMAND_CALL) {
+            return false;
+        }
+        let Some(callee) = expr_child(e) else { return false };
+        if callee.kind() != NAME_REF || is_safe_receiver(&callee) || !self.checked_fn_name(&callee) {
+            return false;
+        }
+        let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else { return false };
+        let Some(sig) = self.binding_sigs.get(id) else { return false };
+        let Some(Some(want)) = self.fns.last().map(|f| f.declared_ret.clone()) else { return false };
+        let got = &sig.ret;
+        if sig.is_async || matches!(got, Type::Any | Type::Tuple(_)) || matches!(want, Type::Tuple(_)) {
+            return false;
+        }
+        *got == want || (self.types.assignable(got, &want) && self.shallow_check(&want, 0))
+    }
+
+    /// True when the runtime check of `t` looks at nothing but Lua's type
+    /// of a value and its metatable: a primitive, `Table`, a list or map
+    /// (whose elements are not checked), a function, a struct or enum, or
+    /// a union of those. Not a record, whose fields are checked, nor an
+    /// interface or a negation.
+    fn shallow_check(&self, t: &Type, depth: u32) -> bool {
+        if depth > 8 {
+            return false;
+        }
+        match self.types.expand(t) {
+            Type::Nil | Type::Number | Type::String | Type::Bool | Type::Table | Type::Array(_) | Type::Map(..) | Type::Function | Type::Fn(_) => true,
+            Type::Named(nid) => self.types.is_struct(nid) || self.types.is_enum(nid),
+            Type::Union(m) => m.iter().all(|x| self.shallow_check(x, depth + 1)),
             _ => false,
         }
     }
@@ -607,7 +652,7 @@ impl Analyzer<'_> {
             // Reported by the resolver.
             return;
         }
-        let single = values.len() == 1 && values.first().is_some_and(|v| self.single_valued(v));
+        let single = values.len() == 1 && values.first().is_some_and(|v| self.single_valued(v) || self.checked_call(v));
         self.record_return(&value, Some(node.text_range()), false, single);
         self.diverges = true;
     }

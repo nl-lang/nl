@@ -412,6 +412,7 @@ impl Analyzer<'_> {
         let Some(recv_node) = expr_child(node) else { return Ty::any() };
         let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
         let recv = self.expr1(&recv_node);
+        self.note_table_read(node, &recv);
         if name == "len" {
             return self.len_of(&recv, node);
         }
@@ -926,7 +927,16 @@ impl Analyzer<'_> {
         let (Some(o), Some(k)) = (parts.first(), parts.get(1)) else { return Ty::any() };
         let recv = self.expr1(o);
         let key = self.expr1(k);
+        self.note_table_read(node, &recv);
         self.index_of(node, &recv, &key)
+    }
+
+    /// Records a read whose receiver is certain to be a Lua table
+    /// ([`crate::Hints::table_reads`]).
+    fn note_table_read(&mut self, node: &SyntaxNode, recv: &Ty) {
+        if recv.certain && self.opts.static_resolution && matches!(self.types.expand(&recv.t), Type::Table | Type::Array(_) | Type::Map(..) | Type::Record(_)) {
+            self.hints.table_reads.insert(node.text_range());
+        }
     }
 
     /// The value of `recv[key]`.
@@ -979,6 +989,7 @@ impl Analyzer<'_> {
                 let Some(recv_node) = expr_child(&inner) else { return Ty::any() };
                 let name = field_name(&inner).map(|t| t.text().to_string()).unwrap_or_default();
                 let recv = self.expr1(&recv_node);
+                self.note_table_read(&inner, &recv);
                 self.check_enum_member(&recv_node, &recv, &name, inner.text_range());
                 let lookup = self.lookup_member(&recv, &name, inner.text_range());
                 let lookup = self.table_member_of_name(&recv_node, &name, lookup);

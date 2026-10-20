@@ -264,6 +264,45 @@ fn duplicate_members(node: &SyntaxNode, file: &str, diags: &mut Vec<(String, Sem
     }
 }
 
+impl Declarations {
+    /// The fields of Lua globals that the declarations say are there, by
+    /// global and Lua key (`("math", "clamp")`): every member of a
+    /// top-level item whose `lua_root` is a global alone (`declare module
+    /// Number = :math`), under its `as 'key'` or its name, and the first
+    /// field of a `lua_root` that has one (`declare module MathEase =
+    /// :math.ease` gives `("math", "ease")`). What a declaration lists is
+    /// part of the library, not something a file adds later; the
+    /// localizer reads only those fields once (nl_ir, lower/localize.rs).
+    pub fn library_fields(&self) -> std::collections::HashSet<(String, String)> {
+        let mut out = std::collections::HashSet::new();
+        for item in &self.items {
+            let Some(root) = &item.root else { continue };
+            match root.steps.first() {
+                Some(LuaStep::Field(f)) => {
+                    out.insert((root.global.clone(), f.clone()));
+                }
+                Some(_) => {}
+                None if item.kind == DeclItemKind::Module => {
+                    for m in item.node.children() {
+                        if !matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE) {
+                            continue;
+                        }
+                        let key = match child(&m, LUA_KEY).and_then(|k| token(&k, STRING)) {
+                            Some(t) => Some(crate::resolver::decode_plain_string(&t)),
+                            None => child(&m, NAME).and_then(|n| name_text(&n)),
+                        };
+                        if let Some(key) = key {
+                            out.insert((root.global.clone(), key));
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+        out
+    }
+}
+
 /// The `LuaRoot` of a `LUA_PATH` in a declaration (a
 /// global, a nested one, a required module or a member of one).
 fn lua_root(path: &SyntaxNode) -> Result<LuaRoot, String> {

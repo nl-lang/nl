@@ -70,6 +70,7 @@ worker_send_messages uses Regex as a value
 worker_spawn_block reads a file-level variable that each worker has a copy of (as on every stock LuaJIT)
 lua_load load_nl is not in the portable profile
 import_add_path add_path is not in the portable profile
+type_declared_class uses add_path, which is not in the portable profile
 event_named relies on handlers running in the order they were added, which gmod's hook library does not keep
 event_return relies on that order, and on a handler that returns nil ending the run, which it does not in gmod
 lua_prelude uses IO, and gmod has no io library

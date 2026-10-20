@@ -1,0 +1,6 @@
+2	1.5
+1	2
+return value of strict expects Number, got String
+return value of bad expects Number, got String
+return value of number_x expects {x: Number}, got Table
+4

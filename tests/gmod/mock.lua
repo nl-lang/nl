@@ -33,7 +33,8 @@
 --   ErrorNoHalt, ErrorNoHaltWithStack, MsgN, Msg
 --   CurTime, RealTime, SysTime, FrameTime
 --   isstring, isnumber, isbool, isfunction, istable, IsValid
---   FindMetaTable, Entity(index), Player(userid): see Classes below
+--   FindMetaTable, Entity(index), Player(userid), Color(r, g, b, a): see
+--                           Classes below
 --   the string metatable's __index also takes a number: ("abc")[2] == "b"
 -- Removed, as gmod removes them (gmod-lua-shared's glua.cpp): loadstring,
 -- load, loadfile, dofile, io, ffi, os apart from os.time, os.clock,
@@ -145,7 +146,8 @@ end
 -- FindMetaTable returns: Entity, Player : Entity, Weapon : Entity.
 -- Entity(index) and Player(userid) give the objects of a small fixed world:
 -- players 1 "bob" and 2 "ann", a prop_physics at index 10 and a weapon_crowbar
--- at index 11.
+-- at index 11. Color is a class over tables, as in gmod: Color(r, g, b, a)
+-- gives a table with the metatable FindMetaTable("Color") returns.
 
 do
   local metas, data = {}, setmetatable({}, { __mode = "k" })
@@ -166,6 +168,13 @@ do
   function Player_:Nick() return data[self].nick end
   function Player_:UserID() return data[self].userid end
   class("Weapon", "Entity")
+
+  local COLOR = { MetaName = "Color" }
+  COLOR.__index = COLOR
+  metas.Color = COLOR
+  function Color(r, g, b, a)
+    return setmetatable({ r = r, g = g, b = b, a = a or 255 }, COLOR)
+  end
 
   function FindMetaTable(name) return metas[name] end
 

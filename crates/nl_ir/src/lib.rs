@@ -70,4 +70,4 @@
 pub mod ir;
 pub mod lower;
 
-pub use lower::{Localize, LowerDiagnostic, LowerOptions, LowerOutput, STD_LIBRARIES, declared_globals, lower};
+pub use lower::{LUA_LIBRARY_FIELDS, Localize, LowerDiagnostic, LowerOptions, LowerOutput, STD_LIBRARIES, declared_globals, directive, lower};

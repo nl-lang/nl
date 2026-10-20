@@ -21,18 +21,33 @@
 //! - `std` (the default): a path whose root is a Lua global (no NL name is
 //!   in scope, the resolver's `Ref::LuaGlobal`) named `string`, `math`,
 //!   `table`, `bit`, `coroutine`, `os` or `io`, and whose first step is
-//!   `.name`: the root and that step are localized, the later steps apply
-//!   to the local (`:table.sort(t)` is `table_sort(t)`);
-//! - `all`: the same for every Lua global root, and a root whose path is
-//!   not localized that way (a root alone, `:print(x)`, or followed by an
-//!   index, a call or a method call) is localized alone (`print`). A path
-//!   rooted at `_G` localizes `_G` only: its field is a global variable;
+//!   `.name` of a field the library is known to have: Lua's own
+//!   ([`LUA_LIBRARY_FIELDS`]), or one the declarations list
+//!   ([`super::LowerOptions::library_fields`]: `decl/lua.d.nl` declares
+//!   NL's additions to `math`, a host's declarations what the host adds,
+//!   such as Garry's Mod's `string.Explode`). The root and that step are
+//!   localized, the later steps apply to the local (`:table.sort(t)` is
+//!   `table_sort(t)`). Any other field (`:string.shout`) is read where it
+//!   stands: a file may add it to the library, and the file that reads it
+//!   may load before the one that adds it, or a later file may replace
+//!   it, which a value taken when the file loaded would not see;
+//! - `all`: the same for every Lua global root and every field, and a
+//!   root whose path is not localized that way (a root alone, `:print(x)`,
+//!   or followed by an index, a call or a method call) is localized alone
+//!   (`print`). A path rooted at `_G` localizes `_G` only: its field is a
+//!   global variable;
 //! - in both, nothing is localized that the file assigns: a path `root.name`
 //!   that is an assignment target anywhere in the file (`:math.pi = 3`),
 //!   and every path of a root the file assigns (`:_G.string = …`, or a
 //!   `global` declaration of that name). Under `all`, the `global` names of
 //!   the files the file imports ([`super::LowerOptions::imported_globals`])
 //!   are excluded too: those are variables by design.
+//!
+//! A file chooses its own setting with a directive, a comment
+//! `#!localize none`, `#!localize std` or `#!localize all` among the
+//! comments that start the file, before its first statement ([`directive`]);
+//! it overrides the option. `none` is for a file that reads library fields
+//! other files install or replace while it runs.
 //!
 //! The locals are made on first use ([`Lowerer::localized`]) and declared
 //! by one statement after the file's imports ([`Lowerer::prologue_at`]), so
@@ -104,6 +119,57 @@ impl Localize {
 
 /// The libraries whose fields `std` localizes.
 pub const STD_LIBRARIES: &[&str] = &["string", "math", "table", "bit", "coroutine", "os", "io"];
+
+/// The fields of Lua 5.1's libraries, and of LuaJIT's `bit`, that `std`
+/// localizes whatever the declarations say. Not the fields of later Lua
+/// versions or of LuaJIT 2.1's extensions (`table.move`, `table.new`):
+/// a file may install those (a polyfill, `require("table.new")`).
+pub const LUA_LIBRARY_FIELDS: &[(&str, &[&str])] = &[
+    ("string", &["byte", "char", "dump", "find", "format", "gmatch", "gsub", "len", "lower", "match", "rep", "reverse", "sub", "upper"]),
+    ("table", &["concat", "foreach", "foreachi", "getn", "insert", "maxn", "remove", "sort"]),
+    (
+        "math",
+        &[
+            "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "deg", "exp", "floor", "fmod", "frexp", "huge", "ldexp", "log", "log10", "max", "min", "modf",
+            "pi", "pow", "rad", "random", "randomseed", "sin", "sinh", "sqrt", "tan", "tanh",
+        ],
+    ),
+    ("bit", &["arshift", "band", "bnot", "bor", "bswap", "bxor", "lshift", "rol", "ror", "rshift", "tobit", "tohex"]),
+    ("coroutine", &["create", "resume", "running", "status", "wrap", "yield"]),
+    ("os", &["clock", "date", "difftime", "execute", "exit", "getenv", "remove", "rename", "setlocale", "time", "tmpname"]),
+    ("io", &["close", "flush", "input", "lines", "open", "output", "popen", "read", "stderr", "stdin", "stdout", "tmpfile", "type", "write"]),
+];
+
+/// Whether `root.name` is one of Lua's own library fields
+/// ([`LUA_LIBRARY_FIELDS`]).
+fn lua_library_field(root: &str, name: &str) -> bool {
+    LUA_LIBRARY_FIELDS.iter().any(|(lib, fields)| *lib == root && fields.contains(&name))
+}
+
+/// The setting a file's `#!localize <setting>` directive names (see the
+/// module documentation): `Ok(None)` without one, `Err` with the
+/// directive's range for a setting that is not `none`, `std` or `all`.
+/// Only the comments before the first statement count.
+pub fn directive(root: &SyntaxNode) -> Result<Option<Localize>, nl_syntax::TextRange> {
+    let mut found = None;
+    for tok in root.descendants_with_tokens().filter_map(|e| e.into_token()) {
+        match tok.kind() {
+            WHITESPACE | NEWLINE | DOC_COMMENT => {}
+            COMMENT => {
+                let Some(rest) = tok.text().strip_prefix("#!localize") else { continue };
+                if !rest.is_empty() && !rest.starts_with([' ', '\t']) {
+                    continue;
+                }
+                match Localize::from_name(rest.trim()) {
+                    Some(mode) => found = Some(mode),
+                    None => return Err(tok.text_range()),
+                }
+            }
+            _ => break,
+        }
+    }
+    Ok(found)
+}
 
 /// The libraries every state that runs NL has (`luaopen_nl` needs them,
 /// and the sandbox has copies): their fields are read without
@@ -185,8 +251,9 @@ fn global_root(node: &SyntaxNode, res: &Resolution) -> Option<String> {
 }
 
 /// Decides what a file localizes (see the module documentation).
-/// `imported_globals` are the `global` names of the files it imports.
-pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported_globals: &[String]) -> Plan {
+/// `imported_globals` are the `global` names of the files it imports,
+/// `library_fields` the library fields the declarations list.
+pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported_globals: &[String], library_fields: &HashSet<(String, String)>) -> Plan {
     let mut plan = Plan::default();
     if mode == Localize::None {
         return plan;
@@ -224,7 +291,8 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
         match mode {
             Localize::None => {}
             Localize::Std => {
-                if let Some(name) = first.filter(|n| STD_LIBRARIES.contains(&global.as_str()) && path_ok(n)) {
+                let known = |n: &String| lua_library_field(&global, n) || library_fields.contains(&(global.clone(), n.clone()));
+                if let Some(name) = first.filter(|n| STD_LIBRARIES.contains(&global.as_str()) && path_ok(n) && known(n)) {
                     plan.paths.insert((global, name));
                 }
             }

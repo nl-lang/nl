@@ -1,0 +1,4 @@
+1375
+true
+false
+TypeError: parameter 'c' of brightness expects Color, got Table

@@ -1,0 +1,7 @@
+parameter 'v' of x_of expects Vec, got Table
+parameter 'v' of x_of expects Vec, got nil
+lookups before the class exists: 2
+x = 3
+300
+parameter 'v' of x_of expects Vec, got Table
+lookups after: 3

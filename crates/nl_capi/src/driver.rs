@@ -223,7 +223,7 @@ mod tests {
         // The Lua backend prints `x:m()` as `__rt.lmethod.m(x)`.
         assert!(lua.contains("Point.new(1, 2)") && lua.contains("lmethod.length(p)"), "{lua}");
         assert!(lua.contains("lmethod.GetPos(pl)"), "{lua}");
-        assert!(lua.contains("getmetatable(v) == Point"), "{lua}");
+        assert!(lua.contains("__rt.luaclass(\"Point\"") && lua.contains(" ~= Point or Point == nil"), "{lua}");
         assert!(lua.contains("__rt.gettype(\"Player\")"), "{lua}");
         assert!(lua.contains("LocalPlayer()") && lua.contains("config.maxPlayers"), "{lua}");
 

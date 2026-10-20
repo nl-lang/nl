@@ -147,6 +147,7 @@ fn lower_counts(src: &str) -> (Count, Vec<&'static str>) {
         hints: nl_sema::Hints::default(),
         level: 0,
         localize: Localize::Std,
+        library_fields: Default::default(),
         imported_globals: Vec::new(),
         profile: nl_sema::Profile::Full,
     };
@@ -201,6 +202,7 @@ fn lower_messages(src: &str) -> Vec<String> {
         hints: nl_sema::Hints::default(),
         level: 0,
         localize: Localize::Std,
+        library_fields: Default::default(),
         imported_globals: Vec::new(),
         profile: nl_sema::Profile::Full,
     };

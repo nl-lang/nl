@@ -1,0 +1,9 @@
+4	3	0	2	0
+102	7	Function
+plain	Function
+inherited	0
+string	parameter 'xs' of first expects Table, got String
+number	parameter 't' of size expects Table, got Number
+nil	parameter 't' of field expects Table, got nil
+assign	variable 't' expects Table, got String
+0

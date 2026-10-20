@@ -297,6 +297,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         level,
         localize: options.localize,
         imported_globals,
+        library_fields: decls.library_fields(),
         profile: options.profile,
     };
     let out = nl_ir::lower(&root, text, &res, &lopts);

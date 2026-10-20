@@ -34,7 +34,8 @@
 //! code, so that a program can be run both ways.
 //! `--localize` says which Lua paths a file reads once, when it loads, into
 //! hidden locals: `none`, `std`
-//! (the fields of the standard libraries, the default) or `all`.
+//! (the fields Lua's standard libraries have or the declarations list, the
+//! default) or `all`. A file's `#!localize` directive overrides it.
 //!
 //! `nlc run` embeds stock LuaJIT through `mlua`,
 //! opens the runtime library (`runtime/*.lua`) with a host table that
@@ -140,8 +141,9 @@ options of check, build and run (and bundle, whose --profile is portable or gmod
   --no-static-resolution                   test everything at runtime: no proven checks, no static resolution
   --no-analyzer                            run only the resolver's checks
   --localize=none|std|all                  which Lua paths a file reads once, when it loads, into hidden locals:
-                                           none, the fields of the standard libraries (:math.floor; the
-                                           default), or every Lua global (:print, :hook.Add)";
+                                           none, the fields the standard libraries have or the declarations
+                                           list (:math.floor, not a field a file adds; the default), or every
+                                           Lua global (:print, :hook.Add); a file's `#!localize` comment wins";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();

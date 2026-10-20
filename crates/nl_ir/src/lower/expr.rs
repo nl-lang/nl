@@ -395,6 +395,10 @@ impl Lowerer<'_> {
         let ops = self.operands(&parts);
         let mut it = ops.into_iter();
         let (Some(o), Some(k)) = (it.next(), it.next()) else { return self.internal(node, "index") };
+        // A receiver certain to be a table: `rt.index` would only index it.
+        if self.opts.hints.is_table_read(node.text_range()) {
+            return Expr::index(single(o), single(k));
+        }
         self.index_read(single(o), single(k))
     }
 
@@ -416,6 +420,9 @@ impl Lowerer<'_> {
             if self.opts.level >= 1 || self.opts.hints.is_string_len(node.text_range()) {
                 return Expr::Unary(UnOp::Len, Box::new(r));
             }
+            if self.opts.hints.is_table_read(node.text_range()) {
+                return self.table_len(r);
+            }
             return Expr::intrinsic_call("len", vec![r]);
         }
         // A member of a primitive type's library named directly is read,
@@ -431,8 +438,41 @@ impl Lowerer<'_> {
             Some(MemberHint::Field { key } | MemberHint::Function { key }) => Expr::index(r, Expr::str(&key)),
             Some(MemberHint::Method { key }) => Expr::MethodCall(Box::new(r), key, Vec::new()),
             Some(MemberHint::TableFn { key }) => Expr::call(table_fn(&key), vec![r]),
+            None if self.opts.level == 0 && self.opts.hints.is_table_read(node.text_range()) => self.table_field(r, &name),
             None => Expr::AutoGet { receiver: Box::new(r), key: Box::new(Expr::str(&name)) },
         }
+    }
+
+    /// `t.len` at level 0 when `t` is certain to be a table
+    /// (`Hints::table_reads`): `#t`, unless it has a metatable, which may
+    /// have a `__len` that Lua 5.1's `#` does not call on a table; then
+    /// `rt.len`. `rt.getmetatable` is the raw one, as in `rt.len`.
+    fn table_len(&mut self, r: Expr) -> Expr {
+        let t = self.stable(r);
+        let mt = Expr::call(self.rt_cached("getmetatable"), vec![t.clone()]);
+        let plain = Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, mt, Expr::Nil), Expr::Unary(UnOp::Len, Box::new(t.clone())));
+        Expr::binary(BinOp::Or, plain, Expr::intrinsic_call("len", vec![t]))
+    }
+
+    /// `t.key` whose value is used, at level 0, when `t` is certain to be
+    /// a table and the key is no member its type knows: the key is read
+    /// directly, and only a function found there goes on to `rt.mget`,
+    /// which calls it when it is a method (a struct instance passed as a
+    /// `Table`), as an untyped receiver's member would be:
+    ///
+    /// ```lua
+    /// local v = t.key; if rt.type(v) == "function" then v = rt.mget(t, "key") end
+    /// ```
+    fn table_field(&mut self, r: Expr, name: &str) -> Expr {
+        let t = self.stable(r);
+        let v = self.fresh_temp(Expr::index(t.clone(), Expr::str(name)), "v");
+        let cond = Expr::binary(BinOp::Eq, Expr::call(self.rt_cached("type"), vec![Expr::Local(v)]), Expr::str("function"));
+        let then = self.sub_block(|l| {
+            let get = Expr::AutoGet { receiver: Box::new(t), key: Box::new(Expr::str(name)) };
+            l.emit(StmtKind::Assign { targets: vec![Place::Local(v)], values: vec![get] });
+        });
+        self.emit(StmtKind::If { cond, then, otherwise: None });
+        Expr::Local(v)
     }
 
     /// `f!`, `x.m!`, `@m!`: the value itself, never called.
@@ -454,6 +494,9 @@ impl Lowerer<'_> {
                         self.fresh_temp(r, "s");
                     }
                     return table_fn(&key);
+                }
+                if self.opts.hints.is_table_read(inner.text_range()) {
+                    return Expr::index(r, Expr::str(&name));
                 }
                 self.index_read(r, Expr::str(&name))
             }

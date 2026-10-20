@@ -95,6 +95,13 @@ pub struct Hints {
     pub interp_string: HashSet<TextRange>,
     /// `AS_EXPR` nodes, by range.
     pub conversions: HashMap<TextRange, AsHint>,
+    /// `INDEX_EXPR` and `FIELD_EXPR` reads (`x[k]`, `x.len`, `x.key`) whose
+    /// receiver is certain to be a Lua table: declared `Table`, `[T]`,
+    /// `{[K]: V}` or a record. What the runtime's `rt.index`, `rt.len`
+    /// and `rt.mget` do beyond Lua's index and `#` is for strings,
+    /// numbers, booleans, `nil`, `__len` and methods: the lowering reads
+    /// the key directly, and keeps a cheap test for the last two.
+    pub table_reads: HashSet<TextRange>,
     /// `FIELD_EXPR` nodes of members of declaration files,
     /// with their Lua keys, and of `Table` functions called as methods
     /// ([`MemberHint::TableFn`]); needed whatever the mode.
@@ -126,6 +133,10 @@ impl Hints {
 
     pub fn is_string_len(&self, field_expr: TextRange) -> bool {
         self.len_string.contains(&field_expr)
+    }
+
+    pub fn is_table_read(&self, node: TextRange) -> bool {
+        self.table_reads.contains(&node)
     }
 
     pub fn is_string_interp(&self, expr: TextRange) -> bool {
