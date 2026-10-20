@@ -994,8 +994,14 @@ impl Analyzer<'_> {
                 let lookup = self.lookup_member(&recv, &name, inner.text_range());
                 let lookup = self.table_member_of_name(&recv_node, &name, lookup);
                 self.record_member_hint(&inner, &recv, &lookup, &name);
+                // A method comes bound to the receiver, so its value takes
+                // the arguments without `self`; on a string, number or
+                // boolean it is the library's function, which takes the
+                // receiver first.
+                let primitive = matches!(self.types.expand(&recv.t), Type::Number | Type::String | Type::Bool);
                 match lookup {
                     Lookup::Field(t, _) => Ty::uncertain(t),
+                    Lookup::Method(sig, _) if !primitive => Ty::uncertain(Type::Fn(Rc::new(FnType { is_method: false, ..(*sig).clone() }))),
                     Lookup::Method(sig, _) | Lookup::Function(sig, _) | Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => Ty::uncertain(Type::Fn(sig)),
                     _ => Ty::any(),
                 }

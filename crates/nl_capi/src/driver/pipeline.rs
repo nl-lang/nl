@@ -24,7 +24,7 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::mpsc;
 
-use nl_sema::{Declarations, ExportInfo};
+use nl_sema::{Declarations, ExportInfo, ExtensionInfo};
 use nl_syntax::{LineIndex, TextRange, TextSize};
 
 use super::imports::DriverImports;
@@ -180,6 +180,9 @@ pub(crate) struct Staged {
     /// The `global` names the file and the files it imports declare
     /// (`imports.rs`, `DriverImports::globals`).
     pub(crate) globals: Vec<String>,
+    /// The functions it and its imports add to declared modules and types
+    /// (`Resolution::extensions`).
+    pub(crate) extensions: Vec<ExtensionInfo>,
     /// The primitive methods the file defines and the paths it imports
     /// (`nl_sema::scan_file`), so that an importer follows them without
     /// reading the file again.
@@ -188,7 +191,7 @@ pub(crate) struct Staged {
 
 impl From<CompileOutput> for Staged {
     fn from(output: CompileOutput) -> Self {
-        Staged { output, exports: None, globals: Vec::new(), scan: None }
+        Staged { output, exports: None, globals: Vec::new(), extensions: Vec::new(), scan: None }
     }
 }
 
@@ -229,7 +232,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
 
     // Resolve.
     let from = chunk_name.strip_prefix('@');
-    let imports = DriverImports::new(loader, from, options, mode);
+    let imports = DriverImports::new(loader, from, options, mode, &decls);
     let res = nl_sema::resolve_with(&root, &imports, &decls);
     let sema_severity = |d: &nl_sema::SemaDiagnostic| if d.error { Severity::Error } else if d.lint { Severity::Lint } else { Severity::Warning };
     diags.extend(res.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
@@ -247,6 +250,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         return out.into();
     }
     let exports = Some(nl_sema::profile::exports(&res, options.profile));
+    let extensions = res.extensions();
     // The `global` names of this file and of its imports, which
     // `Localize::All` leaves alone.
     let imported_globals = imports.globals();
@@ -272,7 +276,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     if profile_errors || realm.iter().any(|d| d.error) || (options.analyze && analysis.has_errors()) {
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, scan };
+        return Staged { output: out, exports, globals, extensions, scan };
     }
     let hints = if options.static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
 
@@ -282,7 +286,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         diags.extend(bad_patterns.into_iter().map(|(range, msg)| pos.diagnostic(Severity::Error, super::regex_literal::CODE, msg, range)));
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, scan };
+        return Staged { output: out, exports, globals, extensions, scan };
     }
 
     // Lower.
@@ -305,13 +309,13 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         diags.extend(out.diagnostics.iter().map(|d| pos.diagnostic(Severity::Error, d.code, d.message.clone(), d.range)));
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, scan };
+        return Staged { output: out, exports, globals, extensions, scan };
     }
     diags.extend(imported);
 
     // Print or emit.
     if let Mode::Imported { .. } = mode {
-        return Staged { output: CompileOutput { chunk: None, diagnostics: sorted(diags) }, exports, globals, scan };
+        return Staged { output: CompileOutput { chunk: None, diagnostics: sorted(diags) }, exports, globals, extensions, scan };
     }
     let chunk = match options.emit {
         Emit::Lua => nl_luagen::print_chunk(&out.chunk).into_bytes(),
@@ -332,11 +336,11 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
                     end_line: e.line.max(1),
                     end_column: 1,
                 });
-                return Staged { output: failed(diags), exports, globals, scan };
+                return Staged { output: failed(diags), exports, globals, extensions, scan };
             }
         },
     };
-    Staged { output: CompileOutput { chunk: Some(chunk), diagnostics: sorted(diags) }, exports, globals, scan }
+    Staged { output: CompileOutput { chunk: Some(chunk), diagnostics: sorted(diags) }, exports, globals, extensions, scan }
 }
 
 /// The declaration files in scope: the built-in prelude declarations of

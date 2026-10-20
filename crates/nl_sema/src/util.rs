@@ -26,6 +26,19 @@ pub fn has_token(node: &SyntaxNode, kind: SyntaxKind) -> bool {
     token(node, kind).is_some()
 }
 
+/// True for an item the file exports: `pub`, or `global` on an `fn`,
+/// `module` or `struct` (which also stores it in the Lua global of its
+/// name). `global X` alone declares a Lua global and exports nothing.
+pub fn is_exported(node: &SyntaxNode) -> bool {
+    has_token(node, SyntaxKind::PUB_KW) || is_global_item(node)
+}
+
+/// True for `global fn`, `global module` and `global struct`: an exported
+/// item that the file also stores in the Lua global of its name.
+pub fn is_global_item(node: &SyntaxNode) -> bool {
+    matches!(node.kind(), SyntaxKind::FN_DECL | SyntaxKind::MODULE_DECL | SyntaxKind::STRUCT_DECL) && has_token(node, SyntaxKind::GLOBAL_KW)
+}
+
 /// The non-trivia child tokens of `node`, in order.
 pub fn tokens(node: &SyntaxNode) -> impl Iterator<Item = SyntaxToken> + '_ {
     node.children_with_tokens().filter_map(|e| e.into_token()).filter(|t| !t.kind().is_trivia())

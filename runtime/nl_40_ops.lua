@@ -539,7 +539,33 @@ do
   -- (where a `To<String>` implementation goes).
   rt.tostring = tostring
 
+  -- `f(*t)`, `[a, *t]`: the items of t (rt.spread). A table that carries
+  -- its count in a numeric `n` gives the items 1 to n, nils included: a
+  -- rest table (`*args` is `{n = select("#", ...), ...}`) and what
+  -- `Table.pack` makes, so forwarding `f(*args)` passes exactly the
+  -- arguments received. Any other table gives 1 to #t, as Lua's unpack.
+  -- Unspecified: the count is `n` whenever t has a numeric `n`, which Lua
+  -- 5.2's `table.unpack` does not read. A value that is not a table raises
+  -- at the NL line, as Lua's unpack would there. The spread of a rest
+  -- parameter is `rt.unpack(args, 1, args.n)`, Lua's unpack itself.
+  -- The count of a rest table, `rt.select("#", ...)` (generated code
+  -- keeps it in a hidden local, as it does rt.getmetatable).
+  rt.select = select
+  local function count(t)
+    local n = rawget(t, "n")
+    if type(n) == "number" then return n end
+    return #t
+  end
+  I.count = count
   rt.unpack = unpack
+  function rt.spread(t)
+    if type(t) ~= "table" then
+      error("bad argument #1 to 'unpack' (table expected, got " .. type(t) .. ")", 2)
+    end
+    local n = rawget(t, "n")
+    if type(n) == "number" then return unpack(t, 1, n) end
+    return unpack(t)
+  end
 
   -- Keyed arguments. `f a, k: v` passes the keyed
   -- arguments as one table after the positional ones, marked with the
@@ -588,10 +614,11 @@ do
   -- The last item of the rest table when it is the keyed table, removed
   -- from the table; nil otherwise.
   function rt.kwpop(rest)
-    local n = #rest
+    local n = count(rest)
     local last = rest[n]
     if iskw(last) then
       rest[n] = nil
+      if rawget(rest, "n") ~= nil then rest.n = n - 1 end
       return last
     end
     return nil
@@ -627,14 +654,15 @@ do
       if iskw(v) then refuse(fname, v) end
     end
   end
-  function rt.nokwrest(fname, rest)
-    local last = rest[#rest]
+  function rt.nokwrest(fname, rest, n)
+    local last = rest[n or rest.n or #rest]
     if iskw(last) then refuse(fname, last) end
   end
 
   -- `[a, *list, b]`: the items of each part, in order. A
   -- part is a table; its items are 1 to #part, so a nil inside a part
-  -- is kept and a trailing nil is cut, as in a literal.
+  -- is kept and a trailing nil is cut, as in a literal; a part that
+  -- carries its count in `n` (a rest table) gives 1 to n, as rt.unpack.
   function rt.listcat(...)
     local out, n = {}, 0
     for i = 1, select("#", ...) do
@@ -642,16 +670,17 @@ do
       if type(part) ~= "table" then
         error("`*` in a list needs a table, got " .. rt.typeof(part), 2)
       end
-      local m = #part
+      local m = count(part)
       for j = 1, m do out[n + j] = part[j] end
       n = n + m
     end
     return out
   end
 
-  -- `f(*list, k: v)`: every item of the list, then the keyed table.
-  function rt.unpackkw(list, kw)
-    local n = #list
+  -- `f(*list, k: v)`: every item of the list, then the keyed table. `n`
+  -- is the count of a rest parameter that keeps it in a local.
+  function rt.unpackkw(list, kw, n)
+    n = n or count(list)
     local t = { unpack(list, 1, n) }
     t[n + 1] = kw
     return unpack(t, 1, n + 1)

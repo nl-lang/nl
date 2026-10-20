@@ -251,6 +251,9 @@ pub struct Lowerer<'a> {
     /// `rt.KW`, `rt.setmetatable`), each copied once into a local of the
     /// main function when the chunk starts ([`Self::rt_cached`]).
     rt_cache: Vec<(&'static str, LocalId)>,
+    /// The rest parameters whose count is a hidden local of their function
+    /// rather than the table's `n` (func.rs), with that local.
+    pub(crate) rest_counts: HashMap<BindingId, LocalId>,
     /// What the file localizes (localize.rs).
     pub(crate) localize: localize::Plan,
     /// The locals of the localized paths, in the order they were made, each
@@ -298,6 +301,7 @@ impl<'a> Lowerer<'a> {
             spawn_depth: 0,
             struct_layouts: HashMap::new(),
             rt_cache: Vec::new(),
+            rest_counts: HashMap::new(),
             localize: localize::Plan::default(),
             localized: Vec::new(),
             prologue_at: None,
@@ -525,6 +529,23 @@ impl<'a> Lowerer<'a> {
             self.emit(StmtKind::Local { locals: vec![l], values: value.into_iter().collect() });
         }
         l
+    }
+
+    /// `global fn name`, `global module Name`, `global struct Name`: once
+    /// the item has its value, the Lua global of its name gets it too, so
+    /// that Lua code finds it while the rest of the file runs.
+    pub(crate) fn store_global_item(&mut self, node: &SyntaxNode) {
+        if !is_global_item(node) {
+            return;
+        }
+        let id = match node.kind() {
+            MODULE_DECL => self.res.module(node.text_range()).map(|(id, _)| id),
+            _ => child(node, NAME).and_then(|n| self.res.declaration(n.text_range())),
+        };
+        let Some(id) = id else { return };
+        let Some(name) = self.res.binding(id).map(|b| b.name.clone()) else { return };
+        let l = self.local_of(id);
+        self.emit(StmtKind::Assign { targets: vec![Place::Global(name)], values: vec![Expr::Local(l)] });
     }
 
     /// True when the binding's `local` was emitted ahead.
@@ -1025,12 +1046,18 @@ impl<'a> Lowerer<'a> {
                     self.lower_fn_decl(node);
                 }
             }
-            STRUCT_DECL => self.lower_struct(node),
+            STRUCT_DECL => {
+                self.lower_struct(node);
+                self.store_global_item(node);
+            }
             ENUM_DECL => self.lower_enum(node),
             INTERFACE_DECL => self.lower_interface(node),
             INTERFACE_IMPL => self.lower_interface_impl(node),
             TYPE_DECL => {}
-            MODULE_DECL => self.lower_module(node),
+            MODULE_DECL => {
+                self.lower_module(node);
+                self.store_global_item(node);
+            }
             IMPORT_DECL => self.lower_import(node),
             WHILE_STMT | UNTIL_STMT | LOOP_STMT => self.lower_while(node),
             FOR_STMT => self.lower_for(node),

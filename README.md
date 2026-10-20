@@ -64,6 +64,8 @@ print describe(ayla)                 # a player with a long name
 - **Full Lua compatibility.** The fork runs unmodified Lua source and stock
   LuaJIT 2.1 bytecode with unchanged behavior. NL calls Lua functions,
   libraries and host APIs directly, and Lua code can `require` an `.nl` file.
+  `fn` adds functions to declared Lua libraries and host classes, and
+  `global fn` publishes one to Lua.
 - **Events, tasks and async.** `on` handlers are shared by NL, Lua and the
   host. `async fn` and `.await` are built on coroutines, and the host drives
   them with one call to `nl_pump` per frame.

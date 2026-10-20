@@ -153,7 +153,7 @@ fn formatted_conformance_programs_run() {
                 let rel = path.strip_prefix(&dir).unwrap().display().to_string();
                 let expected = std::fs::read(path.with_extension("out")).unwrap();
                 let mut cmd = Command::new(nlc());
-                cmd.current_dir(&dir).env_remove("NL_PATH").arg("run").arg(&rel);
+                cmd.current_dir(&dir).env_remove("NL_PATH").args(["run", "--decl", "decl"]).arg(&rel);
                 let outcome = match run_with_timeout(cmd, Duration::from_secs(60)) {
                     Err(e) => Some(e),
                     Ok((Some(0), stdout, _)) if stdout == expected => None,

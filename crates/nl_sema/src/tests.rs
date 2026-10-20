@@ -17,6 +17,30 @@ fn run_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/run")
 }
 
+/// The built-in declarations and those of the conformance suite
+/// (`tests/run/decl/`), which its programs are compiled with.
+fn suite_declarations() -> Declarations {
+    let mut files = prelude_files();
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(run_dir().join("decl")).unwrap().map(|e| e.unwrap().path()).filter(|p| p.to_string_lossy().ends_with(".d.nl")).collect();
+    paths.sort();
+    for p in paths {
+        let src = std::fs::read_to_string(&p).unwrap();
+        files.push((p.display().to_string(), nl_syntax::parse_decl_file(&src).syntax()));
+    }
+    Declarations::load(&files).0
+}
+
+/// The resolver's errors on a program of the conformance suite, with its
+/// declarations.
+fn suite_errors(src: &str) -> Vec<(u32, String)> {
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    let decls = suite_declarations();
+    let res = resolve_with(&parse.syntax(), &AnyImports, &decls);
+    let index = nl_syntax::LineIndex::new(src);
+    res.diagnostics.iter().filter(|d| d.error && d.code != "not-exported").map(|d| (index.line_col(src, d.range.start()).line, d.message.clone())).collect()
+}
+
 /// The files of tests/run, for the analyzer: an import path is found
 /// beside the importing file, then in tests/run (where the entry programs
 /// are); exports are what the file's resolver gives, and the primitive
@@ -58,20 +82,29 @@ fn errors(src: &str) -> Vec<(u32, String)> {
 /// The resolver's errors, then the analyzer's when the resolver found
 /// none (the pipeline's order), with the built-in declarations.
 fn analyzer_diagnostics(src: &str) -> Vec<(u32, &'static str, String, bool)> {
+    analyzer_diagnostics_with(src, &prelude_declarations())
+}
+
+fn analyzer_diagnostics_with(src: &str, decls: &Declarations) -> Vec<(u32, &'static str, String, bool)> {
     let parse = nl_syntax::parse(src);
     assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
-    let decls = prelude_declarations();
     let root = parse.syntax();
-    let res = resolve_with(&root, &AnyImports, &decls);
+    let res = resolve_with(&root, &AnyImports, decls);
     let index = nl_syntax::LineIndex::new(src);
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
     let mut out: Vec<(u32, &'static str, String, bool)> = res.diagnostics.iter().filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code, d.message.clone(), d.error)).collect();
     if !res.has_errors() {
-        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: true, imports: Some(&RunImports), record: false };
+        let opts = AnalyzeOptions { static_resolution: true, decls: Some(decls), lints: true, imports: Some(&RunImports), record: false };
         let analysis = analyze(&root, &res, &opts);
         out.extend(analysis.diagnostics.iter().map(|d| (line(d.range), d.code, d.message.clone(), d.error)));
     }
     out
+}
+
+/// The analyzer's errors on a program of the conformance suite, with its
+/// declarations.
+fn suite_analyzer_errors(src: &str) -> Vec<(u32, String)> {
+    analyzer_diagnostics_with(src, &suite_declarations()).into_iter().filter(|d| d.3).map(|d| (d.0, d.2)).collect()
 }
 
 fn analyzer_errors(src: &str) -> Vec<(u32, String)> {
@@ -123,7 +156,7 @@ fn entry_programs_resolve() {
             continue;
         }
         let src = std::fs::read_to_string(&path).unwrap();
-        let errs = errors(&src);
+        let errs = suite_errors(&src);
         if !errs.is_empty() {
             failures.push(format!("{}: {:?}", path.display(), errs));
         }
@@ -144,7 +177,7 @@ fn reject_programs() {
         }
         let src = std::fs::read_to_string(&path).unwrap();
         let expect = src.lines().position(|l| l.trim_start().starts_with("# expect-error:")).unwrap() as u32 + 2;
-        let errs = analyzer_errors(&src);
+        let errs = suite_analyzer_errors(&src);
         if !errs.iter().any(|(line, _)| *line == expect) {
             failures.push(format!("{name}: expected an error on line {expect}, got {errs:?}"));
         }
@@ -163,7 +196,7 @@ fn entry_programs_analyze() {
             continue;
         }
         let src = std::fs::read_to_string(&path).unwrap();
-        let errs = analyzer_errors(&src);
+        let errs = suite_analyzer_errors(&src);
         if !errs.is_empty() {
             failures.push(format!("{}: {:?}", path.display(), errs));
         }
@@ -1095,6 +1128,126 @@ fn host_types_parents_first() {
     let got = decls.host_types();
     let names: Vec<(&str, Option<&str>)> = got.iter().map(|(n, p)| (n.as_str(), p.as_deref())).collect();
     assert_eq!(names, [("Entity", None), ("Lone", None), ("Player", Some("Entity")), ("Weapon", Some("Entity"))]);
+}
+
+/// Declarations for the tests of `fn Decl.name`: a module, a Lua class, a
+/// host type with a parent, a function and a type nested in a module.
+fn extension_declarations() -> Declarations {
+    let decl = "declare module Util = :util\n  fn width(s: String): Number\nend\ndeclare struct Color = :Color\n  r: Number\nend\ndeclare type Entity\n  fn get_class(self): String as 'GetClass'\nend\ndeclare type Player : Entity\n  fn nick(self): String as 'Nick'\nend\ndeclare fn me(): Player = :LocalPlayer\ndeclare module Nest = :nest\n  type Inner\n  end\nend\n";
+    let parse = nl_syntax::parse_decl_file(decl);
+    assert!(parse.diagnostics().is_empty(), "{:?}", parse.diagnostics());
+    let mut files = crate::decl::prelude_files();
+    files.push(("game.d.nl".to_string(), parse.syntax()));
+    let (decls, diags) = Declarations::load(&files);
+    assert!(diags.is_empty(), "{diags:?}");
+    decls
+}
+
+/// The resolver's and the analyzer's codes, by line, with
+/// [`extension_declarations`] and the imports given.
+fn extension_codes(src: &str, imports: &dyn ImportProvider) -> Vec<(u32, &'static str)> {
+    let decls = extension_declarations();
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    let root = parse.syntax();
+    let res = resolve_with(&root, imports, &decls);
+    let index = nl_syntax::LineIndex::new(src);
+    let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
+    let mut out: Vec<(u32, &'static str)> = res.diagnostics.iter().map(|d| (line(d.range), d.code)).collect();
+    if !res.has_errors() {
+        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+        out.extend(analyze(&root, &res, &opts).diagnostics.iter().map(|d| (line(d.range), d.code)));
+    }
+    out
+}
+
+/// `fn Util.name` adds a plain function to a declared module (no `self`),
+/// `fn Player.name` a method to a declared type; the analyzer knows both,
+/// with their signatures.
+#[test]
+fn extending_declared_modules_and_types() {
+    let src = "fn Util.twice(s: String): String\n  s <> s\nend\nfn Player.tag(prefix: String): String\n  prefix <> self.nick\nend\nfn Color.bright: Number\n  self.r * 2\nend\nlet a: String = Util.twice(\"x\")\nlet b: String = me().tag(\"@\")\nprint a, b\n";
+    assert_eq!(extension_codes(src, &AnyImports), []);
+    // The signatures are checked at calls.
+    assert_eq!(extension_codes("fn Util.twice(s: String): String\n  s\nend\nprint Util.twice(5)\n", &AnyImports), [(4, "type-mismatch")]);
+    assert_eq!(extension_codes("fn Player.tag(p: String): String\n  p\nend\nlet n: Number = me().tag(\"@\")\nprint n\n", &AnyImports), [(4, "type-mismatch")]);
+    // A function of a module has no `self`.
+    assert!(extension_codes("fn Util.bad\n  self\nend\n", &AnyImports).iter().any(|(l, _)| *l == 2));
+    // The same file may define a name again: it replaces the first.
+    assert_eq!(extension_codes("fn Util.f\n  1\nend\nfn Util.f\n  2\nend\n", &AnyImports), []);
+}
+
+#[test]
+fn extending_declared_names_is_checked() {
+    // A member of the declaration, or of a parent of a host type.
+    assert_eq!(extension_codes("fn Util.width(s)\n  1\nend\n", &AnyImports), [(1, "declared-member-redefined")]);
+    assert_eq!(extension_codes("fn Player.get_class\n  \"x\"\nend\n", &AnyImports), [(1, "declared-member-redefined")]);
+    // No metatable: a type nested in a declaration.
+    assert_eq!(extension_codes("fn Nest.Inner.f\nend\n", &AnyImports), [(1, "declared-owner")]);
+    // Not a module or a type; operators.
+    assert_eq!(extension_codes("fn Nest.Missing.f\nend\n", &AnyImports), [(1, "declared-owner")]);
+    assert_eq!(extension_codes("fn Player.+(o)\n  o\nend\n", &AnyImports), [(1, "operator-owner")]);
+    assert_eq!(extension_codes("fn Util.len\n  1\nend\n", &AnyImports), [(1, "operator-owner")]);
+}
+
+/// An import that brings the functions its file adds to declared types.
+struct ExtendingImport;
+
+impl ImportProvider for ExtendingImport {
+    fn exports(&self, _path: &str) -> Result<Vec<ExportInfo>, String> {
+        Ok(vec![ExportInfo { name: "ready".into(), kind: BindingKind::Variable, params: None, decl: DeclKind::Const, optional: false }])
+    }
+    fn extensions(&self, _path: &str) -> Vec<ExtensionInfo> {
+        vec![ExtensionInfo { owner: "Player".into(), name: "tag".into(), method: true, params: vec![("prefix".into(), false)], rest: false, keyed: false, is_async: false, origin: None }]
+    }
+}
+
+/// What an imported file adds to a declared type is known in the
+/// importing file, and passed on to the files that import it; defining
+/// it again is an error.
+#[test]
+fn imported_extensions() {
+    // The member is resolved from the declared type, as the declaration's
+    // own are: a method call under its name.
+    let src = "import { ready } from 'tags'\nprint ready, me().tag(\"@\")\n";
+    assert_eq!(extension_codes(src, &ExtendingImport), []);
+    let decls = extension_declarations();
+    let parse = nl_syntax::parse(src);
+    let root = parse.syntax();
+    let res = resolve_with(&root, &ExtendingImport, &decls);
+    let analysis = analyze(&root, &res, &AnalyzeOptions { decls: Some(&decls), ..Default::default() });
+    let hinted = root.descendants().filter_map(|n| analysis.hints.member(n.text_range()).cloned()).collect::<Vec<_>>();
+    assert!(hinted.contains(&MemberHint::Method { key: "tag".into() }), "{hinted:?}");
+    let parse = nl_syntax::parse("import { ready } from 'tags'\nfn Util.f\nend\nprint ready\n");
+    let res = resolve_with(&parse.syntax(), &ExtendingImport, &decls);
+    let got: Vec<(String, String, Option<String>)> = res.extensions().into_iter().map(|e| (e.owner, e.name, e.origin)).collect();
+    assert_eq!(got, [("Player".into(), "tag".into(), Some("tags".into())), ("Util".into(), "f".into(), None)]);
+    let again = "import { ready } from 'tags'\nfn Player.tag(p)\n  p\nend\nprint ready\n";
+    assert_eq!(extension_codes(again, &ExtendingImport), [(2, "declared-member-redefined")]);
+}
+
+/// `global fn`, `global module` and `global struct` are exports, and no
+/// lint calls them a use of a global.
+#[test]
+fn global_items_are_exported() {
+    let src = "global fn class_(n)\n  n\nend\nglobal module Registry\nend\nglobal struct Point\n  x: Number\nend\n";
+    let parse = nl_syntax::parse(src);
+    assert!(!parse.has_errors(), "{:?}", parse.diagnostics());
+    let res = resolve(&parse.syntax(), &AnyImports);
+    let names: Vec<(String, DeclKind)> = res.exports().into_iter().map(|e| (e.name, e.decl)).collect();
+    assert_eq!(names, [("class_".into(), DeclKind::Fn), ("Registry".into(), DeclKind::Module), ("Point".into(), DeclKind::Struct)]);
+    assert_eq!(analyzer_codes(src), []);
+    // Where `pub` cannot stand, `global` cannot either.
+    assert!(nl_syntax::parse("fn f\n  global fn g\n  end\nend\n").has_errors());
+    assert!(nl_syntax::parse("struct S\nend\nglobal fn S.m\nend\n").has_errors());
+}
+
+/// `M.f!` of a module and `obj.m!` of a struct are bound: their type is
+/// a function without `self`.
+#[test]
+fn bang_of_a_method_is_bound() {
+    let src = "struct P\n  n: Number = 0\nend\nfn P.add(k: Number): Number\n  @n + k\nend\nlet p = P {}\nlet f = p.add!\nlet n: Number = f(1)\nprint n\nprint f(\"x\")\n";
+    assert_eq!(analyzer_codes(src), [(11, "type-mismatch")]);
 }
 
 // ---- user feedback: autocalls, `when` names, declarations, imports --------

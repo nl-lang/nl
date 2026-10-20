@@ -441,6 +441,35 @@ impl Lowerer<'_> {
                 }
                 self.emit(StmtKind::Do(Block::new(stmts)));
             }
+            // `fn Util.name` on a declared module: `rt.declfn(util, "name",
+            // f, owner, "Util")` stores a plain function in the module's
+            // Lua table. `fn Player.name` on a declared host type or Lua
+            // class: `rt.declmethod(mt, "name", f, owner, "Player", kind)`
+            // stores a method where the values find their members, `mt`
+            // being the metatable the host registered under the type's
+            // name (`rt.gettype`), or the class at the struct's Lua path.
+            MethodOwner::Declared(id) => {
+                let kind = self.res.declared_kind(id);
+                let target = match kind {
+                    Some(nl_sema::decl::DeclItemKind::HostType) => Expr::intrinsic_call("gettype", vec![Expr::str(&owner_text)]),
+                    _ => match self.res.declared_path(id).cloned() {
+                        Some(root) => self.lua_root_value(&root),
+                        None => {
+                            self.internal(node, "declared owner without a Lua path");
+                            return;
+                        }
+                    },
+                };
+                let owner = self.owner_value();
+                let call = match kind {
+                    Some(nl_sema::decl::DeclItemKind::Module) => Expr::intrinsic_call("declfn", vec![target, Expr::str(&method), f, owner, Expr::str(&owner_text)]),
+                    _ => {
+                        let how = if kind == Some(nl_sema::decl::DeclItemKind::HostType) { "host" } else { "class" };
+                        Expr::intrinsic_call("declmethod", vec![target, Expr::str(&method), f, owner, Expr::str(&owner_text), Expr::str(how)])
+                    }
+                };
+                self.emit(StmtKind::Expr(call));
+            }
         }
     }
 }

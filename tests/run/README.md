@@ -10,6 +10,7 @@ Small NL programs, one feature each, with the exact output they must print. They
 | `<area>_<feature>.out` | Its exact expected stdout, byte for byte, ending in a newline. |
 | `reject/<name>.nl` | A program the compiler must reject for a non-syntactic reason. No `.out`. |
 | `import/`, `include/`, `lua/`, `worker/` | Helper files used by other programs. Never run on their own. |
+| `decl/` | Declaration files (`.d.nl`) of the Lua things some programs use (`lua_extend_declared.nl`); every program is compiled with them. |
 
 A `.nl` file is an entry program exactly when a `.out` file of the same name sits beside it.
 
@@ -17,7 +18,7 @@ Area prefixes name the part of the language: `lex_` (lexical structure), `var_` 
 
 ## Running a program
 
-- Run `nlc run <file>.nl` with the working directory set to `tests/run/`. `include(...)` and `require(...)` take paths relative to the working directory (`include("include/counter.lua")`, `require("lua.helper")`); `import` paths resolve relative to the importing file and do not depend on it.
+- Run `nlc run --decl decl <file>.nl` with the working directory set to `tests/run/`: the declaration files of `decl/` are in scope for every program (and for `nlc check` and the rejected programs alike). `include(...)` and `require(...)` take paths relative to the working directory (`include("include/counter.lua")`, `require("lua.helper")`); `import` paths resolve relative to the importing file and do not depend on it.
 - Run it again with `nlc run --no-static-resolution <file>.nl`: the analyzer's proven checks and static resolution from declared types are then left out of the generated code, and the output must be the same. The runner in `crates/nlc/tests/conformance.rs` does both.
 - Run it again with `nlc run --localize=none` and `--localize=all`: which Lua paths a file reads once into hidden locals (the default is `std`) must not change the output either. The runner does this on the Lua backend and on the bytecode backend with the JIT forced.
 - Run with `NL_PATH` unset, so that the only search-path entries are those a program adds with `add_path`.

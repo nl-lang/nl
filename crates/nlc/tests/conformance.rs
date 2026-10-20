@@ -1,8 +1,8 @@
 //! The conformance suite of `tests/run/` (see its README).
 //!
 //! Every entry program (a `.nl` with a `.out` beside it) runs as
-//! `nlc run <file>` in a fresh process, with the working directory set to
-//! `tests/run/`, `NL_PATH` unset and a timeout; stdout must equal the `.out`
+//! `nlc run --decl decl <file>` in a fresh process, with the working directory set to
+//! `tests/run/` (whose `decl/` holds the declaration files of the suite), `NL_PATH` unset and a timeout; stdout must equal the `.out`
 //! file byte for byte and the exit status must be 0. It runs eight times:
 //! through the Lua backend, and through the bytecode backend with
 //! the JIT on, off and forced (`--backend=bc --jit=on|off|hot`), each with
@@ -123,6 +123,10 @@ fn mode_label(mode: Mode, sr: bool, localize: Option<&str>) -> String {
 /// The localize settings other than the default, and the modes each runs
 /// in (see the module documentation).
 const LOCALIZE_RUNS: [(&str, Mode); 4] = [("none", Mode::Lua), ("none", Mode::BcJitHot), ("all", Mode::Lua), ("all", Mode::BcJitHot)];
+
+/// The declaration files every program is compiled with: those of
+/// `tests/run/decl/` (README, "Running a program").
+const DECL_ARGS: [&str; 2] = ["--decl", "decl"];
 
 fn run_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/run")
@@ -249,7 +253,7 @@ fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
     let pass = || Outcome { name: case.name.clone(), kind: case.kind, mode: case.mode, sr: case.sr, localize: case.localize, pass: true, detail: String::new() };
     match case.kind {
         Kind::Run => {
-            cmd.arg("run").args(case.mode.run_args());
+            cmd.arg("run").args(case.mode.run_args()).args(DECL_ARGS);
             if !case.sr {
                 cmd.arg("--no-static-resolution");
             }
@@ -279,7 +283,7 @@ fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
                 return fail("no `# expect-error:` comment".to_string());
             };
             let want = marker + 2;
-            cmd.arg("build").arg(case.mode.emit_arg()).arg(&rel);
+            cmd.arg("build").arg(case.mode.emit_arg()).args(DECL_ARGS).arg(&rel);
             match run_with_timeout(cmd, timeout) {
                 Err(e) => fail(e),
                 Ok((code, _stdout, stderr)) => {

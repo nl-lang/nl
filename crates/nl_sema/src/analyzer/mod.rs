@@ -502,6 +502,7 @@ impl<'a> Analyzer<'a> {
     fn collect(&mut self, root: &SyntaxNode) {
         self.collect_prelude();
         self.collect_decls();
+        self.collect_imported_extensions();
         self.collect_binding_fns(root);
         self.collect_assigned(root);
         self.collect_imported_prim_methods(root);
@@ -647,6 +648,28 @@ impl<'a> Analyzer<'a> {
                 // A `declare fn`, `let` or `const`: no nominal type.
                 None => self.fill_decl_members(&node, NamedId(u32::MAX)),
             }
+        }
+    }
+
+    /// The functions the imported files add to declared modules and types
+    /// ([`crate::ExtensionInfo`]): members of the declared types here too,
+    /// with parameters of type `any`.
+    fn collect_imported_extensions(&mut self) {
+        for e in self.res.extensions.iter().filter(|e| e.origin.is_some()) {
+            let Some(nid) = self.decls.lookup(&e.owner).and_then(|id| self.decl_named.get(&id).copied()) else { continue };
+            let params = e.params.iter().map(|(name, optional)| Param { name: name.clone(), ty: Type::Any, optional: *optional }).collect();
+            let sig = FnType {
+                params,
+                rest: e.rest.then_some(Type::Any),
+                keyed: e.keyed.then_some(None),
+                ret: Type::Any,
+                is_method: e.method,
+                is_async: e.is_async,
+                named: false,
+                declared: false,
+            };
+            let name = e.name.clone();
+            self.add_member(nid, &name, Member::Function(Rc::new(sig)));
         }
     }
 
@@ -933,7 +956,14 @@ impl<'a> Analyzer<'a> {
             let name = child(node, NAME).and_then(|n| name_text(&n));
             let op = child(node, OP_NAME).map(|o| o.text().to_string().split_whitespace().collect::<String>());
             let owner_ty = self.method_owner_type(node, &owner);
-            let sig = self.signature_of(node, true, true, owner_ty.clone());
+            // A function added to a declared module is a plain function;
+            // one added to a declared module or type has no name in the
+            // registry of named functions (spawn.rs).
+            let declared = match self.res.method_owner(node.text_range()) {
+                Some(MethodOwner::Declared(id)) => Some(self.decls.get(*id).is_some_and(|i| i.kind == crate::decl::DeclItemKind::Module)),
+                _ => None,
+            };
+            let sig = self.signature_of(node, declared != Some(true), declared.is_none(), owner_ty.clone());
             let sig = Rc::new(sig);
             self.fn_sigs.insert(node.text_range(), sig.clone());
             let name_range = child(node, NAME).map(|n| n.text_range()).unwrap_or(node.text_range());
@@ -1023,6 +1053,14 @@ impl<'a> Analyzer<'a> {
                 "Table" => Type::Table,
                 _ => Type::Bool,
             }),
+            // A declared module's table, or the values of a declared type.
+            MethodOwner::Declared(id) => {
+                let nid = *self.decl_named.get(id)?;
+                Some(match self.decls.get(*id)?.kind {
+                    crate::decl::DeclItemKind::Module => Type::Static(nid),
+                    _ => Type::Named(nid),
+                })
+            }
         }
     }
 

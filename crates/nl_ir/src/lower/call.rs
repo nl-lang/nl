@@ -140,6 +140,8 @@ impl Lowerer<'_> {
     /// positions are unknown.
     pub(crate) fn push_arg_refs(&mut self, vals: &mut Vec<Expr>, args: &[&Arg], block: Option<&SyntaxNode>, keep: usize, call_only: u64) {
         let mut spread_at = None;
+        // The spread is a rest parameter, whose count is its `n`.
+        let mut counted = None;
         let mut call_only = call_only;
         let mut pos = 0u32;
         let mark = |vals: &mut [Expr], call_only: u64, pos: u32| {
@@ -158,6 +160,7 @@ impl Lowerer<'_> {
                 }
                 Arg::Spread(e) => {
                     spread_at = Some(vals.len());
+                    counted = self.counted_rest(e);
                     self.push_operand(vals, |l| l.expr1(e));
                     call_only = 0;
                 }
@@ -200,10 +203,17 @@ impl Lowerer<'_> {
                 let list = std::mem::replace(slot, Expr::Nil);
                 *slot = match keyed.take() {
                     // The keyed table rides along with the spread values.
-                    Some(kw) if last => Expr::intrinsic_call("unpackkw", vec![list, kw]),
+                    Some(kw) if last => match counted {
+                        // A rest parameter whose count is a local.
+                        Some((c, n)) if matches!(list, Expr::Local(l) if l == c) => Expr::intrinsic_call("unpackkw", vec![list, kw, n]),
+                        _ => Expr::intrinsic_call("unpackkw", vec![list, kw]),
+                    },
                     other => {
                         keyed = other;
-                        Expr::intrinsic_call("unpack", vec![list])
+                        match (counted, &list) {
+                            (Some((c, n)), Expr::Local(l)) if *l == c => Expr::intrinsic_call("unpack", vec![list, Expr::Number(1.0), n]),
+                            _ => Expr::intrinsic_call("spread", vec![list]),
+                        }
                     }
                 };
             }

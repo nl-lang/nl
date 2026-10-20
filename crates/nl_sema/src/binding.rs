@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use nl_syntax::{SyntaxNode, TextRange};
 
-use crate::ExportInfo;
+use crate::{ExportInfo, ExtensionInfo};
 use crate::decl::{DeclId, DeclItemKind, LuaRoot};
 use crate::prelude::Prelude;
 
@@ -133,6 +133,10 @@ pub enum MethodOwner {
     Binding { id: BindingId, path: Vec<String> },
     /// `Number`, `String`, `Bool` or `Table` ([`Prelude::takes_methods`]).
     Primitive(&'static Prelude),
+    /// A top-level name of a declaration file: a declared module (`fn
+    /// Util.name` is a plain function of its Lua table) or a declared
+    /// struct or host type (`fn Player.name` is a method of its values).
+    Declared(DeclId),
 }
 
 /// A diagnostic of the resolver.
@@ -185,6 +189,8 @@ pub struct Resolution {
     /// Bindings that a function other than their own assigns: a call can
     /// change them between two reads (evaluation order).
     pub(crate) assigned_in_closure: HashSet<BindingId>,
+    /// Bindings that some assignment targets after their declaration.
+    pub(crate) reassigned: HashSet<BindingId>,
     /// The `pub` items in branches of file-level `if`s: the `if` or
     /// `unless` node, and the indexes of its branches (in the order of
     /// `branch_blocks`) that declare the item.
@@ -206,6 +212,9 @@ pub struct Resolution {
     /// The binding kind of each declared name the file uses (a `declare
     /// fn` is function-kind).
     pub(crate) decl_binding_kinds: HashMap<DeclId, BindingKind>,
+    /// The functions added to declared modules and types: those of the
+    /// files this one imports (with their origin), then this file's own.
+    pub(crate) extensions: Vec<ExtensionInfo>,
     pub diagnostics: Vec<SemaDiagnostic>,
 }
 
@@ -330,9 +339,22 @@ impl Resolution {
         self.assigned_in_closure.contains(&id)
     }
 
+    /// True when some assignment targets the binding after its
+    /// declaration (`args = …`, `args += …`).
+    pub fn reassigned(&self, id: BindingId) -> bool {
+        self.reassigned.contains(&id)
+    }
+
     /// What the file exports, as a file that imports it sees it.
     pub fn exports(&self) -> Vec<ExportInfo> {
         self.exports.iter().map(|(_, e)| e.clone()).collect()
+    }
+
+    /// The functions this file and the files it imports add to declared
+    /// modules and types (`fn Util.name`, `fn Player.name`), as a file that
+    /// imports this one sees them ([`ExtensionInfo`]).
+    pub fn extensions(&self) -> Vec<ExtensionInfo> {
+        self.extensions.clone()
     }
 
     /// The exports with the binding that holds each one's value (for an

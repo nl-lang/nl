@@ -13,8 +13,9 @@
 -- before, for `x.m?.(args)`),
 -- rt.lmethod (rt.lmethod.m(x, args) is Lua's x:m(args) in NL code),
 -- rt.pass (`return rt.pass(rt.mget(x, k))`: a return that is no tail call),
--- rt.index (x[k] and x.m! reads), rt.len (x.len), rt.primmethod, rt.Bool
--- (the table of Bool's methods).
+-- rt.index (x[k] reads), rt.bound (x.m! reads), rt.len (x.len),
+-- rt.primmethod, rt.declfn and rt.declmethod (`fn Decl.name` on a declared
+-- module or type), rt.Bool (the table of Bool's methods).
 do
   local methods = I.methods
   local is_method = I.is_method
@@ -157,6 +158,105 @@ do
       error("attempt to index a nil value with " .. (type(k) == "string" and ("'" .. k .. "'") or tostring(k)), 2)
     end
     return x[k]
+  end
+
+  -- `x.m!`: the member as a value, never called. A method comes bound to
+  -- its receiver, as `x.m(args)` would call it: `M.f!` of a module is a
+  -- function that passes M as `self`, so a Lua caller of it passes only
+  -- the arguments (Python's and Ruby's bound methods do the same). What is
+  -- not a method is the value itself: a field, a plain function, the
+  -- function of a library read from a string, number or boolean
+  -- (`s.upcase!` is String's `upcase`, which takes the string first).
+  --
+  -- `rt.bound(x, k, true)`: the compiler knows from x's declared type that
+  -- the member is a method (a host method, which nothing marks), and it
+  -- is bound whatever it is.
+  --
+  -- One closure per receiver and function, kept while something holds
+  -- it, so that `M.f! == M.f!`, and a read allocates once: the receivers
+  -- are weak keys, and the closures weak values, since a closure refers
+  -- to its receiver and LuaJIT has no ephemerons. A function that
+  -- replaces the member gets a closure of its own. Unspecified: a bound
+  -- method is a plain function, which a worker cannot be sent (it has no
+  -- name in the registry); the raw method is `M.f` read from the table
+  -- with an index, `M["f"]`.
+  local bound = setmetatable({}, { __mode = "k" })
+  function rt.bound(x, k, method)
+    local tx = type(x)
+    if tx == "string" then
+      return I.String[k]
+    elseif tx == "number" then
+      return math[k]
+    elseif tx == "boolean" then
+      return I.Bool[k]
+    elseif x == nil then
+      error("attempt to read member '" .. tostring(k) .. "' of nil", 2)
+    end
+    local f = x[k]
+    if type(f) ~= "function" then return f end
+    if not (method or is_method(f)) then
+      local mt = tx == "userdata" and getmetatable(x) or nil
+      if not (type(mt) == "table" and rawget(mt, "__methods")) then return f end
+    end
+    local per = bound[x]
+    if per == nil then
+      per = setmetatable({}, { __mode = "v" })
+      bound[x] = per
+    end
+    local b = per[f]
+    if b == nil then
+      b = function(...) return f(x, ...) end
+      per[f] = b
+    end
+    return b
+  end
+
+  -- `fn Util.name` on a declared module (`declare module Util = :util`):
+  -- rt.declfn stores a plain function in the module's Lua table, as the
+  -- library's own are, so Lua calls it `util.name(x)` and NL `Util.name(x)`;
+  -- it has no `self`. `fn Player.name` on a declared host type or Lua
+  -- class: rt.declmethod stores a method where the values find their
+  -- members, the `__index` table of the metatable, or the metatable itself
+  -- when `__index` is not a table (gmod's classes look their methods up in
+  -- the metatable with a function), and marks it, so that `ply.name` calls
+  -- it in NL and `ply:name()` in Lua. The metatable is the one the host
+  -- registered under the type's name (rt.gettype; gmod's host registers its
+  -- classes from FindMetaTable), or the class at a struct's Lua path.
+  --
+  -- A name the table already has, its own or one it inherits, is refused:
+  -- the declaration's members are refused at compile time, and this is the
+  -- rest (a member the declaration does not list, one another file
+  -- added). The same file may define it again (a file that runs again,
+  -- rt.forget). The error is a plain Exception, as for rt.primmethod.
+  local decl_owners = setmetatable({}, { __mode = "k" })
+  local function declare_in(t, name, f, file, what)
+    local owners = decl_owners[t]
+    if owners == nil then
+      owners = {}
+      decl_owners[t] = owners
+    end
+    if t[name] ~= nil and owners[name] ~= file then
+      local by = owners[name] and tostring(owners[name]) or ("Lua (" .. what .. " has it already)")
+      I.throw("Exception", "cannot redefine " .. what .. "." .. name .. ": it is already defined by " .. by, 3)
+    end
+    owners[name] = file
+    t[name] = f
+  end
+  function rt.declfn(t, name, f, file, what)
+    if type(t) ~= "table" then
+      I.throw("Exception", "cannot define " .. what .. "." .. name .. ": the module's Lua table is " .. rt.typeof(t) .. ", not a table", 2)
+    end
+    declare_in(t, name, f, file, what)
+  end
+  function rt.declmethod(mt, name, f, file, what, how)
+    if type(mt) ~= "table" then
+      local why = how == "host"
+        and ("no metatable is registered for the host type " .. what .. " (nl_settype; in Garry's Mod, FindMetaTable has none for it)")
+        or ("the metatable at its Lua path is " .. rt.typeof(mt) .. ", not a table")
+      I.throw("Exception", "cannot define " .. what .. "." .. name .. ": " .. why, 2)
+    end
+    local index = rawget(mt, "__index")
+    declare_in(type(index) == "table" and index or mt, name, I.mark(f), file, what)
   end
 
   -- `x.len`: Lua's `#`, or the `len` a struct defines. A

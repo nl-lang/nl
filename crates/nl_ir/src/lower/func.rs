@@ -70,6 +70,7 @@ impl Lowerer<'_> {
                 values: vec![Expr::Local(l)],
             });
         }
+        self.store_global_item(node);
     }
 
     /// `fn(…) … end` as a value, and a short function `|…| -> …`, which is
@@ -120,6 +121,7 @@ impl Lowerer<'_> {
         // destructuring.
         let mut entry: Vec<ParamEntry> = Vec::new();
         let mut rest: Option<(LocalId, Option<SyntaxNode>, String)> = None;
+        let mut rest_id: Option<BindingId> = None;
         let mut keyed: Option<(LocalId, Option<SyntaxNode>, String)> = None;
         if let Some(list) = child(node, PARAM_LIST).or_else(|| child(node, BLOCK_PARAMS)) {
             for p in list.children() {
@@ -150,6 +152,7 @@ impl Lowerer<'_> {
                             if let Some(id) = self.res.declaration(name.text_range()) {
                                 let l = self.local_of(id);
                                 rest = Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
+                                rest_id = Some(id);
                             }
                         }
                     }
@@ -170,8 +173,24 @@ impl Lowerer<'_> {
         // arguments, so they are the last item of the rest table, or the
         // last parameter that received a value. Found before defaults and
         // checks run, since the slot they landed in is not theirs.
+        // The rest table carries its count, `{n = select("#", ...), ...}`,
+        // so that a nil among the arguments is kept by `f(*args)`,
+        // `args.len` and a spread anywhere the table goes (rt.spread). When
+        // the table goes nowhere (the function only reads its items, its
+        // length and spreads it), the count is a hidden local instead,
+        // which spares the table its hash part, as costly as the table.
         if let Some((l, _, _)) = &rest {
-            self.emit(StmtKind::Local { locals: vec![*l], values: vec![Expr::Table(vec![TableEntry::Item(Expr::Vararg)])] });
+            let select = self.rt_cached("select");
+            let n = Expr::call(select, vec![Expr::str("#"), Expr::Vararg]);
+            let local_count = keyed.is_none() && rest_id.is_some_and(|id| !self.res.reassigned(id) && rest_stays_local(node, self.res, id));
+            match rest_id.filter(|_| local_count) {
+                Some(id) => {
+                    let c = self.new_local("n");
+                    self.emit(StmtKind::Local { locals: vec![*l, c], values: vec![Expr::Table(vec![TableEntry::Item(Expr::Vararg)]), n] });
+                    self.rest_counts.insert(id, c);
+                }
+                None => self.emit(StmtKind::Local { locals: vec![*l], values: vec![Expr::Table(vec![TableEntry::Pair(Expr::str("n"), n), TableEntry::Item(Expr::Vararg)])] }),
+            }
         }
         let written: Vec<LocalId> = entry.iter().map(|e| e.local).collect();
         match &keyed {
@@ -357,7 +376,11 @@ impl Lowerer<'_> {
             e.ty = None;
         }
         if let Some(r) = rest {
-            self.emit(StmtKind::Expr(Expr::intrinsic_call("nokwrest", vec![Expr::str(name), Expr::Local(r)])));
+            let mut args = vec![Expr::str(name), Expr::Local(r)];
+            if let Some(c) = self.rest_counts.iter().find(|(id, _)| self.bindings.get(id) == Some(&r)).map(|(_, c)| *c) {
+                args.push(Expr::Local(c));
+            }
+            self.emit(StmtKind::Expr(Expr::intrinsic_call("nokwrest", args)));
         }
     }
 
@@ -390,6 +413,25 @@ pub(crate) fn can_fall_off(stmts: &[Stmt]) -> bool {
         Some(StmtKind::If { then, otherwise: Some(o), .. }) => can_fall_off(&then.stmts) || can_fall_off(&o.stmts),
         _ => true,
     }
+}
+
+/// True when every use of the rest parameter `id` in the function `node`
+/// reads its items (`args[i]`, `for x in args`), its length (`args.len`)
+/// or spreads it (`f(*args)`, `[*args]`): the table goes nowhere that
+/// needs its count in `n`.
+fn rest_stays_local(node: &SyntaxNode, res: &nl_sema::Resolution, id: BindingId) -> bool {
+    node.descendants().filter(|n| n.kind() == NAME_REF && res.reference(n.text_range()) == Some(&nl_sema::Ref::Binding(id))).all(|r| {
+        let Some(p) = r.parent() else { return false };
+        let first = expr_child(&p).is_some_and(|e| e == r);
+        match p.kind() {
+            FIELD_EXPR => first && field_name(&p).is_some_and(|t| t.text() == "len"),
+            INDEX_EXPR => first,
+            // A spread in a call; in a list it goes through rt.listcat.
+            SPREAD_ARG => p.parent().is_some_and(|a| matches!(a.kind(), ARG_LIST | COMMAND_ARGS)),
+            FOR_STMT => true,
+            _ => false,
+        }
+    })
 }
 
 /// A parameter or `let` pattern that is a plain name, possibly annotated:

@@ -12,10 +12,10 @@ use std::collections::{HashMap, HashSet};
 use nl_syntax::{SyntaxKind, SyntaxNode, SyntaxToken, TextRange};
 
 use crate::binding::*;
-use crate::decl::{DeclItemKind, Declarations};
+use crate::decl::{DeclId, DeclItemKind, Declarations};
 use crate::prelude::{self, Prelude};
 use crate::util::*;
-use crate::{ExportInfo, ImportProvider};
+use crate::{ExportInfo, ExtensionInfo, ImportProvider};
 
 use SyntaxKind::*;
 
@@ -414,7 +414,7 @@ impl<'a> Resolver<'a> {
             // The binding of each name, and the last branch that declared it.
             let mut by_name: HashMap<String, (BindingId, usize)> = HashMap::new();
             for (clause, b) in branch_blocks(&construct).into_iter().enumerate() {
-                for item in statements(&b).filter(|i| has_token(i, PUB_KW)) {
+                for item in statements(&b).filter(is_exported) {
                     for (name, text, kind, decl, ty, params) in pub_item_names(&item) {
                         // Twice in one branch is two items, and the
                         // second export of the name an error.
@@ -690,8 +690,14 @@ impl<'a> Resolver<'a> {
         let in_impl = node.parent().is_some_and(|p| p.kind() == INTERFACE_IMPL);
         if let Some(owner) = child(node, QUAL_NAME) {
             let target = self.resolve_method_owner(node, &owner);
+            // A function added to a declared module is a plain function of
+            // a Lua library: it has no `self`.
+            let method = match self.res.method_owner.get(&node.text_range()) {
+                Some(MethodOwner::Declared(id)) => self.decls.get(*id).is_none_or(|i| i.kind != DeclItemKind::Module),
+                _ => true,
+            };
             self.self_targets.push(target);
-            self.walk_function(node, FnKind::Method, true);
+            self.walk_function(node, FnKind::Method, method);
             self.self_targets.pop();
         } else if in_impl {
             // Methods of `interface I for T`: Self was pushed by the impl.
@@ -755,12 +761,114 @@ impl<'a> Resolver<'a> {
                     self.error(owner.text_range(), "bad-method-owner", format!("`{}` cannot have methods; methods are defined on structs, modules, `Number`, `String`, `Bool` and `Table`", p.name));
                     None
                 }
-                None => {
-                    self.error(owner.text_range(), "undeclared-name", format!("`{name}` is not declared"));
-                    None
-                }
+                None => match self.decls.lookup(&name) {
+                    Some(id) => {
+                        self.extend_declared(node, owner, id, &path);
+                        None
+                    }
+                    None => {
+                        self.error(owner.text_range(), "undeclared-name", format!("`{name}` is not declared"));
+                        None
+                    }
+                },
             },
         }
+    }
+
+    /// `fn Decl.name` where `Decl` is a top-level name of a declaration
+    /// file: a declared module gets a plain function, a declared struct
+    /// (a Lua class) or host type a method of its values. The metatable of
+    /// a struct is its Lua path, that of a host type the one the host
+    /// registered under its name. Redefining a member the declaration
+    /// has, or one an imported file added, is an error; this file may
+    /// define a name again, which replaces it.
+    fn extend_declared(&mut self, node: &SyntaxNode, owner: &SyntaxNode, id: DeclId, path: &[String]) {
+        let Some(item) = self.decls.get(id) else { return };
+        let (kind, decl_name) = (item.kind, item.name.clone());
+        let range = owner.text_range();
+        let what = match kind {
+            DeclItemKind::Module => "module",
+            DeclItemKind::Struct => "struct",
+            DeclItemKind::HostType => "type",
+            DeclItemKind::Fn => "fn",
+            DeclItemKind::Let | DeclItemKind::Const => "value",
+        };
+        if !matches!(kind, DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType) {
+            self.error(range, "bad-method-owner", format!("`{decl_name}` is a declared {what}, not a module or a type, so it cannot have methods"));
+            return;
+        }
+        if !path.is_empty() {
+            let full = qual_text(owner);
+            let nested = decl_member_node(&item.node, path.first().map(String::as_str).unwrap_or_default());
+            let msg = match nested.map(|n| n.kind()) {
+                Some(DECL_TYPE | DECL_STRUCT) => format!("`{full}` has no known metatable: a type nested in a declaration has no registered name and no Lua path of its own, so `fn {full}.name` has nowhere to go; declare it at the top level of the declaration file (`declare type`, or `declare struct … = :path`)"),
+                Some(DECL_MODULE) => format!("`{full}` is a module nested in a declaration; `fn` extends a top-level declared module, whose Lua table is its path"),
+                _ => format!("`{full}` is not a module or type that `{decl_name}` declares"),
+            };
+            self.error(range, "declared-owner", msg);
+            return;
+        }
+        let Some(word) = child(node, NAME).and_then(|n| name_text(&n)) else {
+            // `fn Player.+(x)`: the metatable of a host type is the host's.
+            self.error(range, "operator-owner", format!("operators cannot be defined on the declared {what} `{decl_name}`: its metatable belongs to Lua or the host; define them on a struct of NL"));
+            return;
+        };
+        if matches!(word.as_str(), "len" | "coerce" | "iter") {
+            self.error(range, "operator-owner", format!("`fn {decl_name}.{word}` would define the operator `{word}`, and operators cannot be defined on the declared {what} `{decl_name}`, whose metatable belongs to Lua or the host"));
+            return;
+        }
+        if let Some(r) = item.root.clone() {
+            self.res.decl_paths.entry(id).or_insert(r);
+        }
+        self.res.decl_kinds.insert(id, kind);
+        self.res.decl_binding_kinds.insert(id, self.decls.binding_kind(id));
+        self.res.type_refs.insert(range, Ref::Declared(id));
+        let name_range = child(node, NAME).map_or(range, |n| n.text_range());
+        if let Some(from) = self.declared_member_of(id, &word) {
+            self.error(name_range, "declared-member-redefined", format!("cannot redefine {decl_name}.{word}: {from} declares it; a function added to a declared {what} must have a name of its own"));
+            return;
+        }
+        if let Some(e) = self.res.extensions.iter().find(|e| e.owner == decl_name && e.name == word && e.origin.is_some()) {
+            let origin = e.origin.clone().unwrap_or_default();
+            self.error(name_range, "declared-member-redefined", format!("cannot redefine {decl_name}.{word}: it is already defined by '{origin}', which this file imports"));
+            return;
+        }
+        self.res.method_owner.insert(node.text_range(), MethodOwner::Declared(id));
+        let mut params = Vec::new();
+        let (mut rest, mut keyed) = (false, false);
+        if let Some(list) = child(node, PARAM_LIST) {
+            for p in list.children() {
+                match p.kind() {
+                    PARAM => {
+                        let pname = pattern_children(&p).next().and_then(|pat| child(&pat, NAME).or_else(|| pattern_children(&pat).next().and_then(|i| child(&i, NAME)))).and_then(|n| name_text(&n)).unwrap_or_default();
+                        params.push((pname, expr_child(&p).is_some()));
+                    }
+                    REST_PARAM => rest = true,
+                    KEYED_PARAM => keyed = true,
+                    _ => {}
+                }
+            }
+        }
+        let method = kind != DeclItemKind::Module;
+        let info = ExtensionInfo { owner: decl_name, name: word, method, params, rest, keyed, is_async: has_token(node, ASYNC_KW), origin: None };
+        self.res.extensions.retain(|e| e.origin.is_some() || e.owner != info.owner || e.name != info.name);
+        self.res.extensions.push(info);
+    }
+
+    /// The declaration file that declares the member `name` of the
+    /// declared item `id` or of one of its parents (`declare type Player :
+    /// Entity`), if any.
+    fn declared_member_of(&self, id: DeclId, name: &str) -> Option<String> {
+        let mut cur = Some(id);
+        for _ in 0..64 {
+            let item = self.decls.get(cur?)?;
+            if decl_member_node(&item.node, name).is_some() {
+                return Some(item.file.clone());
+            }
+            let parent = child(&item.node, STRUCT_PARENT).and_then(|p| type_child(&p)).map(|t| t.text().to_string().trim().to_owned());
+            cur = parent.and_then(|p| self.decls.lookup(&p));
+        }
+        None
     }
 
     /// Walks a function-like node: parameters, return type and body.
@@ -1145,9 +1253,13 @@ impl<'a> Resolver<'a> {
                 self.keep_earlier(&text, earlier);
                 if let Some(e) = exports {
                     self.import_exports.insert(id, e);
+                    self.import_extensions(&path);
                 }
             }
             return;
+        }
+        if exports.is_some() {
+            self.import_extensions(&path);
         }
         let names: Vec<SyntaxNode> = match child(node, IMPORT_LIST) {
             Some(list) => children(&list, NAME).collect(),
@@ -1184,6 +1296,21 @@ impl<'a> Resolver<'a> {
             self.keep_earlier(&text, earlier);
             if let Some(decl) = decl {
                 self.res.imported.insert(id, decl);
+            }
+        }
+    }
+
+    /// The functions the imported file adds to declared modules and
+    /// types, which running it defines for the whole Lua state: this file
+    /// knows them as it knows the declaration's own members, and passes
+    /// them on to the files that import it.
+    fn import_extensions(&mut self, path: &str) {
+        for mut e in self.imports.extensions(path) {
+            if e.origin.is_none() {
+                e.origin = Some(path.to_string());
+            }
+            if !self.res.extensions.iter().any(|x| x.owner == e.owner && x.name == e.name) {
+                self.res.extensions.push(e);
             }
         }
     }
@@ -1422,6 +1549,7 @@ impl<'a> Resolver<'a> {
                     Some(Ref::Binding(id)) => {
                         self.res.refs.insert(range, Ref::Binding(id));
                         let Some(b) = self.binding(id).cloned() else { return };
+                        self.res.reassigned.insert(id);
                         if b.function != self.current_fn() {
                             self.res.assigned_in_closure.insert(id);
                         }
@@ -1727,7 +1855,7 @@ impl<'a> Resolver<'a> {
             }
         }
         for s in items {
-            if !has_token(&s, PUB_KW) {
+            if !is_exported(&s) {
                 continue;
             }
             let mut found: Vec<(BindingId, TextRange, DeclKind)> = Vec::new();
@@ -1765,10 +1893,11 @@ impl<'a> Resolver<'a> {
                     let Some(q) = child(&s, QUAL_NAME) else { continue };
                     if qual_segments(&q).len() > 1 {
                         let outer = qual_segments(&q).first().map(|t| t.text().to_string()).unwrap_or_default();
+                        let kw = if has_token(&s, PUB_KW) { "pub" } else { "global" };
                         self.error(
                             q.text_range(),
                             "pub-nested-module",
-                            format!("`pub module {}`: an import binds a plain name, so a nested module is exported with the module it belongs to; write `pub module {outer}`", qual_text(&q)),
+                            format!("`{kw} module {}`: an import binds a plain name, so a nested module is exported with the module it belongs to; write `{kw} module {outer}`", qual_text(&q)),
                         );
                         continue;
                     }
@@ -2014,6 +2143,12 @@ pub(crate) fn branch_blocks(construct: &SyntaxNode) -> Vec<SyntaxNode> {
 /// declaring range, the name, the binding and declaration kinds, the
 /// annotation and what is known of a function's parameters.
 #[allow(clippy::type_complexity)]
+/// The member `name` of a declared item (`DECL_MODULE`, `DECL_STRUCT`,
+/// `DECL_TYPE`): an `fn`, a field, a `const` or a nested declaration.
+fn decl_member_node(item: &SyntaxNode, name: &str) -> Option<SyntaxNode> {
+    item.children().find(|m| matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE) && child(m, NAME).and_then(|n| name_text(&n)).as_deref() == Some(name))
+}
+
 fn pub_item_names(item: &SyntaxNode) -> Vec<(TextRange, String, BindingKind, DeclKind, Option<SyntaxNode>, Option<FnParams>)> {
     let mut out = Vec::new();
     match item.kind() {

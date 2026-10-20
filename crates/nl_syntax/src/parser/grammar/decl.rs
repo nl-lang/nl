@@ -375,8 +375,30 @@ impl Parser<'_> {
         m.complete(self, CONST_DECL);
     }
 
-    /// `global_decl = "global" CNAME [ ":" type ] [ "=" cmd_expr ]`.
+    /// `global_decl = "global" CNAME [ ":" type ] [ "=" cmd_expr ]`, or
+    /// `"global"` before an `fn`, `module` or `struct` declaration: an item
+    /// that is exported, as with `pub`, and also stored in the Lua global
+    /// of its name when the file runs. It stands where `pub` may.
     fn global_decl(&mut self, m: Marker) {
+        if self.nth_at(1, FN_KW) || self.nth_at(1, ASYNC_KW) || self.nth_at(1, MODULE_KW) || self.nth_at(1, STRUCT_KW) {
+            let global_range = self.cur_range();
+            if !self.at_file_level() && !self.in_file_level_branch() {
+                self.error("`global fn`, `global module` and `global struct` are only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there");
+            }
+            self.bump();
+            match self.cur() {
+                FN_KW | ASYNC_KW => {
+                    let n = if self.at(ASYNC_KW) { 2 } else { 1 };
+                    if self.nth_at(n, CNAME) && self.nth_at(n + 1, DOT) {
+                        self.error_at(global_range, "`global` cannot be used on a method: a method is reached through its type, which can be `global`");
+                    }
+                    self.fn_decl(m);
+                }
+                MODULE_KW => self.module_decl(m),
+                _ => self.struct_decl(m),
+            }
+            return;
+        }
         self.bump();
         self.name(NameClass::Cap, "a global's name");
         if self.eat(COLON) {

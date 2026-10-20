@@ -23,7 +23,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use nl_sema::{ExportInfo, ImportProvider};
+use nl_sema::{Declarations, ExportInfo, ExtensionInfo, ImportProvider};
 
 use super::pipeline::{self, Mode};
 use super::{CompileOptions, Diagnostic, Loader, Severity};
@@ -44,6 +44,9 @@ pub(crate) struct DriverImports<'a> {
     globals: RefCell<Vec<String>>,
     /// The errors of the imported files.
     diagnostics: RefCell<Vec<Diagnostic>>,
+    /// The declaration files in scope, with which a file two imports away
+    /// is resolved for the functions it adds to declared types.
+    decls: &'a Declarations,
     /// The primitive methods and imports of each file looked at for
     /// [`ImportProvider::primitive_methods`], by canonical name (`None`:
     /// it cannot be read or parsed), so that each is parsed once.
@@ -51,7 +54,7 @@ pub(crate) struct DriverImports<'a> {
 }
 
 impl<'a> DriverImports<'a> {
-    pub(crate) fn new(loader: &'a dyn Loader, from: Option<&'a str>, options: &'a CompileOptions, mode: Mode<'a>) -> Self {
+    pub(crate) fn new(loader: &'a dyn Loader, from: Option<&'a str>, options: &'a CompileOptions, mode: Mode<'a>, decls: &'a Declarations) -> Self {
         DriverImports {
             loader,
             from,
@@ -60,6 +63,7 @@ impl<'a> DriverImports<'a> {
             cache: RefCell::new(HashMap::new()),
             globals: RefCell::new(Vec::new()),
             diagnostics: RefCell::new(Vec::new()),
+            decls,
             scans: RefCell::new(HashMap::new()),
         }
     }
@@ -93,6 +97,10 @@ impl<'a> DriverImports<'a> {
     }
 
     fn load(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
+        self.imported(path).map(|i| i.exports)
+    }
+
+    fn imported(&self, path: &str) -> Result<Imported, String> {
         let name = self.loader.resolve(self.from, path).ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
         let cached = self.cache.borrow().get(&name).cloned();
         let result = match cached {
@@ -105,12 +113,12 @@ impl<'a> DriverImports<'a> {
         };
         let imported = result?;
         let mut globals = self.globals.borrow_mut();
-        for g in imported.globals {
-            if !globals.contains(&g) {
-                globals.push(g);
+        for g in &imported.globals {
+            if !globals.contains(g) {
+                globals.push(g.clone());
             }
         }
-        Ok(imported.exports)
+        Ok(imported)
     }
 
     fn load_file(&self, name: &str) -> Result<Imported, String> {
@@ -139,7 +147,7 @@ impl<'a> DriverImports<'a> {
             }
             self.scans.borrow_mut().insert(name.to_string(), staged.scan);
             let exports = staged.exports.ok_or_else(|| format!("'{name}' does not compile"))?;
-            return Ok(Imported { exports, globals: staged.globals });
+            return Ok(Imported { exports, globals: staged.globals, extensions: staged.extensions });
         }
         // A file imported by an imported file: resolved for its exports,
         // not checked (it is checked when the file importing it is
@@ -151,7 +159,8 @@ impl<'a> DriverImports<'a> {
         }
         let root = parse.syntax();
         self.scans.borrow_mut().insert(name.to_string(), Some(nl_sema::scan_file(&root)));
-        Ok(Imported { exports: nl_sema::resolve(&root, &Unread).exports(), globals: nl_ir::declared_globals(&root) })
+        let res = nl_sema::resolve_with(&root, &Unread, self.decls);
+        Ok(Imported { exports: res.exports(), globals: nl_ir::declared_globals(&root), extensions: res.extensions() })
     }
 }
 
@@ -162,6 +171,9 @@ struct Imported {
     /// The `global` names it declares, and those of the files it imports
     /// (for a file the main file imports directly).
     globals: Vec<String>,
+    /// The functions it adds to declared modules and types, and those of
+    /// the files it imports (for a file the main file imports directly).
+    extensions: Vec<ExtensionInfo>,
 }
 
 /// The imports of a file that is only resolved for its exports: the files
@@ -179,6 +191,10 @@ impl ImportProvider for Unread {
 impl ImportProvider for DriverImports<'_> {
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
         self.load(path)
+    }
+
+    fn extensions(&self, path: &str) -> Vec<ExtensionInfo> {
+        self.imported(path).map(|i| i.extensions).unwrap_or_default()
     }
 
     /// Follows the imports from the file `path` names, through every file

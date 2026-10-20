@@ -21,7 +21,7 @@ p.step
 print p.x
 let m = p.distance!
 print typeof(m)
-print m(p)
+print m()
 print p.distance()
 
 let button = {on_click: fn(x) x * 10 end}

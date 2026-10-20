@@ -127,6 +127,11 @@ impl Lowerer<'_> {
                 return;
             }
         }
+        if matches!(owner, MethodOwner::Declared(_)) {
+            // The resolver refuses it.
+            self.internal(node, "an operator on a declared type");
+            return;
+        }
         if matches!(owner, MethodOwner::Primitive(_)) && !kind.on_primitive {
             self.error(node, "operator-owner", format!("the operator `{}` cannot be defined on `{owner_text}`; only structs define it", kind.symbol));
             return;
@@ -146,6 +151,7 @@ impl Lowerer<'_> {
                 let owner = self.owner_value();
                 Expr::intrinsic_call("primop", vec![Expr::str(p.name), Expr::str(kind.event), f, owner])
             }
+            MethodOwner::Declared(_) => return,
         };
         self.emit(StmtKind::Expr(call));
     }

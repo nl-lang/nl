@@ -128,7 +128,7 @@ for f in "$ROOT"/tests/run/*.nl; do
   selected "$name" || continue
   why=$(excluded "$name")
   if [ -n "$why" ]; then skipped=$((skipped + 1)); continue; fi
-  bundle "$name" "$ROOT/tests/run" "$name.nl" "${f%.nl}.out" client gmod-client
+  bundle "$name" "$ROOT/tests/run" "$name.nl" "${f%.nl}.out" client gmod-client --decl decl
 done
 for f in "$ROOT"/tests/gmod/*.nl; do
   [ -f "$f" ] || continue
@@ -332,6 +332,7 @@ if [ "$GLUA" = 1 ]; then
   for dir in "$ROOT/tests/run" "$ROOT/tests/gmod"; do
     for profile in portable gmod-client; do
       decl=
+      [ "$dir" = "$ROOT/tests/run" ] && decl=decl
       [ "$dir" = "$ROOT/tests/gmod" ] && decl=decl
       [ "$dir" = "$ROOT/tests/gmod" ] && [ "$profile" = gmod-client ] && decl=decl-client
       minify=

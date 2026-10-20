@@ -7,8 +7,9 @@
 //! pins them per file, so that a new false positive or a lost diagnostic
 //! fails it.
 //!
-//! Each program is checked as `nlc check <file>` in a fresh process, with
-//! the working directory set to `tests/run/` and `NL_PATH` unset. The
+//! Each program is checked as `nlc check --decl decl <file>` in a fresh
+//! process, with the working directory set to `tests/run/` and `NL_PATH`
+//! unset. The
 //! regex and worker programs are included: `nlc check` compiles without
 //! running. A diagnostic line ends in its code in brackets
 //! (`crates/nlc/src/run.rs`); the lines of its source snippet are skipped.
@@ -66,7 +67,7 @@ fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
 
 /// The diagnostics `nlc check` printed for one file: (severity, code).
 fn check(nlc: &Path, dir: &Path, rel: &Path) -> Vec<(String, String)> {
-    let out = Command::new(nlc).current_dir(dir).env_remove("NL_PATH").arg("check").arg(rel).output().expect("cannot start nlc");
+    let out = Command::new(nlc).current_dir(dir).env_remove("NL_PATH").args(["check", "--decl", "decl"]).arg(rel).output().expect("cannot start nlc");
     let text = String::from_utf8_lossy(&out.stderr);
     text.lines()
         // The snippet under each diagnostic (`  |`, `12 | source`, `   |   ^^^`)

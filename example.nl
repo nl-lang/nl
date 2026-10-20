@@ -357,6 +357,21 @@ let max = :config.maxPlayers # reading works as well as calling
 
 # there are no raw Lua blocks. Lua code goes into .lua files
 
+# a declaration file (.d.nl, `nlc --decl`) gives Lua things NL names and types:
+#   declare module Util = :util          a Lua library table
+#   declare struct Color = :Color        a Lua class, whose metatable is at that path
+#   declare type Player                  a host type, whose metatable the host registers
+# `fn` adds to them, so an extension needs no module of its own
+fn Util.text_width(s: String): Number # a plain function of the table: util.text_width(s)
+  s.len * 8                          # in Lua, Util.text_width(s) in NL. there is no self
+end
+
+fn Player.display_name: String # a method of the values, in their metatable:
+  "[#{self.nick}]"            # ply.display_name in NL, ply:display_name() in Lua
+end
+# a name the declaration has, or one another file added, cannot be defined again.
+# files that import this one know the new members too
+
 # calling functions
 
 a # calls a if it was declared as a function: with `fn a`, with a Function type
@@ -378,6 +393,14 @@ fn foo: Function
 
   a! # exclamation point at the end will prevent the automatic function call
 end
+
+# a method taken with `!` comes bound to its receiver, so whoever calls it
+# passes only the arguments: `Foo.some_func!` of a module passes Foo as self,
+# and Lua code can call it (`:table.sort(list, Sorter.by_name!)`).
+# `obj.method!` binds obj the same way. a field, a plain function and a
+# library's function stay what they are: `"x".upcase!` takes a string
+let f = Foo.some_func!
+f() # Foo.some_func()
 
 # callbacks
 # a function that has a `Function` parameter can be called with a block, which is passed as the final argument
@@ -637,8 +660,11 @@ let a = 1...10 # a range from 1 to 9
 
 # rest arguments: *args collects the remaining arguments into a table. there are no `...` varargs
 
-fn foo(a, b, *args) # Lua: function foo(a, b, ...) local args = {...}
-end
+fn foo(a, b, *args) # Lua: function foo(a, b, ...) local args = {n = select("#", ...), ...}
+  args.len # how many arguments there were, nils included: args.n
+  bar(*args) # passes them all on, nils included: unpack(args, 1, args.n)
+end             # a spread of any table with a number `n` (Table.pack) uses it.
+                # iterating (`for x in args`) still stops at the first nil
 
 fn foo(a: any, b: any, callback: Function, *args: any) # *args is always last; `foo 1, 2 do ... end` puts the block in callback
 end
@@ -704,6 +730,11 @@ pub struct Foo
 end
 
 pub const limit = 10
+
+# `global` on a fn, module or struct exports it and also stores it in the Lua
+# global of its name, for Lua code (no analyzer warning: it is a definition)
+global fn class_(name)
+end
 
 # an export can also stand directly in a branch of an if at the top of the file.
 # it is nil where no branch that declares it ran, and an importer then gets a plain

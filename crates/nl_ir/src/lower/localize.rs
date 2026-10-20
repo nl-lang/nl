@@ -39,7 +39,9 @@
 //! - in both, nothing is localized that the file assigns: a path `root.name`
 //!   that is an assignment target anywhere in the file (`:math.pi = 3`),
 //!   and every path of a root the file assigns (`:_G.string = …`, or a
-//!   `global` declaration of that name). Under `all`, the `global` names of
+//!   `global` declaration of that name), and a field that an `fn` adds to
+//!   a declared module or class at a Lua global (`fn Util.name` on
+//!   `declare module Util = :util` assigns `util.name`). Under `all`, the `global` names of
 //!   the files the file imports ([`super::LowerOptions::imported_globals`])
 //!   are excluded too: those are variables by design.
 //!
@@ -65,7 +67,7 @@
 use std::collections::HashSet;
 
 use nl_sema::util::*;
-use nl_sema::{Ref, Resolution};
+use nl_sema::{MethodOwner, Ref, Resolution};
 use nl_syntax::{SyntaxKind, SyntaxNode};
 
 use crate::ir::*;
@@ -202,13 +204,19 @@ impl Plan {
     }
 }
 
-/// The names of the `global` declarations of a file, in order.
+/// The names of the `global` declarations of a file, in order, and of
+/// its `global fn`, `global module` and `global struct` items, which
+/// assign their globals too.
 /// The driver gives the importing file those of the files it imports
 /// ([`super::LowerOptions::imported_globals`]).
 pub fn declared_globals(root: &SyntaxNode) -> Vec<String> {
     let mut out = Vec::new();
-    for g in root.descendants().filter(|n| n.kind() == GLOBAL_DECL) {
-        if let Some(name) = child(&g, NAME).and_then(|n| name_text(&n)) {
+    for g in root.descendants().filter(|n| n.kind() == GLOBAL_DECL || is_global_item(n)) {
+        let name = match g.kind() {
+            MODULE_DECL => child(&g, QUAL_NAME).map(|q| qual_text(&q)),
+            _ => child(&g, NAME).and_then(|n| name_text(&n)),
+        };
+        if let Some(name) = name {
             if !out.contains(&name) {
                 out.push(name);
             }
@@ -282,6 +290,15 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
             }
         }
         reads.push((global, first));
+    }
+    // `fn Util.name` on a declared module or class whose Lua path is a
+    // global: it assigns that global's field.
+    for f in root.descendants().filter(|n| n.kind() == FN_DECL) {
+        let Some(MethodOwner::Declared(id)) = res.method_owner(f.text_range()) else { continue };
+        let (Some(path), Some(name)) = (res.declared_path(*id), child(&f, NAME).and_then(|n| name_text(&n))) else { continue };
+        if path.steps.is_empty() {
+            assigned_paths.insert((path.global.clone(), name));
+        }
     }
     for (global, first) in reads {
         if assigned_roots.contains(&global) {

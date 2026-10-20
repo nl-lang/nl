@@ -291,7 +291,7 @@ impl Lowerer<'_> {
             let n = items.len();
             for (i, (c, v)) in items.iter().zip(values).enumerate() {
                 let v = if c.kind() == SPREAD_ARG {
-                    Expr::intrinsic_call("unpack", vec![v])
+                    Expr::intrinsic_call("spread", vec![v])
                 } else if i + 1 < n && v.is_multi() {
                     Expr::Paren(Box::new(v))
                 } else {
@@ -413,6 +413,13 @@ impl Lowerer<'_> {
     fn field_value(&mut self, node: &SyntaxNode) -> Expr {
         let Some(recv) = expr_child(node) else { return self.internal(node, "member access") };
         let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
+        // `args.len` of a rest parameter is the count of arguments it
+        // received, nils included.
+        if name == "len" {
+            if let Some((_, n)) = self.counted_rest(&recv) {
+                return n;
+            }
+        }
         let r = self.expr1(&recv);
         if name == "len" {
             // `#s` for a string; at level 1 `#` for every
@@ -441,6 +448,26 @@ impl Lowerer<'_> {
             None if self.opts.level == 0 && self.opts.hints.is_table_read(node.text_range()) => self.table_field(r, &name),
             None => Expr::AutoGet { receiver: Box::new(r), key: Box::new(Expr::str(&name)) },
         }
+    }
+
+    /// The local of a rest parameter (`*args`) named by `node`, when no
+    /// assignment replaces it, and the count of arguments it received: a
+    /// hidden local, or the table's `n` (func.rs).
+    pub(crate) fn counted_rest(&mut self, node: &SyntaxNode) -> Option<(LocalId, Expr)> {
+        if node.kind() != NAME_REF {
+            return None;
+        }
+        let Some(Ref::Binding(id)) = self.res.reference(node.text_range()).cloned() else { return None };
+        let b = self.res.binding(id)?;
+        if b.decl != DeclKind::RestParam || self.res.reassigned(id) {
+            return None;
+        }
+        let l = self.local_of(id);
+        let n = match self.rest_counts.get(&id) {
+            Some(c) => Expr::Local(*c),
+            None => Expr::index(Expr::Local(l), Expr::str("n")),
+        };
+        Some((l, n))
     }
 
     /// `t.len` at level 0 when `t` is certain to be a table
@@ -475,30 +502,42 @@ impl Lowerer<'_> {
         Expr::Local(v)
     }
 
-    /// `f!`, `x.m!`, `@m!`: the value itself, never called.
+    /// `f!`, `x.m!`, `@m!`: the value itself, never called. A method read
+    /// with `x.m!` is bound to `x` (`rt.bound`): `M.f!` of a module passes
+    /// the module as `self`, as `M.f(args)` does. A field, a plain
+    /// function and a library's function are read as they are.
     fn bang(&mut self, node: &SyntaxNode) -> Expr {
         let Some(inner) = expr_child(node) else { return self.internal(node, "`!`") };
         match inner.kind() {
             NAME_REF => self.name_raw(&inner),
             FIELD_EXPR => {
                 let Some(recv) = expr_child(&inner) else { return self.internal(node, "member access") };
-                let name = match self.opts.hints.member(inner.text_range()) {
+                let hint = self.opts.hints.member(inner.text_range()).cloned();
+                let name = match &hint {
                     Some(h) => h.key().to_string(),
                     None => field_name(&inner).map(|t| t.text().to_string()).unwrap_or_default(),
                 };
+                let plain_library = self.res.plain_primitive_member(&recv, &name).is_some();
                 let r = self.expr1(&recv);
-                // `xs.map!` on a table is the library's function, as
-                // `s.upcase!` is String's; the receiver is still evaluated.
-                if let Some(MemberHint::TableFn { key }) = self.opts.hints.member(inner.text_range()).cloned() {
-                    if !r.is_constant() && !matches!(r, Expr::Local(_)) {
-                        self.fresh_temp(r, "s");
+                match hint {
+                    // `xs.map!` on a table is the library's function, as
+                    // `s.upcase!` is String's; the receiver is still evaluated.
+                    Some(MemberHint::TableFn { key }) => {
+                        if !r.is_constant() && !matches!(r, Expr::Local(_)) {
+                            self.fresh_temp(r, "s");
+                        }
+                        table_fn(&key)
                     }
-                    return table_fn(&key);
+                    Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => self.index_read(r, Expr::str(&name)),
+                    // `String.shout!`, `Self.half!` in `fn Number.x`: the
+                    // library's function, whose first parameter is `self`.
+                    _ if plain_library => self.index_read(r, Expr::str(&name)),
+                    // A method the receiver's declared type has (a host
+                    // method under its Lua key, unmarked) is bound whatever
+                    // the runtime would say of it.
+                    Some(MemberHint::Method { .. }) => Expr::intrinsic_call("bound", vec![r, Expr::str(&name), Expr::Bool(true)]),
+                    _ => Expr::intrinsic_call("bound", vec![r, Expr::str(&name)]),
                 }
-                if self.opts.hints.is_table_read(inner.text_range()) {
-                    return Expr::index(r, Expr::str(&name));
-                }
-                self.index_read(r, Expr::str(&name))
             }
             AT_EXPR => self.at_expr(&inner),
             _ => self.expr(&inner),

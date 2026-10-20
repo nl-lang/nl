@@ -89,12 +89,43 @@ pub struct ExportInfo {
     pub optional: bool,
 }
 
+/// A function a file adds to a declared module or type (`fn Util.name`
+/// on `declare module Util`, `fn Player.name` on `declare type Player`),
+/// as the files that import it see it: running the file defines it for the
+/// whole Lua state, so the importer's analyzer knows the member too. Its
+/// parameters are known by name only; their types are `any`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExtensionInfo {
+    /// The declared name it extends.
+    pub owner: String,
+    pub name: String,
+    /// A method of the type's values (a declared struct or host type), or
+    /// a plain function of a declared module.
+    pub method: bool,
+    /// The parameters' names, and whether each has a default.
+    pub params: Vec<(String, bool)>,
+    pub rest: bool,
+    pub keyed: bool,
+    pub is_async: bool,
+    /// The import path of the file that defines it, as the importing file
+    /// wrote it; `None` in the file that defines it.
+    pub origin: Option<String>,
+}
+
 /// How the resolver learns what an imported file exports.
 pub trait ImportProvider {
     /// The exports of the file that the import path `path` names, as seen
     /// from the file being resolved; an error message when the file cannot
     /// be found or compiled.
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String>;
+
+    /// The functions the file that `path` names adds to declared modules
+    /// and types, its own and those of the files it imports
+    /// ([`Resolution::extensions`]). Asked after [`Self::exports`]
+    /// succeeded; none by default.
+    fn extensions(&self, _path: &str) -> Vec<ExtensionInfo> {
+        Vec::new()
+    }
 
     /// The methods and operators defined on primitive types (`fn
     /// String.+`) by the file that `path` names and by the files it
