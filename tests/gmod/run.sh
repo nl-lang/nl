@@ -75,6 +75,9 @@ event_return relies on that order, and on a handler that returns nil ending the 
 lua_prelude uses IO, and gmod has no io library
 type_is uses IO, and gmod has no io library
 prim_plain_call uses loadstring, which gmod does not have
+prim_number_format uses loadstring, which gmod does not have
+string_lua_methods uses loadstring, which gmod does not have
+table_fn_user uses loadstring, which gmod does not have
 "
 
 excluded() {

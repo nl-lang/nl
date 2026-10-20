@@ -89,7 +89,9 @@ end
     let bundle = |limit: &str| nlc(&dir, &["bundle", "--profile=gmod-client", limit, "-o", "out/client.lua", "--map", "client.nlmap.json", "addon/main.nl"]);
     let list = || {
         let mut parts: Vec<PathBuf> = std::fs::read_dir(dir.join("out")).unwrap().map(|e| e.unwrap().path()).collect();
-        parts.sort();
+        // By part number, since `client_12.lua` sorts before `client_2.lua` as text.
+        let number = |p: &PathBuf| p.file_stem().unwrap().to_string_lossy().rsplit('_').next().and_then(|n| n.parse::<u32>().ok()).unwrap_or(1);
+        parts.sort_by_key(number);
         parts
     };
     // `-o` into a folder that does not exist fails cleanly.
