@@ -407,7 +407,8 @@ impl Analyzer<'_> {
                 DECL_MODULE | DECL_STRUCT | DECL_TYPE => {
                     if let Some(&inner) = self.decl_nested.get(&m.text_range()) {
                         let name = child(&m, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
-                        self.decl_keys.insert((nid, name.clone()), name.clone());
+                        let key = lua_key(&m).unwrap_or_else(|| name.clone());
+                        self.decl_keys.insert((nid, name), key);
                         self.fill_decl_members(&m, inner);
                     }
                 }

@@ -38,9 +38,11 @@ pub(crate) enum Lookup {
 /// The type a method's receiver is checked as. For a function of `Table`
 /// it is a table, which is all the resolution relies on: which kind of
 /// table is not checked (a list function on a map goes by its list part,
-/// as Lua's table functions do), nor a record against `[T]`.
-fn receiver_ty(recv: &Ty, table_fn: bool) -> Ty {
-    if table_fn { Ty::uncertain(Type::Table) } else { recv.clone() }
+/// as Lua's table functions do), nor a record against `[T]`. A receiver
+/// that may be `nil` (`T?`) is checked as `T`: the member is read from it
+/// before the call, which fails on `nil`.
+fn receiver_ty(types: &TypeTable, recv: &Ty, table_fn: bool) -> Ty {
+    if table_fn { Ty::uncertain(Type::Table) } else { Ty::new(types.non_nil(&recv.t), recv.certain) }
 }
 
 /// One argument of a call, typed.
@@ -170,7 +172,12 @@ impl Analyzer<'_> {
                 t
             }
             Some(Ref::Prelude(p)) => self.prelude_value(p),
-            Some(Ref::Declared(id)) => self.declared_value(id),
+            Some(Ref::Declared(id)) => match self.env.get(&Self::declared_flow_id(id)) {
+                // Narrowed by a test along the path (`stmt.rs`,
+                // `local_binding`).
+                Some(t) => Ty::uncertain(t.clone()),
+                None => self.declared_value(id),
+            },
             Some(Ref::LuaGlobal(_)) | None => Ty::any(),
         }
     }
@@ -425,7 +432,7 @@ impl Analyzer<'_> {
                 self.call_result(&sig)
             }
             Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
-                let args = [ArgTy { ty: receiver_ty(&recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+                let args = [ArgTy { ty: receiver_ty(&self.types, &recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
                 self.check_call(&sig, &name, &args, None, node.text_range(), false);
                 self.call_result(&sig)
             }
@@ -480,6 +487,12 @@ impl Analyzer<'_> {
         let declared_type = match self.types.expand(&recv.t) {
             Type::Static(nid) => matches!(self.types.kind(nid), Some(NamedKind::Module { .. } | NamedKind::LuaClass { .. } | NamedKind::HostType { .. })) && !self.types.is_struct(nid) && self.is_declared_module(nid),
             Type::Named(nid) => matches!(self.types.kind(nid), Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. })),
+            // `T?` and unions of declared types, whose members
+            // `lookup_member` found under one key.
+            Type::Union(parts) => {
+                let mut non_nil = parts.iter().filter(|p| **p != Type::Nil).peekable();
+                non_nil.peek().is_some() && non_nil.all(|p| self.is_declared_instance(p))
+            }
             _ => false,
         };
         let declared_key = if declared_type { Some(key.clone().unwrap_or_else(|| name.to_string())) } else { key.filter(|k| k != name) };
@@ -506,11 +519,11 @@ impl Analyzer<'_> {
         }
     }
 
-    /// A module of a declaration file or of the prelude's libraries (not
-    /// an NL module of this file, whose functions are methods with the
-    /// module as `self`).
+    /// A module of a declaration file, at the top level or nested in
+    /// another, or of the prelude's libraries (not an NL module of this
+    /// file, whose functions are methods with the module as `self`).
     fn is_declared_module(&self, nid: NamedId) -> bool {
-        self.decl_named.values().any(|n| *n == nid) || self.prelude_named.values().any(|n| *n == nid)
+        self.decl_types.contains(&nid)
     }
 
     /// What `recv.name` is.
@@ -570,6 +583,17 @@ impl Analyzer<'_> {
                 }
             },
             Type::Union(members) => {
+                // `T?`: the member of `T`, under its declared key. The read
+                // fails at runtime when the value is `nil`, which is not
+                // known here (`index-nil` is for a certain `nil`).
+                let non_nil: Vec<Type> = members.iter().filter(|m| **m != Type::Nil).cloned().collect();
+                if non_nil.len() == 1 && non_nil.len() < members.len() {
+                    let t = non_nil.into_iter().next().unwrap_or(Type::Any);
+                    return self.lookup_member(&Ty::uncertain(t), name, at);
+                }
+                if let Some(agreed) = self.union_declared_member(&non_nil, name, at) {
+                    return agreed;
+                }
                 // Every member must know the name the same way; otherwise
                 // the runtime decides.
                 let mut found: Option<Type> = None;
@@ -608,6 +632,34 @@ impl Analyzer<'_> {
             }
             Type::Not(_) | Type::Never | Type::Tuple(_) => Lookup::Unknown,
         }
+    }
+
+    /// A member of a union of declared types (host types, Lua classes, with
+    /// `nil` taken out) that every one of them declares as the same kind of
+    /// member under the same Lua key: that member, as it is on the first,
+    /// with the union of the fields' types. `None` when they disagree, or
+    /// when a part is not a declared type.
+    fn union_declared_member(&mut self, parts: &[Type], name: &str, at: TextRange) -> Option<Lookup> {
+        if parts.len() < 2 || !parts.iter().all(|p| self.is_declared_instance(p)) {
+            return None;
+        }
+        let mut agreed: Option<Lookup> = None;
+        for p in parts {
+            let found = self.lookup_member(&Ty::uncertain(p.clone()), name, at);
+            agreed = Some(match (agreed, found) {
+                (None, f @ (Lookup::Method(_, Some(_)) | Lookup::Function(_, Some(_)) | Lookup::Field(_, Some(_)))) => f,
+                (Some(Lookup::Method(sig, Some(k))), Lookup::Method(_, Some(k2))) if k == k2 => Lookup::Method(sig, Some(k)),
+                (Some(Lookup::Function(sig, Some(k))), Lookup::Function(_, Some(k2))) if k == k2 => Lookup::Function(sig, Some(k)),
+                (Some(Lookup::Field(t, Some(k))), Lookup::Field(t2, Some(k2))) if k == k2 => Lookup::Field(self.types.union(&t, &t2), Some(k)),
+                _ => return None,
+            });
+        }
+        agreed
+    }
+
+    /// An instance of a declared host type or Lua class.
+    fn is_declared_instance(&self, t: &Type) -> bool {
+        matches!(self.types.expand(t), Type::Named(nid) if matches!(self.types.kind(nid), Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. })))
     }
 
     /// `Enum.name` on an enum declared in this file, by its name or through
@@ -972,6 +1024,7 @@ impl Analyzer<'_> {
                 KEYED_ARG => {
                     let key = first_token(&c).map(|t| t.text().to_string()).unwrap_or_default();
                     if let Some(e) = expr_child(&c) {
+                        self.autocall_argument(&e);
                         let ty = self.expr1(&e);
                         out.push(ArgTy { ty, range: c.text_range(), spread: false, keyed: Some(key), keyed_spread: false, fn_kind_name: None, is_fn_literal: false });
                     }
@@ -983,13 +1036,7 @@ impl Analyzer<'_> {
                     }
                 }
                 k if is_expr(k) => {
-                    let fn_kind_name = match c.kind() {
-                        NAME_REF => match self.res.reference(c.text_range()) {
-                            Some(Ref::Binding(id)) if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Function) => self.binding(*id).map(|b| b.name.clone()),
-                            _ => None,
-                        },
-                        _ => None,
-                    };
+                    let fn_kind_name = self.autocall_argument(&c);
                     let ty = self.expr(&c);
                     out.push(ArgTy { ty, range: c.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name, is_fn_literal: matches!(c.kind(), FN_EXPR | LAMBDA_EXPR) });
                 }
@@ -997,6 +1044,52 @@ impl Analyzer<'_> {
             }
         }
         out
+    }
+
+    /// An argument that is a bare function-kind name (a `fn`, a name
+    /// annotated `Function`, `let f = fn … end`, a declared function):
+    /// the name is called, with no arguments, and its result is passed. The
+    /// name is returned, for the `fn-kind-argument` warning of a parameter
+    /// that takes a function. When the function is known to take a
+    /// required parameter, the call cannot be what was meant (the parameter
+    /// gets `nil`), so it is the lint `autocall-argument`; a function of no
+    /// required parameter is called on purpose (`print now`), and one whose
+    /// parameters are unknown is left alone. `check_call` drops the lint
+    /// where it warns `fn-kind-argument` instead.
+    fn autocall_argument(&mut self, arg: &SyntaxNode) -> Option<String> {
+        if arg.kind() != NAME_REF {
+            return None;
+        }
+        let (name, sig) = match self.res.reference(arg.text_range())? {
+            Ref::Binding(id) => {
+                let b = self.binding(*id).filter(|b| b.kind == BindingKind::Function)?;
+                let name = b.name.clone();
+                let sig = self.binding_fn_type(*id).or_else(|| match self.binding_types.get(id).map(|t| self.types.expand(&t.t)) {
+                    Some(Type::Fn(f)) => Some(f),
+                    _ => None,
+                });
+                (name, sig)
+            }
+            Ref::Declared(id) if self.decls.binding_kind(*id) == BindingKind::Function => {
+                let name = self.decls.get(*id)?.name.clone();
+                let sig = match self.declared_value(*id).t {
+                    Type::Fn(f) => Some(f),
+                    _ => None,
+                };
+                (name, sig)
+            }
+            _ => return None,
+        };
+        let required = sig.as_ref().and_then(|f| f.params.iter().find(|p| !p.optional && (matches!(p.ty, Type::Any | Type::Unknown) || !self.types.may_be_nil(&p.ty))));
+        if let Some(p) = required {
+            let param = if p.name.is_empty() { String::new() } else { format!(" '{}'", p.name) };
+            self.lint(
+                arg.text_range(),
+                "autocall-argument",
+                format!("`{name}` is called here, with no arguments, because a bare function name is a call, and its parameter{param} gets `nil`; write `{name}!` to pass the function itself, or `{name}()` to call it"),
+            );
+        }
+        Some(name)
     }
 
     /// A call of `callee` with the piped values `pre`, the written
@@ -1035,7 +1128,7 @@ impl Analyzer<'_> {
                         self.call_result(&sig)
                     }
                     Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
-                        let mut all = vec![ArgTy { ty: receiver_ty(&recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+                        let mut all = vec![ArgTy { ty: receiver_ty(&self.types, &recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
                         all.extend(args);
                         self.check_call(&sig, &desc, &all, block_ty, callee.text_range(), false);
                         self.call_result(&sig)
@@ -1219,6 +1312,8 @@ impl Analyzer<'_> {
                 let what = if p.name.is_empty() { format!("argument {} of {desc}", i + 1) } else { format!("parameter '{}' of {desc}", p.name) };
                 if let Some(n) = fn_name {
                     if takes_block(&p.ty) {
+                        let at = *range;
+                        self.diags.retain(|d| !(d.range == at && d.code == "autocall-argument"));
                         self.warn(*range, "fn-kind-argument", format!("`{n}` is a function-kind name, so it is called here and its result is passed; write `{n}!` to pass the function itself"));
                         continue;
                     }

@@ -37,6 +37,17 @@ declare struct Color = :FindMetaTable('Color')
   a: Number
 end
 
+# Lua's functions whose wiki types are narrower than what Lua takes: the
+# replacement of gsub is a string (or number), a table or a function, and
+# find gives nil when nothing matches, then the captures.
+## gmod's library `string`. https://wiki.facepunch.com/gmod/string
+declare module StringLib = :string
+  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.gsub
+  fn gsub(string: String, pattern: String, replacement: String | Number | Table | Function, max_replaces: Number?): (String, Number)
+  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.find
+  fn find(haystack: String, needle: String, start_pos: Number?, no_patterns: Bool?): (Number?, Number?, any)
+end
+
 ## The realm a file runs in. Realm: shared.
 declare const SERVER: Bool
 ## The realm a file runs in. Realm: shared.

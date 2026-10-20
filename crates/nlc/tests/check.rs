@@ -31,6 +31,8 @@ fn run_dir() -> PathBuf {
 /// produce none.
 fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
     let table: &[(&str, &[&str])] = &[
+        // `typeof(label)` calls `label` with nothing, on purpose there.
+        ("call_autocall_argument", &["autocall-argument"]),
         ("conv_builtin", &["unused-binding", "unused-binding", "unused-binding"]),
         ("conv_custom", &["unused-binding"]),
         ("ctrl_if_let", &["unused-binding", "unused-binding", "unused-binding"]),

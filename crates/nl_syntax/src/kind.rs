@@ -591,11 +591,14 @@ syntax_kinds! {
 
     // -- Declaration files. The root is a `SOURCE_FILE` holding
     // the items directly (no `BLOCK`), then `EOF`.
-    /// `[declare] module NAME LUA_ROOT? members end`.
+    /// `declare module NAME LUA_ROOT? members end`, or nested in a
+    /// module `module NAME LUA_KEY? members end`.
     DECL_MODULE,
-    /// `[declare] struct NAME LUA_ROOT? members end`: a Lua class.
+    /// `declare struct NAME LUA_ROOT? members end`: a Lua class; nested,
+    /// `struct NAME LUA_KEY? …`.
     DECL_STRUCT,
-    /// `[declare] type NAME STRUCT_PARENT? members end`: a host type.
+    /// `[declare] type NAME STRUCT_PARENT? LUA_KEY? members end`: a host
+    /// type (the key only when nested).
     DECL_TYPE,
     /// `declare fn NAME TYPE_PARAMS? PARAM_LIST? RETURN_TYPE? LUA_ROOT?`, or
     /// a member `fn (NAME | OP_NAME) … LUA_KEY?`.

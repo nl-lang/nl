@@ -905,7 +905,12 @@ impl Analyzer<'_> {
     }
 
     /// The binding of a bare name, when it is one that narrowing applies
-    /// to.
+    /// to. A declared `const`, and a declared `let` that this file never
+    /// assigns, narrow too, under a flow id of their own
+    /// ([`Analyzer::declared_flow_id`]): like a local that nothing
+    /// assigns, nothing in the file changes them between the test and the
+    /// use. Lua code could, so the narrowed type is never certain
+    /// (`name_raw`), and gives no hint that drops a check.
     fn local_binding(&self, e: &SyntaxNode) -> Option<BindingId> {
         if e.kind() != NAME_REF {
             return None;
@@ -918,12 +923,27 @@ impl Analyzer<'_> {
                 }
                 Some(*id)
             }
+            Ref::Declared(id) => {
+                let item = self.decls.get(*id)?;
+                let narrows = match item.kind {
+                    crate::decl::DeclItemKind::Const => true,
+                    crate::decl::DeclItemKind::Let => !self.assigned_decls.contains(id),
+                    _ => false,
+                };
+                (narrows && self.decls.binding_kind(*id) == BindingKind::Variable).then(|| Self::declared_flow_id(*id))
+            }
             _ => None,
         }
     }
 
     fn flow_in(&self, env: &Env, id: BindingId) -> Type {
-        env.get(&id).cloned().or_else(|| self.binding_types.get(&id).map(|t| t.t.clone())).unwrap_or(Type::Any)
+        if let Some(t) = env.get(&id) {
+            return t.clone();
+        }
+        if let Some(d) = self.declared_of_flow_id(id) {
+            return self.declared_value(d).t;
+        }
+        self.binding_types.get(&id).map(|t| t.t.clone()).unwrap_or(Type::Any)
     }
 
     /// The union of several envs: a binding narrowed in all of them keeps

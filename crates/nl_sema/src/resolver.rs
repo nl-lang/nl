@@ -224,7 +224,16 @@ impl<'a> Resolver<'a> {
                         _ => "variable",
                     };
                     self.lint(range, "shadowing", format!("`{name}` shadows the {what} `{name}` declared earlier"));
+                } else if !file_level && self.binding(prev).is_some_and(|b| b.decl == DeclKind::Import) {
+                    // At file level the same name is the error
+                    // `import-clash`.
+                    self.lint(range, "shadows-declared", format!("`{name}` shadows the imported `{name}`; below this, `{name}` is this one"));
                 }
+            } else if decl != DeclKind::SelfParam && prelude::lookup(name).is_none() && self.decls.lookup(name).is_some() {
+                // A name of the declaration files (looked up after the
+                // prelude, so one with a prelude name is not reachable
+                // anyway): the local hides the host's value from here on.
+                self.lint(range, "shadows-declared", format!("`{name}` shadows the declared `{name}` of the declaration files; below this, `{name}` is this one (rename it, or reach the declared value through its Lua path)"));
             }
         }
         if file_level && decl != DeclKind::Import {

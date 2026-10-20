@@ -44,9 +44,9 @@ impl Parser<'_> {
         let m = self.start();
         self.bump();
         match self.cur() {
-            MODULE_KW => self.decl_container(m, DECL_MODULE),
-            STRUCT_KW => self.decl_container(m, DECL_STRUCT),
-            TYPE_KW => self.decl_container(m, DECL_TYPE),
+            MODULE_KW => self.decl_container(m, DECL_MODULE, true),
+            STRUCT_KW => self.decl_container(m, DECL_STRUCT, true),
+            TYPE_KW => self.decl_container(m, DECL_TYPE, true),
             FN_KW => self.decl_fn(m, true),
             LET_KW | CONST_KW => self.decl_value(m, true),
             _ => {
@@ -58,8 +58,11 @@ impl Parser<'_> {
     }
 
     /// `decl_module`, `decl_struct`, `decl_type`: a header, members
-    /// one per line, `end`.
-    fn decl_container(&mut self, m: Marker, kind: SyntaxKind) {
+    /// one per line, `end`. A top-level one names its Lua value with
+    /// `= :path` (a host type has none); a nested one is a member of the
+    /// module around it and names its Lua key with `as 'Key'`, as the
+    /// other members do.
+    fn decl_container(&mut self, m: Marker, kind: SyntaxKind, top: bool) {
         let keyword = match kind {
             DECL_MODULE => "module",
             DECL_STRUCT => "struct",
@@ -81,14 +84,24 @@ impl Parser<'_> {
                         p.type_ref("after `:`", "the parent of a host type");
                         s.complete(p, STRUCT_PARENT);
                     }
-                    if p.at(EQ) {
+                    if p.at(EQ) && top {
                         p.error("a host type is found by its registered name and takes no `= :path`");
                         let e = p.start();
                         p.opt_lua_root();
                         e.complete(p, ERROR_NODE);
                     }
                 }
-                _ => p.opt_lua_root(),
+                _ if top => p.opt_lua_root(),
+                _ => {}
+            }
+            if !top {
+                p.opt_lua_key();
+                if p.at(EQ) && !p.nl() {
+                    p.error("a nested declaration is a member: it names its Lua key with `as 'luaName'`, not `= :path`");
+                    let e = p.start();
+                    p.opt_lua_root();
+                    e.complete(p, ERROR_NODE);
+                }
             }
             p.member_block(keyword, &[COLON], |p| p.decl_member());
             p.expect_end(keyword);
@@ -158,15 +171,15 @@ impl Parser<'_> {
             }
             MODULE_KW => {
                 let m = self.start();
-                self.decl_container(m, DECL_MODULE);
+                self.decl_container(m, DECL_MODULE, false);
             }
             STRUCT_KW => {
                 let m = self.start();
-                self.decl_container(m, DECL_STRUCT);
+                self.decl_container(m, DECL_STRUCT, false);
             }
             TYPE_KW => {
                 let m = self.start();
-                self.decl_container(m, DECL_TYPE);
+                self.decl_container(m, DECL_TYPE, false);
             }
             _ if (is_word(k) || k == ONAME) && self.nth_at(1, COLON) && !self.nth_raw_nl(1) => self.decl_field(),
             _ if is_word(k) || k == ONAME => {

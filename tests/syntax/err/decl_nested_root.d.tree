@@ -1,0 +1,71 @@
+SOURCE_FILE@0..187
+  COMMENT@0..82 "# A nested declaration names its Lua key with `as`, not `= :path`; parsing goes on"
+  NEWLINE@82..83 "\n"
+  DECL_MODULE@83..186
+    DECLARE_KW@83..90 "declare"
+    WHITESPACE@90..91 " "
+    MODULE_KW@91..97 "module"
+    WHITESPACE@97..98 " "
+    NAME@98..101
+      CNAME@98..101 "Top"
+    WHITESPACE@101..102 " "
+    LUA_ROOT@102..108
+      EQ@102..103 "="
+      WHITESPACE@103..104 " "
+      LUA_PATH@104..108
+        COLON@104..105 ":"
+        CNAME@105..108 "Top"
+    NEWLINE@108..109 "\n"
+    WHITESPACE@109..111 "  "
+    DECL_MODULE@111..160
+      MODULE_KW@111..117 "module"
+      WHITESPACE@117..118 " "
+      NAME@118..121
+        CNAME@118..121 "Sub"
+      WHITESPACE@121..122 " "
+      ERROR_NODE@122..128
+        LUA_ROOT@122..128
+          EQ@122..123 "="
+          WHITESPACE@123..124 " "
+          LUA_PATH@124..128
+            COLON@124..125 ":"
+            LNAME@125..128 "sub"
+      NEWLINE@128..129 "\n"
+      WHITESPACE@129..133 "    "
+      DECL_FN@133..154
+        FN_KW@133..135 "fn"
+        WHITESPACE@135..136 " "
+        NAME@136..140
+          LNAME@136..140 "meth"
+        PARAM_LIST@140..146
+          L_PAREN@140..141 "("
+          SELF_PARAM@141..145
+            SELF_KW@141..145 "self"
+          R_PAREN@145..146 ")"
+        RETURN_TYPE@146..154
+          COLON@146..147 ":"
+          WHITESPACE@147..148 " "
+          NAMED_TYPE@148..154
+            QUAL_NAME@148..154
+              CNAME@148..154 "String"
+      NEWLINE@154..155 "\n"
+      WHITESPACE@155..157 "  "
+      END_KW@157..160 "end"
+    NEWLINE@160..161 "\n"
+    WHITESPACE@161..163 "  "
+    DECL_VALUE@163..182
+      CONST_KW@163..168 "const"
+      WHITESPACE@168..169 " "
+      NAME@169..174
+        LNAME@169..174 "limit"
+      COLON@174..175 ":"
+      WHITESPACE@175..176 " "
+      NAMED_TYPE@176..182
+        QUAL_NAME@176..182
+          CNAME@176..182 "Number"
+    NEWLINE@182..183 "\n"
+    END_KW@183..186 "end"
+  NEWLINE@186..187 "\n"
+  EOF@187..187 ""
+---
+error@122..123 3:14: a nested declaration is a member: it names its Lua key with `as 'luaName'`, not `= :path`

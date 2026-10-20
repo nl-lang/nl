@@ -54,6 +54,7 @@ mod checks;
 pub mod decl;
 pub mod hints;
 pub mod prelude;
+mod primmethods;
 pub mod profile;
 mod resolver;
 pub mod types;
@@ -64,6 +65,7 @@ pub use binding::*;
 pub use decl::{DeclId, Declarations, LuaArg, LuaRoot, LuaStep, prelude_declarations};
 pub use hints::{AsHint, Hints, LoopHint, MemberHint};
 pub use prelude::{Access, Prelude, PreludeClass};
+pub use primmethods::{FileScan, PrimMethod, primitive_methods_through, scan_file};
 pub use profile::Profile;
 pub use resolver::{decode_plain_string, has_function_param, lua_path_root};
 
@@ -93,6 +95,16 @@ pub trait ImportProvider {
     /// from the file being resolved; an error message when the file cannot
     /// be found or compiled.
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String>;
+
+    /// The methods and operators defined on primitive types (`fn
+    /// String.+`) by the file that `path` names and by the files it
+    /// imports, transitively: they are global once those files ran, which
+    /// they did before the importing file runs (`primmethods.rs`). None by
+    /// default.
+    fn primitive_methods(&self, path: &str) -> Vec<PrimMethod> {
+        let _ = path;
+        Vec::new()
+    }
 }
 
 /// An [`ImportProvider`] that refuses every import.

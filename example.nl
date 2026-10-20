@@ -204,6 +204,11 @@ fn foo(a: Number): nil # if one parameter has a type, all of them must have one.
                        # `: nil` means the function returns nothing, whatever its last line is
 end
 
+fn parse(s: String): (Number?, String?) # several return values, each checked
+  return 1 if s == "1" # a `return` gives the values it writes: here one, and
+  return nil, "bad"    # `let n, err = parse(s)` gets nil for the missing one
+end
+
 let a = fn print('hello world') end
 let b = fn(a) print('hello world') end
 let c = fn(a: Number): nil print('hello world') end
@@ -355,6 +360,9 @@ a b # will call function a with b as argument
 a b, c # will call function a with b and c as arguments
 a b, c d # will raise a parser error (ambiguous function call)
 a b, c(d) # is ok
+print now # an argument too: a bare function name is called, so this prints now's result.
+          # passing a function that takes parameters this way calls it with nothing,
+          # which the analyzer flags (autocall-argument): write `f!` to pass f itself
 
 # returning a function without calling it
 
@@ -423,6 +431,13 @@ let word = case var
 when 1 then "one"
 when 2, 3 then "a few"
 else "many"
+end
+
+case var
+when is Player # tests the type. `when Player` would compare var with the struct itself,
+  # ...        # which never matches, so it is an error
+when Player {name} # tests the type and destructures
+  # ...
 end
 
 # cond
@@ -927,7 +942,9 @@ end
 print 100.is_multiple_of(7) # false
 print 100.is_multiple_of(10) # true
 
-# methods also work on literals and on the built-in string and number functions
+# methods also work on literals and on the built-in string and number functions.
+# they are global once the file that defines them has run: a file that imports it
+# (directly or through other imports) can use them, operators included
 
 print "hello".upcase # HELLO
 

@@ -233,6 +233,10 @@ pub(crate) struct Analyzer<'a> {
     pub(crate) prelude_named: HashMap<&'static str, NamedId>,
     /// The nominal types of declared names.
     pub(crate) decl_named: HashMap<DeclId, NamedId>,
+    /// Every nominal type of the declaration files and the prelude
+    /// libraries: the top-level declared items and the modules, structs
+    /// and types nested in declared modules, at any depth.
+    pub(crate) decl_types: HashSet<NamedId>,
     /// Methods defined on `Number`, `String` and `Bool` in this file.
     pub(crate) prim_methods: HashMap<&'static str, HashMap<String, Rc<FnType>>>,
     /// The signature of each function node, by the node's range, with the
@@ -246,6 +250,8 @@ pub(crate) struct Analyzer<'a> {
     pub(crate) binding_types: HashMap<BindingId, Ty>,
     /// Bindings assigned somewhere after their declaration.
     pub(crate) assigned: HashSet<BindingId>,
+    /// Declared `let`s this file assigns.
+    pub(crate) assigned_decls: HashSet<DeclId>,
     /// `**opts` parameters: tables of options passed by name, whose
     /// members are their keys, never functions of `Table`.
     pub(crate) keyed_params: HashSet<BindingId>,
@@ -301,12 +307,14 @@ impl<'a> Analyzer<'a> {
             named_of: HashMap::new(),
             prelude_named: HashMap::new(),
             decl_named: HashMap::new(),
+            decl_types: HashSet::new(),
             prim_methods: HashMap::new(),
             fn_sigs: HashMap::new(),
             binding_sigs: HashMap::new(),
             inferred_ret: HashMap::new(),
             binding_types: HashMap::new(),
             assigned: HashSet::new(),
+            assigned_decls: HashSet::new(),
             keyed_params: HashSet::new(),
             place_read: None,
             binding_fn: HashMap::new(),
@@ -426,6 +434,23 @@ impl<'a> Analyzer<'a> {
         self.res.binding(id)
     }
 
+    /// The id under which the flow env narrows a declared `let` or
+    /// `const` (`stmt.rs`, `local_binding`): counted down from the top of
+    /// the id space, past every binding of a file.
+    pub(crate) fn declared_flow_id(id: DeclId) -> BindingId {
+        BindingId((u32::MAX - 1).saturating_sub(id.0))
+    }
+
+    /// The declared name a flow id of [`Self::declared_flow_id`] stands
+    /// for; `None` for the id of a binding.
+    pub(crate) fn declared_of_flow_id(&self, id: BindingId) -> Option<DeclId> {
+        if (id.0 as usize) < self.res.bindings.len() {
+            return None;
+        }
+        let d = DeclId((u32::MAX - 1).checked_sub(id.0)?);
+        self.decls.get(d).map(|_| d)
+    }
+
     /// The flow type of a binding: narrowed along the path, else declared.
     pub(crate) fn type_of_binding(&self, id: BindingId) -> Ty {
         if let Some(t) = self.env.get(&id) {
@@ -479,6 +504,7 @@ impl<'a> Analyzer<'a> {
         self.collect_decls();
         self.collect_binding_fns(root);
         self.collect_assigned(root);
+        self.collect_imported_prim_methods(root);
         self.find_top_level_effects(root);
         // Type-level declarations first (a field may name any of them).
         for n in root.descendants() {
@@ -587,6 +613,7 @@ impl<'a> Analyzer<'a> {
     /// The nominal types of the declaration files, then their members.
     fn collect_decls(&mut self) {
         let decls = self.decls;
+        self.decl_types.extend(self.prelude_named.values().copied());
         for (i, item) in decls.items.iter().enumerate() {
             let id = DeclId(u32::try_from(i).unwrap_or(u32::MAX));
             // A declared module with the name of a prelude library fills
@@ -606,6 +633,7 @@ impl<'a> Analyzer<'a> {
             };
             let nid = self.types.add(&item.name, kind);
             self.decl_named.insert(id, nid);
+            self.decl_types.insert(nid);
             if self.opts.record {
                 self.decl_nodes.insert(nid, (id, item.node.text_range()));
             }
@@ -636,6 +664,7 @@ impl<'a> Analyzer<'a> {
             let name = child(&c, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
             let nid = self.types.add(&name, kind);
             self.decl_nested.insert(c.text_range(), nid);
+            self.decl_types.insert(nid);
             if self.opts.record {
                 self.decl_nodes.insert(nid, (top, c.text_range()));
             }
@@ -657,6 +686,29 @@ impl<'a> Analyzer<'a> {
                     }
                 }
                 _ => {}
+            }
+        }
+    }
+
+    /// The methods and operators the imported files (and the files they
+    /// import) define on primitive types (`primmethods.rs`): known here
+    /// with what their syntax says, a return type that is a primitive and
+    /// no checked parameters. A definition of this file, collected later,
+    /// replaces one of the same name.
+    fn collect_imported_prim_methods(&mut self, root: &SyntaxNode) {
+        let Some(imports) = self.opts.imports else { return };
+        let Some(b) = block(root) else { return };
+        for s in statements(&b).filter(|s| s.kind() == IMPORT_DECL) {
+            let Some(path) = token(&s, STRING).map(|t| crate::resolver::decode_plain_string(&t)) else { continue };
+            for m in imports.primitive_methods(&path) {
+                let ret = match m.ret {
+                    Some("Number") => Type::Number,
+                    Some("String") => Type::String,
+                    Some("Bool") => Type::Bool,
+                    _ => Type::Any,
+                };
+                let sig = FnType { params: Vec::new(), rest: Some(Type::Any), keyed: Some(None), ret, is_method: true, is_async: false, named: true, declared: true };
+                self.prim_methods.entry(m.owner).or_default().entry(m.name).or_insert_with(|| Rc::new(sig));
             }
         }
     }
@@ -689,8 +741,14 @@ impl<'a> Analyzer<'a> {
             };
             for t in targets {
                 if t.kind() == NAME_REF {
-                    if let Some(Ref::Binding(id)) = self.res.reference(t.text_range()) {
-                        self.assigned.insert(*id);
+                    match self.res.reference(t.text_range()) {
+                        Some(Ref::Binding(id)) => {
+                            self.assigned.insert(*id);
+                        }
+                        Some(Ref::Declared(id)) => {
+                            self.assigned_decls.insert(*id);
+                        }
+                        _ => {}
                     }
                 }
             }

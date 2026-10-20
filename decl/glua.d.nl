@@ -10836,6 +10836,10 @@ end
 
 ## gmod's library `string`. https://wiki.facepunch.com/gmod/string
 declare module StringLib = :string
+  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.gsub
+  fn gsub(string: String, pattern: String, replacement: String | Number | Table | Function, max_replaces: Number?): (String, Number)
+  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.find
+  fn find(haystack: String, needle: String, start_pos: Number?, no_patterns: Bool?): (Number?, Number?, any)
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.CardinalToOrdinal
   fn cardinal_to_ordinal(input: Number): String as 'CardinalToOrdinal'
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.Comma
@@ -10906,16 +10910,12 @@ declare module StringLib = :string
   fn char(*bytes: any): String
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.dump
   fn dump(func: Function, strip_debug_info: Bool?): String
-  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.find
-  fn find(haystack: String, needle: String, start_pos: Number?, no_patterns: Bool?): (Number, Number, String)
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.format
   fn format(format: String, *format_parameters: any): String
   ## Realm: shared and menu. Deprecated. https://wiki.facepunch.com/gmod/string.gfind
   fn gfind(data: String, pattern: String): Function
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.gmatch
   fn gmatch(data: String, pattern: String): Function
-  ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.gsub
-  fn gsub(string: String, pattern: String, replacement: String, max_replaces: Number?): (String, Number)
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.len
   fn len(str: String): Number
   ## Realm: shared and menu. https://wiki.facepunch.com/gmod/string.lower

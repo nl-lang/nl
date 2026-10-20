@@ -180,11 +180,15 @@ pub(crate) struct Staged {
     /// The `global` names the file and the files it imports declare
     /// (`imports.rs`, `DriverImports::globals`).
     pub(crate) globals: Vec<String>,
+    /// The primitive methods the file defines and the paths it imports
+    /// (`nl_sema::scan_file`), so that an importer follows them without
+    /// reading the file again.
+    pub(crate) scan: Option<nl_sema::FileScan>,
 }
 
 impl From<CompileOutput> for Staged {
     fn from(output: CompileOutput) -> Self {
-        Staged { output, exports: None, globals: Vec::new() }
+        Staged { output, exports: None, globals: Vec::new(), scan: None }
     }
 }
 
@@ -217,6 +221,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         return failed(diags).into();
     }
     let root = parse.syntax();
+    let scan = Some(nl_sema::scan_file(&root));
 
     // Declaration files: the built-in ones and the loader's.
     let (decls, decl_diags) = load_declarations(loader, options.profile);
@@ -267,7 +272,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     if profile_errors || realm.iter().any(|d| d.error) || (options.analyze && analysis.has_errors()) {
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals };
+        return Staged { output: out, exports, globals, scan };
     }
     let hints = if options.static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
 
@@ -277,7 +282,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         diags.extend(bad_patterns.into_iter().map(|(range, msg)| pos.diagnostic(Severity::Error, super::regex_literal::CODE, msg, range)));
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals };
+        return Staged { output: out, exports, globals, scan };
     }
 
     // Lower.
@@ -299,13 +304,13 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         diags.extend(out.diagnostics.iter().map(|d| pos.diagnostic(Severity::Error, d.code, d.message.clone(), d.range)));
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals };
+        return Staged { output: out, exports, globals, scan };
     }
     diags.extend(imported);
 
     // Print or emit.
     if let Mode::Imported { .. } = mode {
-        return Staged { output: CompileOutput { chunk: None, diagnostics: sorted(diags) }, exports, globals };
+        return Staged { output: CompileOutput { chunk: None, diagnostics: sorted(diags) }, exports, globals, scan };
     }
     let chunk = match options.emit {
         Emit::Lua => nl_luagen::print_chunk(&out.chunk).into_bytes(),
@@ -326,11 +331,11 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
                     end_line: e.line.max(1),
                     end_column: 1,
                 });
-                return Staged { output: failed(diags), exports, globals };
+                return Staged { output: failed(diags), exports, globals, scan };
             }
         },
     };
-    Staged { output: CompileOutput { chunk: Some(chunk), diagnostics: sorted(diags) }, exports, globals }
+    Staged { output: CompileOutput { chunk: Some(chunk), diagnostics: sorted(diags) }, exports, globals, scan }
 }
 
 /// The declaration files in scope: the built-in prelude declarations of

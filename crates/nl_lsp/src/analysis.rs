@@ -102,6 +102,15 @@ impl ImportProvider for Exports<'_> {
         let (_, _, res) = resolve_import(self.files, self.from.as_deref(), path).ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
         Ok(res.exports())
     }
+
+    fn primitive_methods(&self, path: &str) -> Vec<nl_sema::PrimMethod> {
+        let scan = |name: &str| {
+            let text = self.files.read_text(Path::new(name))?;
+            let parse = nl_syntax::parse(&text);
+            (!parse.has_errors()).then(|| nl_sema::scan_file(&parse.syntax()))
+        };
+        nl_sema::primitive_methods_through(self.from.as_deref(), path, &|from, p| self.files.resolve(from, p), &scan)
+    }
 }
 
 /// Finds, reads and resolves the file an `import` of `from` names: its

@@ -34,3 +34,18 @@ end
 Hook.add "HUDShouldDraw", "nl_hide", fn(name: String)
   return false if name == "CHudHealth"
 end
+
+# Lua's string functions through gmod's `string`: a replacement can be a
+# function or a table, and find gives nil when nothing matches.
+fn shout_tags(text: String): String
+  let out, count = StringLib.gsub(text, "<(%w+)>", fn(tag) tag.upcase end)
+  print "#{count} tags"
+  StringLib.gsub(out, "%$(%w+)", {hp: "100"})
+end
+
+fn has_tag(text: String): Bool
+  let at = StringLib.find(text, "<", 1, true)
+  at != nil
+end
+
+print shout_tags("<b>$hp</b>"), has_tag("plain")

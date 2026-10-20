@@ -21,6 +21,11 @@
 //! output must be the same `.out` on every one (the trace programs use
 //! it).
 //!
+//! A line `# decl: lib/x.d.nl` names a declaration file the program is
+//! compiled with (`--decl`, relative to `tests/cases/`), in both build
+//! modes and on every backend; there may be several. A rejected program
+//! takes them too.
+//!
 //! `NL_CASES_FILTER=a,b` runs only the programs whose name contains one of
 //! these substrings.
 
@@ -109,11 +114,19 @@ fn backends(src: &str) -> Vec<Option<String>> {
     }
 }
 
+/// The declaration files of the `# decl: path` lines.
+fn decls(src: &str) -> Vec<String> {
+    src.lines().filter_map(|l| l.trim().strip_prefix("# decl:")).map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect()
+}
+
 /// Runs one entry program in one mode, on one backend (`None`: the
 /// default); `None` when it passes.
-fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: bool, backend: Option<&str>) -> Option<String> {
+fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: bool, backend: Option<&str>, decl: &[String]) -> Option<String> {
     let mut cmd = Command::new(nlc);
     cmd.current_dir(dir).env_remove("NL_PATH").arg("run");
+    for d in decl {
+        cmd.arg("--decl").arg(d);
+    }
     if unchecked {
         cmd.arg("--unchecked");
     }
@@ -144,9 +157,12 @@ fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: boo
 
 /// Compiles one rejected program in one mode; `None` when it is rejected
 /// with an error on line `want`.
-fn check_reject(nlc: &Path, dir: &Path, rel: &Path, want: usize, unchecked: bool) -> Option<String> {
+fn check_reject(nlc: &Path, dir: &Path, rel: &Path, want: usize, unchecked: bool, decl: &[String]) -> Option<String> {
     let mut cmd = Command::new(nlc);
     cmd.current_dir(dir).env_remove("NL_PATH").arg("build").arg("--emit=lua");
+    for d in decl {
+        cmd.arg("--decl").arg(d);
+    }
     if unchecked {
         cmd.arg("--unchecked");
     }
@@ -202,12 +218,13 @@ fn regression_cases() {
         count += 1;
         let src = std::fs::read_to_string(&path).unwrap_or_default();
         let checked_only = src.lines().any(|l| l.trim() == "# checked-only");
+        let decl = decls(&src);
         for backend in backends(&src) {
-            if let Some(why) = check_run(&nlc, &dir, &rel, &expected, false, backend.as_deref()) {
+            if let Some(why) = check_run(&nlc, &dir, &rel, &expected, false, backend.as_deref(), &decl) {
                 failures.push(format!("{name}: {why}"));
             }
             if !checked_only {
-                if let Some(why) = check_run(&nlc, &dir, &rel, &expected, true, backend.as_deref()) {
+                if let Some(why) = check_run(&nlc, &dir, &rel, &expected, true, backend.as_deref(), &decl) {
                     failures.push(format!("{name}: {why}"));
                 }
             }
@@ -225,8 +242,9 @@ fn regression_cases() {
             failures.push(format!("{name}: no `# expect-error:` comment"));
             continue;
         };
+        let decl = decls(&src);
         for unchecked in [false, true] {
-            if let Some(why) = check_reject(&nlc, &dir, &rel, marker + 2, unchecked) {
+            if let Some(why) = check_reject(&nlc, &dir, &rel, marker + 2, unchecked, &decl) {
                 failures.push(format!("{name}: {why}"));
             }
         }

@@ -21,7 +21,7 @@ end
 
 fn kind(v: any)
   case v
-  when Number
+  when is Number
     "number"
   when "abcd" if v.nope.x
     "long string"

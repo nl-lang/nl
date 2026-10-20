@@ -432,6 +432,7 @@ impl Analyzer<'_> {
         }
         // An expression: compared with `==`; a range or regex by
         // containment or matching.
+        self.check_when_type_name(item);
         let t = self.expr1(item);
         let cover = match item.kind() {
             FIELD_EXPR => {
@@ -462,6 +463,38 @@ impl Analyzer<'_> {
             _ => remaining.clone(),
         };
         (matched, cover, None)
+    }
+
+    /// `when Name` with the bare name of a struct, an enum, an interface or
+    /// a library type compares the subject with the type's table, which
+    /// only that table equals: no instance ever matches. The test of a type
+    /// is `when is Name` (or `when Name {…}` for a struct), so the bare name
+    /// is an error. A dotted name (`when M.Point`) is parsed as a pattern,
+    /// a type test, and does not come here.
+    fn check_when_type_name(&mut self, item: &SyntaxNode) {
+        if item.kind() != NAME_REF {
+            return;
+        }
+        let what = match self.res.reference(item.text_range()) {
+            Some(Ref::Binding(id)) => match self.res.declared_as(*id) {
+                Some(DeclKind::Struct) => "struct",
+                Some(DeclKind::Enum) => "enum",
+                Some(DeclKind::Interface) => "interface",
+                _ => return,
+            },
+            Some(Ref::Prelude(p)) => match p.class {
+                crate::prelude::PreludeClass::Struct => "struct",
+                crate::prelude::PreludeClass::ValueAndType => "type",
+                _ => return,
+            },
+            _ => return,
+        };
+        let name = name_text(item).unwrap_or_default();
+        self.error(
+            item.text_range(),
+            "when-type-compare",
+            format!("`when {name}` compares the subject with the {what} `{name}` itself, which no value of it equals; to test the type, write `when is {name}`"),
+        );
     }
 
     /// Exhaustiveness: for an enum or a union of structs, a

@@ -1123,11 +1123,34 @@ impl<'a> Lowerer<'a> {
     }
 
     /// `return values`, checked against the declared return type. A
-    /// `(A, B)` return type checks each value and returns exactly that
-    /// many.
+    /// `(A, B)` return type checks each value. A `return` that writes a
+    /// fixed number of values returns those (at most as many as the tuple
+    /// has), as an unchecked build does: `return x` gives one value, and
+    /// the missing ones are checked as `nil`, which a type that rejects
+    /// `nil` refuses. The tuple says what a caller may destructure, not
+    /// how many values a Lua caller's `select('#', …)` sees. When the last
+    /// value is a call or a spread, whose count is only known at runtime,
+    /// exactly the tuple's count comes back (padded with `nil`, or cut).
     pub(crate) fn emit_return(&mut self, values: Vec<Expr>) {
         let check = self.fns.last().and_then(|f| f.ret_check.clone());
         match check {
+            Some((ty, ctx)) if ty.kind() == TUPLE_TYPE && values.len() < ty.children().filter(|c| is_type(c.kind())).count() && !values.last().is_some_and(Expr::is_multi) => {
+                // Fewer values than the tuple, all written: each written
+                // one in a local, checked, then the missing ones as `nil`.
+                let parts: Vec<SyntaxNode> = ty.children().filter(|c| is_type(c.kind())).collect();
+                let rs: Vec<LocalId> = (0..values.len()).map(|_| self.new_local("r")).collect();
+                if !rs.is_empty() {
+                    self.emit(StmtKind::Local { locals: rs.clone(), values });
+                }
+                for (i, part) in parts.iter().enumerate() {
+                    let Some(t) = self.type_value(part) else { continue };
+                    let test = self.inline_test(part);
+                    let what = ctx.replacen("return value of", &format!("return value {} of", i + 1), 1);
+                    let value = rs.get(i).map_or(Expr::Nil, |r| Expr::Local(*r));
+                    self.emit_check_value(value, t, test, &what);
+                }
+                self.emit(StmtKind::Return(rs.into_iter().map(Expr::Local).collect()));
+            }
             Some((ty, ctx)) if ty.kind() == TUPLE_TYPE => {
                 let parts: Vec<SyntaxNode> = ty.children().filter(|c| is_type(c.kind())).collect();
                 let types: Option<Vec<Expr>> = parts.iter().map(|t| self.type_value(t)).collect();

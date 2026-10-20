@@ -17,6 +17,32 @@ fn run_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/run")
 }
 
+/// The files of tests/run, for the analyzer: an import path is found
+/// beside the importing file, then in tests/run (where the entry programs
+/// are); exports are what the file's resolver gives, and the primitive
+/// methods are followed through the files' imports, as the driver does.
+struct RunImports;
+
+impl RunImports {
+    fn find(from: Option<&str>, path: &str) -> Option<String> {
+        let near = from.and_then(|f| Path::new(f).parent().map(|d| d.join(format!("{path}.nl"))));
+        near.into_iter().chain(std::iter::once(run_dir().join(format!("{path}.nl")))).find(|c| c.is_file()).map(|c| c.to_string_lossy().into_owned())
+    }
+}
+
+impl ImportProvider for RunImports {
+    fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
+        let name = Self::find(None, path).ok_or_else(|| format!("cannot find '{path}'"))?;
+        let text = std::fs::read_to_string(&name).map_err(|e| e.to_string())?;
+        Ok(resolve(&nl_syntax::parse(&text).syntax(), &NoImports).exports())
+    }
+
+    fn primitive_methods(&self, path: &str) -> Vec<PrimMethod> {
+        let scan = |name: &str| Some(scan_file(&nl_syntax::parse(&std::fs::read_to_string(name).ok()?).syntax()));
+        primitive_methods_through(None, path, &Self::find, &scan)
+    }
+}
+
 fn errors(src: &str) -> Vec<(u32, String)> {
     let parse = nl_syntax::parse(src);
     assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
@@ -41,7 +67,7 @@ fn analyzer_diagnostics(src: &str) -> Vec<(u32, &'static str, String, bool)> {
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
     let mut out: Vec<(u32, &'static str, String, bool)> = res.diagnostics.iter().filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code, d.message.clone(), d.error)).collect();
     if !res.has_errors() {
-        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: true, imports: None, record: false };
+        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: true, imports: Some(&RunImports), record: false };
         let analysis = analyze(&root, &res, &opts);
         out.extend(analysis.diagnostics.iter().map(|d| (line(d.range), d.code, d.message.clone(), d.error)));
     }
@@ -988,4 +1014,152 @@ fn host_types_parents_first() {
     let got = decls.host_types();
     let names: Vec<(&str, Option<&str>)> = got.iter().map(|(n, p)| (n.as_str(), p.as_deref())).collect();
     assert_eq!(names, [("Entity", None), ("Lone", None), ("Player", Some("Entity")), ("Weapon", Some("Entity"))]);
+}
+
+// ---- user feedback: autocalls, `when` names, declarations, imports --------
+
+/// The resolver's and the analyzer's codes, by line, for a program with a
+/// declaration file beside the built-in ones, and the analysis (lints on).
+fn with_decl(decl: &str, src: &str) -> (Vec<(u32, &'static str)>, Analysis) {
+    let parse = nl_syntax::parse_decl_file(decl);
+    assert!(parse.diagnostics().is_empty(), "{:?}", parse.diagnostics());
+    let mut files = prelude_files();
+    files.push(("host.d.nl".to_string(), parse.syntax()));
+    let (decls, diags) = Declarations::load(&files);
+    assert!(diags.is_empty(), "{diags:?}");
+    let p = nl_syntax::parse(src);
+    assert!(!p.has_errors(), "{:?}", p.diagnostics());
+    let root = p.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: true, imports: None, record: false };
+    let a = analyze(&root, &res, &opts);
+    let index = nl_syntax::LineIndex::new(src);
+    let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
+    let codes = res.diagnostics.iter().chain(a.diagnostics.iter()).filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code)).collect();
+    (codes, a)
+}
+
+fn declared_hints(a: &Analysis) -> Vec<String> {
+    a.hints.members_declared.values().map(|h| format!("{h:?}")).collect()
+}
+
+/// A bare function-kind name passed as an argument is called with no
+/// arguments: a lint when the function has a required parameter, nothing
+/// for one without, and the warning `fn-kind-argument` alone where the
+/// parameter takes a function.
+#[test]
+fn autocall_argument_lint() {
+    assert!(has_code("fn f(x)\n  x\nend\nprint typeof(f)\n", 4, "autocall-argument"));
+    assert!(has_code("fn f(x: Number): Number\n  x\nend\nprint(k: f)\n", 4, "autocall-argument"));
+    let quiet = ["fn now\n  1\nend\nprint now\n", "fn f(x = 1)\n  x\nend\nprint f\n", "fn f(x: Number?)\n  x\nend\nprint f\n", "fn f(x)\n  x\nend\nprint typeof(f!)\n"];
+    for src in quiet {
+        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != "autocall-argument"), "{src}: {:?}", analyzer_codes(src));
+    }
+    let codes = analyzer_codes("fn reg(cb: Function)\n  cb\nend\nfn cb(x)\n  x\nend\nreg cb\n");
+    assert_eq!(codes.iter().filter(|(l, _)| *l == 7).map(|(_, c)| *c).collect::<Vec<_>>(), ["fn-kind-argument"], "{codes:?}");
+    // A declared function is a bare call too.
+    let (codes, _) = with_decl("declare fn get_name(id: Number): String = :GetName\n", "print get_name\n");
+    assert_eq!(codes, [(1, "autocall-argument")]);
+}
+
+/// `when Name` with a struct, enum, interface or library type compares
+/// with the type's table: an error, whose fix is `when is Name`.
+#[test]
+fn when_type_name_is_an_error() {
+    let case = |item: &str| format!("struct S\n  x: Number\nend\nenum E\n  A\nend\nfn f(v)\n  case v\n  when {item}\n    1\n  else\n    2\n  end\nend\nprint f(1)\n");
+    for item in ["S", "E", "String", "Exception"] {
+        assert!(has_code(&case(item), 9, "when-type-compare"), "{item}: {:?}", analyzer_codes(&case(item)));
+    }
+    for item in ["is S", "S {x}", "E.A", "is String", "\"S\"", "1"] {
+        assert!(analyzer_errors(&case(item)).is_empty(), "{item}: {:?}", analyzer_errors(&case(item)));
+    }
+}
+
+/// A module nested in a declared module is declared too: its methods are
+/// Lua method calls, its functions plain ones, each under its Lua key, and
+/// the nested module's own `as` key is the key it is read with.
+#[test]
+fn nested_declared_modules() {
+    let decl = "declare module Top = :Top\n  module Sub\n    fn meth(self, x: String): String\n    fn plain(x: String): String as 'Plain'\n  end\n  module Inner as 'InnerLua'\n    fn hello(): String as 'Hello'\n  end\nend\n";
+    let (codes, a) = with_decl(decl, "print Top.Sub.meth(\"a\")\nprint Top.Sub.plain(\"b\")\nprint Top.Inner.hello()\n");
+    assert!(codes.is_empty(), "{codes:?}");
+    let hints = declared_hints(&a);
+    for want in ["Method { key: \"meth\" }", "Function { key: \"Plain\" }", "Field { key: \"InnerLua\" }", "Function { key: \"Hello\" }"] {
+        assert!(hints.iter().any(|h| h == want), "{want} not in {hints:?}");
+    }
+    // The key is written with `as`; a Lua path is for the top level.
+    assert!(nl_syntax::parse_decl_file("declare module T = :T\n  module S = :s\n  end\nend\n").has_errors());
+}
+
+/// A member of an optional declared type is the type's member, under its
+/// Lua key, and a declared `const` narrows in a test (a declared `let`
+/// that the file assigns does not).
+#[test]
+fn optional_declared_types_and_narrowing() {
+    let decl = "declare type Panel\n  fn remove(self) as 'Remove'\nend\ndeclare fn find(): Panel? = :Find\ndeclare const PACKAGE: Panel?\ndeclare let CURRENT: Panel?\n";
+    let (codes, a) = with_decl(decl, "let p = find()\np.remove() if p\nprint p.remove\n");
+    assert!(codes.is_empty(), "{codes:?}");
+    assert!(declared_hints(&a).iter().any(|h| h == "Method { key: \"Remove\" }"), "{:?}", declared_hints(&a));
+    let src = "fn need(p: Panel)\n  p.remove\nend\nif PACKAGE\n  need(PACKAGE)\nend\nneed(PACKAGE) if PACKAGE != nil\nneed(PACKAGE)\nif CURRENT\n  need(CURRENT)\nend\nCURRENT = nil\n";
+    let (codes, _) = with_decl(decl, src);
+    assert_eq!(codes, [(8, "type-mismatch"), (10, "type-mismatch")]);
+}
+
+/// A member declared twice in a declaration is an error; `fn -` and
+/// `fn -(right)` are two operators.
+#[test]
+fn duplicate_declared_members() {
+    let src = "declare module Dup = :Dup\n  fn a(x: String)\n  fn a(self, y: Number): Number\n  module In\n    b: Number\n    fn b(): Number\n  end\nend\ndeclare type V\n  fn -: V\n  fn -(r: V): V\n  fn +(r: V): V\n  fn +(r: Number): V\nend\n";
+    let parse = nl_syntax::parse_decl_file(src);
+    assert!(!parse.has_errors(), "{:?}", parse.diagnostics());
+    let (_, diags) = Declarations::load(&[("d.d.nl".to_string(), parse.syntax())]);
+    let index = nl_syntax::LineIndex::new(src);
+    let got: Vec<(u32, &str)> = diags.iter().map(|(_, d)| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    assert_eq!(got, [(3, "duplicate-member"), (6, "duplicate-member"), (13, "duplicate-member")]);
+}
+
+/// A local named like a declared name or an import hides it: a lint. A
+/// prelude name has its own rules and is not reported here.
+#[test]
+fn shadowing_declared_and_imported_names() {
+    let (codes, _) = with_decl("declare fn player(i: Number): Table = :Player\n", "fn f(i)\n  let player = i\n  player\nend\nlet print_it = 1\nprint f(print_it)\n");
+    assert_eq!(codes, [(2, "shadows-declared")]);
+    assert!(has_code("import { helper } from 'x'\nfn f\n  let helper = 2\n  helper\nend\nprint f\n", 3, "shadows-declared"));
+}
+
+/// Methods and operators that an imported file defines on primitives are
+/// known to the importer, from what `scan_file` reads.
+#[test]
+fn primitive_methods_of_imports() {
+    let scanned = scan_file(&nl_syntax::parse("import { a } from 'b'\nfn String.+(r: String): String\n  r\nend\nfn Number.half: Number\n  self / 2\nend\ninterface I for Bool\n  fn flip: Bool\n    not self\n  end\nend\nprint a\n").syntax());
+    assert_eq!(scanned.imports, ["b"]);
+    let got: Vec<(&str, &str, Option<&str>)> = scanned.methods.iter().map(|m| (m.owner, m.name.as_str(), m.ret)).collect();
+    assert_eq!(got, [("String", "+", Some("String")), ("Number", "half", Some("Number")), ("Bool", "flip", Some("Bool"))]);
+
+    struct Ops;
+    impl ImportProvider for Ops {
+        fn exports(&self, _path: &str) -> Result<Vec<ExportInfo>, String> {
+            Ok(Vec::new())
+        }
+        fn primitive_methods(&self, _path: &str) -> Vec<PrimMethod> {
+            vec![PrimMethod { owner: "String", name: "+".into(), ret: Some("String") }]
+        }
+    }
+    let src = "import { x } from 'ops'\nlet s: Number = \"a\" + \"b\"\nprint s, x\n";
+    let root = nl_syntax::parse(src).syntax();
+    let decls = prelude_declarations();
+    let res = resolve_with(&root, &Ops, &decls);
+    let codes = |imports: Option<&dyn ImportProvider>| {
+        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports, record: false };
+        analyze(&root, &res, &opts).diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+    };
+    assert_eq!(codes(None), ["bad-operand"]);
+    // Known, with its return type.
+    assert_eq!(codes(Some(&Ops)), ["type-mismatch"]);
+    // Through a chain of imports, each file once, a cycle included.
+    let files: std::collections::HashMap<&str, &str> =
+        [("a", "import { b } from 'b'\nfn String.one\n  1\nend\n"), ("b", "import { a } from 'a'\nimport { c } from 'c'\n"), ("c", "fn Table.two\n  2\nend\n")].into_iter().collect();
+    let found = primitive_methods_through(Some("main"), "a", &|_, p| files.contains_key(p).then(|| p.to_string()), &|name| Some(scan_file(&nl_syntax::parse(files[name]).syntax())));
+    let names: Vec<&str> = found.iter().map(|m| m.name.as_str()).collect();
+    assert_eq!(names, ["one", "two"]);
 }

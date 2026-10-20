@@ -1,0 +1,113 @@
+SOURCE_FILE@0..276
+  COMMENT@0..81 "# Nested modules, structs and types are members: each names its Lua key with `as`"
+  NEWLINE@81..82 "\n"
+  DECL_MODULE@82..275
+    DECLARE_KW@82..89 "declare"
+    WHITESPACE@89..90 " "
+    MODULE_KW@90..96 "module"
+    WHITESPACE@96..97 " "
+    NAME@97..100
+      CNAME@97..100 "Top"
+    WHITESPACE@100..101 " "
+    LUA_ROOT@101..107
+      EQ@101..102 "="
+      WHITESPACE@102..103 " "
+      LUA_PATH@103..107
+        COLON@103..104 ":"
+        CNAME@104..107 "Top"
+    NEWLINE@107..108 "\n"
+    WHITESPACE@108..110 "  "
+    DECL_MODULE@110..175
+      MODULE_KW@110..116 "module"
+      WHITESPACE@116..117 " "
+      NAME@117..120
+        CNAME@117..120 "Sub"
+      WHITESPACE@120..121 " "
+      LUA_KEY@121..132
+        AS_KW@121..123 "as"
+        WHITESPACE@123..124 " "
+        STRING@124..132 "'SubLua'"
+      NEWLINE@132..133 "\n"
+      WHITESPACE@133..137 "    "
+      DECL_FN@137..169
+        FN_KW@137..139 "fn"
+        WHITESPACE@139..140 " "
+        NAME@140..144
+          LNAME@140..144 "meth"
+        PARAM_LIST@144..161
+          L_PAREN@144..145 "("
+          SELF_PARAM@145..149
+            SELF_KW@145..149 "self"
+          COMMA@149..150 ","
+          WHITESPACE@150..151 " "
+          PARAM@151..160
+            TYPED_PAT@151..160
+              BIND_PAT@151..152
+                NAME@151..152
+                  LNAME@151..152 "x"
+              COLON@152..153 ":"
+              WHITESPACE@153..154 " "
+              NAMED_TYPE@154..160
+                QUAL_NAME@154..160
+                  CNAME@154..160 "String"
+          R_PAREN@160..161 ")"
+        RETURN_TYPE@161..169
+          COLON@161..162 ":"
+          WHITESPACE@162..163 " "
+          NAMED_TYPE@163..169
+            QUAL_NAME@163..169
+              CNAME@163..169 "String"
+      NEWLINE@169..170 "\n"
+      WHITESPACE@170..172 "  "
+      END_KW@172..175 "end"
+    NEWLINE@175..176 "\n"
+    WHITESPACE@176..178 "  "
+    DECL_STRUCT@178..226
+      STRUCT_KW@178..184 "struct"
+      WHITESPACE@184..185 " "
+      NAME@185..190
+        CNAME@185..190 "Point"
+      WHITESPACE@190..191 " "
+      LUA_KEY@191..206
+        AS_KW@191..193 "as"
+        WHITESPACE@193..194 " "
+        STRING@194..206 "'PointClass'"
+      NEWLINE@206..207 "\n"
+      WHITESPACE@207..211 "    "
+      DECL_FIELD@211..220
+        NAME@211..212
+          LNAME@211..212 "x"
+        COLON@212..213 ":"
+        WHITESPACE@213..214 " "
+        NAMED_TYPE@214..220
+          QUAL_NAME@214..220
+            CNAME@214..220 "Number"
+      NEWLINE@220..221 "\n"
+      WHITESPACE@221..223 "  "
+      END_KW@223..226 "end"
+    NEWLINE@226..227 "\n"
+    WHITESPACE@227..229 "  "
+    DECL_TYPE@229..271
+      TYPE_KW@229..233 "type"
+      WHITESPACE@233..234 " "
+      NAME@234..240
+        CNAME@234..240 "Handle"
+      WHITESPACE@240..241 " "
+      STRUCT_PARENT@241..249
+        COLON@241..242 ":"
+        WHITESPACE@242..243 " "
+        NAMED_TYPE@243..249
+          QUAL_NAME@243..249
+            CNAME@243..249 "Entity"
+      WHITESPACE@249..250 " "
+      LUA_KEY@250..265
+        AS_KW@250..252 "as"
+        WHITESPACE@252..253 " "
+        STRING@253..265 "'HandleMeta'"
+      NEWLINE@265..266 "\n"
+      WHITESPACE@266..268 "  "
+      END_KW@268..271 "end"
+    NEWLINE@271..272 "\n"
+    END_KW@272..275 "end"
+  NEWLINE@275..276 "\n"
+  EOF@276..276 ""

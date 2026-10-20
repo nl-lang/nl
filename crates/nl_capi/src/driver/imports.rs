@@ -44,6 +44,10 @@ pub(crate) struct DriverImports<'a> {
     globals: RefCell<Vec<String>>,
     /// The errors of the imported files.
     diagnostics: RefCell<Vec<Diagnostic>>,
+    /// The primitive methods and imports of each file looked at for
+    /// [`ImportProvider::primitive_methods`], by canonical name (`None`:
+    /// it cannot be read or parsed), so that each is parsed once.
+    scans: RefCell<HashMap<String, Option<nl_sema::FileScan>>>,
 }
 
 impl<'a> DriverImports<'a> {
@@ -56,7 +60,23 @@ impl<'a> DriverImports<'a> {
             cache: RefCell::new(HashMap::new()),
             globals: RefCell::new(Vec::new()),
             diagnostics: RefCell::new(Vec::new()),
+            scans: RefCell::new(HashMap::new()),
         }
+    }
+
+    /// `nl_sema::scan_file` of a file: kept from `load_file` for the files
+    /// this one imports, read and parsed once for the files further away.
+    fn scan(&self, name: &str) -> Option<nl_sema::FileScan> {
+        if let Some(done) = self.scans.borrow().get(name) {
+            return done.clone();
+        }
+        let scanned = self.loader.read(name).and_then(|bytes| {
+            let text = nl_syntax::source_from_bytes(&bytes).ok()?;
+            let parse = nl_syntax::parse(text);
+            (!parse.has_errors()).then(|| nl_sema::scan_file(&parse.syntax()))
+        });
+        self.scans.borrow_mut().insert(name.to_string(), scanned.clone());
+        scanned
     }
 
     /// The names of the `global` declarations of the files
@@ -117,6 +137,7 @@ impl<'a> DriverImports<'a> {
                 self.diagnostics.borrow_mut().extend(errors);
                 return Err(msg);
             }
+            self.scans.borrow_mut().insert(name.to_string(), staged.scan);
             let exports = staged.exports.ok_or_else(|| format!("'{name}' does not compile"))?;
             return Ok(Imported { exports, globals: staged.globals });
         }
@@ -129,6 +150,7 @@ impl<'a> DriverImports<'a> {
             return Err(format!("'{name}' has syntax errors"));
         }
         let root = parse.syntax();
+        self.scans.borrow_mut().insert(name.to_string(), Some(nl_sema::scan_file(&root)));
         Ok(Imported { exports: nl_sema::resolve(&root, &Unread).exports(), globals: nl_ir::declared_globals(&root) })
     }
 }
@@ -157,6 +179,12 @@ impl ImportProvider for Unread {
 impl ImportProvider for DriverImports<'_> {
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
         self.load(path)
+    }
+
+    /// Follows the imports from the file `path` names, through every file
+    /// of the chain (a parse of each; nothing is resolved or checked).
+    fn primitive_methods(&self, path: &str) -> Vec<nl_sema::PrimMethod> {
+        nl_sema::primitive_methods_through(self.from, path, &|from, p| self.loader.resolve(from, p), &|name| self.scan(name))
     }
 }
 

@@ -1,6 +1,7 @@
 123	string
 2
 7	true
+1
 TypeError	return value 2 of bad expects String, got Number
 TypeError	return value 2 of missing expects String, got nil
 5

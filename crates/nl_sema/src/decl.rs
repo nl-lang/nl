@@ -137,6 +137,9 @@ impl Declarations {
                     ));
                     continue;
                 }
+                if matches!(kind, DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType) {
+                    duplicate_members(&item, file, &mut diags);
+                }
                 let id = DeclId(u32::try_from(decls.items.len()).unwrap_or(u32::MAX));
                 decls.by_name.insert(name.clone(), id);
                 decls.items.push(DeclItem { name, kind, file: file.clone(), range: name_node.text_range(), node: item, root });
@@ -206,6 +209,58 @@ impl Declarations {
             }
         }
         out
+    }
+}
+
+/// A member declared twice in one module, struct or type (and in the
+/// containers nested in it): an error at the second. Declarations have no
+/// overloads, and the analyzer keeps one member per name, so the second
+/// would silently replace the first. Fields, constants, functions and
+/// nested containers share the names of the container; operators
+/// (`fn +`) are named apart.
+fn duplicate_members(node: &SyntaxNode, file: &str, diags: &mut Vec<(String, SemaDiagnostic)>) {
+    let mut seen: HashMap<String, TextRange> = HashMap::new();
+    let mut ops: HashMap<String, TextRange> = HashMap::new();
+    for m in node.children() {
+        let (name, range, is_op) = match m.kind() {
+            DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE => match child(&m, NAME) {
+                Some(n) => (name_text(&n).unwrap_or_default(), n.text_range(), false),
+                None => continue,
+            },
+            DECL_FN => match (child(&m, NAME), child(&m, OP_NAME)) {
+                (Some(n), _) => (name_text(&n).unwrap_or_default(), n.text_range(), false),
+                // `fn -` (negation) and `fn -(right)` are two operators.
+                (None, Some(o)) => {
+                    let op: String = o.text().to_string().split_whitespace().collect();
+                    let binary = child(&m, PARAM_LIST).is_some_and(|l| l.children().any(|p| p.kind() == PARAM));
+                    (if binary { format!("{op}(right)") } else { op }, o.text_range(), true)
+                }
+                (None, None) => continue,
+            },
+            _ => continue,
+        };
+        if matches!(m.kind(), DECL_MODULE | DECL_STRUCT | DECL_TYPE) {
+            duplicate_members(&m, file, diags);
+        }
+        if name.is_empty() {
+            continue;
+        }
+        let table = if is_op { &mut ops } else { &mut seen };
+        if let std::collections::hash_map::Entry::Vacant(e) = table.entry(name.clone()) {
+            e.insert(range);
+        } else {
+            let what = if is_op { format!("the operator `{}`", name.trim_end_matches("(right)")) } else { format!("`{name}`") };
+            diags.push((
+                file.to_string(),
+                SemaDiagnostic {
+                    range,
+                    code: "duplicate-member",
+                    message: format!("{what} is declared twice in this declaration; a declaration has no overloads, so give each member one declaration (a parameter that takes several kinds of values is typed with a union, `A | B`)"),
+                    error: true,
+                    lint: false,
+                },
+            ));
+        }
     }
 }
 
