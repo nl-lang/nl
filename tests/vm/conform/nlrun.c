@@ -1,9 +1,12 @@
 /*
 ** Runs one NL program on the fork as a host would, with the rules of
 ** tests/run/README.md and nlc run (crates/nlc/src/run.rs):
-**   nlrun [--sandbox] FILE.nl
+**   nlrun [--sandbox] [--decl PATH]... FILE.nl
 ** - with --sandbox, NL_OPT_SANDBOX is set before the file loads, so the
 **   program runs as an untrusted mod would;
+** - --decl names a declaration file or a directory of them, as for
+**   nlc run --decl: a file goes to nl_adddecl as given, a directory's
+**   .d.nl files in name order (the suite passes --decl decl);
 ** - the file is loaded with luaL_loadfile (NL by its extension) and run
 **   with nl_pcall; an uncaught error is printed on stderr, exit status 1;
 ** - with NL_CONFORM_WORKERS=n in the environment, nl_setworkers(L, n)
@@ -23,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -103,6 +108,47 @@ static int pending_tasks(lua_State *L)
   return n;
 }
 
+static int name_cmp(const void *a, const void *b)
+{
+  return strcmp(*(char *const *)a, *(char *const *)b);
+}
+
+/* --decl PATH: a .d.nl file, or every .d.nl of a directory in name order. */
+static int add_decl(lua_State *L, const char *path)
+{
+  struct stat st;
+  DIR *d;
+  struct dirent *e;
+  char *names[256];
+  int n = 0, i;
+  if (stat(path, &st) != 0) {
+    fprintf(stderr, "nlrun: --decl %s: no such file or directory\n", path);
+    return 0;
+  }
+  if (!S_ISDIR(st.st_mode)) {
+    nl_adddecl(L, path);
+    return 1;
+  }
+  if (!(d = opendir(path))) {
+    fprintf(stderr, "nlrun: --decl %s: cannot read the directory\n", path);
+    return 0;
+  }
+  while ((e = readdir(d)) != NULL && n < (int)(sizeof(names) / sizeof(names[0]))) {
+    size_t len = strlen(e->d_name);
+    if (len > 5 && strcmp(e->d_name + len - 5, ".d.nl") == 0) {
+      names[n] = malloc(strlen(path) + len + 2);
+      sprintf(names[n++], "%s/%s", path, e->d_name);
+    }
+  }
+  closedir(d);
+  qsort(names, n, sizeof(names[0]), name_cmp);
+  for (i = 0; i < n; i++) {
+    nl_adddecl(L, names[i]);
+    free(names[i]);
+  }
+  return 1;
+}
+
 static int openlibs(lua_State *L)
 {
   luaL_openlibs(L);
@@ -119,14 +165,25 @@ static void print_error(lua_State *L, const char *what)
 int main(int argc, char **argv)
 {
   lua_State *L;
-  int n, sandbox = 0;
-  if (argc == 3 && strcmp(argv[1], "--sandbox") == 0) {
-    sandbox = 1;
+  int n, i, sandbox = 0;
+  const char *decls[16];
+  int ndecls = 0;
+  while (argc > 2) {
+    if (strcmp(argv[1], "--sandbox") == 0) {
+      sandbox = 1;
+    } else if (strcmp(argv[1], "--decl") == 0 && argc > 3 &&
+	       ndecls < (int)(sizeof(decls) / sizeof(decls[0]))) {
+      decls[ndecls++] = argv[2];
+      argv++;
+      argc--;
+    } else {
+      break;
+    }
     argv++;
     argc--;
   }
   if (argc != 2) {
-    fprintf(stderr, "usage: nlrun [--sandbox] FILE.nl\n");
+    fprintf(stderr, "usage: nlrun [--sandbox] [--decl PATH]... FILE.nl\n");
     return 2;
   }
   NL_VERSION_SYM();
@@ -137,6 +194,8 @@ int main(int argc, char **argv)
     return 1;
   }
   nl_settimer(L, timer, NULL);
+  for (i = 0; i < ndecls; i++)
+    if (!add_decl(L, decls[i])) return 2;
   if (getenv("NL_CONFORM_WORKERS") && *getenv("NL_CONFORM_WORKERS"))
     nl_setworkers(L, atoi(getenv("NL_CONFORM_WORKERS")));
   /* NL_CONFORM_JIT=hot: force the JIT (hotloop=1). */

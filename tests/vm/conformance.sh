@@ -1,7 +1,8 @@
 #!/bin/sh
 # The conformance programs of tests/run on the fork, with the rules of
 # tests/run/README.md: working directory tests/run, NL_PATH unset, stdout
-# compared byte for byte with the .out file, exit status 0, a time limit;
+# compared byte for byte with the .out file, exit status 0, a time limit,
+# the declaration files of tests/run/decl in scope (nlrun --decl decl);
 # after the main chunk, pump until no task is pending (as `nlc run` does).
 # Every program runs, the worker_* ones included. The worker_* programs run
 # three times, with 0, 1 and 8 pool workers (NL_CONFORM_WORKERS, which nlrun
@@ -68,7 +69,7 @@ for f in $LIST; do
     unset NL_CONFORM_WORKERS
     [ "$wmode" != - ] && { WSFX=".w$wmode"; NL_CONFORM_WORKERS=$wmode; export NL_CONFORM_WORKERS; }
     # shellcheck disable=SC2086
-    run_with 30 "$R/nlrun-$D" $SBX "$f" >"$R/$base$SFX$WSFX.stdout" 2>"$R/$base$SFX$WSFX.stderr"
+    run_with 30 "$R/nlrun-$D" $SBX --decl decl "$f" >"$R/$base$SFX$WSFX.stdout" 2>"$R/$base$SFX$WSFX.stderr"
     st=$?
     if [ $st = 0 ] && cmp -s "$R/$base$SFX$WSFX.stdout" "$base.out"; then
       pass=$((pass + 1))
@@ -87,7 +88,7 @@ if [ $# = 0 ]; then
     base=${f%.nl}; name=${base#reject/}
     line=$(grep -n 'expect-error:' "$f" | head -1 | cut -d: -f1)
     line=$((line + 1))
-    run_with 30 "$R/nlrun-$D" "$f" >"$R/reject_$name.stdout" 2>"$R/reject_$name.stderr"
+    run_with 30 "$R/nlrun-$D" --decl decl "$f" >"$R/reject_$name.stdout" 2>"$R/reject_$name.stderr"
     st=$?
     if [ $st != 0 ] && grep -q " $f:$line:" "$R/reject_$name.stderr"; then
       pass=$((pass + 1))

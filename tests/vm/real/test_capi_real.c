@@ -437,15 +437,23 @@ static void test_methods(void)
   CHECK(nl_ismethod(L, -1) == 1);
   lua_pop(L, 1);
   lua_setglobal(L, "unit");
-  /* A compiled method carries the mark; a plain function does not. */
+  /* A compiled method carries the mark; a plain function does not, nor a
+  ** method taken with `!`, which comes bound to its receiver (the raw
+  ** method is read with an index).
+  */
   CHECK(donl(L, "struct P\n  x: Number = 1\nend\n"
 	        "fn P.m\n  @x\nend\n"
-	        "pub fn method\n  P.m!\nend\n"
+	        "pub fn method\n  P[\"m\"]\nend\n"
+	        "pub fn bound\n  let o = P { x: 3 }\n  o.m!\nend\n"
 	        "pub fn plain\n  fn(a) a end\nend\n"
 	        "pub fn obj\n  P { x: 7 }\nend\n"
 	        "pub fn through_unit\n  :unit.poke(1, 2)\nend\n", "=methods") == 0);
   CHECK(callf(L, -1, "method", 0, 1) == 0);
   CHECK(nl_ismethod(L, -1) == 1);
+  lua_pop(L, 1);
+  CHECK(callf(L, -1, "bound", 0, 1) == 0);
+  CHECK(nl_ismethod(L, -1) == 0);
+  CHECK(lua_pcall(L, 0, 1, 0) == 0 && lua_tonumber(L, -1) == 3);
   lua_pop(L, 1);
   CHECK(callf(L, -1, "plain", 0, 1) == 0);
   CHECK(nl_ismethod(L, -1) == 0);
