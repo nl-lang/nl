@@ -1,0 +1,80 @@
+SOURCE_FILE@0..212
+  BLOCK@0..212
+    COMMENT@0..71 "# `then` is an ordinary name outside the headers it ends: a variable, a"
+    NEWLINE@71..72 "\n"
+    COMMENT@72..124 "# field, an argument in parentheses inside a header."
+    NEWLINE@124..125 "\n"
+    LET_DECL@125..137
+      LET_KW@125..128 "let"
+      WHITESPACE@128..129 " "
+      BIND_PAT@129..133
+        NAME@129..133
+          LNAME@129..133 "then"
+      WHITESPACE@133..134 " "
+      EQ@134..135 "="
+      WHITESPACE@135..136 " "
+      EXPR_LIST@136..137
+        LITERAL@136..137
+          NUMBER@136..137 "1"
+    NEWLINE@137..138 "\n"
+    ASSIGN_STMT@138..153
+      NAME_REF@138..142
+        LNAME@138..142 "then"
+      WHITESPACE@142..143 " "
+      EQ@143..144 "="
+      WHITESPACE@144..145 " "
+      BIN_EXPR@145..153
+        NAME_REF@145..149
+          LNAME@145..149 "then"
+        WHITESPACE@149..150 " "
+        PLUS@150..151 "+"
+        WHITESPACE@151..152 " "
+        LITERAL@152..153
+          NUMBER@152..153 "1"
+    NEWLINE@153..154 "\n"
+    EXPR_STMT@154..188
+      IF_EXPR@154..188
+        IF_KW@154..156 "if"
+        WHITESPACE@156..157 " "
+        CALL_EXPR@157..168
+          NAME_REF@157..162
+            LNAME@157..162 "check"
+          ARG_LIST@162..168
+            L_PAREN@162..163 "("
+            NAME_REF@163..167
+              LNAME@163..167 "then"
+            R_PAREN@167..168 ")"
+        BLOCK@168..185
+          NEWLINE@168..169 "\n"
+          WHITESPACE@169..171 "  "
+          ASSIGN_STMT@171..184
+            FIELD_EXPR@171..177
+              NAME_REF@171..172
+                LNAME@171..172 "x"
+              DOT@172..173 "."
+              LNAME@173..177 "then"
+            WHITESPACE@177..178 " "
+            EQ@178..179 "="
+            WHITESPACE@179..180 " "
+            NAME_REF@180..184
+              LNAME@180..184 "then"
+          NEWLINE@184..185 "\n"
+        END_KW@185..188 "end"
+    NEWLINE@188..189 "\n"
+    EXPR_STMT@189..211
+      IF_EXPR@189..211
+        IF_KW@189..191 "if"
+        WHITESPACE@191..192 " "
+        NAME_REF@192..197
+          LNAME@192..197 "check"
+        WHITESPACE@197..198 " "
+        THEN_KW@198..202 "then"
+        BLOCK@202..208
+          WHITESPACE@202..203 " "
+          EXPR_STMT@203..207
+            NAME_REF@203..207
+              LNAME@203..207 "then"
+          WHITESPACE@207..208 " "
+        END_KW@208..211 "end"
+    NEWLINE@211..212 "\n"
+  EOF@212..212 ""

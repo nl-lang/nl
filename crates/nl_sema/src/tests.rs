@@ -69,6 +69,23 @@ fn hoisting() {
     assert!(errors("print g()\nfn g 1 end\n").is_empty());
 }
 
+/// A `const` is declared at the top of its block: a function above it
+/// sees it; the block's own code before its line, its own initializer
+/// included, is an error.
+#[test]
+fn const_hoisting() {
+    assert!(errors("fn f\n  X\nend\nconst X = 1\n").is_empty());
+    assert!(errors("module M\n  fn f\n    X\n  end\n  const X = 1\nend\n").is_empty());
+    assert!(errors("let g = fn() X end\nconst X = 1\nprint g()\n").is_empty());
+    assert_eq!(errors("print X\nconst X = 1\n").len(), 1);
+    assert_eq!(errors("if true\n  print X\nend\nconst X = 1\n").len(), 1);
+    assert_eq!(errors("const X = X\n").len(), 1);
+    // Redeclared in its block: not hoisted, so the read sees nothing.
+    assert_eq!(errors("fn f\n  X\nend\nconst X = 1\nconst X = 2\n").len(), 1);
+    // `let` is not hoisted.
+    assert_eq!(errors("fn f\n  x\nend\nlet x = 1\n").len(), 1);
+}
+
 /// Every entry program resolves without errors; the excluded areas are
 /// those of tests/run/README.md that need later milestones.
 #[test]
@@ -222,6 +239,47 @@ fn lua_path_to_own_function() {
     }
 }
 
+/// The last statement `x if c` is the tail `x`, as `x` alone would be:
+/// its value is used, so it may be any expression or a list of values; a
+/// loop modifier and a statement that is not last discard theirs.
+#[test]
+fn postfix_if_tail_is_a_value() {
+    assert!(errors("fn f(x, ok)\n  x + 1 if ok\nend\n").is_empty());
+    assert!(errors("fn f(ok)\n  1, 2 unless ok\nend\n").is_empty());
+    let errs = errors("fn f(x, ok)\n  x + 1 if ok\n  x\nend\n");
+    assert!(errs.len() == 1 && errs[0].0 == 2, "{errs:?}");
+    let errs = errors("fn f(x, ok)\n  x + 1 while ok\nend\n");
+    assert!(errs.len() == 1 && errs[0].0 == 2, "{errs:?}");
+    // The analyzer types the value as optional.
+    let src = "fn f(x: Number, ok: Bool): String\n  x if ok\nend\n";
+    assert!(has_code(src, 2, "return-type"), "{:?}", analyzer_codes(src));
+}
+
+#[test]
+fn raw_string_escapes() {
+    let code = "raw-escape";
+    for src in ["print 'a\\nb'\n", "print 'tab\\t'\n", "print 'nul\\0'\n", "print '\\x41'\n", "print '\\u{48}'\n", "print 'say \\\"hi\\\"'\n", "print 'it\\'s\\n'\n"] {
+        assert!(has_code(src, 1, code), "{src}: {:?}", analyzer_codes(src));
+    }
+    // The raw escapes themselves, `\\n` (a backslash and an n, spelled out),
+    // a backslash before anything else (a regex class, a path), a regex
+    // pattern, and the other string forms.
+    let quiet = [
+        "print 'it\\'s'\n",
+        "print 'back\\\\slash'\n",
+        "print '\\\\n'\n",
+        "print '^\\d+\\n'\n",
+        "print 'C:\\games\\new'\n",
+        "let re = Regex.new '\\n+'\nprint re\n",
+        "print \"a\\nb\"\n",
+        "print \"\"\"=\na\\nb\n\"\"\"\n",
+        "print '%d+'\n",
+    ];
+    for src in quiet {
+        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != code), "{src}: {:?}", analyzer_codes(src));
+    }
+}
+
 #[test]
 fn library_keyed_options() {
     // The String library declares its keyed options as records.
@@ -272,6 +330,26 @@ fn declared_names_and_members() {
     // The Lua keys of the renamed members reach the lowering.
     let keys: Vec<String> = a.hints.members_declared.values().map(|h| h.key().to_string()).collect();
     assert!(keys.contains(&"ReturnLargest".to_string()) && keys.contains(&"coolnessFactor".to_string()), "{keys:?}");
+}
+
+/// `declare let` takes a capitalized name, as the host names its global:
+/// the variable can be assigned, and a `declare const` cannot.
+#[test]
+fn declared_capitalized_let() {
+    let decl = "declare let PLUGIN: Table?\ndeclare let SCHEMA: Number = :Schema\ndeclare const ENV: Table\n";
+    let parse = nl_syntax::parse_decl_file(decl);
+    assert!(parse.diagnostics().is_empty(), "{:?}", parse.diagnostics());
+    let mut files = crate::decl::prelude_files();
+    files.push(("host.d.nl".to_string(), parse.syntax()));
+    let (decls, diags) = Declarations::load(&files);
+    assert!(diags.is_empty(), "{diags:?}");
+    let src = "PLUGIN = {name: \"x\"}\nSCHEMA = 3\nprint SCHEMA + 1\nENV = {}\n";
+    let p = nl_syntax::parse(src);
+    let root = p.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    let index = nl_syntax::LineIndex::new(src);
+    let codes: Vec<(u32, &str)> = res.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    assert_eq!(codes, vec![(4, "assign-declared-const")]);
 }
 
 /// The operators of a declared host type give the analyzer the result
@@ -447,6 +525,44 @@ fn exports_keep_the_kinds_of_their_file() {
     );
     let k = res.exports().into_iter().find(|e| e.name == "k").and_then(|e| e.params);
     assert!(k.is_some_and(|p| p.has_function_param));
+}
+
+/// `pub` items in the branches of a file-level `if` are exports: one name
+/// in several branches is one export, and it is optional unless a branch
+/// that declares it always runs.
+#[test]
+fn conditional_exports() {
+    let src = "let a = true\nif a\n  pub fn both\n    1\n  end\n  pub const only_if = 1\nelse\n  pub fn both\n    2\n  end\nend\nunless a\n  pub module Never\n  end\nend\nprint both, only_if\n";
+    let (_, res) = resolution(src);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let got: Vec<(String, BindingKind, bool)> = res.exports().into_iter().map(|e| (e.name, e.kind, e.optional)).collect();
+    assert_eq!(
+        got,
+        vec![
+            ("both".to_string(), BindingKind::Function, false),
+            ("only_if".to_string(), BindingKind::Variable, true),
+            ("Never".to_string(), BindingKind::TypeLevel, true),
+        ]
+    );
+    // The same name twice in one branch is still an error.
+    assert_eq!(errors("let a = true\nif a\n  pub fn f\n    1\n  end\n  pub const f = 2\nend\n").len(), 1);
+}
+
+/// Under the gmod-client profile, `if CLIENT` always runs and `if SERVER`
+/// never does: what the first declares is not optional for an importer.
+#[test]
+fn conditional_exports_in_the_client_realm() {
+    let parse = nl_syntax::parse_decl_file(GMOD_DECL);
+    let mut files = crate::decl::prelude_files();
+    files.push(("gmod.d.nl".to_string(), parse.syntax()));
+    let (decls, _) = Declarations::load(&files);
+    let src = "if CLIENT\n  pub fn draw\n    1\n  end\nend\nif SERVER\n  pub fn serve\n    2\n  end\nelse\n  pub fn serve\n    3\n  end\nend\nif SERVER\n  pub const port = 1\nend\n";
+    let p = nl_syntax::parse(src);
+    let res = resolve_with(&p.syntax(), &AnyImports, &decls);
+    assert!(!res.has_errors(), "{:?}", res.diagnostics);
+    let optional = |exports: Vec<ExportInfo>| exports.into_iter().map(|e| (e.name, e.optional)).collect::<Vec<_>>();
+    assert_eq!(optional(res.exports()), vec![("draw".into(), true), ("serve".into(), false), ("port".into(), true)]);
+    assert_eq!(optional(profile::exports(&res, Profile::GmodClient)), vec![("draw".into(), false), ("serve".into(), false), ("port".into(), true)]);
 }
 
 /// Import and export errors, on their lines.

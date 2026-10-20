@@ -1,0 +1,52 @@
+SOURCE_FILE@0..163
+  BLOCK@0..163
+    COMMENT@0..69 "# `then` in the headers of `while` and `until`, each reported once: a"
+    NEWLINE@69..70 "\n"
+    COMMENT@70..110 "# loop has no one-line form with `then`."
+    NEWLINE@110..111 "\n"
+    WHILE_STMT@111..136
+      WHILE_KW@111..116 "while"
+      WHITESPACE@116..117 " "
+      NAME_REF@117..121
+        LNAME@117..121 "busy"
+      WHITESPACE@121..122 " "
+      ERROR_NODE@122..126
+        LNAME@122..126 "then"
+      BLOCK@126..133
+        NEWLINE@126..127 "\n"
+        WHITESPACE@127..129 "  "
+        EXPR_STMT@129..132
+          CALL_EXPR@129..132
+            NAME_REF@129..130
+              LNAME@129..130 "w"
+            ARG_LIST@130..132
+              L_PAREN@130..131 "("
+              R_PAREN@131..132 ")"
+        NEWLINE@132..133 "\n"
+      END_KW@133..136 "end"
+    NEWLINE@136..137 "\n"
+    UNTIL_STMT@137..162
+      UNTIL_KW@137..142 "until"
+      WHITESPACE@142..143 " "
+      NAME_REF@143..147
+        LNAME@143..147 "done"
+      WHITESPACE@147..148 " "
+      ERROR_NODE@148..152
+        LNAME@148..152 "then"
+      BLOCK@152..159
+        NEWLINE@152..153 "\n"
+        WHITESPACE@153..155 "  "
+        EXPR_STMT@155..158
+          CALL_EXPR@155..158
+            NAME_REF@155..156
+              LNAME@155..156 "v"
+            ARG_LIST@156..158
+              L_PAREN@156..157 "("
+              R_PAREN@157..158 ")"
+        NEWLINE@158..159 "\n"
+      END_KW@159..162 "end"
+    NEWLINE@162..163 "\n"
+  EOF@163..163 ""
+---
+error@122..126 3:12: unexpected identifier `then`: the header of `while` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@148..152 6:12: unexpected identifier `then`: the header of `until` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

@@ -1,6 +1,6 @@
 //! Lints that need the whole file: unused bindings, a Lua path that
-//! names the function it is in, and the top-level statements a worker
-//! would repeat. The lints that are
+//! names the function it is in, escapes in raw strings, and the top-level
+//! statements a worker would repeat. The lints that are
 //! found along the walk (a global read, a redundant `!`, a function-kind
 //! name passed without `!`, shadowing in the resolver) live where they
 //! are found.
@@ -17,6 +17,54 @@ impl Analyzer<'_> {
     pub(crate) fn lints(&mut self, root: &SyntaxNode) {
         self.unused_bindings(root);
         self.lua_paths_to_own_function(root);
+        self.raw_escapes(root);
+    }
+
+    /// A single-quoted string is raw: only `\'` and `\\` are escapes in it,
+    /// so `'\n'` is a backslash and an `n`, which trips everyone who comes
+    /// from Lua, where both quotes escape. A raw literal holding what is an
+    /// escape in a `"…"` string (`\n`, `\t`, `\r`, `\0`, `\xHH`, `\u{…}`,
+    /// `\"`) is reported once, at its first such sequence. A raw string is
+    /// also how a regex is written, and the engine reads these escapes
+    /// itself, so the pattern of `Regex.new` is left alone, and so is a
+    /// literal with a backslash before anything else (`\d`, `\.`, a
+    /// Windows path), which is plainly meant as written. `'\\n'` spells the
+    /// same backslash and `n` without the lint.
+    fn raw_escapes(&mut self, root: &SyntaxNode) {
+        for tok in root.descendants_with_tokens().filter_map(|e| e.into_token()) {
+            if tok.kind() != STRING || nl_syntax::string_form(tok.text()) != Some(nl_syntax::StringForm::Raw) {
+                continue;
+            }
+            let Some(at) = raw_escape_at(tok.text()) else { continue };
+            if tok.parent().is_some_and(|lit| self.is_regex_pattern(&lit)) {
+                continue;
+            }
+            let text = tok.text();
+            let seq = text.get(at..).map_or("", |r| if r.starts_with("\\u{") { r.get(..3).unwrap_or(r) } else { r.get(..2).unwrap_or(r) });
+            let start = tok.text_range().start() + nl_syntax::TextSize::from(u32::try_from(at).unwrap_or(0));
+            let range = TextRange::at(start, nl_syntax::TextSize::from(u32::try_from(seq.len()).unwrap_or(0)));
+            let rest = seq.get(1..).unwrap_or("");
+            self.lint(
+                range,
+                "raw-escape",
+                format!("single-quoted strings are raw: `{seq}` here is a backslash and `{rest}`, not an escape; for the escape use a double-quoted string (`\"{seq}\"`), or write `\\\\{rest}` if the backslash is meant"),
+            );
+        }
+    }
+
+    /// `lit` is the first argument of the prelude's `Regex.new`.
+    fn is_regex_pattern(&self, lit: &SyntaxNode) -> bool {
+        let Some(list) = lit.parent().filter(|l| matches!(l.kind(), ARG_LIST | COMMAND_ARGS)) else { return false };
+        if list.children().next().as_ref() != Some(lit) {
+            return false;
+        }
+        let Some(callee) = list.parent().and_then(|c| expr_child(&c)) else { return false };
+        if callee.kind() != FIELD_EXPR || !field_name(&callee).is_some_and(|t| t.text() == "new") {
+            return false;
+        }
+        expr_child(&callee).is_some_and(|r| {
+            r.kind() == NAME_REF && name_text(&r).as_deref() == Some("Regex") && matches!(self.res.reference(r.text_range()), Some(Ref::Prelude(p)) if p.name == "Regex")
+        })
     }
 
     /// A Lua path whose first name is the function it is written in:
@@ -140,4 +188,38 @@ fn is_worker_parent(e: &SyntaxNode) -> bool {
     e.kind() == FIELD_EXPR
         && field_name(e).is_some_and(|t| t.text() == "parent")
         && expr_child(e).is_some_and(|r| r.kind() == NAME_REF && name_text(&r).as_deref() == Some("Worker"))
+}
+
+/// The byte offset in a raw literal's text of the first backslash sequence
+/// that would be an escape in a `"…"` string, when every backslash of the
+/// literal starts either such a sequence or one of the raw escapes `\\`
+/// and `\'` (see `raw_escapes`).
+fn raw_escape_at(text: &str) -> Option<usize> {
+    let b = text.as_bytes();
+    let body_end = b.len().saturating_sub(1);
+    let mut found = None;
+    let mut i = 1;
+    while i < body_end {
+        if b.get(i) != Some(&b'\\') {
+            i += 1;
+            continue;
+        }
+        match b.get(i + 1).copied() {
+            Some(b'\\' | b'\'') => {}
+            Some(b'n' | b't' | b'r' | b'0' | b'"') => {
+                found = found.or(Some(i));
+            }
+            Some(b'x') if b.get(i + 2).is_some_and(u8::is_ascii_hexdigit) && b.get(i + 3).is_some_and(u8::is_ascii_hexdigit) => {
+                found = found.or(Some(i));
+            }
+            Some(b'u') if b.get(i + 2) == Some(&b'{') => {
+                found = found.or(Some(i));
+            }
+            // A backslash meant as written: a regex class, an escaped
+            // punctuation character, a path.
+            _ => return None,
+        }
+        i += 2;
+    }
+    found
 }

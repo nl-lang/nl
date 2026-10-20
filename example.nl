@@ -14,6 +14,8 @@ import from 'filename' as File # everything the file exports, as File.foo, File.
 # variable defs
 let a
 const a = 1 # constants cannot be modified, so they must be given a value
+            # like fn, a const is visible in its whole block: functions above it can use it
+            # (it holds nil until its line runs), while code above it in the same block cannot
 global C # globals must follow PascalCase
          # globals are generally discouraged and will raise an analyzer warning
 let d: Number # variable with type binding
@@ -79,7 +81,8 @@ let res = a == b
 let res = a != b
 
 # strings
-let a = 'simple string'
+let a = 'simple string' # single quotes are raw: only \' and \\ are escapes,
+                        # so '\n' is a backslash and an n (the analyzer warns); "\n" is a line break
 let b = "variable a was #{a}"
 let c = "concatenating strings is easy!" <> a <> b
 let d = """
@@ -364,7 +367,8 @@ fn foo(a: Function(a: Number, b: String): nil)
 end
 
 # control flow
-# the first line of if, while, for etc. ends at the line break. there is no `then` or `do`
+# the first line of if, while, for etc. ends at the line break. there is no `do`
+# `then` ends the header of if, unless, elseif and when early, for a body on the same line
 
 # if
 
@@ -383,6 +387,9 @@ end
 some_function() if condition
 some_function() unless condition
 
+if condition then some_function() end
+let sign = if n < 0 then "minus" elseif n == 0 then "zero" else "plus" end
+
 # case
 
 case var
@@ -392,6 +399,12 @@ when 2
   # do another thing
 else
   # default case
+end
+
+let word = case var
+when 1 then "one"
+when 2, 3 then "a few"
+else "many"
 end
 
 # cond
@@ -652,6 +665,14 @@ end
 
 pub const limit = 10
 
+# an export can also stand directly in a branch of an if at the top of the file.
+# it is nil where no branch that declares it ran, and an importer then gets a plain
+# value that is never called implicitly (test it, or call it with `draw_hud?.()`)
+if CLIENT
+  pub fn draw_hud
+  end
+end
+
 # importing stuff from other NL files
 # the imports themselves are at the top of this file: imports must be the
 # first statements of a file, and inside a function or module they are an error
@@ -809,6 +830,9 @@ when {role: "user"}
 when [x, 456]
   # square brackets always go by position: matches a table of two
   # elements whose second one is 456, and puts the first one into x
+when {kind: "move", speed?, to?: {x, y}}
+  # a name bound in `when` must not be nil, unless its field is optional (`?`):
+  # then a missing field matches too, and its names are nil
 else
   # ...
 end

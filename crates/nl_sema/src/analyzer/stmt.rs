@@ -49,13 +49,14 @@ impl Analyzer<'_> {
     /// is used.
     fn stmt(&mut self, s: &SyntaxNode, value_used: bool) -> Ty {
         if let Some(m) = modifier(s) {
-            return self.modified_stmt(s, &m);
+            return self.modified_stmt(s, &m, value_used);
         }
         self.stmt_inner(s, value_used)
     }
 
-    /// `stmt if cond`, `stmt while cond`.
-    fn modified_stmt(&mut self, s: &SyntaxNode, m: &SyntaxNode) -> Ty {
+    /// `stmt if cond`, `stmt while cond`. A tail `x if cond` has the value
+    /// of `x`, or `nil` when the condition fails, as `if cond x end`.
+    fn modified_stmt(&mut self, s: &SyntaxNode, m: &SyntaxNode, value_used: bool) -> Ty {
         let kw = first_token(m).map(|t| t.kind());
         let negated = matches!(kw, Some(UNLESS_KW | UNTIL_KW));
         let looping = matches!(kw, Some(WHILE_KW | UNTIL_KW));
@@ -74,7 +75,7 @@ impl Analyzer<'_> {
         if looping {
             self.current_fn().loop_depth += 1;
         }
-        self.stmt_inner(s, false);
+        let v = self.stmt_inner(s, value_used && !looping);
         if looping {
             self.current_fn().loop_depth -= 1;
         }
@@ -82,6 +83,9 @@ impl Analyzer<'_> {
         let diverged = self.diverges;
         self.diverges = was;
         self.env = if diverged { skip_env } else { self.merge_envs(&[after, skip_env]) };
+        if value_used && !looping && !diverged {
+            return Ty::new(optional(&self.types, &v.t), v.certain);
+        }
         Ty::certain(Type::Nil)
     }
 

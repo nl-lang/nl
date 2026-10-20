@@ -173,13 +173,10 @@ impl Parser<'_> {
             p.bump();
             p.comma_list(R_CURLY, |p| {
                 let k = p.cur();
-                if (is_word(k) || matches!(k, NUMBER | STRING | ONAME)) && p.nth_at(1, COLON) {
+                if (is_word(k) || matches!(k, NUMBER | STRING | ONAME)) && p.at_key_colon() {
                     p.keyed_item(true);
-                } else if matches!(k, LNAME | ONAME) && matches!(p.nth(1), COMMA | R_CURLY | EQ) {
-                    let f = p.start();
-                    p.name(NameClass::Lower, "a name");
-                    p.pattern_default();
-                    f.complete(p, PAT_FIELD);
+                } else if matches!(k, LNAME | ONAME) && p.at_shorthand_end() {
+                    p.shorthand_item();
                 } else if k.is_keyword() && matches!(p.nth(1), COMMA | R_CURLY) {
                     let text = p.nth_text(0).to_string();
                     p.error(format!(
@@ -206,6 +203,28 @@ impl Parser<'_> {
             p.close_bracket(R_CURLY, "{");
         });
         m.complete(self, BRACE_PAT)
+    }
+
+    /// After the key of a keyed item: `:`, or `?` and `:` for an optional
+    /// field (`{pos?: {x, y}}`).
+    fn at_key_colon(&self) -> bool {
+        self.nth_at(1, COLON) || (self.nth_at(1, QUESTION) && self.nth_at(2, COLON))
+    }
+
+    /// After a shorthand name (`{name}`, `{name?}`): the end of the item.
+    fn at_shorthand_end(&self) -> bool {
+        let n = if self.nth_at(1, QUESTION) { 2 } else { 1 };
+        matches!(self.nth(n), COMMA | R_CURLY | EQ)
+    }
+
+    /// `{name}` or `{name?}` as a `PAT_FIELD`. With `?` the field is
+    /// optional: a missing or `nil` field matches, and binds `nil`.
+    fn shorthand_item(&mut self) {
+        let f = self.start();
+        self.name(NameClass::Lower, "a name");
+        self.eat(QUESTION);
+        self.pattern_default();
+        f.complete(self, PAT_FIELD);
     }
 
     /// A default value inside a pattern is a deferred feature.
@@ -245,6 +264,8 @@ impl Parser<'_> {
             return;
         }
         self.bump_word();
+        // `key?: p`: an optional field, which matches when missing.
+        self.eat(QUESTION);
         self.bump();
         self.key_value();
         self.pattern_default();
@@ -319,17 +340,14 @@ impl Parser<'_> {
             p.bump();
             p.comma_list(R_CURLY, |p| {
                 let k = p.cur();
-                if (is_lower_word(k) || matches!(k, CNAME | ONAME)) && p.nth_at(1, COLON) {
+                if (is_lower_word(k) || matches!(k, CNAME | ONAME)) && p.at_key_colon() {
                     if k == CNAME {
                         let fixed = super::to_snake(p.nth_text(0));
                         p.error(format!("field names are lowercase: write `{fixed}`"));
                     }
                     p.keyed_item(false);
-                } else if matches!(k, LNAME | ONAME) && matches!(p.nth(1), COMMA | R_CURLY | EQ) {
-                    let f = p.start();
-                    p.name(NameClass::Lower, "a name");
-                    p.pattern_default();
-                    f.complete(p, PAT_FIELD);
+                } else if matches!(k, LNAME | ONAME) && p.at_shorthand_end() {
+                    p.shorthand_item();
                 } else if k != R_CURLY {
                     if k == ONAME {
                         let msg = oname_message(p.nth_text(0));

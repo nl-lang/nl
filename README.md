@@ -190,7 +190,9 @@ nlc bundle --profile=gmod-client -o autorun/client/myaddon.lua \
 - **`if SERVER`.** Code under `if SERVER`, `unless CLIENT`, `x if SERVER` and
   other conditions decided by `SERVER` and `CLIENT` is not checked and is
   left out of the output. A shared file can keep its server half, and that
-  code never ships to players.
+  code never ships to players. A `pub` item may stand in a branch of a
+  file-level `if`: importers see it, and where the branch does not run it
+  is `nil`.
 - **Output.** The runtime and the program are minified (line breaks stay, so
   line numbers still match) and checked to load on LuaJIT. Garry's Mod sends
   a client file only if it is at most 64 KiB compressed, so a bundle that

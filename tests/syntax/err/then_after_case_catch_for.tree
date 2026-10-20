@@ -1,0 +1,104 @@
+SOURCE_FILE@0..235
+  BLOCK@0..235
+    COMMENT@0..67 "# `then` in the headers of `case`, `catch` and `for`, each reported"
+    NEWLINE@67..68 "\n"
+    COMMENT@68..137 "# once; a `when` takes `then`, so the one after `case x then` parses."
+    NEWLINE@137..138 "\n"
+    EXPR_STMT@138..171
+      CASE_EXPR@138..171
+        CASE_KW@138..142 "case"
+        WHITESPACE@142..143 " "
+        NAME_REF@143..144
+          LNAME@143..144 "x"
+        WHITESPACE@144..145 " "
+        ERROR_NODE@145..149
+          LNAME@145..149 "then"
+        NEWLINE@149..150 "\n"
+        WHEN_CLAUSE@150..168
+          WHEN_KW@150..154 "when"
+          WHITESPACE@154..155 " "
+          LITERAL@155..156
+            NUMBER@155..156 "1"
+          WHITESPACE@156..157 " "
+          THEN_KW@157..161 "then"
+          BLOCK@161..168
+            WHITESPACE@161..162 " "
+            EXPR_STMT@162..167
+              CALL_EXPR@162..167
+                NAME_REF@162..165
+                  LNAME@162..165 "foo"
+                ARG_LIST@165..167
+                  L_PAREN@165..166 "("
+                  R_PAREN@166..167 ")"
+            NEWLINE@167..168 "\n"
+        END_KW@168..171 "end"
+    NEWLINE@171..172 "\n"
+    EXPR_STMT@172..204
+      TRY_EXPR@172..204
+        TRY_KW@172..175 "try"
+        BLOCK@175..182
+          NEWLINE@175..176 "\n"
+          WHITESPACE@176..178 "  "
+          EXPR_STMT@178..181
+            CALL_EXPR@178..181
+              NAME_REF@178..179
+                LNAME@178..179 "f"
+              ARG_LIST@179..181
+                L_PAREN@179..180 "("
+                R_PAREN@180..181 ")"
+          NEWLINE@181..182 "\n"
+        CATCH_CLAUSE@182..201
+          CATCH_KW@182..187 "catch"
+          WHITESPACE@187..188 " "
+          NAME@188..189
+            LNAME@188..189 "e"
+          WHITESPACE@189..190 " "
+          ERROR_NODE@190..194
+            LNAME@190..194 "then"
+          BLOCK@194..201
+            NEWLINE@194..195 "\n"
+            WHITESPACE@195..197 "  "
+            EXPR_STMT@197..200
+              CALL_EXPR@197..200
+                NAME_REF@197..198
+                  LNAME@197..198 "g"
+                ARG_LIST@198..200
+                  L_PAREN@198..199 "("
+                  R_PAREN@199..200 ")"
+            NEWLINE@200..201 "\n"
+        END_KW@201..204 "end"
+    NEWLINE@204..205 "\n"
+    FOR_STMT@205..234
+      FOR_KW@205..208 "for"
+      WHITESPACE@208..209 " "
+      BIND_PAT@209..210
+        NAME@209..210
+          LNAME@209..210 "i"
+      WHITESPACE@210..211 " "
+      IN_KW@211..213 "in"
+      WHITESPACE@213..214 " "
+      NAME_REF@214..218
+        LNAME@214..218 "list"
+      WHITESPACE@218..219 " "
+      ERROR_NODE@219..223
+        LNAME@219..223 "then"
+      BLOCK@223..231
+        NEWLINE@223..224 "\n"
+        WHITESPACE@224..226 "  "
+        EXPR_STMT@226..230
+          CALL_EXPR@226..230
+            NAME_REF@226..227
+              LNAME@226..227 "h"
+            ARG_LIST@227..230
+              L_PAREN@227..228 "("
+              NAME_REF@228..229
+                LNAME@228..229 "i"
+              R_PAREN@229..230 ")"
+        NEWLINE@230..231 "\n"
+      END_KW@231..234 "end"
+    NEWLINE@234..235 "\n"
+  EOF@235..235 ""
+---
+error@145..149 3:8: unexpected identifier `then`: the header of `case` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@190..194 8:9: unexpected identifier `then`: the header of `catch` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@219..223 11:15: unexpected identifier `then`: the header of `for` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line

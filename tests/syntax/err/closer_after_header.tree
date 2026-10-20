@@ -56,6 +56,6 @@ SOURCE_FILE@0..252
     NEWLINE@251..252 "\n"
   EOF@252..252 ""
 ---
-error@215..218 4:6: unexpected `end`: the header of `if` ends at the end of its line; put the body on the next line, or separate it with `;`
+error@215..218 4:6: unexpected `end`: the header of `if` ends at the end of its line; put the body on the next line, or write `then` before a body on the same line
 error@227..230 5:9: unexpected `end`: the header of `while` ends at the end of its line; put the body on the next line, or separate it with `;`
-error@240..244 6:10: unexpected `else`: the header of `if` ends at the end of its line; put the body on the next line, or separate it with `;`
+error@240..244 6:10: unexpected `else`: the header of `if` ends at the end of its line; put the body on the next line, or write `then` before a body on the same line

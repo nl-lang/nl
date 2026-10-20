@@ -1,0 +1,62 @@
+SOURCE_FILE@0..184
+  BLOCK@0..184
+    COMMENT@0..71 "# A body on the line of an `if` or `when` header needs `then` (or `;`):"
+    NEWLINE@71..72 "\n"
+    COMMENT@72..128 "# the error names `then`, and the next statement parses."
+    NEWLINE@128..129 "\n"
+    EXPR_STMT@129..146
+      IF_EXPR@129..146
+        IF_KW@129..131 "if"
+        WHITESPACE@131..132 " "
+        COMMAND_CALL@132..142
+          NAME_REF@132..137
+            LNAME@132..137 "ready"
+          WHITESPACE@137..138 " "
+          COMMAND_ARGS@138..142
+            CALL_EXPR@138..142
+              NAME_REF@138..140
+                LNAME@138..140 "go"
+              ARG_LIST@140..142
+                L_PAREN@140..141 "("
+                R_PAREN@141..142 ")"
+        BLOCK@142..143
+          WHITESPACE@142..143 " "
+        END_KW@143..146 "end"
+    NEWLINE@146..147 "\n"
+    EXPR_STMT@147..170
+      CASE_EXPR@147..170
+        CASE_KW@147..151 "case"
+        WHITESPACE@151..152 " "
+        NAME_REF@152..153
+          LNAME@152..153 "x"
+        NEWLINE@153..154 "\n"
+        WHEN_CLAUSE@154..167
+          WHEN_KW@154..158 "when"
+          WHITESPACE@158..159 " "
+          LITERAL@159..160
+            NUMBER@159..160 "1"
+          BLOCK@160..167
+            WHITESPACE@160..161 " "
+            EXPR_STMT@161..166
+              CALL_EXPR@161..166
+                NAME_REF@161..164
+                  LNAME@161..164 "foo"
+                ARG_LIST@164..166
+                  L_PAREN@164..165 "("
+                  R_PAREN@165..166 ")"
+            NEWLINE@166..167 "\n"
+        END_KW@167..170 "end"
+    NEWLINE@170..171 "\n"
+    EXPR_STMT@171..183
+      COMMAND_CALL@171..183
+        NAME_REF@171..176
+          LNAME@171..176 "print"
+        WHITESPACE@176..177 " "
+        COMMAND_ARGS@177..183
+          LITERAL@177..183
+            STRING@177..183 "\"next\""
+    NEWLINE@183..184 "\n"
+  EOF@184..184 ""
+---
+error@143..146 3:15: unexpected `end`: the header of `if` ends at the end of its line; put the body on the next line, or write `then` before a body on the same line
+error@161..164 5:8: unexpected `foo`: the header of `when` ends at the end of its line; put the body on the next line, or write `then` before a body on the same line

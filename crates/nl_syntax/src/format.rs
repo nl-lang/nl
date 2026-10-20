@@ -661,7 +661,7 @@ fn space_between(prev: &SyntaxToken, cur: &SyntaxToken) -> bool {
     if matches!(ck, BANG | BANG_POSTFIX) && cp == Some(BANG_EXPR) {
         return false;
     }
-    if ck == QUESTION && cp == Some(OPTIONAL_TYPE) {
+    if ck == QUESTION && matches!(cp, Some(OPTIONAL_TYPE | PAT_FIELD)) {
         return false;
     }
     // Calls, parameter lists, indexes, type arguments and operator names.

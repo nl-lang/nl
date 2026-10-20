@@ -15,8 +15,9 @@ macro_rules! syntax_kinds {
         ///
         /// In the syntax tree, a token's kind is the lexer's with two kinds of
         /// exception, both decided by position: the contextual keywords
-        /// `from` and `step` become [`SyntaxKind::FROM_KW`] and
-        /// [`SyntaxKind::STEP_KW`] where they are keywords; and a keyword
+        /// `from`, `step` and `then` become [`SyntaxKind::FROM_KW`],
+        /// [`SyntaxKind::STEP_KW`] and [`SyntaxKind::THEN_KW`] where they
+        /// are keywords; and a keyword
         /// used as a name (after `.`, after the `:` of a method
         /// call or a Lua path, as a table, struct literal, pattern or record
         /// key, as a declared field or method name) becomes `LNAME`, or
@@ -257,13 +258,17 @@ syntax_kinds! {
     QUESTION_DOT = "?.",
 
     // ---- Contextual keywords ------------------------------------------------
-    // The lexer never produces these: it emits `from` and `step` as `LNAME`.
+    // The lexer never produces these: it emits `from`, `step` and `then` as
+    // `LNAME`.
     // The parser gives the token this kind in the tree where it recognizes
     // the word as a keyword by position.
     /// `from` in an `import` statement.
     FROM_KW = "from",
     /// `step` in a `for` header.
     STEP_KW = "step",
+    /// `then` after the condition of `if`, `unless` or `elseif`, or after
+    /// the values of a `when`: the body follows on the same line.
+    THEN_KW = "then",
 
     /// End of file: an empty token at the end of the input, always the last
     /// token, with `nl_before` and `sp_before` set.
@@ -566,7 +571,9 @@ syntax_kinds! {
     /// `{ item, … }`: `PAT_FIELD`s (keyed) or patterns (positional).
     BRACE_PAT,
     /// A keyed item `key : value` (the value is a pattern or, after a
-    /// `key:`, a type node), or the shorthand `NAME` with no colon.
+    /// `key:`, a type node), or the shorthand `NAME` with no colon. A
+    /// `QUESTION` after the key or the name marks an optional field
+    /// (`{count?}`, `{pos?: {x, y}}`), which matches when it is `nil`.
     PAT_FIELD,
     /// `[ pattern, …, REST_PAT? ]`.
     BRACKET_PAT,

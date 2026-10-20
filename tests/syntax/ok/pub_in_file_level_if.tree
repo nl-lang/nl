@@ -1,0 +1,135 @@
+SOURCE_FILE@0..335
+  BLOCK@0..335
+    COMMENT@0..69 "# `pub` directly in a branch of an `if` or `unless` statement at file"
+    NEWLINE@69..70 "\n"
+    COMMENT@70..123 "# level: an export that exists where the branch runs."
+    NEWLINE@123..124 "\n"
+    EXPR_STMT@124..287
+      IF_EXPR@124..287
+        IF_KW@124..126 "if"
+        WHITESPACE@126..127 " "
+        NAME_REF@127..133
+          CNAME@127..133 "CLIENT"
+        BLOCK@133..204
+          NEWLINE@133..134 "\n"
+          WHITESPACE@134..136 "  "
+          FN_DECL@136..174
+            PUB_KW@136..139 "pub"
+            WHITESPACE@139..140 " "
+            FN_KW@140..142 "fn"
+            WHITESPACE@142..143 " "
+            NAME@143..147
+              LNAME@143..147 "draw"
+            PARAM_LIST@147..153
+              L_PAREN@147..148 "("
+              PARAM@148..152
+                BIND_PAT@148..152
+                  NAME@148..152
+                    LNAME@148..152 "text"
+              R_PAREN@152..153 ")"
+            BLOCK@153..171
+              NEWLINE@153..154 "\n"
+              WHITESPACE@154..158 "    "
+              EXPR_STMT@158..168
+                COMMAND_CALL@158..168
+                  NAME_REF@158..163
+                    LNAME@158..163 "print"
+                  WHITESPACE@163..164 " "
+                  COMMAND_ARGS@164..168
+                    NAME_REF@164..168
+                      LNAME@164..168 "text"
+              NEWLINE@168..169 "\n"
+              WHITESPACE@169..171 "  "
+            END_KW@171..174 "end"
+          NEWLINE@174..175 "\n"
+          WHITESPACE@175..177 "  "
+          CONST_DECL@177..203
+            PUB_KW@177..180 "pub"
+            WHITESPACE@180..181 " "
+            CONST_KW@181..186 "const"
+            WHITESPACE@186..187 " "
+            BIND_PAT@187..191
+              NAME@187..191
+                CNAME@187..191 "FONT"
+            WHITESPACE@191..192 " "
+            EQ@192..193 "="
+            WHITESPACE@193..194 " "
+            EXPR_LIST@194..203
+              LITERAL@194..203
+                STRING@194..203 "\"Default\""
+          NEWLINE@203..204 "\n"
+        ELSEIF_CLAUSE@204..241
+          ELSEIF_KW@204..210 "elseif"
+          WHITESPACE@210..211 " "
+          NAME_REF@211..217
+            CNAME@211..217 "SERVER"
+          BLOCK@217..241
+            NEWLINE@217..218 "\n"
+            WHITESPACE@218..220 "  "
+            MODULE_DECL@220..240
+              PUB_KW@220..223 "pub"
+              WHITESPACE@223..224 " "
+              MODULE_KW@224..230 "module"
+              WHITESPACE@230..231 " "
+              QUAL_NAME@231..234
+                CNAME@231..234 "Net"
+              NEWLINE@234..235 "\n"
+              WHITESPACE@235..237 "  "
+              END_KW@237..240 "end"
+            NEWLINE@240..241 "\n"
+        ELSE_CLAUSE@241..284
+          ELSE_KW@241..245 "else"
+          BLOCK@245..284
+            NEWLINE@245..246 "\n"
+            WHITESPACE@246..248 "  "
+            STRUCT_DECL@248..283
+              PUB_KW@248..251 "pub"
+              WHITESPACE@251..252 " "
+              STRUCT_KW@252..258 "struct"
+              WHITESPACE@258..259 " "
+              NAME@259..263
+                CNAME@259..263 "Stub"
+              NEWLINE@263..264 "\n"
+              WHITESPACE@264..268 "    "
+              FIELD_DECL@268..277
+                NAME@268..269
+                  LNAME@268..269 "x"
+                COLON@269..270 ":"
+                WHITESPACE@270..271 " "
+                NAMED_TYPE@271..277
+                  QUAL_NAME@271..277
+                    CNAME@271..277 "Number"
+              NEWLINE@277..278 "\n"
+              WHITESPACE@278..280 "  "
+              END_KW@280..283 "end"
+            NEWLINE@283..284 "\n"
+        END_KW@284..287 "end"
+    NEWLINE@287..288 "\n"
+    EXPR_STMT@288..334
+      UNLESS_EXPR@288..334
+        UNLESS_KW@288..294 "unless"
+        WHITESPACE@294..295 " "
+        NAME_REF@295..301
+          CNAME@295..301 "SERVER"
+        BLOCK@301..331
+          NEWLINE@301..302 "\n"
+          WHITESPACE@302..304 "  "
+          ENUM_DECL@304..330
+            PUB_KW@304..307 "pub"
+            WHITESPACE@307..308 " "
+            ENUM_KW@308..312 "enum"
+            WHITESPACE@312..313 " "
+            NAME@313..317
+              CNAME@313..317 "Mode"
+            NEWLINE@317..318 "\n"
+            WHITESPACE@318..322 "    "
+            VARIANT@322..324
+              NAME@322..324
+                CNAME@322..324 "On"
+            NEWLINE@324..325 "\n"
+            WHITESPACE@325..327 "  "
+            END_KW@327..330 "end"
+          NEWLINE@330..331 "\n"
+        END_KW@331..334 "end"
+    NEWLINE@334..335 "\n"
+  EOF@335..335 ""

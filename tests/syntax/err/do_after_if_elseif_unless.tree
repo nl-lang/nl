@@ -67,6 +67,6 @@ SOURCE_FILE@0..115
     NEWLINE@114..115 "\n"
   EOF@115..115 ""
 ---
-error@62..64 2:6: unexpected `do`: the header of `if` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
-error@80..82 4:10: unexpected `do`: the header of `elseif` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
-error@102..104 7:10: unexpected `do`: the header of `unless` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@62..64 2:6: unexpected `do`: the header of `if` ends at the end of its line. Hint: write `then` to put the body on the same line, or put the body on the next line
+error@80..82 4:10: unexpected `do`: the header of `elseif` ends at the end of its line. Hint: write `then` to put the body on the same line, or put the body on the next line
+error@102..104 7:10: unexpected `do`: the header of `unless` ends at the end of its line. Hint: write `then` to put the body on the same line, or put the body on the next line

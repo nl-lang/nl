@@ -1,0 +1,176 @@
+SOURCE_FILE@0..365
+  BLOCK@0..365
+    COMMENT@0..71 "# `then` ends the header of a `when` of `case` (after the values or the"
+    NEWLINE@71..72 "\n"
+    COMMENT@72..147 "# guard) and of `cond`; a `case` may take its first `when` on its own line."
+    NEWLINE@147..148 "\n"
+    LET_DECL@148..259
+      LET_KW@148..151 "let"
+      WHITESPACE@151..152 " "
+      BIND_PAT@152..156
+        NAME@152..156
+          LNAME@152..156 "name"
+      WHITESPACE@156..157 " "
+      EQ@157..158 "="
+      WHITESPACE@158..159 " "
+      EXPR_LIST@159..259
+        CASE_EXPR@159..259
+          CASE_KW@159..163 "case"
+          WHITESPACE@163..164 " "
+          NAME_REF@164..165
+            LNAME@164..165 "n"
+          NEWLINE@165..166 "\n"
+          WHEN_CLAUSE@166..184
+            WHEN_KW@166..170 "when"
+            WHITESPACE@170..171 " "
+            LITERAL@171..172
+              NUMBER@171..172 "1"
+            WHITESPACE@172..173 " "
+            THEN_KW@173..177 "then"
+            BLOCK@177..184
+              WHITESPACE@177..178 " "
+              EXPR_STMT@178..183
+                LITERAL@178..183
+                  STRING@178..183 "\"one\""
+              NEWLINE@183..184 "\n"
+          WHEN_CLAUSE@184..207
+            WHEN_KW@184..188 "when"
+            WHITESPACE@188..189 " "
+            LITERAL@189..190
+              NUMBER@189..190 "2"
+            COMMA@190..191 ","
+            WHITESPACE@191..192 " "
+            LITERAL@192..193
+              NUMBER@192..193 "3"
+            WHITESPACE@193..194 " "
+            THEN_KW@194..198 "then"
+            BLOCK@198..207
+              WHITESPACE@198..199 " "
+              EXPR_STMT@199..206
+                LITERAL@199..206
+                  STRING@199..206 "\"a few\""
+              NEWLINE@206..207 "\n"
+          WHEN_CLAUSE@207..244
+            WHEN_KW@207..211 "when"
+            WHITESPACE@211..212 " "
+            STRUCT_PAT@212..221
+              QUAL_NAME@212..217
+                CNAME@212..217 "Point"
+              WHITESPACE@217..218 " "
+              L_CURLY@218..219 "{"
+              PAT_FIELD@219..220
+                NAME@219..220
+                  LNAME@219..220 "x"
+              R_CURLY@220..221 "}"
+            WHITESPACE@221..222 " "
+            WHEN_GUARD@222..230
+              IF_KW@222..224 "if"
+              WHITESPACE@224..225 " "
+              BIN_EXPR@225..230
+                NAME_REF@225..226
+                  LNAME@225..226 "x"
+                WHITESPACE@226..227 " "
+                GT@227..228 ">"
+                WHITESPACE@228..229 " "
+                LITERAL@229..230
+                  NUMBER@229..230 "0"
+            WHITESPACE@230..231 " "
+            THEN_KW@231..235 "then"
+            BLOCK@235..244
+              WHITESPACE@235..236 " "
+              EXPR_STMT@236..243
+                LITERAL@236..243
+                  STRING@236..243 "\"right\""
+              NEWLINE@243..244 "\n"
+          ELSE_CLAUSE@244..256
+            ELSE_KW@244..248 "else"
+            BLOCK@248..256
+              WHITESPACE@248..249 " "
+              EXPR_STMT@249..255
+                LITERAL@249..255
+                  STRING@249..255 "\"many\""
+              NEWLINE@255..256 "\n"
+          END_KW@256..259 "end"
+    NEWLINE@259..260 "\n"
+    LET_DECL@260..310
+      LET_KW@260..263 "let"
+      WHITESPACE@263..264 " "
+      BIND_PAT@264..267
+        NAME@264..267
+          LNAME@264..267 "big"
+      WHITESPACE@267..268 " "
+      EQ@268..269 "="
+      WHITESPACE@269..270 " "
+      EXPR_LIST@270..310
+        COND_EXPR@270..310
+          COND_KW@270..274 "cond"
+          NEWLINE@274..275 "\n"
+          COND_CLAUSE@275..296
+            WHEN_KW@275..279 "when"
+            WHITESPACE@279..280 " "
+            BIN_EXPR@280..285
+              NAME_REF@280..281
+                LNAME@280..281 "n"
+              WHITESPACE@281..282 " "
+              GT@282..283 ">"
+              WHITESPACE@283..284 " "
+              LITERAL@284..285
+                NUMBER@284..285 "9"
+            WHITESPACE@285..286 " "
+            THEN_KW@286..290 "then"
+            BLOCK@290..296
+              WHITESPACE@290..291 " "
+              EXPR_STMT@291..295
+                LITERAL@291..295
+                  TRUE_KW@291..295 "true"
+              NEWLINE@295..296 "\n"
+          ELSE_CLAUSE@296..307
+            ELSE_KW@296..300 "else"
+            BLOCK@300..307
+              WHITESPACE@300..301 " "
+              EXPR_STMT@301..306
+                LITERAL@301..306
+                  FALSE_KW@301..306 "false"
+              NEWLINE@306..307 "\n"
+          END_KW@307..310 "end"
+    NEWLINE@310..311 "\n"
+    LET_DECL@311..364
+      LET_KW@311..314 "let"
+      WHITESPACE@314..315 " "
+      BIND_PAT@315..320
+        NAME@315..320
+          LNAME@315..320 "short"
+      WHITESPACE@320..321 " "
+      EQ@321..322 "="
+      WHITESPACE@322..323 " "
+      EXPR_LIST@323..364
+        CASE_EXPR@323..364
+          CASE_KW@323..327 "case"
+          WHITESPACE@327..328 " "
+          NAME_REF@328..329
+            LNAME@328..329 "n"
+          WHITESPACE@329..330 " "
+          WHEN_CLAUSE@330..348
+            WHEN_KW@330..334 "when"
+            WHITESPACE@334..335 " "
+            LITERAL@335..336
+              NUMBER@335..336 "1"
+            WHITESPACE@336..337 " "
+            THEN_KW@337..341 "then"
+            BLOCK@341..348
+              WHITESPACE@341..342 " "
+              EXPR_STMT@342..347
+                LITERAL@342..347
+                  STRING@342..347 "\"one\""
+              WHITESPACE@347..348 " "
+          ELSE_CLAUSE@348..361
+            ELSE_KW@348..352 "else"
+            BLOCK@352..361
+              WHITESPACE@352..353 " "
+              EXPR_STMT@353..360
+                LITERAL@353..360
+                  STRING@353..360 "\"other\""
+              WHITESPACE@360..361 " "
+          END_KW@361..364 "end"
+    NEWLINE@364..365 "\n"
+  EOF@365..365 ""

@@ -36,4 +36,4 @@ SOURCE_FILE@0..80
   EOF@80..80 ""
 ---
 error@57..59 2:8: unexpected `do`: the header of `case` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
-error@67..69 3:8: unexpected `do`: the header of `when` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line
+error@67..69 3:8: unexpected `do`: the header of `when` ends at the end of its line. Hint: write `then` to put the body on the same line, or put the body on the next line

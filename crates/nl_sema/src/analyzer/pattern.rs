@@ -150,6 +150,9 @@ impl Analyzer<'_> {
         }));
         let field_ty = key.as_deref().map(|k| self.field_type_of(owner, k)).unwrap_or(Type::Any);
         let value = Ty::new(field_ty, certain && false);
+        // `{name?}`, `{key?: p}`: an optional field matches when it is
+        // `nil`, so what it binds may be `nil`, as in a must-match context.
+        let must = must || has_token(field, QUESTION);
         if !has_token(field, COLON) {
             // `{name}`: binds the key.
             if let Some(id) = child(field, NAME).and_then(|n| self.res.declaration(n.text_range())) {
@@ -174,6 +177,7 @@ impl Analyzer<'_> {
         } else if let Some(ty) = type_child(field) {
             // `{key: Type}` binds `key` and requires the type.
             let t = self.type_of(&ty);
+            let t = if has_token(field, QUESTION) { optional(&self.types, &t) } else { t };
             if let Some(id) = name_token(field).and_then(|k| self.res.declaration(k.text_range())) {
                 let fn_init = self.binding_sigs.contains_key(&id);
                 let _ = fn_init;

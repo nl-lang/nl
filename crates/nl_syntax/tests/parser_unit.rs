@@ -885,14 +885,29 @@ fn declaration_errors() {
 
 #[test]
 fn targeted_errors() {
-    // `then` is an ordinary name and `do` an ordinary keyword; after a
-    // header they are unexpected, and the error carries a hint.
+    // `then` is an ordinary name and `do` an ordinary keyword. After the
+    // header of `if`, `unless`, `elseif` and `when`, `then` puts the body
+    // on the same line; after any other header both are unexpected, and
+    // the error carries a hint.
     const HINT: &str = "Hint: do not write `then` or `do` after a header";
-    one_error("if ready then\n  go()\nend", "unexpected identifier `then`: the header of `if`");
-    one_error("if ready then\n  go()\nend", HINT);
-    one_error("elseif_test = 1\nif a\nelseif b then\nend", "unexpected identifier `then`: the header of `elseif`");
-    one_error("case x\nwhen 1 then foo()\nend", "unexpected identifier `then`: the header of `when`");
-    one_error("unless done then\nend", "unexpected identifier `then`");
+    for ok in [
+        "if ready then\n  go()\nend",
+        "if ready then go() end",
+        "x = if a then 1 elseif b then 2 else 3 end",
+        "unless done then go() else stop() end",
+        "case x\nwhen 1 then foo()\nwhen 2, 3 then bar() end",
+        "x = case n when 1 then \"one\" else \"many\" end",
+        "cond\nwhen a then b()\nend",
+        "if let v = f() then v end",
+    ] {
+        assert!(errors(ok).is_empty(), "{ok:?}: {:?}", errors(ok));
+    }
+    one_error("while busy then\n  w()\nend", "unexpected identifier `then`: the header of `while`");
+    one_error("while busy then\n  w()\nend", HINT);
+    one_error("for i in xs then\nend", "unexpected identifier `then`: the header of `for`");
+    one_error("case x then\nwhen 1\nend", "unexpected identifier `then`: the header of `case`");
+    one_error("if a go() end", "write `then` before a body on the same line");
+    one_error("if a do\nend", "Hint: write `then` to put the body on the same line");
     one_error("while x do\n  y()\nend", "unexpected `do`: the header of `while`");
     one_error("while x do\n  y()\nend", HINT);
     one_error("for x in xs do\nend", "unexpected `do`");
@@ -1081,6 +1096,6 @@ fn dump_format() {
         dump,
         "SOURCE_FILE@0..10\n  BLOCK@0..10\n    LET_DECL@0..9\n      LET_KW@0..3 \"let\"\n      WHITESPACE@3..4 \" \"\n      BIND_PAT@4..5\n        NAME@4..5\n          LNAME@4..5 \"x\"\n      WHITESPACE@5..6 \" \"\n      EQ@6..7 \"=\"\n      WHITESPACE@7..8 \" \"\n      EXPR_LIST@8..9\n        LITERAL@8..9\n          NUMBER@8..9 \"1\"\n    NEWLINE@9..10 \"\\n\"\n  EOF@10..10 \"\"\n"
     );
-    let dump = nl_syntax::dump_parse("if a then\nend");
-    assert!(dump.ends_with("---\nerror@5..9 1:6: unexpected identifier `then`: the header of `if` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line\n"), "{dump}");
+    let dump = nl_syntax::dump_parse("while a then\nend");
+    assert!(dump.ends_with("---\nerror@8..12 1:9: unexpected identifier `then`: the header of `while` ends at the end of its line. Hint: do not write `then` or `do` after a header; put the body on the next line\n"), "{dump}");
 }

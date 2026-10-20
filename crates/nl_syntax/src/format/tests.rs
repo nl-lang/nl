@@ -126,6 +126,27 @@ fn statements_and_semicolons() {
 }
 
 #[test]
+fn optional_pattern_fields_touch_their_names() {
+    check("let {a ?, b ? : String} = t\n", "let {a?, b?: String} = t\n");
+    same("case n\nwhen Dice {count?, sides}\n  1\nend\n");
+}
+
+#[test]
+fn then_keeps_one_line_bodies() {
+    // A one-line `if … then … end` stays on its line, like every other
+    // construct: the formatter adds no line break.
+    check("let x = if c  then a  else b end\n", "let x = if c then a else b end\n");
+    same("if a then b() elseif c then d() else e() end\n");
+    same("unless done then wait() end\n");
+    check(
+        "fn f\ncase n\nwhen 1  then \"one\"\nwhen 2, 3 then \"few\"\nelse \"many\"\nend\nend\n",
+        "fn f\n  case n\n  when 1 then \"one\"\n  when 2, 3 then \"few\"\n  else \"many\"\n  end\nend\n",
+    );
+    same("let s = case n when 1 then \"one\" else \"other\" end\n");
+    check("if a then\nb\nend\n", "if a then\n  b\nend\n");
+}
+
+#[test]
 fn nested_blocks_indent_two_spaces() {
     check(
         "fn outer\nif a\nwhile b\nx\nend\nelse\ny\nend\nend\n",

@@ -1,0 +1,130 @@
+SOURCE_FILE@0..278
+  BLOCK@0..278
+    COMMENT@0..73 "# `pub` is allowed only one level down, in a branch of a file-level `if`:"
+    NEWLINE@73..74 "\n"
+    COMMENT@74..143 "# not in a nested `if`, a loop, an `if` used as a value, or a `case`."
+    NEWLINE@143..144 "\n"
+    EXPR_STMT@144..182
+      IF_EXPR@144..182
+        IF_KW@144..146 "if"
+        WHITESPACE@146..147 " "
+        NAME_REF@147..148
+          LNAME@147..148 "a"
+        BLOCK@148..179
+          NEWLINE@148..149 "\n"
+          WHITESPACE@149..151 "  "
+          EXPR_STMT@151..178
+            IF_EXPR@151..178
+              IF_KW@151..153 "if"
+              WHITESPACE@153..154 " "
+              NAME_REF@154..155
+                LNAME@154..155 "b"
+              BLOCK@155..175
+                NEWLINE@155..156 "\n"
+                WHITESPACE@156..160 "    "
+                FN_DECL@160..172
+                  PUB_KW@160..163 "pub"
+                  WHITESPACE@163..164 " "
+                  FN_KW@164..166 "fn"
+                  WHITESPACE@166..167 " "
+                  NAME@167..168
+                    LNAME@167..168 "f"
+                  BLOCK@168..169
+                    WHITESPACE@168..169 " "
+                  END_KW@169..172 "end"
+                NEWLINE@172..173 "\n"
+                WHITESPACE@173..175 "  "
+              END_KW@175..178 "end"
+          NEWLINE@178..179 "\n"
+        END_KW@179..182 "end"
+    NEWLINE@182..183 "\n"
+    WHILE_STMT@183..212
+      WHILE_KW@183..188 "while"
+      WHITESPACE@188..189 " "
+      NAME_REF@189..190
+        LNAME@189..190 "c"
+      BLOCK@190..209
+        NEWLINE@190..191 "\n"
+        WHITESPACE@191..193 "  "
+        CONST_DECL@193..208
+          PUB_KW@193..196 "pub"
+          WHITESPACE@196..197 " "
+          CONST_KW@197..202 "const"
+          WHITESPACE@202..203 " "
+          BIND_PAT@203..204
+            NAME@203..204
+              LNAME@203..204 "x"
+          WHITESPACE@204..205 " "
+          EQ@205..206 "="
+          WHITESPACE@206..207 " "
+          EXPR_LIST@207..208
+            LITERAL@207..208
+              NUMBER@207..208 "1"
+        NEWLINE@208..209 "\n"
+      END_KW@209..212 "end"
+    NEWLINE@212..213 "\n"
+    LET_DECL@213..244
+      LET_KW@213..216 "let"
+      WHITESPACE@216..217 " "
+      BIND_PAT@217..218
+        NAME@217..218
+          LNAME@217..218 "v"
+      WHITESPACE@218..219 " "
+      EQ@219..220 "="
+      WHITESPACE@220..221 " "
+      EXPR_LIST@221..244
+        IF_EXPR@221..244
+          IF_KW@221..223 "if"
+          WHITESPACE@223..224 " "
+          NAME_REF@224..225
+            LNAME@224..225 "d"
+          BLOCK@225..241
+            NEWLINE@225..226 "\n"
+            WHITESPACE@226..228 "  "
+            FN_DECL@228..240
+              PUB_KW@228..231 "pub"
+              WHITESPACE@231..232 " "
+              FN_KW@232..234 "fn"
+              WHITESPACE@234..235 " "
+              NAME@235..236
+                LNAME@235..236 "g"
+              BLOCK@236..237
+                WHITESPACE@236..237 " "
+              END_KW@237..240 "end"
+            NEWLINE@240..241 "\n"
+          END_KW@241..244 "end"
+    NEWLINE@244..245 "\n"
+    EXPR_STMT@245..277
+      CASE_EXPR@245..277
+        CASE_KW@245..249 "case"
+        WHITESPACE@249..250 " "
+        NAME_REF@250..251
+          LNAME@250..251 "e"
+        NEWLINE@251..252 "\n"
+        WHEN_CLAUSE@252..274
+          WHEN_KW@252..256 "when"
+          WHITESPACE@256..257 " "
+          LITERAL@257..258
+            NUMBER@257..258 "1"
+          BLOCK@258..274
+            NEWLINE@258..259 "\n"
+            WHITESPACE@259..261 "  "
+            FN_DECL@261..273
+              PUB_KW@261..264 "pub"
+              WHITESPACE@264..265 " "
+              FN_KW@265..267 "fn"
+              WHITESPACE@267..268 " "
+              NAME@268..269
+                LNAME@268..269 "h"
+              BLOCK@269..270
+                WHITESPACE@269..270 " "
+              END_KW@270..273 "end"
+            NEWLINE@273..274 "\n"
+        END_KW@274..277 "end"
+    NEWLINE@277..278 "\n"
+  EOF@278..278 ""
+---
+error@160..163 5:5: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there
+error@193..196 9:3: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there
+error@228..231 12:3: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there
+error@261..264 16:3: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there

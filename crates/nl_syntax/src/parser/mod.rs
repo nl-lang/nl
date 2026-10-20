@@ -819,6 +819,15 @@ impl<'a> Parser<'a> {
         self.constructs.is_empty()
     }
 
+    /// Directly in a branch of an `if` or `unless` statement at file level
+    /// (`if CLIENT … end`), where a `pub` declaration is allowed.
+    pub(crate) fn in_file_level_branch(&self) -> bool {
+        let [c] = self.constructs.as_slice() else { return false };
+        let Some(t) = self.toks.get(c.opener) else { return false };
+        let stmt_start = c.opener == 0 || t.nl || c.opener.checked_sub(1).and_then(|i| self.toks.get(i)).is_some_and(|p| p.kind == SEMI);
+        matches!(t.kind, IF_KW | UNLESS_KW) && stmt_start
+    }
+
     /// Some open construct accepts this closer keyword.
     pub(crate) fn closer_accepted(&self, kind: SyntaxKind) -> bool {
         let bit = closer_bit(kind);

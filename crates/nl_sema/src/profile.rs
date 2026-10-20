@@ -220,6 +220,47 @@ pub fn static_condition(cond: &SyntaxNode, res: &Resolution, profile: Profile) -
     }
 }
 
+/// True when a `pub` item declared in the branches `clauses` of the
+/// file-level `if` or `unless` `construct` has a value after it, whichever
+/// way the `if` goes under `profile`: the branch the realm constants
+/// decide is taken declares it, or every branch that may run does and
+/// one of them always runs (an `else`). Otherwise the export may be
+/// `nil` ([`crate::ExportInfo::optional`]).
+pub fn defined_on_every_path(construct: &SyntaxNode, clauses: &[usize], res: &Resolution, profile: Profile) -> bool {
+    // Each branch with what decides whether it runs, when the branches
+    // before it did not: `Some(true)` for `else`.
+    let mut owners: Vec<(SyntaxNode, bool)> = vec![(construct.clone(), construct.kind() == UNLESS_EXPR)];
+    owners.extend(construct.children().filter(|c| matches!(c.kind(), ELSEIF_CLAUSE | ELSE_CLAUSE)).map(|c| (c, false)));
+    for (i, (owner, negated)) in owners.iter().enumerate() {
+        let decided = if owner.kind() == ELSE_CLAUSE { Some(true) } else { plain_condition(owner).and_then(|c| static_condition(&c, res, profile)).map(|v| v != *negated) };
+        let declares = clauses.contains(&i);
+        match decided {
+            Some(false) => {}
+            Some(true) => return declares,
+            None if declares => {}
+            None => return false,
+        }
+    }
+    false
+}
+
+/// The file's exports as an importer compiled under `profile` sees them:
+/// [`Resolution::exports`], with [`crate::ExportInfo::optional`] decided
+/// by the realm constants of the profile for the `pub` items in branches
+/// of a file-level `if` (`if CLIENT … end` always runs in the client
+/// realm).
+pub fn exports(res: &Resolution, profile: Profile) -> Vec<crate::ExportInfo> {
+    res.export_bindings()
+        .map(|(id, e)| {
+            let mut e = e.clone();
+            if let Some((c, clauses)) = res.conditional_export(id) {
+                e.optional = !defined_on_every_path(c, clauses, res, profile);
+            }
+            e
+        })
+        .collect()
+}
+
 /// The condition of an `if`, `elseif`, `unless` or modifier: `None` for
 /// an `if let`.
 fn plain_condition(owner: &SyntaxNode) -> Option<SyntaxNode> {

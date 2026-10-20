@@ -598,6 +598,11 @@ impl<'a> Lowerer<'a> {
         let (decls, ()) = self.capture(|l| {
             if hoisting {
                 l.predeclare(&stmts);
+            } else {
+                l.predeclare_forward_consts(&stmts);
+            }
+            if main {
+                l.predeclare_conditional_exports();
             }
         });
         // A file that localizes Lua paths declares them after its imports
@@ -625,6 +630,7 @@ impl<'a> Lowerer<'a> {
         });
         let (pool_decl, pool_defs) = if pooled { self.pop_pool() } else { (None, Vec::new()) };
         if !hoisting {
+            self.stmts.extend(decls);
             self.stmts.extend(imports);
             if prologue {
                 self.prologue_at = Some((self.stmts.len(), imports_line));
@@ -694,6 +700,39 @@ impl<'a> Lowerer<'a> {
         for id in &ids {
             self.predeclared.insert(*id);
         }
+    }
+
+    /// In a block that does not hoist, the `local` of each `const` that a
+    /// function above its line reads (the resolver's `forward_consts`),
+    /// so that the function captures the local the `const` assigns.
+    fn predeclare_forward_consts(&mut self, stmts: &[SyntaxNode]) {
+        let mut ids = Vec::new();
+        for s in stmts.iter().filter(|s| s.kind() == CONST_DECL) {
+            self.declared_bindings(s, &mut ids);
+        }
+        let ids: Vec<BindingId> = ids.into_iter().filter(|id| self.res.forward_const(*id) && !self.predeclared.contains(id)).collect();
+        if ids.is_empty() {
+            return;
+        }
+        let locals: Vec<LocalId> = ids.iter().map(|id| self.local_of(*id)).collect();
+        self.emit(StmtKind::Local { locals, values: Vec::new() });
+        self.predeclared.extend(ids);
+    }
+
+    /// The locals of the `pub` items in branches of file-level `if`s, in
+    /// the main function: the branch assigns them, and the export table
+    /// reads them (`nil` when no branch that declares one ran).
+    fn predeclare_conditional_exports(&mut self) {
+        let mut ids: Vec<BindingId> = self.res.conditional_export_bindings().filter(|id| !self.predeclared.contains(id)).collect();
+        if ids.is_empty() {
+            return;
+        }
+        ids.sort_by_key(|id| id.0);
+        for chunk in ids.chunks(50) {
+            let locals: Vec<LocalId> = chunk.iter().map(|id| self.local_of(*id)).collect();
+            self.emit(StmtKind::Local { locals, values: Vec::new() });
+        }
+        self.predeclared.extend(ids);
     }
 
     /// The imports, and when the block hoists, its type declarations (see
@@ -860,7 +899,7 @@ impl<'a> Lowerer<'a> {
     pub(crate) fn stmt(&mut self, node: &SyntaxNode, tail: Tail) {
         self.line = self.line_of(node);
         if let Some(m) = modifier(node) {
-            self.stmt_with_modifier(node, &m);
+            self.stmt_with_modifier(node, &m, tail);
             return;
         }
         let declares = matches!(
@@ -881,21 +920,25 @@ impl<'a> Lowerer<'a> {
         }
     }
 
-    /// A statement followed by `if`/`unless`/`while`/`until`.
-    fn stmt_with_modifier(&mut self, node: &SyntaxNode, m: &SyntaxNode) {
+    /// A statement followed by `if`/`unless`/`while`/`until`. The tail
+    /// statement `x if c` keeps the block's tail for `x`, as the branch of
+    /// `if c x end` would: a value is returned or assigned, and a bare
+    /// name is called only where `x` alone would be (`nl_sema` checks.rs).
+    fn stmt_with_modifier(&mut self, node: &SyntaxNode, m: &SyntaxNode, tail: Tail) {
         let word = first_token(m).map(|t| t.kind());
         let Some(cond_node) = expr_child(m) else {
             self.internal(m, "modifier without condition");
             return;
         };
         let is_loop = matches!(word, Some(WHILE_KW | UNTIL_KW));
+        let tail = if is_loop { Tail::Discard } else { tail };
         // `x if SERVER`: left out where realm constants say it never
         // runs, and run without a test where they say it always does.
         if !is_loop {
             if let Some(v) = self.decided(m) {
                 if v != matches!(word, Some(UNLESS_KW)) {
                     let body = self.sub_block(|l| {
-                        let (stmts, ()) = l.capture(|l| l.simple_stmt(node, Tail::Discard));
+                        let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));
                         l.stmts.extend(stmts);
                     });
                     self.emit(StmtKind::Do(body));
@@ -909,7 +952,7 @@ impl<'a> Lowerer<'a> {
             }
         }
         let body = self.sub_block(|l| {
-            let (stmts, ()) = l.capture(|l| l.simple_stmt(node, Tail::Discard));
+            let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));
             l.stmts.extend(stmts);
         });
         let body = if is_loop { self.finish_loop_body(body) } else { body };

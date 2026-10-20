@@ -23,3 +23,4 @@ declare fn find<T>(items: [T], *rest: [T], **opts: {limit: Number?}): (T?, Numbe
 declare let frame_count: Number = :game.frameCount
 declare const max_players: Number = :config.maxPlayers
 declare const MAX_HP: Number
+declare let PLUGIN: Table

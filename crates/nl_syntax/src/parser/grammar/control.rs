@@ -60,13 +60,13 @@ impl Parser<'_> {
         self.in_construct(closer::ELSEIF | closer::ELSE | closer::END, |p| {
             p.bump();
             p.header_condition("if", true);
-            p.header_end("if");
+            p.header_then_end("if");
             p.block();
             while p.takes_closer(ELSEIF_KW) {
                 let c = p.start();
                 p.bump();
                 p.header_condition("elseif", true);
-                p.header_end("elseif");
+                p.header_then_end("elseif");
                 p.block();
                 c.complete(p, ELSEIF_CLAUSE);
             }
@@ -94,7 +94,7 @@ impl Parser<'_> {
             self.bump();
             if is_elseif {
                 self.header_condition("elseif", true);
-                self.header_end("elseif");
+                self.header_then_end("elseif");
             }
             self.block();
             e.complete(self, ERROR_NODE);
@@ -107,14 +107,14 @@ impl Parser<'_> {
         self.in_construct(closer::ELSEIF | closer::ELSE | closer::END, |p| {
             p.bump();
             p.header_condition("unless", false);
-            p.header_end("unless");
+            p.header_then_end("unless");
             p.block();
             while p.takes_closer(ELSEIF_KW) {
                 p.error("`unless` takes no `elseif`: use `if` with `elseif`, or `else`");
                 let e = p.start();
                 p.bump();
                 p.header_condition("elseif", true);
-                p.header_end("elseif");
+                p.header_then_end("elseif");
                 p.block();
                 e.complete(p, ERROR_NODE);
             }
@@ -131,7 +131,11 @@ impl Parser<'_> {
             p.bump();
             p.header_same_line("case");
             p.header_expr();
-            p.header_end("case");
+            // `case x when 1 then "one" else "many" end` on one line: a
+            // `when` may follow the header directly.
+            if !(p.at(WHEN_KW) && !p.nl()) {
+                p.header_end("case");
+            }
             while p.eat(SEMI) {}
             if !p.at(WHEN_KW) {
                 if p.at(ELSE_KW) || p.at(END_KW) {
@@ -208,7 +212,7 @@ impl Parser<'_> {
             }
             g.complete(self, WHEN_GUARD);
         }
-        self.header_end("when");
+        self.header_then_end("when");
         self.block();
         c.complete(self, WHEN_CLAUSE);
     }
@@ -274,7 +278,7 @@ impl Parser<'_> {
             self.header_expr();
             e.complete(self, ERROR_NODE);
         }
-        self.header_end("when");
+        self.header_then_end("when");
         self.block();
         c.complete(self, COND_CLAUSE);
     }

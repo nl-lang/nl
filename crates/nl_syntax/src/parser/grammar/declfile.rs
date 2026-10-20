@@ -321,7 +321,10 @@ impl Parser<'_> {
     fn decl_value(&mut self, m: Marker, top: bool) {
         let is_const = self.at(CONST_KW);
         self.bump();
-        if is_const && self.at(CNAME) {
+        // A declaration describes a Lua global as it is named: a host's
+        // mutable globals are often capitalized (`PLUGIN`, `ENV`), so
+        // `let` takes a capitalized name as `const` does.
+        if self.at(CNAME) {
             let n = self.start();
             self.bump();
             n.complete(self, NAME);

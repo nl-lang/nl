@@ -57,7 +57,9 @@ pub(crate) fn check_discarded(r: &mut Resolver<'_>, root: &SyntaxNode) {
 /// expression statement's value is discarded ([`Resolver::mark_discarded`];
 /// the lowering calls a bare name or member there). The rule
 /// is taken literally: discarded means "a statement that is
-/// not last" (or one with a modifier). That leaves open
+/// not last" (or one with a loop modifier, `x while c`; the last
+/// statement `x if c` is the tail `x` run only when `c` holds, as
+/// `if c x end` would be). That leaves open
 /// the last statement of a loop body, of a function declared `: nil`,
 /// of an `on` handler, of a `do` block or `finally` block, and of the file:
 /// those are last, so their value counts as used (a variable is read, a
@@ -69,7 +71,8 @@ fn check_block(r: &mut Resolver<'_>, block: &SyntaxNode, tail_used: bool) {
     for (i, s) in stmts.iter().enumerate() {
         let last = i + 1 == n;
         if s.kind() == EXPR_STMT {
-            let discarded = !(last && tail_used) || modifier(s).is_some();
+            let loop_modifier = modifier(s).is_some_and(|m| first_token(&m).is_some_and(|t| matches!(t.kind(), WHILE_KW | UNTIL_KW)));
+            let discarded = !(last && tail_used) || loop_modifier;
             if let Some(list) = child(s, EXPR_LIST) {
                 // `a, b` as a statement returns several values from a
                 // function; anywhere else it is not a call or

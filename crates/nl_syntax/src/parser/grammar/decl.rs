@@ -37,12 +37,14 @@ impl Parser<'_> {
         }
     }
 
-    /// `pub_decl`: only at file level, and not on `let`, `global`,
-    /// `on`, an implementation or a method.
+    /// `pub_decl`: only at file level or directly in a branch of a
+    /// file-level `if` or `unless` (an export that exists only where the
+    /// branch runs), and not on `let`, `global`, `on`, an implementation
+    /// or a method.
     fn pub_decl(&mut self, m: Marker) {
         let pub_range = self.cur_range();
-        if !self.at_file_level() {
-            self.error("`pub` is only allowed at the top level of a file");
+        if !self.at_file_level() && !self.in_file_level_branch() {
+            self.error("`pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there");
         }
         self.bump();
         match self.cur() {

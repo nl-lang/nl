@@ -62,5 +62,5 @@ SOURCE_FILE@0..118
   EOF@118..118 ""
 ---
 error@48..54 3:3: `import` is only allowed at the top of a file, before every other statement; to load a file while the program runs, call `require` or `include`
-error@70..73 4:3: `pub` is only allowed at the top level of a file
-error@98..101 7:3: `pub` is only allowed at the top level of a file
+error@70..73 4:3: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there
+error@98..101 7:3: `pub` is only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there

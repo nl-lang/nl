@@ -1,0 +1,134 @@
+SOURCE_FILE@0..296
+  BLOCK@0..296
+    COMMENT@0..71 "# `?` after a shorthand name or a key marks an optional field, in brace"
+    NEWLINE@71..72 "\n"
+    COMMENT@72..143 "# and struct patterns: `{count?}`, `{pos?: {x, y}}`, `{name?: String}`."
+    NEWLINE@143..144 "\n"
+    EXPR_STMT@144..267
+      CASE_EXPR@144..267
+        CASE_KW@144..148 "case"
+        WHITESPACE@148..149 " "
+        NAME_REF@149..153
+          LNAME@149..153 "node"
+        NEWLINE@153..154 "\n"
+        WHEN_CLAUSE@154..205
+          WHEN_KW@154..158 "when"
+          WHITESPACE@158..159 " "
+          STRUCT_PAT@159..183
+            QUAL_NAME@159..167
+              CNAME@159..167 "DiceNode"
+            WHITESPACE@167..168 " "
+            L_CURLY@168..169 "{"
+            PAT_FIELD@169..175
+              NAME@169..174
+                LNAME@169..174 "count"
+              QUESTION@174..175 "?"
+            COMMA@175..176 ","
+            WHITESPACE@176..177 " "
+            PAT_FIELD@177..182
+              NAME@177..182
+                LNAME@177..182 "sides"
+            R_CURLY@182..183 "}"
+          BLOCK@183..205
+            NEWLINE@183..184 "\n"
+            WHITESPACE@184..186 "  "
+            EXPR_STMT@186..204
+              CALL_EXPR@186..204
+                NAME_REF@186..190
+                  LNAME@186..190 "roll"
+                ARG_LIST@190..204
+                  L_PAREN@190..191 "("
+                  NAME_REF@191..196
+                    LNAME@191..196 "count"
+                  COMMA@196..197 ","
+                  WHITESPACE@197..198 " "
+                  NAME_REF@198..203
+                    LNAME@198..203 "sides"
+                  R_PAREN@203..204 ")"
+            NEWLINE@204..205 "\n"
+        WHEN_CLAUSE@205..264
+          WHEN_KW@205..209 "when"
+          WHITESPACE@209..210 " "
+          BRACE_PAT@210..245
+            L_CURLY@210..211 "{"
+            PAT_FIELD@211..223
+              LNAME@211..215 "kind"
+              COLON@215..216 ":"
+              WHITESPACE@216..217 " "
+              LITERAL_PAT@217..223
+                STRING@217..223 "\"move\""
+            COMMA@223..224 ","
+            WHITESPACE@224..225 " "
+            PAT_FIELD@225..236
+              LNAME@225..227 "to"
+              QUESTION@227..228 "?"
+              COLON@228..229 ":"
+              WHITESPACE@229..230 " "
+              BRACE_PAT@230..236
+                L_CURLY@230..231 "{"
+                PAT_FIELD@231..232
+                  NAME@231..232
+                    LNAME@231..232 "x"
+                COMMA@232..233 ","
+                WHITESPACE@233..234 " "
+                PAT_FIELD@234..235
+                  NAME@234..235
+                    LNAME@234..235 "y"
+                R_CURLY@235..236 "}"
+            COMMA@236..237 ","
+            WHITESPACE@237..238 " "
+            PAT_FIELD@238..244
+              NAME@238..243
+                LNAME@238..243 "speed"
+              QUESTION@243..244 "?"
+            R_CURLY@244..245 "}"
+          BLOCK@245..264
+            NEWLINE@245..246 "\n"
+            WHITESPACE@246..248 "  "
+            EXPR_STMT@248..263
+              CALL_EXPR@248..263
+                NAME_REF@248..250
+                  LNAME@248..250 "go"
+                ARG_LIST@250..263
+                  L_PAREN@250..251 "("
+                  NAME_REF@251..252
+                    LNAME@251..252 "x"
+                  COMMA@252..253 ","
+                  WHITESPACE@253..254 " "
+                  NAME_REF@254..255
+                    LNAME@254..255 "y"
+                  COMMA@255..256 ","
+                  WHITESPACE@256..257 " "
+                  NAME_REF@257..262
+                    LNAME@257..262 "speed"
+                  R_PAREN@262..263 ")"
+            NEWLINE@263..264 "\n"
+        END_KW@264..267 "end"
+    NEWLINE@267..268 "\n"
+    LET_DECL@268..295
+      LET_KW@268..271 "let"
+      WHITESPACE@271..272 " "
+      BRACE_PAT@272..291
+        L_CURLY@272..273 "{"
+        PAT_FIELD@273..286
+          LNAME@273..277 "name"
+          QUESTION@277..278 "?"
+          COLON@278..279 ":"
+          WHITESPACE@279..280 " "
+          NAMED_TYPE@280..286
+            QUAL_NAME@280..286
+              CNAME@280..286 "String"
+        COMMA@286..287 ","
+        WHITESPACE@287..288 " "
+        PAT_FIELD@288..290
+          NAME@288..290
+            LNAME@288..290 "hp"
+        R_CURLY@290..291 "}"
+      WHITESPACE@291..292 " "
+      EQ@292..293 "="
+      WHITESPACE@293..294 " "
+      EXPR_LIST@294..295
+        NAME_REF@294..295
+          LNAME@294..295 "t"
+    NEWLINE@295..296 "\n"
+  EOF@296..296 ""

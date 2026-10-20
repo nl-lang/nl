@@ -241,7 +241,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         out.diagnostics.extend(imports.into_diagnostics());
         return out.into();
     }
-    let exports = Some(res.exports());
+    let exports = Some(nl_sema::profile::exports(&res, options.profile));
     // The `global` names of this file and of its imports, which
     // `Localize::All` leaves alone.
     let imported_globals = imports.globals();

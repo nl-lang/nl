@@ -278,14 +278,22 @@ impl Lowerer<'_> {
         }
     }
 
-    /// One keyed item: `{name}`, `{key: P}`, `{key: Type}`.
+    /// One keyed item: `{name}`, `{key: P}`, `{key: Type}`, and the
+    /// optional `{name?}`, `{key?: P}`, `{key?: Type}`: a `nil` field
+    /// matches an optional item, binding `nil` to its names; any other
+    /// value must match as usual.
     fn pattern_field(&mut self, f: &SyntaxNode, v: &Expr, mode: Mode, ctx: &str) {
+        let optional = has_token(f, QUESTION);
         if !has_token(f, COLON) {
             // `{name}`: short for `{name: name}`.
             if let Some(name) = child(f, NAME) {
                 let key = name_text(&name).unwrap_or_default();
                 let sub = Expr::index(v.clone(), Expr::str(&key));
-                self.bind_name(name.text_range(), sub, mode, f);
+                if optional {
+                    self.bind_name_plain(name.text_range(), sub, f);
+                } else {
+                    self.bind_name(name.text_range(), sub, mode, f);
+                }
             }
             return;
         }
@@ -297,7 +305,21 @@ impl Lowerer<'_> {
         };
         let sub = Expr::index(v.clone(), key);
         let sub = self.stable(sub);
-        let field = part_of(format!("field '{}'", key_label(&key_tok)), ctx);
+        if optional {
+            // The names were declared ahead (`bind_must`, `bind_may`), so
+            // they stay `nil` when the field is.
+            let body = self.sub_block(|l| l.pattern_field_value(f, &key_tok, &sub, mode, ctx));
+            self.emit(StmtKind::If { cond: Expr::binary(BinOp::Ne, sub, Expr::Nil), then: body, otherwise: None });
+            return;
+        }
+        self.pattern_field_value(f, &key_tok, &sub, mode, ctx);
+    }
+
+    /// The value part of a keyed item, against the field's stable value
+    /// `sub`.
+    fn pattern_field_value(&mut self, f: &SyntaxNode, key_tok: &nl_syntax::SyntaxToken, sub: &Expr, mode: Mode, ctx: &str) {
+        let sub = sub.clone();
+        let field = part_of(format!("field '{}'", key_label(key_tok)), ctx);
         if let Some(p) = pattern_children(f).next() {
             self.pattern(&p, sub.clone(), mode, &field);
             // `{key: Mod.Type}` also binds the key, unless the dotted name is

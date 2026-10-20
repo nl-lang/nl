@@ -80,6 +80,11 @@ pub struct ExportInfo {
     /// `Enum`, `Interface`, `TypeAlias`, `Module`);
     /// [`Resolution::declared_as`] gives it for the importing binding.
     pub decl: DeclKind,
+    /// Declared in a branch of a file-level `if` that may not run (or
+    /// that the profile decides never runs), so the value may be `nil`:
+    /// an importer binds it as a plain variable, which is never called
+    /// implicitly.
+    pub optional: bool,
 }
 
 /// How the resolver learns what an imported file exports.

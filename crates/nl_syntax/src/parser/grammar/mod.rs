@@ -325,20 +325,42 @@ impl Parser<'_> {
     /// line are what a Lua user writes there: they are unexpected like any
     /// other token, the error carries a hint, and they are dropped.
     pub(crate) fn header_end(&mut self, keyword: &str) {
-        const HINT: &str = "Hint: do not write `then` or `do` after a header; put the body on the next line";
+        self.header_end_with(keyword, false);
+    }
+
+    /// [`Self::header_end`] for the headers of `if`, `unless`, `elseif` and
+    /// `when`, which may also end with `then`: `if ready then go() end` has
+    /// its body on the line of the header, as in Ruby, for a short choice
+    /// (`let x = if c then a else b end`). The body may still start on the
+    /// next line after `then`.
+    pub(crate) fn header_then_end(&mut self, keyword: &str) {
+        self.header_end_with(keyword, true);
+    }
+
+    fn header_end_with(&mut self, keyword: &str, then_ok: bool) {
+        let hint = if then_ok {
+            "Hint: write `then` to put the body on the same line, or put the body on the next line"
+        } else {
+            "Hint: do not write `then` or `do` after a header; put the body on the next line"
+        };
+        if then_ok && self.at_word("then") && !self.nl() {
+            self.bump_as(THEN_KW);
+            while self.eat(SEMI) {}
+            return;
+        }
         let mut reported = false;
         loop {
             if self.at_word("then") && !self.nl() {
                 self.err_bump(format!(
                     "unexpected identifier `then`: the header of `{keyword}` ends at the end of \
-                     its line. {HINT}"
+                     its line. {hint}"
                 ));
                 reported = true;
                 continue;
             }
             if self.at(DO_KW) && !self.nl() && self.do_ends_line(1) {
                 self.err_bump(format!(
-                    "unexpected `do`: the header of `{keyword}` ends at the end of its line. {HINT}"
+                    "unexpected `do`: the header of `{keyword}` ends at the end of its line. {hint}"
                 ));
                 reported = true;
                 continue;
@@ -358,9 +380,10 @@ impl Parser<'_> {
         // swallow the body. The closer itself is left for the block.
         if !reported {
             let found = self.describe_cur();
+            let fix = if then_ok { "write `then` before a body on the same line" } else { "separate it with `;`" };
             self.error(format!(
                 "unexpected {found}: the header of `{keyword}` ends at the end of its line; put \
-                 the body on the next line, or separate it with `;`"
+                 the body on the next line, or {fix}"
             ));
         }
     }

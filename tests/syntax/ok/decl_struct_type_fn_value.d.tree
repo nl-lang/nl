@@ -1,4 +1,4 @@
-SOURCE_FILE@0..707
+SOURCE_FILE@0..733
   COMMENT@0..100 "# Declare struct (a Lua class) with operators, declare type with a parent, declare fn, let and const"
   NEWLINE@100..101 "\n"
   DECL_STRUCT@101..303
@@ -409,4 +409,17 @@ SOURCE_FILE@0..707
       QUAL_NAME@700..706
         CNAME@700..706 "Number"
   NEWLINE@706..707 "\n"
-  EOF@707..707 ""
+  DECL_VALUE@707..732
+    DECLARE_KW@707..714 "declare"
+    WHITESPACE@714..715 " "
+    LET_KW@715..718 "let"
+    WHITESPACE@718..719 " "
+    NAME@719..725
+      CNAME@719..725 "PLUGIN"
+    COLON@725..726 ":"
+    WHITESPACE@726..727 " "
+    NAMED_TYPE@727..732
+      QUAL_NAME@727..732
+        CNAME@727..732 "Table"
+  NEWLINE@732..733 "\n"
+  EOF@733..733 ""

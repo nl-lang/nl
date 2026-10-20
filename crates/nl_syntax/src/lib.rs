@@ -100,8 +100,8 @@
 //! - a doc comment (a `##` line and the comment lines
 //!   after it) is inside the node of the declaration it documents, before
 //!   its first token; [`doc_comment`] reads it;
-//! - `from` and `step` are `FROM_KW` and `STEP_KW` in the tree where they are
-//!   keywords; a `>>` that closed two type argument lists is two `GT` tokens;
+//! - `from`, `step` and `then` are `FROM_KW`, `STEP_KW` and `THEN_KW` in the
+//!   tree where they are keywords; a `>>` that closed two type argument lists is two `GT` tokens;
 //! - a command call is a `COMMAND_CALL`, a call with parentheses or a
 //!   trailing block a `CALL_EXPR`; a method call `x:m(…)` is one
 //!   `METHOD_CALL` holding its arguments and block;

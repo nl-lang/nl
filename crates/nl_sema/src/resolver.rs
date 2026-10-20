@@ -80,6 +80,9 @@ pub(crate) struct Resolver<'a> {
     pending_blocks: Vec<(TextRange, BindingId, String)>,
     /// The variant names of the enums of this file.
     enum_variants: HashMap<BindingId, Vec<String>>,
+    /// Each `const` declared at the top of its block (see [`Self::hoist`]),
+    /// with the range of its `CONST_DECL`.
+    hoisted_consts: HashMap<BindingId, TextRange>,
 }
 
 impl<'a> Resolver<'a> {
@@ -102,6 +105,7 @@ impl<'a> Resolver<'a> {
             import_exports: HashMap::new(),
             pending_blocks: Vec::new(),
             enum_variants: HashMap::new(),
+            hoisted_consts: HashMap::new(),
         }
     }
 
@@ -193,6 +197,15 @@ impl<'a> Resolver<'a> {
                 scope.names.insert(name.to_string(), id);
             }
             self.res.decls.insert(range, id);
+            return id;
+        }
+        // Declared ahead (a `pub` item in a branch of a file-level `if`,
+        // see `hoist_conditional_pubs`): the same binding, now also in
+        // this scope.
+        if let Some(&id) = self.res.decls.get(&range) {
+            if let Some(scope) = self.scopes.last_mut() {
+                scope.names.insert(name.to_string(), id);
+            }
             return id;
         }
         let id = BindingId(u32::try_from(self.res.bindings.len()).unwrap_or(u32::MAX));
@@ -363,6 +376,9 @@ impl<'a> Resolver<'a> {
     fn walk_block(&mut self, block: &SyntaxNode) {
         self.push_scope();
         self.hoist(block);
+        if block.parent().is_some_and(|p| p.kind() == SOURCE_FILE) {
+            self.hoist_conditional_pubs(block);
+        }
         for stmt in statements(block) {
             self.walk(&stmt);
         }
@@ -370,8 +386,93 @@ impl<'a> Resolver<'a> {
     }
 
     /// Declares the hoisted names of a block before its statements: `fn`
-    /// declarations and type-level declarations.
+    /// declarations, type-level declarations, then `const`s.
     fn hoist(&mut self, block: &SyntaxNode) {
+        self.hoist_fns_and_types(block);
+        self.hoist_consts(block);
+    }
+
+    /// A `pub` item directly in a branch of a file-level `if` or `unless`
+    /// (`if CLIENT pub fn draw … end end`) is a file-level name: declared
+    /// here in the file's scope, and given its value where the branch
+    /// runs, so the export table holds it, or `nil` when no branch that
+    /// declares it ran. The items of one name in several branches of the
+    /// same `if` (one per realm) are one binding. Which branches declare
+    /// each one is kept for the exports ([`Resolution::conditional_export`]).
+    fn hoist_conditional_pubs(&mut self, file_block: &SyntaxNode) {
+        for s in statements(file_block) {
+            let Some(construct) = file_branch_construct(&s) else { continue };
+            // The binding of each name, and the last branch that declared it.
+            let mut by_name: HashMap<String, (BindingId, usize)> = HashMap::new();
+            for (clause, b) in branch_blocks(&construct).into_iter().enumerate() {
+                for item in statements(&b).filter(|i| has_token(i, PUB_KW)) {
+                    for (name, text, kind, decl, ty, params) in pub_item_names(&item) {
+                        // Twice in one branch is two items, and the
+                        // second export of the name an error.
+                        let id = match by_name.get(&text) {
+                            Some(&(id, last)) if last != clause => {
+                                self.res.decls.insert(name, id);
+                                id
+                            }
+                            _ => self.declare(&text, name, kind, decl, false, ty, params),
+                        };
+                        by_name.insert(text, (id, clause));
+                        let entry = self.res.conditional_exports.entry(id).or_insert_with(|| (construct.clone(), Vec::new()));
+                        if !entry.1.contains(&clause) {
+                            entry.1.push(clause);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// A `const` is declared at the top of its block, like `fn`, and gets
+    /// its value where it stands: a function of the block, a method of a
+    /// module or a closure can use it wherever it stands, and one that
+    /// runs before the `const` line reads `nil`, as with a Lua local
+    /// declared ahead. `let` is not hoisted, since its value changes. A
+    /// read before the line in the block's own straight-line code (the
+    /// same function) is an error ([`Self::walk_name_ref`]). A `const`
+    /// whose name another statement of the block declares too (a
+    /// redeclaration), and a destructuring `const`, are declared in place
+    /// as before.
+    fn hoist_consts(&mut self, block: &SyntaxNode) {
+        let stmts: Vec<SyntaxNode> = statements(block).collect();
+        if !stmts.iter().any(|s| s.kind() == CONST_DECL) {
+            return;
+        }
+        let mut counts: HashMap<String, u32> = HashMap::new();
+        for s in &stmts {
+            for n in statement_names(s) {
+                *counts.entry(n).or_default() += 1;
+            }
+        }
+        for stmt in stmts.iter().filter(|s| s.kind() == CONST_DECL) {
+            let pats: Vec<SyntaxNode> = pattern_children(stmt).collect();
+            let simple: Option<Vec<(SyntaxNode, Option<SyntaxNode>)>> = pats.iter().map(simple_const_pattern).collect();
+            let Some(simple) = simple else { continue };
+            let names: Vec<String> = simple.iter().map(|(n, _)| name_text(n).unwrap_or_default()).collect();
+            if names.iter().any(|n| counts.get(n).copied().unwrap_or(0) != 1) {
+                continue;
+            }
+            let values: Vec<SyntaxNode> = child(stmt, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+            for (i, ((name, ty), text)) in simple.into_iter().zip(names).enumerate() {
+                let func = match values.get(i) {
+                    Some(v) if matches!(v.kind(), FN_EXPR | LAMBDA_EXPR) && ty.is_none() => Some(FnParams { has_function_param: has_function_param(v), anonymous: true, call_only: 0 }),
+                    _ => None,
+                };
+                let fn_typed = ty.as_ref().is_some_and(is_function_type);
+                let kind = if func.is_some() || fn_typed { BindingKind::Function } else { BindingKind::Variable };
+                let id = self.declare(&text, name.text_range(), kind, DeclKind::Const, false, ty, func);
+                // A conditional export of one name in several branches is
+                // one binding: its first `const` decides what is early.
+                self.hoisted_consts.entry(id).or_insert(stmt.text_range());
+            }
+        }
+    }
+
+    fn hoist_fns_and_types(&mut self, block: &SyntaxNode) {
         for stmt in statements(block) {
             match stmt.kind() {
                 FN_DECL if child(&stmt, QUAL_NAME).is_none() => {
@@ -419,6 +520,14 @@ impl<'a> Resolver<'a> {
             }
         }
         for (i, pat) in pattern_children(node).enumerate() {
+            // Declared ahead by `hoist_consts`: only its type is left.
+            let hoisted = simple_const_pattern(&pat).and_then(|(n, _)| self.res.decls.get(&n.text_range()).copied()).is_some_and(|id| self.hoisted_consts.contains_key(&id));
+            if hoisted {
+                if let Some(t) = type_child(&pat) {
+                    self.resolve_type(&t);
+                }
+                continue;
+            }
             let func = match values.get(i) {
                 Some(v) if matches!(v.kind(), FN_EXPR | LAMBDA_EXPR) && pat.kind() == BIND_PAT => {
                     Some(FnParams { has_function_param: has_function_param(v), anonymous: true, call_only: 0 })
@@ -947,6 +1056,19 @@ impl<'a> Resolver<'a> {
         let segs = qual_segments(&q);
         let Some(first) = segs.first() else { return };
         let name = first.text().to_string();
+        // `pub module` in a branch of a file-level `if`, declared ahead
+        // by `hoist_conditional_pubs`: a new module, not a reopening.
+        if let Some(id) = self.res.decls.get(&first.text_range()).copied().filter(|_| segs.len() == 1) {
+            self.res.modules.insert(node.text_range(), (id, false));
+            self.self_targets.push(Some(SelfTarget::Binding(id)));
+            self.modules.push(ModuleCtx { binding: id, fn_depth: self.fns.len() });
+            if let Some(b) = block(node) {
+                self.walk_block(&b);
+            }
+            self.modules.pop();
+            self.self_targets.pop();
+            return;
+        }
         let existing = self.lookup_binding(&name);
         if segs.len() == 1 {
             // An imported name is reopened only when it is a module, or the
@@ -1034,6 +1156,10 @@ impl<'a> Resolver<'a> {
         for name in names {
             let text = name_text(&name).unwrap_or_default();
             let (kind, params, decl) = match find(&text) {
+                // An export that may be `nil` is a plain value here, which
+                // is never called implicitly: `draw` alone does not call
+                // it, `draw?.()` and `if draw` work.
+                Some(e) if e.optional && e.kind == BindingKind::Function => (BindingKind::Variable, e.params, Some(e.decl)),
                 Some(e) => (e.kind, e.params, Some(e.decl)),
                 None => {
                     if exports.is_some() {
@@ -1369,6 +1495,9 @@ impl<'a> Resolver<'a> {
         let range = node.text_range();
         match self.lookup_value(&name) {
             Some(r) => {
+                if let Ref::Binding(id) = r {
+                    self.check_const_order(id, &name, range);
+                }
                 self.res.refs.insert(range, r);
             }
             None => {
@@ -1379,6 +1508,23 @@ impl<'a> Resolver<'a> {
                 };
                 self.error(range, "undeclared-name", msg);
             }
+        }
+    }
+
+    /// A read of a hoisted `const` before its line: an error in the
+    /// const's own function, where it runs before the value is assigned;
+    /// from another function (which may run later) it is allowed, and the
+    /// lowering then declares the local ahead ([`Resolution::forward_consts`]).
+    fn check_const_order(&mut self, id: BindingId, name: &str, range: TextRange) {
+        let Some(decl) = self.hoisted_consts.get(&id).copied() else { return };
+        if range.start() >= decl.end() {
+            return;
+        }
+        let own = self.binding(id).is_some_and(|b| b.function == self.current_fn());
+        if own {
+            self.error(range, "const-before-definition", format!("`{name}` is read before its `const` declaration, which gives it its value; move the `const` above this line (a function may use it, since it runs later)"));
+        } else {
+            self.res.forward_consts.insert(id);
         }
     }
 
@@ -1558,7 +1704,19 @@ impl<'a> Resolver<'a> {
     pub(crate) fn collect_exports(&mut self, root: &SyntaxNode) {
         let Some(file_block) = block(root) else { return };
         let mut seen: HashSet<String> = HashSet::new();
+        // The file's own items, and those in the branches of its `if`s.
+        let mut items = Vec::new();
         for s in statements(&file_block) {
+            match file_branch_construct(&s) {
+                Some(c) => {
+                    for b in branch_blocks(&c) {
+                        items.extend(statements(&b));
+                    }
+                }
+                None => items.push(s),
+            }
+        }
+        for s in items {
             if !has_token(&s, PUB_KW) {
                 continue;
             }
@@ -1614,11 +1772,16 @@ impl<'a> Resolver<'a> {
             }
             for (id, range, decl) in found {
                 let Some(b) = self.binding(id).cloned() else { continue };
+                // One name in several branches of one `if` is one export.
+                if self.res.exports.iter().any(|(e, _)| *e == id) {
+                    continue;
+                }
                 if !seen.insert(b.name.clone()) {
                     self.error(range, "duplicate-export", format!("`{}` is exported twice; a file exports one item per name", b.name));
                     continue;
                 }
-                self.res.exports.push((id, ExportInfo { name: b.name, kind: b.kind, params: b.params, decl }));
+                let optional = self.res.conditional_export(id).is_some_and(|(c, clauses)| !crate::profile::defined_on_every_path(c, clauses, &self.res, crate::profile::Profile::Full));
+                self.res.exports.push((id, ExportInfo { name: b.name, kind: b.kind, params: b.params, decl, optional }));
             }
         }
     }
@@ -1789,4 +1952,99 @@ pub fn decode_plain_string(tok: &SyntaxToken) -> String {
 #[allow(dead_code)]
 fn is_prelude_struct(p: &Prelude) -> bool {
     matches!(p.class, crate::prelude::PreludeClass::Struct)
+}
+
+/// A `const` pattern that `Resolver::hoist_consts` declares ahead: a
+/// name, or a name with a type. The name node and the type node.
+fn simple_const_pattern(pat: &SyntaxNode) -> Option<(SyntaxNode, Option<SyntaxNode>)> {
+    match pat.kind() {
+        BIND_PAT => Some((child(pat, NAME)?, None)),
+        TYPED_PAT => {
+            let inner = pattern_children(pat).next().filter(|p| p.kind() == BIND_PAT)?;
+            Some((child(&inner, NAME)?, type_child(pat)))
+        }
+        _ => None,
+    }
+}
+
+/// The names a statement declares in its block's scope (an
+/// approximation for `Resolver::hoist_consts`: every name in the patterns
+/// of `let` and `const`, and the name of a declaration).
+fn statement_names(s: &SyntaxNode) -> Vec<String> {
+    match s.kind() {
+        LET_DECL | CONST_DECL => pattern_children(s).flat_map(|p| p.descendants().filter(|n| n.kind() == NAME).collect::<Vec<_>>()).filter_map(|n| name_text(&n)).collect(),
+        FN_DECL if child(s, QUAL_NAME).is_some() => Vec::new(),
+        FN_DECL | STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | TYPE_DECL | GLOBAL_DECL => child(s, NAME).and_then(|n| name_text(&n)).into_iter().collect(),
+        MODULE_DECL => child(s, QUAL_NAME).and_then(|q| qual_segments(&q).first().map(|t| t.text().to_string())).into_iter().collect(),
+        IMPORT_DECL => s.descendants().filter(|n| n.kind() == NAME).filter_map(|n| name_text(&n)).collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// The `if` or `unless` of a file-level statement `if … end` (no
+/// modifier), whose branches may hold `pub` items.
+pub(crate) fn file_branch_construct(s: &SyntaxNode) -> Option<SyntaxNode> {
+    if s.kind() != EXPR_STMT || modifier(s).is_some() {
+        return None;
+    }
+    expr_child(s).filter(|e| matches!(e.kind(), IF_EXPR | UNLESS_EXPR))
+}
+
+/// The branch blocks of an `if` or `unless` in order: its own, then each
+/// `elseif` and the `else`.
+pub(crate) fn branch_blocks(construct: &SyntaxNode) -> Vec<SyntaxNode> {
+    let mut out: Vec<SyntaxNode> = block(construct).into_iter().collect();
+    for c in construct.children().filter(|c| matches!(c.kind(), ELSEIF_CLAUSE | ELSE_CLAUSE)) {
+        out.extend(block(&c));
+    }
+    out
+}
+
+/// The names a `pub` item declares, as `hoist` would declare them: the
+/// declaring range, the name, the binding and declaration kinds, the
+/// annotation and what is known of a function's parameters.
+#[allow(clippy::type_complexity)]
+fn pub_item_names(item: &SyntaxNode) -> Vec<(TextRange, String, BindingKind, DeclKind, Option<SyntaxNode>, Option<FnParams>)> {
+    let mut out = Vec::new();
+    match item.kind() {
+        FN_DECL if child(item, QUAL_NAME).is_none() => {
+            if let Some(n) = child(item, NAME) {
+                let params = Some(FnParams { has_function_param: has_function_param(item), anonymous: false, call_only: 0 });
+                out.push((n.text_range(), name_text(&n).unwrap_or_default(), BindingKind::Function, DeclKind::Fn, None, params));
+            }
+        }
+        CONST_DECL => {
+            let values: Vec<SyntaxNode> = child(item, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+            for (i, p) in pattern_children(item).enumerate() {
+                let Some((n, ty)) = simple_const_pattern(&p) else { continue };
+                let func = match values.get(i) {
+                    Some(v) if matches!(v.kind(), FN_EXPR | LAMBDA_EXPR) && ty.is_none() => Some(FnParams { has_function_param: has_function_param(v), anonymous: true, call_only: 0 }),
+                    _ => None,
+                };
+                let kind = if func.is_some() || ty.as_ref().is_some_and(is_function_type) { BindingKind::Function } else { BindingKind::Variable };
+                out.push((n.text_range(), name_text(&n).unwrap_or_default(), kind, DeclKind::Const, ty, func));
+            }
+        }
+        STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | TYPE_DECL => {
+            let decl = match item.kind() {
+                STRUCT_DECL => DeclKind::Struct,
+                ENUM_DECL => DeclKind::Enum,
+                INTERFACE_DECL => DeclKind::Interface,
+                _ => DeclKind::TypeAlias,
+            };
+            if let Some(n) = child(item, NAME) {
+                out.push((n.text_range(), name_text(&n).unwrap_or_default(), BindingKind::TypeLevel, decl, None, None));
+            }
+        }
+        MODULE_DECL => {
+            if let Some(q) = child(item, QUAL_NAME) {
+                let segs = qual_segments(&q);
+                if let (1, Some(first)) = (segs.len(), segs.first()) {
+                    out.push((first.text_range(), first.text().to_string(), BindingKind::TypeLevel, DeclKind::Module, None, None));
+                }
+            }
+        }
+        _ => {}
+    }
+    out
 }

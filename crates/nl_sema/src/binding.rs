@@ -185,6 +185,14 @@ pub struct Resolution {
     /// Bindings that a function other than their own assigns: a call can
     /// change them between two reads (evaluation order).
     pub(crate) assigned_in_closure: HashSet<BindingId>,
+    /// The `pub` items in branches of file-level `if`s: the `if` or
+    /// `unless` node, and the indexes of its branches (in the order of
+    /// `branch_blocks`) that declare the item.
+    pub(crate) conditional_exports: HashMap<BindingId, (SyntaxNode, Vec<usize>)>,
+    /// Hoisted `const`s that a function read above their line: the
+    /// lowering declares their locals at the top of the block, so that
+    /// the function captures them.
+    pub(crate) forward_consts: HashSet<BindingId>,
     /// The file's `pub` items in source order, each with the binding that
     /// holds its value. The one place where the name and kind
     /// of an export are decided: the driver hands [`Resolution::exports`]
@@ -298,6 +306,23 @@ impl Resolution {
     /// tested with `is`, and after a key it binds the key.
     pub fn is_enum_variant(&self, range: TextRange) -> bool {
         self.variants.contains(&range)
+    }
+
+    /// For a `pub` item in a branch of a file-level `if`: the `if` (or
+    /// `unless`) and the branches that declare it.
+    pub fn conditional_export(&self, id: BindingId) -> Option<(&SyntaxNode, &[usize])> {
+        self.conditional_exports.get(&id).map(|(n, c)| (n, c.as_slice()))
+    }
+
+    /// The bindings of the `pub` items in branches of file-level `if`s.
+    pub fn conditional_export_bindings(&self) -> impl Iterator<Item = BindingId> + '_ {
+        self.conditional_exports.keys().copied()
+    }
+
+    /// True when the binding is a `const` that a function above its line
+    /// reads (see [`Resolution::forward_consts`]).
+    pub fn forward_const(&self, id: BindingId) -> bool {
+        self.forward_consts.contains(&id)
     }
 
     /// True when a function other than the binding's own assigns it.
