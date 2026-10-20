@@ -565,6 +565,14 @@ impl<'a> Analyzer<'a> {
             let id = self.types.add(name, NamedKind::Module { members: HashMap::new() });
             self.prelude_named.insert(name, id);
         }
+        // Library tables whose values are instances over tables, checked
+        // by their metatable (runtime/nl_86_time.lua): Lua classes, so that
+        // `Time.at(…)` is a function of the library and `t.year` a method
+        // of the instance, both from decl/nl.d.nl.
+        for name in ["Time", "Duration"] {
+            let id = self.types.add(name, NamedKind::LuaClass { fields: Vec::new(), members: HashMap::new() });
+            self.prelude_named.insert(name, id);
+        }
     }
 
     /// The nominal types of the declaration files, then their members.
@@ -1116,7 +1124,7 @@ impl<'a> Analyzer<'a> {
     pub(crate) fn prelude_value(&self, p: &Prelude) -> Ty {
         match p.class {
             prelude::PreludeClass::Value | prelude::PreludeClass::ValueAndType => match self.prelude_type_id(p.name) {
-                Some(id) if matches!(self.types.kind(id), Some(NamedKind::Module { .. })) => Ty::certain(Type::Static(id)),
+                Some(id) if matches!(self.types.kind(id), Some(NamedKind::Module { .. } | NamedKind::LuaClass { .. })) => Ty::certain(Type::Static(id)),
                 _ => {
                     // A prelude function: its declaration gives the type.
                     match self.decl_fn_type(p.name) {

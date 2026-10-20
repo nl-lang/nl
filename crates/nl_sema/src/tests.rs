@@ -135,7 +135,7 @@ fn prelude_declarations_are_clean() {
     assert!(errs.is_empty(), "{}", errs.join("\n"));
     let (decls, diags) = Declarations::load(&crate::decl::prelude_files());
     assert!(diags.is_empty(), "{diags:?}");
-    for name in ["Number", "String", "Table", "IO", "OS", "Event", "Worker", "Task", "Regex", "print", "raise", "File"] {
+    for name in ["Number", "String", "Table", "IO", "OS", "Event", "Worker", "Task", "Regex", "Time", "Duration", "print", "raise", "File"] {
         assert!(decls.lookup(name).is_some(), "{name} is not declared");
     }
 }
@@ -285,6 +285,26 @@ fn declared_operators_type_results() {
     let index = nl_syntax::LineIndex::new(src);
     let codes: Vec<(u32, &str)> = a.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
     assert_eq!(codes, vec![(1, "type-mismatch"), (2, "type-mismatch"), (3, "type-mismatch")]);
+}
+
+/// `Time` and `Duration` are prelude library types (decl/nl.d.nl): their
+/// functions, instance methods, keyed arguments and operators are typed
+/// from the declarations, and a method of a known Time is a declared
+/// method call.
+#[test]
+fn time_and_duration_are_declared_types() {
+    let src = "let t = Time.at(0)\nlet d = 5.minutes\nlet a: String = t + d\nlet b: Duration = d * 2\nlet c: Number = t.year(utc: true)\nlet e: String = t.since(t)\nlet f = t.hour(utc: 1)\nlet g = t.min(zone: true)\nlet h: Time = Time.now\nlet i: any = t - t\nprint a, b, c, e, f, g, h, i\n";
+    let errs: Vec<(u32, &str)> = analyzer_diagnostics(src).into_iter().filter(|d| d.3).map(|d| (d.0, d.1)).collect();
+    assert_eq!(errs, vec![(3, "type-mismatch"), (6, "type-mismatch"), (7, "type-mismatch"), (8, "unknown-keyed-arg")]);
+    let decls = prelude_declarations();
+    let parse = nl_syntax::parse("let t = Time.at(0)\nprint t.epoch\n");
+    let root = parse.syntax();
+    let res = resolve_with(&root, &AnyImports, &decls);
+    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+    let a = analyze(&root, &res, &opts);
+    let kinds: Vec<String> = a.hints.members_declared.values().map(|h| format!("{h:?}")).collect();
+    assert!(kinds.iter().any(|k| k.starts_with("Function") && k.contains("\"at\"")), "{kinds:?}");
+    assert!(kinds.iter().any(|k| k.starts_with("Method") && k.contains("\"epoch\"")), "{kinds:?}");
 }
 
 fn resolution(src: &str) -> (nl_syntax::SyntaxNode, Resolution) {

@@ -84,6 +84,8 @@ prelude! {
     // Library tables that are also types.
     "Task" => Runtime("Task"), ValueAndType;
     "Regex" => Runtime("Regex"), ValueAndType;
+    "Time" => Runtime("Time"), ValueAndType;
+    "Duration" => Runtime("Duration"), ValueAndType;
     // The NL prelude functions.
     "typeof" => Runtime("typeof"), Value;
     "raise" => Runtime("raise"), Value;

@@ -82,6 +82,10 @@
 --       Unicode case mappings for the String stand-in, in the encoding
 --       nl_80_string.lua reads; without them (and without host.text) case
 --       mapping is ASCII-only.
+--   host.now() -> seconds                       (optional)
+--       The wall clock, in seconds since the Unix epoch, possibly
+--       fractional, for `Time.now` (nl_86_time.lua). Without it,
+--       `os.time()`, in whole seconds.
 --   host.vm                                     (optional; the fork)
 --       The VM's method mark: `markmethod(f)` sets it
 --       on a function, `ismethod(f)` reads it. The runtime marks every
@@ -193,6 +197,7 @@
 --   nl_70_module.lua   imports, `load_nl`, `include`, `add_path`, the package searcher
 --   nl_80_string.lua   NL's `String` library (host.text on the fork, a Lua stand-in otherwise)
 --   nl_82_regex.lua    NL's `Regex` (host.regex on the fork; `Regex.new` raises otherwise)
+--   nl_86_time.lua     NL's `Time` and `Duration`
 --   nl_90_prelude.lua  prelude globals, file-handle methods, primitive metatables
 --   nl_99_return.lua   returns `rt`
 

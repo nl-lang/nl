@@ -863,6 +863,26 @@ print 100.divisible_by(10) # true
 
 print "hello".upcase # HELLO
 
+# time
+# a Duration is a length of time, a Time a point in time (seconds since 1970).
+# both are values: they cannot be changed, and their operators make new ones
+
+let d = 90.minutes # also .seconds, .hours, .days, .weeks, .ms, and Duration.minutes(90)
+d.to_s # "1h 30m", which is also what "#{d}" gives
+d.total_minutes # 90
+d.humanize # "about 2 hours"
+let {hours, minutes} = d.parts # 1, 30
+
+let now = Time.now
+let later = now + d # a Time; `later - now` is d again
+later > now # true
+now.hour # read in local time
+now.iso(utc: true) # "2026-10-20T14:03:00Z": what reads the calendar takes `utc: true`
+now.strftime "%H:%M"
+Time.at(0).humanize # "almost 57 years ago", from now
+Time.parse "2026-10-20T14:03:00+02:00"
+Time.new 2026, 10, 20, utc: true
+
 # exceptions
 
 fn foo

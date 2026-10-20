@@ -1,0 +1,11 @@
+a time at 5	a duration of 3d	Number
+02:00:00
+parameter 'budget' of deadline expects Duration, got String
+false	false	false
+Time values cannot be changed
+Duration values cannot be changed
+0	60
+1	1970-01-01T00:01:00Z
+2	true
+1m after 1970-01-01T00:00:00Z	1m
+1	2

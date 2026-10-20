@@ -367,12 +367,12 @@ do
   local host_types = {}
 
   -- The state-wide names that are not host types: Exception
-  -- and its built-in descendants, Range, Task and Regex. Their values are
-  -- set by the files that define them.
+  -- and its built-in descendants, Range, Task, Regex, Time and Duration.
+  -- Their values are set by the files that define them.
   local builtin_names = {
     Exception = true, LuaError = true, TypeError = true, MatchError = true, ConversionError = true,
     RegexError = true, EncodingError = true, SendError = true, WorkerError = true,
-    Range = true, Task = true, Regex = true,
+    Range = true, Task = true, Regex = true, Time = true, Duration = true,
   }
   local function builtin_type(name)
     if name == "Range" then return I.Range end

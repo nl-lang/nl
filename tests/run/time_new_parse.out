@@ -1,0 +1,21 @@
+2026-10-20T14:03:00Z	1792504980
+2026-01-01T00:00:00Z	2026-03-01
+2027-01-01	2026-02-28
+2026-10-21T01:00:00.500Z
+true	true
+true	true
+2026-10-20T14:03:00Z
+2026-10-20T00:00:00Z	true
+2026-10-20T14:03:00.250Z	1792504980.5
+60
+true	true
+cannot parse "2026-10-2" as a Time: expected YYYY-MM-DD
+cannot parse "2026-13-01" as a Time: the month is out of range
+cannot parse "2026-02-29" as a Time: the day is out of range
+cannot parse "2026-10-20T24:00Z" as a Time: the time of day is out of range
+cannot parse "2026-10-20T14:60Z" as a Time: the time of day is out of range
+cannot parse "2026-10-20T14" as a Time: expected HH:MM after the date
+cannot parse "2026-10-20T14:03:00+25:00" as a Time: the zone offset is out of range
+cannot parse "2026-10-20 junk" as a Time: expected HH:MM after the date
+cannot parse " 2026-10-20" as a Time: expected YYYY-MM-DD
+Time.new argument 2 (month) expects an integer, got 1.5

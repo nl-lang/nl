@@ -1,0 +1,17 @@
+2026-10-20T15:33:00Z	2026-10-19T14:03:00Z
+Duration	1h 30m	-1h 30m
+1h 30m	1h 30m	-1h 30m
+true	false	true	false	true	true
+2026-10-20T14:00:00Z	2026-10-20T14:00:00Z
+2026-10-20T00:00:00Z	2026-10-20T00:00:00Z
+true
+14:03:00
+15:03:00
+17:03:00
+same instant
+cannot apply '+' to Time and Number
+cannot apply '+' to Time and Time
+cannot apply '+' to Duration and Time
+cannot apply '-' to Time and Number
+cannot apply '<' to Time and Number
+Time.floor_to argument 1 expects a positive Duration, got 0s

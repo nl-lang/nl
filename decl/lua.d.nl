@@ -41,6 +41,14 @@ declare module Number = :math
   fn randomseed(x: Number)
   ## `n.chr`: the string for a code point; stored in `math`.
   fn chr(n: Number): String
+  ## `5.minutes`: a Duration of that many units (runtime/nl_86_time.lua);
+  ## stored in `math`.
+  fn seconds(n: Number): Duration
+  fn minutes(n: Number): Duration
+  fn hours(n: Number): Duration
+  fn days(n: Number): Duration
+  fn weeks(n: Number): Duration
+  fn ms(n: Number): Duration
 end
 
 declare module Table = :table

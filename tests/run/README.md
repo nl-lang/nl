@@ -13,7 +13,7 @@ Small NL programs, one feature each, with the exact output they must print. They
 
 A `.nl` file is an entry program exactly when a `.out` file of the same name sits beside it.
 
-Area prefixes name the part of the language: `lex_` (lexical structure), `var_` (declarations and scope), `type_` (types and runtime checks), `expr_` (expressions), `fn_` and `call_` (functions and calls), `ctrl_` and `pattern_` (control flow and patterns), `err_` (exceptions), `struct_`, `iface_`, `conv_`, `enum_`, `op_`, `prim_` (structs, interfaces, conversions, enums, operators, primitive methods), `module_`, `import_` (modules and files), `event_` (events), `lua_` (Lua interop and Lua's libraries), `task_` (tasks), `regex_` (regular expressions), `string_` (the string library), `worker_` (`spawn` and workers).
+Area prefixes name the part of the language: `lex_` (lexical structure), `var_` (declarations and scope), `type_` (types and runtime checks), `expr_` (expressions), `fn_` and `call_` (functions and calls), `ctrl_` and `pattern_` (control flow and patterns), `err_` (exceptions), `struct_`, `iface_`, `conv_`, `enum_`, `op_`, `prim_` (structs, interfaces, conversions, enums, operators, primitive methods), `module_`, `import_` (modules and files), `event_` (events), `lua_` (Lua interop and Lua's libraries), `task_` (tasks), `regex_` (regular expressions), `string_` (the string library), `time_` (`Time` and `Duration`), `worker_` (`spawn` and workers).
 
 ## Running a program
 
@@ -58,4 +58,5 @@ A runner checks that compiling the file fails and that a diagnostic points at th
 - An error that a feature raises is caught with `try`/`catch` and printed by type name (`typeof(err)` or a typed `catch`), not by message, unless the message is what the program checks.
 - Values that must fail a runtime check come from a variable declared `any`, so that the analyzer cannot reject the program at compile time.
 - Code that needs the regex library goes in `regex_` files, and code that needs workers in `worker_` files. Avoid `Task.sleep` outside worker files: in the main state it needs a host timer.
+- A `time_` program builds its times with `Time.at` and reads them with `utc: true`: what it prints must not depend on the wall clock or the machine's time zone. Local time and `Time.now` are checked through relations that hold everywhere (`t.hour == (t + t.utc_offset).hour(utc: true)`).
 - A worker program keeps its top level free of side effects that a worker would repeat when it loads the file: put the program in a function and call it with `main() unless Worker.parent`, or call only functions imported from a helper file, which is then the only file a worker loads.
