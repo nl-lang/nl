@@ -22,13 +22,13 @@
 # A suite entry must occur (so that the list stays exact); a corpus entry is
 # checked when its file differs.
 suite	fake	lib/contents.lua --- base	added: event include typeof raise add_path load_nl __fake_rt	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude; __fake_rt is the fake runtime's test hook.
-suite	real	lib/contents.lua --- base	added: event include typeof raise add_path load_nl String keyed worker	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude (typeof, raise, add_path, load_nl, String, keyed, and worker, the worker library).
+suite	real	lib/contents.lua --- base	added: event include typeof raise add_path load_nl String Table keyed worker	luaL_openlibs opens NL, which adds globals: event, include, and the runtime's prelude (typeof, raise, add_path, load_nl, String, Table, keyed, and worker, the worker library).
 suite	any	lib/contents.lua --- package.loaders	added: 5	the runtime adds a package searcher for .nl files, after Lua's four.
 suite	fake	lib/contents.lua --- package.loaded	added: event	the event library registers itself in package.loaded, as the stock libraries do.
 suite	real	lib/contents.lua --- package.loaded	added: event worker	the event and worker libraries register themselves in package.loaded, as the stock libraries do.
-suite	real	lib/contents.lua --- math	added: chr	math.chr (for n.chr) is one of the additions the compatibility contract names.
+suite	real	lib/contents.lua --- math	added: angle_difference approach approach_angle between chr clamp days divisible_by down_to even hours hypot is_finite is_integer is_nan lerp minutes ms normalize_angle odd remap round seconds sign times to_hex to_s truncate up_to weeks	the Number library (runtime/nl_81_number.lua) lives in math, as the compatibility contract allows: math.chr (for n.chr) and the rest of the functions behind n.round, n.clamp, n.minutes and the others.
 corpus	fake	test/lib/contents.lua	first-error-added: event include typeof raise add_path load_nl __fake_rt	as the suite entry lib/contents.lua --- base: run without the runner, the file stops at that first failure.
-corpus	real	test/lib/contents.lua	first-error-added: event include typeof raise add_path load_nl String keyed worker	as the suite entry lib/contents.lua --- base: run without the runner, the file stops at that first failure.
+corpus	real	test/lib/contents.lua	first-error-added: event include typeof raise add_path load_nl String Table keyed worker	as the suite entry lib/contents.lua --- base: run without the runner, the file stops at that first failure.
 corpus	any	test/test.lua	suite	the whole upstream suite as one bytecode file: the suite entries apply.
 corpus	fake	test/lib/ffi/ffi_convert.lua	extra-lines: ^%s+no NL file for '	requires a C test library that is not built; the "module not found" message lists the .nl searcher's attempt too.
 corpus	real	test/lib/ffi/ffi_convert.lua	extra-lines: ^%s+no NL file '	requires a C test library that is not built; the "module not found" message lists the .nl searcher's attempt too.
