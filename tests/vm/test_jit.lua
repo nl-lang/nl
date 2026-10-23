@@ -162,6 +162,39 @@ if loadstring("return 1 & 1") then
   end)
 end
 
+-- Safe navigation ----------------------------------------------------------
+
+-- A safe-navigation call as the last expression of an assignment statement
+-- with as many expressions as variables: the parser turned a plain call into
+-- its base register before the store (so that the store freed it, and the
+-- earlier variables' stores found theirs below it), but not a navigation
+-- call, so the earlier variables got the call's value too (a local
+-- statement went through assign_adjust and was right).
+if loadstring("local t return t?.f") then
+  test("a navigation call last in an assignment leaves the other values alone", function()
+    local f = loadstring([[
+      local t = { f = function(x) return x * 2, "second" end }
+      local n, u, v, w
+      u, v = 0, t?.f(6)
+      local r1, r2 = u, v
+      u, v = 0, n?.f(6)
+      local r3, r4 = u, v
+      u, v, w = 0, t?.f(6)
+      local r5, r6, r7 = u, v, w
+      local g = {}
+      g.a, g.b = 0, t?.f(6)
+      u = t?.f(6)
+      return r1, r2, r3, r4, r5, r6, r7, g.a, g.b, u
+    ]])
+    local r1, r2, r3, r4, r5, r6, r7, ga, gb, u = f()
+    eq(r1, 0, "first variable"); eq(r2, 12, "the call's value")
+    eq(r3, 0, "first variable, nil base"); eq(r4, nil, "nil for a nil base")
+    eq(r5, 0, "three variables"); eq(r6, 12, "second of three"); eq(r7, "second", "third of three")
+    eq(ga, 0, "field"); eq(gb, 12, "field from the call")
+    eq(u, 12, "one variable")
+  end)
+end
+
 print(string.format("# test_jit.lua (%s): %d passed, %d failed, %d skipped",
   jit and (jit.status() and "JIT on" or "JIT off") or "?", passed, failed, skipped))
 os.exit(failed == 0 and 0 or 1)
