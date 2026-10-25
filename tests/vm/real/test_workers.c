@@ -423,6 +423,52 @@ static void test_nl_spawn(void)
   lua_close(L);
 }
 
+/* The metatables of the boxes that hold messages, ports and worker handles
+** are in the registry, where a script finds them: one put on a userdata
+** that is no box makes its __gc do nothing (rather than free what the
+** userdata holds), at a call and at a collection.
+*/
+static void test_forged_boxes(void)
+{
+  lua_State *L = newstate(1);
+  int top;
+  nl_import(L, "jobs");
+  lua_getfield(L, -1, "square");
+  lua_pushnumber(L, 3);
+  nl_spawn(L, 1);
+  CHECK(nl_drain(L) > 0);
+  CHECK(nl_taskstate(L, -1) == NL_TASK_DONE);
+  CHECK(lua_tonumber(L, -1) == 9);
+  lua_settop(L, 0);
+  top = lua_gettop(L);
+  CHECK(luaL_dostring(L,
+    "local reg, n = debug.getregistry(), 0\n"
+    "for _, name in ipairs({ 'nl.worker.msg', 'nl.worker.port', 'nl.worker.handle' }) do\n"
+    "  local mt = reg[name]\n"
+    "  if type(mt) == 'table' then\n"
+    "    n = n + 1\n"
+    "    for _, ud in ipairs({ newproxy(false), io.stdout }) do\n"
+    "      if ud ~= io.stdout then debug.setmetatable(ud, mt) end\n"
+    "      mt.__gc(ud)\n"
+    "    end\n"
+    "    for _ = 1, 8 do debug.setmetatable(newproxy(false), mt) end\n"
+    "  end\n"
+    "end\n"
+    "collectgarbage() collectgarbage()\n"
+    "return n") == 0 || (fprintf(stderr, "  %s\n", lua_tostring(L, -1)), 0));
+  CHECK(lua_tonumber(L, -1) >= 1);
+  lua_settop(L, top);
+  /* The workers still work. */
+  nl_import(L, "jobs");
+  lua_getfield(L, -1, "square");
+  lua_pushnumber(L, 4);
+  nl_spawn(L, 1);
+  CHECK(nl_drain(L) > 0);
+  CHECK(nl_taskstate(L, -1) == NL_TASK_DONE);
+  CHECK(lua_tonumber(L, -1) == 16);
+  lua_close(L);
+}
+
 /* -- The worker-init function --------------------------------------------------- */
 
 static void test_init_fails(void)
@@ -1466,6 +1512,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_pool_four);
   RUN_TEST(test_count);
   RUN_TEST(test_nl_spawn);
+  RUN_TEST(test_forged_boxes);
   RUN_TEST(test_init_fails);
   RUN_TEST(test_spawn_while_loading);
   RUN_TEST(test_dedicated_zero);

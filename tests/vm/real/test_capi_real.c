@@ -897,6 +897,33 @@ static void test_imports(void)
   lua_close(L);
 }
 
+/* The intrinsic table of KINTR is out of scripts' reach: no table in the
+** registry holds the String library at an index (a script could resize or
+** free it), and NL code finds it after full collections.
+*/
+static void test_intrinsics_out_of_reach(void)
+{
+  lua_State *L = newstate();
+  CHECK_LUA(L,
+    "(function()\n"
+    "  for _, v in pairs(debug.getregistry()) do\n"
+    "    if type(v) == 'table' then\n"
+    "      for i, x in pairs(v) do\n"
+    "        if x == String and type(i) == 'number' then return false end\n"
+    "      end\n"
+    "    end\n"
+    "  end\n"
+    "  return true\n"
+    "end)()");
+  dolua(L, "collectgarbage() collectgarbage()");
+  CHECK(donl(L, "pub fn up(s: String): String\n  s.upcase()\nend\n", "=intr") == 0);
+  dolua(L, "collectgarbage() collectgarbage()");
+  lua_pushliteral(L, "abc");
+  CHECK(callf(L, -2, "up", 1, 1) == 0);
+  CHECK_STR(lua_tostring(L, -1), "ABC");
+  lua_close(L);
+}
+
 /* nl_adddecl: a declared name resolves in files compiled
 ** after the call; without a host loader, every .d.nl on the search path is
 ** read as well; a name that cannot be read fails the compile.
@@ -1141,6 +1168,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_events_from_nl);
   RUN_TEST(test_handler_awaits);
   RUN_TEST(test_imports);
+  RUN_TEST(test_intrinsics_out_of_reach);
   RUN_TEST(test_adddecl);
   RUN_TEST(test_compile_errors);
   RUN_TEST(test_checks_option);
