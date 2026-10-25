@@ -143,9 +143,8 @@ do
     return compile_lua(source, "@" .. name)
   end
 
-  local include = global("include")
-  if include ~= nil then
-    host.include = function(path) return include(path) end
+  if global("include") ~= nil then
+    host.include = function(path) return global("include")(path) end
   end
 
   -- The event library over `hook` (see EVENTS above).
