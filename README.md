@@ -77,7 +77,7 @@ print describe(ayla)                 # a player with a long name
   another thread, in a separate VM state. Values are copied across, and
   nothing is shared, so scripts need no locks.
 - **Performance on par with Lua.** NL compiles straight to LuaJIT bytecode,
-  with five extra opcodes. Generated code is benchmarked against equivalent
+  with seven extra opcodes. Generated code is benchmarked against equivalent
   hand-written Lua under both the interpreter and the JIT (see [bench/](bench)).
 - **Embeddable from C and Rust.** The C API extends LuaJIT's. The `nl` crate
   extends [mlua](https://github.com/mlua-rs/mlua). An optional sandbox profile
@@ -131,7 +131,7 @@ report() unless Worker.parent
   bytecode and diagnostics. It never calls into Lua. The same compiler ships as
   the `nlc` command-line tool.
 - **VM**: a [fork of LuaJIT 2.1](https://github.com/nl-lang/LuaJIT). It adds
-  five opcodes, the metamethod events Lua 5.1 lacks, and a C event library. It
+  seven opcodes, the metamethod events Lua 5.1 lacks, and a C event library. It
   also adds the loader, the transfer encoder, and the threads behind workers.
   All of these are additive: no stock opcode, value representation or C API
   function changes meaning.
@@ -235,7 +235,7 @@ nlc bundle --profile=gmod-client -o autorun/client/myaddon.lua \
 
 ### Building the VM
 
-The full language, including the five extra opcodes, workers and the sandbox,
+The full language, including the seven extra opcodes, workers and the sandbox,
 needs the fork. Build the compiler library, then the VM against it:
 
 ```sh

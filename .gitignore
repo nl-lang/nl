@@ -1,16 +1,1 @@
 target/
-
-# Design and tracking documents, kept locally
-/API.md
-/CONCURRENCY.md
-/DESIGN.md
-/EMBEDDING.md
-/GMOD.md
-/GRAMMAR.md
-/IMPLEMENTATION_PLAN.md
-/M10_M11_TRACKING.md
-/M10_STATUS.md
-/M11_STATUS.md
-/M8_M9_STATUS.md
-/REVIEW.md
-/bench/TODO.md
