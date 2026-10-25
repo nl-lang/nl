@@ -291,7 +291,7 @@ fn cmd_minify(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let text = match nl_capi::minify::minify(&String::from_utf8_lossy(&bytes), options) {
+    let text = match nl_capi::minify::minify_bytes(&bytes, options) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("{file}: error: {e}");
@@ -307,7 +307,7 @@ fn cmd_minify(args: &[String]) -> ExitCode {
             }
         },
         None => {
-            let _ = std::io::stdout().write_all(text.as_bytes());
+            let _ = std::io::stdout().write_all(&text);
             ExitCode::SUCCESS
         }
     }

@@ -236,8 +236,8 @@ pub fn cmd_build(args: &[String], usage: &str) -> ExitCode {
     let chunk = if checked.is_empty() { out.chunk } else { None };
     // `--minify`: as `nlc bundle` carries the file (nl_capi::minify).
     let chunk = match chunk {
-        Some(c) if a.minify => match nl_capi::minify::minify(&String::from_utf8_lossy(&c), nl_capi::minify::MinifyOptions::COMPILED) {
-            Ok(m) => Some(m.into_bytes()),
+        Some(c) if a.minify => match nl_capi::minify::minify_bytes(&c, nl_capi::minify::MinifyOptions::COMPILED) {
+            Ok(m) => Some(m),
             Err(e) => {
                 eprintln!("{canonical}: error: internal error: the Lua of this file does not minify: {e}");
                 None

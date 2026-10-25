@@ -88,7 +88,9 @@ pub struct NlbText {
 
 impl NlbText {
     fn ok(text: String) -> *mut NlbText {
-        let mut bytes = text.into_bytes();
+        NlbText::ok_bytes(text.into_bytes())
+    }
+    fn ok_bytes(mut bytes: Vec<u8>) -> *mut NlbText {
         bytes.push(0);
         Box::into_raw(Box::new(NlbText { text: Some(bytes), error: None }))
     }
@@ -442,10 +444,11 @@ pub unsafe extern "C" fn nlb_free(r: *mut NlbResult) {
 pub unsafe extern "C" fn nlb_minify(src: *const c_char, size: usize, flags: c_int) -> *mut NlbText {
     let body = AssertUnwindSafe(|| {
         // SAFETY: as the caller promises.
-        let text = String::from_utf8_lossy(unsafe { bytes(src, size) });
+        let text = unsafe { bytes(src, size) };
         let options = MinifyOptions { glua: flags & NLB_MINIFY_GLUA != 0, escape_gmod_macro: flags & NLB_MINIFY_ESCAPE_MACRO != 0 };
-        match crate::minify::minify(&text, options) {
-            Ok(t) => NlbText::ok(t),
+        // Bytes in, bytes out: Lua that is not UTF-8 keeps its bytes.
+        match crate::minify::minify_bytes(text, options) {
+            Ok(t) => NlbText::ok_bytes(t),
             Err(e) => NlbText::err(&e),
         }
     });
@@ -860,6 +863,13 @@ mod tests {
             nlb_text_free(t);
             let t = nlb_minify(ptr::null(), 0, 0);
             assert_eq!(cstr(nlb_text(t, ptr::null_mut())), "");
+            nlb_text_free(t);
+            // Lua that is not UTF-8 (Latin-1) keeps every byte.
+            let latin1: &[u8] = b"local \xe9 = 1\nlocal \xe8 = 2\nprint(\xe9, \"caf\xe9\")\n";
+            let t = nlb_minify(latin1.as_ptr().cast(), latin1.len(), NLB_MINIFY_GLUA);
+            let mut size = 0usize;
+            let p = nlb_text(t, &mut size);
+            assert_eq!(std::slice::from_raw_parts(p.cast::<u8>(), size), b"local \xe9=1\nlocal \xe8=2\nprint(\xe9,\"caf\xe9\")\n");
             nlb_text_free(t);
             let data = "local x = 1\n".repeat(1000);
             let n = nlb_compressed_size(data.as_ptr().cast(), data.len());

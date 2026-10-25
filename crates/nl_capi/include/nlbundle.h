@@ -197,8 +197,10 @@ void nlb_text_free(nlb_Text *t);
 ** comments, `!=`, `&&`, `||`. NLB_MINIFY_ESCAPE_MACRO spells DEFINE_BASECLASS inside quoted
 ** strings with an escape, so that gmod's textual replacement of it leaves
 ** the string as written: for compiled code, not for a GLua script, which
-** expects the replacement. Fails (nlb_text_error) on an unfinished string
-** or long comment. Returns NULL only when the result cannot be built.
+** expects the replacement. The text is read and written as bytes: Lua
+** that is not UTF-8 (a script saved as Latin-1) keeps every byte of its
+** strings and names. Fails (nlb_text_error) on an unfinished string or
+** long comment. Returns NULL only when the result cannot be built.
 */
 #define NLB_MINIFY_GLUA			1
 #define NLB_MINIFY_ESCAPE_MACRO		2

@@ -16,6 +16,10 @@
 //! gives the same value, and a raw break inside a quoted string can only
 //! follow a backslash, where it is one `\n` too. Strings keep their text.
 //!
+//! Lua source is bytes, and the minifier reads it as bytes: a script saved
+//! as Latin-1 or Windows-1252 keeps every byte of its strings and names
+//! (LuaJIT takes the bytes from 0x80 up as name bytes) as written.
+//!
 //! [`MinifyOptions::glua`] reads GLua: `//` and `/* … */` comments (an
 //! unterminated `/*` runs to the end of the file, as in gmod) are comments,
 //! and `!=`, `&&`, `||` are tokens. Plain Lua lexes the same either way,
@@ -47,41 +51,50 @@ impl MinifyOptions {
 /// (with `local BaseClass = baseclass.Get`).
 pub const GMOD_MACRO: &str = "DEFINE_BASECLASS";
 
-/// `src` minified (module docs), or why it does not lex.
+/// `src` minified (module docs), or why it does not lex. Text in, text
+/// out: [`minify_bytes`] over its bytes.
 pub fn minify(src: &str, options: MinifyOptions) -> Result<String, String> {
+    // Every token is copied whole and what is dropped is whole too, so the
+    // minified text of UTF-8 is UTF-8.
+    minify_bytes(src.as_bytes(), options).map(|out| String::from_utf8(out).unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()))
+}
+
+/// `src` minified (module docs), or why it does not lex. Lua source is
+/// bytes, not necessarily UTF-8 (a script saved as Latin-1 or Windows-1252):
+/// every byte of a string or a name is kept as it is.
+pub fn minify_bytes(src: &[u8], options: MinifyOptions) -> Result<Vec<u8>, String> {
     let src = normalize_breaks(src);
     let tokens = lex(&src, options.glua)?;
-    let mut out = String::with_capacity(src.len() / 2);
+    let mut out = Vec::with_capacity(src.len() / 2);
     // The last token on the current output line, if any.
     let mut prev: Option<&Token> = None;
     for t in &tokens {
         match t.kind {
             Kind::Break => {
-                out.push('\n');
+                out.push(b'\n');
                 prev = None;
             }
             Kind::Comment => {
                 // A comment is the line breaks it spans.
-                for _ in t.text.matches('\n') {
-                    out.push('\n');
-                }
-                if t.text.contains('\n') {
+                let breaks = count_breaks(t.text);
+                out.extend(std::iter::repeat_n(b'\n', breaks));
+                if breaks > 0 {
                     prev = None;
                 }
             }
             _ => {
                 if let Some(p) = prev {
                     if needs_space(p, t) {
-                        out.push(' ');
+                        out.push(b' ');
                     }
                 }
-                if options.escape_gmod_macro && t.kind == Kind::Quoted && t.text.contains(GMOD_MACRO) {
-                    out.push_str(&t.text.replace(GMOD_MACRO, "DEFINE_\\066ASECLASS"));
+                if options.escape_gmod_macro && t.kind == Kind::Quoted && find(t.text, GMOD_MACRO.as_bytes(), 0).is_some() {
+                    replace_into(&mut out, t.text, GMOD_MACRO.as_bytes(), b"DEFINE_\\066ASECLASS");
                 } else {
-                    out.push_str(t.text);
+                    out.extend_from_slice(t.text);
                 }
                 prev = Some(t);
-                if t.text.contains('\n') {
+                if count_breaks(t.text) > 0 {
                     // A long string spanning lines: what follows it is on
                     // its last line, after `]]`, which joins nothing.
                     prev = None;
@@ -92,26 +105,47 @@ pub fn minify(src: &str, options: MinifyOptions) -> Result<String, String> {
     Ok(out)
 }
 
-fn normalize_breaks(src: &str) -> String {
-    if !src.contains('\r') {
-        return src.to_owned();
+fn normalize_breaks(src: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+    if !src.contains(&b'\r') {
+        return std::borrow::Cow::Borrowed(src);
     }
-    let mut out = String::with_capacity(src.len());
-    let mut chars = src.chars().peekable();
-    while let Some(c) = chars.next() {
+    let mut out = Vec::with_capacity(src.len());
+    let mut bytes = src.iter().copied().peekable();
+    while let Some(c) = bytes.next() {
         match c {
-            '\r' => {
-                chars.next_if_eq(&'\n');
-                out.push('\n');
+            b'\r' => {
+                bytes.next_if_eq(&b'\n');
+                out.push(b'\n');
             }
-            '\n' => {
-                chars.next_if_eq(&'\r');
-                out.push('\n');
+            b'\n' => {
+                bytes.next_if_eq(&b'\r');
+                out.push(b'\n');
             }
             c => out.push(c),
         }
     }
-    out
+    std::borrow::Cow::Owned(out)
+}
+
+/// The line breaks in `text` (normalized: `\n` only).
+fn count_breaks(text: &[u8]) -> usize {
+    text.iter().filter(|&&b| b == b'\n').count()
+}
+
+/// The first `needle` in `hay` at or after `from`.
+fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
+    hay.get(from..)?.windows(needle.len()).position(|w| w == needle).map(|k| from + k)
+}
+
+/// `text` with every `from` replaced by `to`, appended to `out`.
+fn replace_into(out: &mut Vec<u8>, text: &[u8], from: &[u8], to: &[u8]) {
+    let mut at = 0;
+    while let Some(k) = find(text, from, at) {
+        out.extend_from_slice(text.get(at..k).unwrap_or_default());
+        out.extend_from_slice(to);
+        at = k + from.len();
+    }
+    out.extend_from_slice(text.get(at..).unwrap_or_default());
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -128,7 +162,7 @@ enum Kind {
 #[derive(Debug)]
 struct Token<'a> {
     kind: Kind,
-    text: &'a str,
+    text: &'a [u8],
 }
 
 /// A byte that continues a name or a number: LuaJIT takes every byte
@@ -139,7 +173,7 @@ fn is_ident(b: u8) -> bool {
 
 /// Whether two tokens written together would lex as something else.
 fn needs_space(p: &Token, n: &Token) -> bool {
-    let (Some(&last), Some(&first)) = (p.text.as_bytes().last(), n.text.as_bytes().first()) else { return false };
+    let (Some(&last), Some(&first)) = (p.text.last(), n.text.first()) else { return false };
     if is_ident(last) && is_ident(first) {
         return true;
     }
@@ -169,16 +203,17 @@ fn long_level(b: &[u8], i: usize) -> Option<usize> {
 }
 
 /// The end of the long bracket of `level` whose body starts at `from`.
-fn long_end(src: &str, from: usize, level: usize) -> Option<usize> {
+fn long_end(src: &[u8], from: usize, level: usize) -> Option<usize> {
     let close = format!("]{}]", "=".repeat(level));
-    src.get(from..)?.find(&close).map(|k| from + k + close.len())
+    find(src, close.as_bytes(), from).map(|k| k + close.len())
 }
 
-fn lex(src: &str, glua: bool) -> Result<Vec<Token<'_>>, String> {
-    let b = src.as_bytes();
+fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
+    let b = src;
     let mut out = Vec::new();
     let mut i = 0;
-    let line_at = |i: usize| src.get(..i).map_or(0, |s| s.matches('\n').count()) + 1;
+    let line_at = |i: usize| count_breaks(src.get(..i).unwrap_or_default()) + 1;
+    let line_end = |i: usize| find(src, b"\n", i).unwrap_or(src.len());
     while let Some(&c) = b.get(i) {
         let start = i;
         let kind = match c {
@@ -193,18 +228,18 @@ fn lex(src: &str, glua: bool) -> Result<Vec<Token<'_>>, String> {
             b'-' if b.get(i + 1) == Some(&b'-') => {
                 match long_level(b, i + 2) {
                     Some(level) => i = long_end(src, i + 2 + level + 2, level).ok_or_else(|| format!("line {}: unfinished long comment", line_at(start)))?,
-                    None => i = src.get(i..).and_then(|r| r.find('\n')).map_or(b.len(), |k| i + k),
+                    None => i = line_end(i),
                 }
                 Kind::Comment
             }
             // GLua's comments: `//` to the end of the line, `/* … */` (to
             // the end of the file when unterminated).
             b'/' if glua && b.get(i + 1) == Some(&b'/') => {
-                i = src.get(i..).and_then(|r| r.find('\n')).map_or(b.len(), |k| i + k);
+                i = line_end(i);
                 Kind::Comment
             }
             b'/' if glua && b.get(i + 1) == Some(&b'*') => {
-                i = src.get(i + 2..).and_then(|r| r.find("*/")).map_or(b.len(), |k| i + 2 + k + 2);
+                i = find(src, b"*/", i + 2).map_or(b.len(), |k| k + 2);
                 Kind::Comment
             }
             b'"' | b'\'' => {
@@ -212,6 +247,14 @@ fn lex(src: &str, glua: bool) -> Result<Vec<Token<'_>>, String> {
                 loop {
                     match b.get(i) {
                         None | Some(b'\n') => return Err(format!("line {}: unfinished string", line_at(start))),
+                        // `\z` skips the white space after it, line
+                        // breaks included, which the token keeps.
+                        Some(b'\\') if b.get(i + 1) == Some(&b'z') => {
+                            i += 2;
+                            while b.get(i).is_some_and(|&c| matches!(c, b' ' | b'\t' | b'\n' | 0x0b | 0x0c)) {
+                                i += 1;
+                            }
+                        }
                         Some(b'\\') => i += 2,
                         Some(&q) if q == c => {
                             i += 1;
@@ -248,9 +291,8 @@ fn lex(src: &str, glua: bool) -> Result<Vec<Token<'_>>, String> {
                 Kind::Op
             }
         };
-        // A quoted string or a long string never ends inside a UTF-8
-        // sequence, and every other token is ASCII.
-        let text = src.get(start..i).ok_or_else(|| format!("line {}: a token ends inside a character", line_at(start)))?;
+        // An escape at the end of the text steps past it.
+        let text = src.get(start..i.min(src.len())).unwrap_or_default();
         out.push(Token { kind, text });
     }
     Ok(out)
@@ -331,6 +373,25 @@ mod tests {
         assert_eq!(minify("x = a // b", LUA).unwrap(), "x=a/ /b");
         // `!` before `=` is kept apart from it, `a ! = b` being two tokens.
         assert_eq!(minify("x = ! = y", g).unwrap(), "x=! =y");
+    }
+
+    #[test]
+    fn bytes_that_are_not_utf8_are_kept() {
+        // A Latin-1 script: two locals whose names differ in a byte from
+        // 0x80 up, and a string with such a byte; each stays as written.
+        let src: &[u8] = b"local \xe9 = 1 -- \xff\nlocal \xe8 = 2\r\nprint(\xe9, 'caf\xe9', [[\xe8]])\n";
+        assert_eq!(minify_bytes(src, LUA).unwrap(), b"local \xe9=1\nlocal \xe8=2\nprint(\xe9,'caf\xe9',[[\xe8]])\n");
+        let g = MinifyOptions { glua: true, escape_gmod_macro: true };
+        assert_eq!(minify_bytes(b"x = '\x80DEFINE_BASECLASS\x81' // \xfe\n", g).unwrap(), b"x='\x80DEFINE_\\066ASECLASS\x81'\n");
+    }
+
+    #[test]
+    fn z_escapes_skip_line_breaks() {
+        // `\z` and the white space after it are part of the string, line
+        // breaks included, which stay.
+        assert_eq!(minify("s = \"a\\z\n   b\" .. c\nd = 1", LUA).unwrap(), "s=\"a\\z\n   b\"..c\nd=1");
+        assert_eq!(minify("s = 'a\\z  b'", LUA).unwrap(), "s='a\\z  b'");
+        assert!(minify("s = 'a\\z", LUA).is_err());
     }
 
     #[test]
