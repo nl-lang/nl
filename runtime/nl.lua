@@ -273,11 +273,3 @@ function I.is_method(f)
   if I.methods[f] then return true end
   return vm_ismethod ~= nil and vm_ismethod(f) or false
 end
-
--- A function that raises "not implemented" for a part of the runtime that
--- is not written yet.
-function I.unimplemented(name)
-  return function()
-    error("NL runtime: " .. name .. " is not implemented yet", 2)
-  end
-end

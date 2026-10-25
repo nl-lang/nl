@@ -128,7 +128,6 @@ do
     if nl == nil then return msg end
     return src .. ":" .. nl .. ": " .. ssub(msg, at)
   end
-  I.map_message = map_message
 
   -- The main functions of loaded files (rt.load, rt.runmain): a frame of
   -- one is "in main chunk".
@@ -146,7 +145,6 @@ do
     -- short names with one more `=`.
     return s == "=[C]" or smatch(s, "^[@=]+%[?nl ") ~= nil
   end
-  I.foreign_source = foreign_source
 
   local function frame_text(info)
     local s = info.source or "?"
@@ -200,7 +198,6 @@ do
     end
     return tconcat(lines, "\n")
   end
-  I.build_trace = build_trace
 
   local translator = nil
   function rt.settranslator(f)

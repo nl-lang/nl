@@ -375,7 +375,7 @@ do
   local function retn_tail(types, n, what, i, ...)
     if i > n then return end
     local v = ...
-    if not isa(v, types[i]) then check_failed(v, types[i], string.format(what, i)) end
+    if not isa(v, types[i]) then check_failed(v, types[i], sformat(what, i)) end
     return v, retn_tail(types, n, what, i + 1, select(2, ...))
   end
   function rt.retn(types, n, what, ...)

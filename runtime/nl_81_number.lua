@@ -31,15 +31,20 @@ do
     return x
   end
 
-  -- Half away from zero, to an integer.
+  -- Half away from zero, to an integer. Never a negative zero: `ceil` of
+  -- a number in (-1, 0) is -0.0 in the interpreter, and the JIT of a
+  -- dual-number LuaJIT may narrow it to the integer 0, so `(-0.4).round`
+  -- gets the canonical zero, as `//` does (nl_40_ops.lua).
   local function round0(x)
+    local f
     if x >= 0 then
-      local f = floor(x)
-      if x - f >= 0.5 then return f + 1 end
-      return f
+      f = floor(x)
+      if x - f >= 0.5 then f = f + 1 end
+    else
+      f = ceil(x)
+      if f - x >= 0.5 then f = f - 1 end
     end
-    local f = ceil(x)
-    if f - x >= 0.5 then return f - 1 end
+    if f == 0 then return 0 end
     return f
   end
 
@@ -95,6 +100,7 @@ do
 
   -- `x.truncate(places = 0)`: toward zero, to `places` digits (Ruby's,
   -- with the same decimal judgement as round: 0.29.truncate(2) is 0.29).
+  -- Never a negative zero (see round0).
   local function trunc_pos(x, places)
     if places <= 0 then
       local i = floor(x)
@@ -115,8 +121,10 @@ do
   function math.truncate(x, places)
     if x ~= x or x == huge or x == -huge then return x end
     places = int(places, "truncate", 1, 0)
-    if x < 0 then return -trunc_pos(-x, places) end
-    return trunc_pos(x, places)
+    local r
+    if x < 0 then r = -trunc_pos(-x, places) else r = trunc_pos(x, places) end
+    if r == 0 then return 0 end
+    return r
   end
 
   -- -1, 0 or 1; NaN stays NaN.

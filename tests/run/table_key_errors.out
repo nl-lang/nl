@@ -1,0 +1,9 @@
+group_by nil: Table.group_by: the key from the function for index 1 is nil, which cannot be a key
+group_by NaN: Table.group_by: the key from the function for index 1 is NaN, which cannot be a key
+tally: Table.tally: the value at index 2 is NaN, which cannot be a key
+invert: Table.invert: the value at key a is NaN, which cannot be a key
+to_set: Table.to_set: the value at index 1 is NaN, which cannot be a key
+map_keys: Table.map_keys: the key from the function for key a is NaN, which cannot be a key
+map_kv: Table.map_kv: the key from the function for key a is NaN, which cannot be a key
+0,1	2
+1

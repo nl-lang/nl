@@ -9,7 +9,8 @@
 --
 --   _state     "pending", "done" or "failed"
 --   _value     the value (done) or the exception (failed)
---   _waiters   functions w(state, value) run when the task finishes
+--   _waiters   run when the task finishes: functions w(state, value), and
+--              the coroutines of the tasks awaiting it, which are resumed
 --   _observed  true once something awaits the task or handles its error
 --
 -- The body of an `async` function runs in a coroutine of its own. `.await`
@@ -29,8 +30,6 @@ do
   -- A built-in type, not a struct: `x is Task` holds for
   -- tasks, and rt.new cannot make one.
   I.info[Task] = { kind = "builtin", name = "Task" }
-
-  local function pack(...) return { n = select("#", ...), ... } end
 
   -- Work queued for the next pump: functions run in order.
   local queue = {}
@@ -127,9 +126,17 @@ do
   end
   local newtask = rt.newtask
 
+  local step -- resumes a task's coroutine; below
+
   -- A waiter or callback runs protected: an error in one is reported
-  -- through the unhandled hook, and the other waiters still run.
+  -- through the unhandled hook, and the other waiters still run. A
+  -- coroutine is an awaiting task, resumed (`step` raises nothing: a
+  -- failure of the task is the task's).
   local function run_waiter(w, state, value)
+    if type(w) == "thread" then
+      step(w)
+      return
+    end
     local ok, e = xpcall(w, rt.handler, state, value)
     if not ok then rt.unhandled(e) end
   end
@@ -245,7 +252,6 @@ do
   -- Timer: f(seconds, wake); wake() ends the sleep.
   local timer = nil
   function rt.settimer(f) timer = f end
-  I.timer = function() return timer end
 
   ---------------------------------------------------------------------------
   -- Coroutines.
@@ -261,27 +267,22 @@ do
     return xpcall(f, rt.handler, ...)
   end
 
-  -- Resumes a task's coroutine and, when it has ended, finishes its task.
-  local function step(co, ...)
-    if costatus(co) ~= "suspended" then
-      -- Cannot happen: a task waits on one task at a time and is resumed
-      -- once. Reported rather than raised into whoever finished the task.
-      rt.unhandled(rt.new(rt.Exception, { message = "NL runtime: a task was resumed while it was not waiting" }))
-      return
-    end
-    local r = pack(coresume(co, ...))
+  -- After a resume of a task's coroutine: `ok` and the first two values
+  -- it returned (the status and the value of `body`'s xpcall) or
+  -- yielded. When it has ended, its task is finished.
+  local function stepped(co, ok, a, b)
     if costatus(co) == "dead" then
       local t = task_of[co]
       task_of[co] = nil
       if t == nil then return end
-      if not r[1] then
-        finish(t, "failed", to_exception(r[2]))
-      elseif r[2] then
-        finish(t, "done", r[3])
+      if not ok then
+        finish(t, "failed", to_exception(a))
+      elseif a then
+        finish(t, "done", b)
       else
-        finish(t, "failed", r[3])
+        finish(t, "failed", b)
       end
-    elseif r[2] ~= AWAIT then
+    elseif a ~= AWAIT then
       -- The coroutine was suspended by something other than `.await`
       -- (`Coroutine.yield` called in a task): nothing would resume it.
       local t = task_of[co]
@@ -290,6 +291,17 @@ do
         finish(t, "failed", rt.new(rt.Exception, { message = "a task cannot yield except through .await" }))
       end
     end
+  end
+
+  -- Resumes a task's coroutine with the arguments.
+  step = function(co, ...)
+    if costatus(co) ~= "suspended" then
+      -- Cannot happen: a task waits on one task at a time and is resumed
+      -- once. Reported rather than raised into whoever finished the task.
+      rt.unhandled(rt.new(rt.Exception, { message = "NL runtime: a task was resumed while it was not waiting" }))
+      return
+    end
+    return stepped(co, coresume(co, ...))
   end
 
   -- Runs f(...) as a new task: at once, in a coroutine of its own, until
@@ -342,8 +354,9 @@ do
     local observed = rawget(t, "_observed")
     rawset(t, "_observed", true)
     if rawget(t, "_state") == "pending" then
-      local w = function() step(co) end
-      when_done(t, w)
+      -- The coroutine itself is the waiter (run_waiter), so an await
+      -- allocates nothing.
+      when_done(t, co)
       local ok, err = pcall(coyield, AWAIT)
       if not ok then
         -- The yield failed (across a C call, for instance): nothing is
@@ -353,7 +366,7 @@ do
         local ws = rawget(t, "_waiters")
         if ws ~= nil then
           for i = #ws, 1, -1 do
-            if ws[i] == w then tremove(ws, i) break end
+            if ws[i] == co then tremove(ws, i) break end
           end
         end
         rawset(t, "_observed", observed)

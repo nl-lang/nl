@@ -84,6 +84,8 @@ do
   -- separates fields in `split` without a separator. Ruby's set without
   -- NUL; the same as Lua's `%s` on LuaJIT.
   local WS = " \t\n\v\f\r"
+  -- Patterns over WS: a run of it, leading, and one other character.
+  local WS_RUN, WS_LEAD, NOT_WS = "[" .. WS .. "]+", "^[" .. WS .. "]*", "[^" .. WS .. "]"
   local ws_byte = {}
   for i = 1, #WS do ws_byte[byte(WS, i)] = true end
 
@@ -875,7 +877,7 @@ do
     end
     local n = #s
     if sep == nil then
-      local _, e = find(s, "^[" .. WS .. "]*")
+      local _, e = find(s, WS_LEAD)
       local i = e + 1
       if i > n and limit == nil then return out end
       while true do
@@ -883,7 +885,7 @@ do
           put(bsub(s, i))
           break
         end
-        local a, b = find(s, "[" .. WS .. "]+", i)
+        local a, b = find(s, WS_RUN, i)
         if a == nil then
           put(bsub(s, i))
           break
@@ -929,7 +931,7 @@ do
   end
 
   local function lstrip(s)
-    local _, e = find(s, "^[" .. WS .. "]*")
+    local _, e = find(s, WS_LEAD)
     return bsub(s, e + 1)
   end
 
@@ -1000,7 +1002,7 @@ do
 
   -- Only whitespace (WS), or nothing.
   function String.is_blank(s)
-    return find(bytes_arg(s, "is_blank"), "[^" .. WS .. "]") == nil
+    return find(bytes_arg(s, "is_blank"), NOT_WS) == nil
   end
 
   function String.include(s, sub)
@@ -1117,7 +1119,7 @@ do
 
   -- strip, then every run of whitespace (WS) as one space (Rails' squish).
   function String.squish(s)
-    return (gsub(rstrip(lstrip(bytes_arg(s, "squish"))), "[" .. WS .. "]+", " "))
+    return (gsub(rstrip(lstrip(bytes_arg(s, "squish"))), WS_RUN, " "))
   end
 
   -- The lines without their line endings, as Rust's `lines` (Ruby's keep
@@ -1536,7 +1538,7 @@ do
     local paras = lines(s)
     for p = 1, #paras do
       local line = nil
-      for word in gmatch(paras[p], "[^" .. WS .. "]+") do
+      for word in gmatch(paras[p], NOT_WS .. "+") do
         local cand = line and (line .. " " .. word) or word
         if w(cand) <= width then
           line = cand

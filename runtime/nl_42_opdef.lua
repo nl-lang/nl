@@ -82,7 +82,6 @@ do
       rawset(D, ev, generic[ev])
     end
   end
-  I.install_op = install
 
   -- Defines `ev` on struct S and makes it reach S and its descendants.
   local function define(S, ev, f)

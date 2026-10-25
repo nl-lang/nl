@@ -35,7 +35,9 @@
 -- the function cannot use: `sum` takes numbers (and `sum(t, f)` numbers
 -- from f); `min`, `max`, `sorted` without `lt`, and `min_by`, `max_by`,
 -- `sort_by` on their keys, compare with `<`, so the values must be all
--- numbers, all strings, or values with the same `__lt` (Durations, Times).
+-- numbers, all strings, or values with the same `__lt` (Durations, Times);
+-- `group_by`, `tally`, `invert`, `to_set`, `map_keys` and `map_kv` make
+-- keys of values, which nil and NaN cannot be.
 --
 --   LISTS                        RESULT
 --   map(t, f)                    [f(v, i)]; a nil result leaves a hole
@@ -154,6 +156,18 @@ do
     return v
   end
 
+  -- A value that is to be a key of the result: nil and NaN cannot be
+  -- keys, and raise naming the function (not Lua's "table index is nil",
+  -- which would name a line of the runtime). `what` says where the value
+  -- came from ("the key from the function for index "), `i` where.
+  local function key(k, fname, what, i)
+    if k == nil or k ~= k then
+      I.throw("TypeError", "Table." .. fname .. ": " .. what .. tostring(i) .. " is " .. (k == nil and "nil" or "NaN")
+        .. ", which cannot be a key")
+    end
+    return k
+  end
+
   -- A predicate from a function or a value (find_index, count).
   local function matcher(f)
     if callable(f) then return f end
@@ -235,10 +249,10 @@ do
     local out = {}
     for i = 1, #t do
       local v = t[i]
-      local key = f(v, i)
-      local g = out[key]
+      local k = key(f(v, i), "group_by", "the key from the function for index ", i)
+      local g = out[k]
       if g == nil then
-        out[key] = { v }
+        out[k] = { v }
       else
         g[#g + 1] = v
       end
@@ -250,7 +264,7 @@ do
     tbl(t, "tally")
     local out = {}
     for i = 1, #t do
-      local v = t[i]
+      local v = key(t[i], "tally", "the value at index ", i)
       out[v] = (out[v] or 0) + 1
     end
     return out
@@ -911,7 +925,7 @@ do
     local out = {}
     for k, v in next, t do
       local k2 = f(k, v)
-      if k2 ~= nil then out[k2] = v end
+      if k2 ~= nil then out[key(k2, "map_keys", "the key from the function for key ", k)] = v end
     end
     return out
   end
@@ -922,7 +936,7 @@ do
     local out = {}
     for k, v in next, t do
       local k2, v2 = f(k, v)
-      if k2 ~= nil then out[k2] = v2 end
+      if k2 ~= nil then out[key(k2, "map_kv", "the key from the function for key ", k)] = v2 end
     end
     return out
   end
@@ -943,17 +957,14 @@ do
   function Table.invert(t)
     tbl(t, "invert")
     local out = {}
-    for k, v in next, t do out[v] = k end
+    for k, v in next, t do out[key(v, "invert", "the value at key ", k)] = k end
     return out
   end
 
   function Table.to_set(t)
     tbl(t, "to_set")
     local out = {}
-    for i = 1, #t do
-      local v = t[i]
-      if v ~= nil then out[v] = true end
-    end
+    for i = 1, #t do out[key(t[i], "to_set", "the value at index ", i)] = true end
     return out
   end
 

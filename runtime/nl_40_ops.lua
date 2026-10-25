@@ -118,7 +118,6 @@ do
     if info == nil or info.kind ~= "struct" then return nil end
     return info.defs[ev]
   end
-  I.find_def = find_def
 
   local generic = {}
   local is_generic = setmetatable({}, { __mode = "k" })
@@ -195,7 +194,6 @@ do
     if h ~= nil then return call2(h, a, b, bool) end
     return fail(ev, a, b)
   end
-  I.perform = perform
 
   -- A unary operation: the operand's definition, or a metamethod written
   -- in Lua.
@@ -206,7 +204,6 @@ do
     if h ~= nil then return h(a, a) end
     error("attempt to perform '" .. (symbols[ev] or ev) .. "' on " .. rt.typeof(a), 2)
   end
-  I.perform_unary = perform_unary
 
   local function add_generic(ev, f)
     generic[ev] = f
@@ -444,20 +441,23 @@ do
   end
 
   -- The iterators of a range, for Lua's generic `for`: the state is the
-  -- last number, the control the number before the next one.
+  -- range, the control the number given last, nil before the first. The
+  -- first number is read from the range, not computed as `first - 1`
+  -- and then `+ 1`: that is not `first` for a fraction (0.1 - 1 + 1 is
+  -- 0.09999999999999998), while `for i = 0.1, 2` begins at 0.1.
   --
   -- Neither they nor rt.iter make a closure. The JIT recorder compiles
   -- neither the creation of a closure (FNEW) nor the closing of upvalues
   -- that a function containing one does before every return (UCLO), so a
   -- `for` that got a closure from rt.iter kept every hot loop and
   -- function around it out of a trace.
-  local function range_next(last, i)
-    i = i + 1
-    if i <= last then return i end
+  local function range_next(r, i)
+    if i == nil then i = r.first else i = i + 1 end
+    if i <= r.last then return i end
   end
-  local function range_next_excl(last, i)
-    i = i + 1
-    if i < last then return i end
+  local function range_next_excl(r, i)
+    if i == nil then i = r.first else i = i + 1 end
+    if i < r.last then return i end
   end
 
   -- The array values of `t` in order, up to the first nil. The control
@@ -505,8 +505,8 @@ do
     if tx == "function" then return x, s, c end
     local mt = getmetatable(x)
     if mt == Range then
-      if x.exclusive then return range_next_excl, x.last, x.first - 1 end
-      return range_next, x.last, x.first - 1
+      if x.exclusive then return range_next_excl, x, nil end
+      return range_next, x, nil
     end
     if type(mt) == "table" and rawget(mt, "__iter") then return mt.__iter(x) end
     if tx == "string" then

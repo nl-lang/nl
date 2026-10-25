@@ -36,7 +36,6 @@ do
   I.named = named
   -- file -> name -> value
   local by_file = {}
-  I.registry = by_file
 
   -- Registers `v` as `name` of `file` and returns `v`. Loading a file
   -- again registers its new values under the same names.
@@ -368,7 +367,6 @@ do
       end
       return result
     end
-    I.copy = copy
 
     -- The job runs at the next pump, as a task (so `.await` works in it);
     -- its result, or its exception, is copied back and finishes the
