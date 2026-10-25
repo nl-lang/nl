@@ -81,8 +81,10 @@ pub(crate) enum Mode<'a> {
     Main,
     /// A file imported by the main file `root` (its canonical name, if it
     /// has one), checked for errors only: not printed, and its own imports
-    /// are only parsed.
-    Imported { root: Option<&'a str> },
+    /// are only parsed. `decls` are the declaration files the main file
+    /// loaded, which the import shares: its problems are the main
+    /// compile's to report, once.
+    Imported { root: Option<&'a str>, decls: &'a Declarations },
 }
 
 /// The stack of the compiler thread.
@@ -226,14 +228,23 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let root = parse.syntax();
     let scan = Some(nl_sema::scan_file(&root));
 
-    // Declaration files: the built-in ones and the loader's.
-    let (decls, decl_diags) = load_declarations(loader, options.profile);
-    diags.extend(decl_diags);
+    // Declaration files: the built-in ones and the loader's, loaded once
+    // per compile, by the main file.
+    let loaded;
+    let decls: &Declarations = match mode {
+        Mode::Imported { decls, .. } => decls,
+        Mode::Main => {
+            let (d, decl_diags) = load_declarations(loader, options.profile);
+            diags.extend(decl_diags);
+            loaded = d;
+            &loaded
+        }
+    };
 
     // Resolve.
     let from = chunk_name.strip_prefix('@');
-    let imports = DriverImports::new(loader, from, options, mode, &decls);
-    let res = nl_sema::resolve_with(&root, &imports, &decls);
+    let imports = DriverImports::new(loader, from, options, mode, decls);
+    let res = nl_sema::resolve_with(&root, &imports, decls);
     let sema_severity = |d: &nl_sema::SemaDiagnostic| if d.error { Severity::Error } else if d.lint { Severity::Lint } else { Severity::Warning };
     diags.extend(res.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
     // What the profile leaves out, at its uses. These errors stop the
@@ -241,7 +252,7 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     // so that one compile reports them all (the realm of members is
     // checked on what the analyzer records).
     let earlier_errors = res.has_errors() || diags.iter().any(|d| d.severity == Severity::Error);
-    let found = nl_sema::profile::check(&root, &res, &decls, options.profile);
+    let found = nl_sema::profile::check(&root, &res, decls, options.profile);
     let profile_errors = found.iter().any(|d| d.error);
     diags.extend(found.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
     if earlier_errors {
@@ -261,12 +272,12 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     // member keys of declared names, and reports nothing. A gmod profile
     // has it record the members the file reads, for the realm check.
     let record = options.profile.is_gmod();
-    let aopts = nl_sema::AnalyzeOptions { static_resolution: options.static_resolution, decls: Some(&decls), lints: options.analyze, imports: Some(&imports), record };
+    let aopts = nl_sema::AnalyzeOptions { static_resolution: options.static_resolution, decls: Some(decls), lints: options.analyze, imports: Some(&imports), record };
     let analysis = nl_sema::analyze(&root, &res, &aopts);
     // The members of declared types and modules that the realm lacks
     // (`ply.kick` on the client): profile errors, reported whether or not
     // the analyzer's own diagnostics are wanted.
-    let realm = analysis.info.as_ref().map(|info| nl_sema::profile::check_members(&root, &res, info, &decls, options.profile)).unwrap_or_default();
+    let realm = analysis.info.as_ref().map(|info| nl_sema::profile::check_members(&root, &res, info, decls, options.profile)).unwrap_or_default();
     diags.extend(realm.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
     // The errors of imported files follow this file's diagnostics.
     let imported = imports.into_diagnostics();

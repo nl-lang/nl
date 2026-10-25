@@ -690,6 +690,31 @@ fn open_documents_own_their_uris() {
     c.shutdown();
 }
 
+/// An open document is known by the URI the editor gave, whatever its
+/// spelling: what another document's compile reports about it goes under
+/// that URI, not under the server's own spelling of the path.
+#[test]
+fn open_documents_are_known_by_the_editors_uri() {
+    let dir = temp_dir("urispelling");
+    let mut c = Client::start(Some(&dir));
+    let path = dir.join("lib.nl");
+    let own = path_to_uri(&path).unwrap();
+    // The same file, with a letter percent-encoded.
+    let editors = Uri::from_str(&own.as_str().replace("lib.nl", "l%69b.nl")).unwrap();
+    assert_eq!(uri_to_path(&editors).unwrap(), path);
+    c.open_uri(editors.clone(), "pub fn f\n  1\nend\nprint nope\n");
+    assert_eq!(c.diagnostics(&editors).len(), 1);
+    let main = c.open(&dir.join("main.nl"), "import { f } from 'lib'\nprint f\n");
+    let main_diags = c.diagnostics(&main);
+    assert!(main_diags.iter().any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))), "{main_diags:?}");
+    assert_eq!(c.diagnostics(&editors).len(), 1, "lib's own compile, under the editor's URI");
+    // A request answers after every notification sent before it.
+    let _ = c.hover(&main, Position::new(0, 0));
+    assert!(!c.pending_for(&own), "nothing is published under the server's spelling");
+    assert!(!c.pending_for(&editors));
+    c.shutdown();
+}
+
 /// A declaration file that exists only as an open buffer is in scope for
 /// the documents of its directory.
 #[test]

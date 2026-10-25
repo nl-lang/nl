@@ -112,7 +112,7 @@ impl SourceMap {
         let ranges = self.chunks.get(chunk)?;
         let r = ranges.iter().find(|[start, _, _, count]| line >= *start && line < start.saturating_add(*count))?;
         let file = self.files.get(r[1] as usize)?;
-        Some((file, r[2] + (line - r[0])))
+        Some((file, r[2].saturating_add(line - r[0])))
     }
 
     /// [`Self::lookup`] for a chunk as LuaJIT names it in `short_src`: the
@@ -275,6 +275,13 @@ mod tests {
         let m = sample();
         assert_eq!(SourceMap::from_json(&m.to_json()).unwrap(), m);
         assert!(SourceMap::from_json("{\"version\": 7}").is_err());
+        assert!(SourceMap::from_json("{\"version\": 1}").is_err(), "no chunks");
+        assert!(SourceMap::from_json("{\"version\": 1, \"chunks\": {\"a\": [[1, 2]]}}").is_err(), "a range is four numbers");
+        // A map that was not made by `nlc bundle` cannot make a lookup
+        // overflow: the source line saturates.
+        let m = SourceMap::from_json("{\"version\": 1, \"files\": [\"f\"], \"chunks\": {\"a\": [[1, 0, 4294967295, 4294967295]]}}").unwrap();
+        assert_eq!(m.lookup("a", 3), Some(("f", u32::MAX)));
+        assert_eq!(m.lookup("a", 0), None);
     }
 
     #[test]

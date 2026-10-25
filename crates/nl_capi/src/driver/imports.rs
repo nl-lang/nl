@@ -44,8 +44,8 @@ pub(crate) struct DriverImports<'a> {
     globals: RefCell<Vec<String>>,
     /// The errors of the imported files.
     diagnostics: RefCell<Vec<Diagnostic>>,
-    /// The declaration files in scope, with which a file two imports away
-    /// is resolved for the functions it adds to declared types.
+    /// The declaration files in scope, loaded once by the main file: the
+    /// imported files are checked against the same ones.
     decls: &'a Declarations,
     /// The primitive methods and imports of each file looked at for
     /// [`ImportProvider::primitive_methods`], by canonical name (`None`:
@@ -125,7 +125,7 @@ impl<'a> DriverImports<'a> {
         if Some(name) == self.from {
             return Err(format!("'{name}' imports itself; an import cycle is an error"));
         }
-        if let Mode::Imported { root: Some(root) } = self.mode {
+        if let Mode::Imported { root: Some(root), .. } = self.mode {
             if name == root {
                 let this = self.from.unwrap_or("this file");
                 return Err(format!("import cycle: '{root}' imports '{this}', which imports '{root}'"));
@@ -134,7 +134,7 @@ impl<'a> DriverImports<'a> {
         let bytes = self.loader.read(name).ok_or_else(|| format!("cannot read '{name}'"))?;
         if let Mode::Main = self.mode {
             let chunk_name = format!("@{name}");
-            let staged = pipeline::stages(&bytes, &chunk_name, self.options, self.loader, Mode::Imported { root: self.from });
+            let staged = pipeline::stages(&bytes, &chunk_name, self.options, self.loader, Mode::Imported { root: self.from, decls: self.decls });
             let errors: Vec<Diagnostic> = staged.output.diagnostics.into_iter().filter(|d| d.severity == Severity::Error).collect();
             if let Some(first) = errors.first() {
                 let more = match errors.len() {
@@ -328,6 +328,34 @@ mod tests {
         ]);
         let errs = errors(&build(&files, "a.nl"));
         assert!(errs.iter().any(|e| e.0 == "b.nl" && e.1 == 3 && e.2.contains("`Function` parameter")), "{errs:?}");
+    }
+
+    /// The declaration files are loaded once, by the main file: a broken
+    /// one is reported once, under its own name, and does not make the
+    /// imported files "not compile".
+    #[test]
+    fn a_broken_declaration_file_is_reported_once() {
+        struct WithDecl(Mem);
+        impl Loader for WithDecl {
+            fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
+                self.0.resolve(from, path)
+            }
+            fn read(&self, name: &str) -> Option<Vec<u8>> {
+                self.0.read(name)
+            }
+            fn declarations(&self) -> Vec<(String, Vec<u8>)> {
+                vec![("game.d.nl".to_string(), b"declare fn g(\n".to_vec())]
+            }
+        }
+        let files = WithDecl(Mem::new(&[("main.nl", "import { f } from 'lib'\nprint f\n"), ("lib.nl", "pub fn f\n  1\nend\n")]));
+        let src = files.0.files["main.nl"].clone();
+        let out = compile(src.as_bytes(), "@main.nl", &CompileOptions::default(), &files);
+        assert!(out.chunk.is_none());
+        let errs = errors(&out);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert_eq!((errs[0].0.as_str(), errs[0].1), ("game.d.nl", 2));
+        // lib.nl was read once, for the one check of it.
+        assert_eq!(files.0.reads.get(), 1);
     }
 
     #[test]

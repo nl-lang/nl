@@ -1091,7 +1091,12 @@ impl Gen {
                 }
                 let e = self.int_within(ctx, 2, v.elem.max(1.0));
                 let k = self.rng.pick(&["a", "b", "zed", "end", "type", "count", "if", "q1"]);
-                let target = if self.rng.chance(60) { format!("{}.{k}", v.name) } else { format!("{}[\"{k}\"]", v.name) };
+                // On a map, `m.count` is `Table.count(m)`: the name of a
+                // function of the Table library is assigned as a key only
+                // in brackets (the draw is made either way, so that the
+                // random stream stays as it was).
+                let dotted = self.rng.chance(60) && k != "count";
+                let target = if dotted { format!("{}.{k}", v.name) } else { format!("{}[\"{k}\"]", v.name) };
                 if self.rng.chance(30) {
                     // A compound assignment evaluates its target once;
                     // the key may be missing, so it starts

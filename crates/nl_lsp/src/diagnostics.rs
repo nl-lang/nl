@@ -24,7 +24,9 @@ use crate::position::{LineMap, path_to_uri};
 /// Compiles the document `uri` (the file `path`, when it is one) with
 /// text `text` and gives its diagnostics by URI, without duplicates. The
 /// document itself is always present, with an empty list when it is
-/// clean, so that stale diagnostics are cleared.
+/// clean, so that stale diagnostics are cleared. A file that is open is
+/// named by the URI the editor opened it under, whatever its spelling,
+/// so that the server sees it as the open document it is.
 pub fn compile(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> HashMap<String, Vec<Diagnostic>> {
     if is_decl_file(uri) {
         return HashMap::from([(uri.to_string(), dedup(decl_file(uri, text)))]);
@@ -43,8 +45,8 @@ pub fn compile(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> Has
             uri.to_string()
         } else {
             let p = decl_file_path(files, &d.file, false).unwrap_or_else(|| PathBuf::from(&d.file));
-            match path_to_uri(&p) {
-                Some(u) => u.as_str().to_string(),
+            match files.uri_of(&p).map(str::to_string).or_else(|| path_to_uri(&p).map(|u| u.as_str().to_string())) {
+                Some(u) => u,
                 None => continue,
             }
         };

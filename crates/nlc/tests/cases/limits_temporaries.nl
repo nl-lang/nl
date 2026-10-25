@@ -1,6 +1,6 @@
-# Finding 2: compiler temporaries do not accumulate at block level.
-# Each destructuring `let` used to leave a temporary per pattern step
-# in the enclosing block (7 per line here); 40 lines overflowed.
+# Compiler temporaries do not accumulate at block level: a destructuring
+# `let` leaves no temporary per pattern step in the enclosing block (7
+# per line here, which over 40 lines would pass LuaJIT's limit on locals).
 let t = [1, 2, 3]
 let [a0, b0, c0] = t
 let [a1, b1, c1] = t

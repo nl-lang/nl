@@ -166,7 +166,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         other => {
-            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle`, `remap`, `minify` and `fmt`\n\n{USAGE}");
+            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle`, `runtime`, `remap`, `minify` and `fmt`\n\n{USAGE}");
             ExitCode::from(2)
         }
     }

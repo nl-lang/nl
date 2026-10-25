@@ -803,13 +803,14 @@ mod tests {
 
     /// `nlc_Options.decls` names declaration files: each is
     /// read through the loader, a declared name then resolves, and a name
-    /// the loader cannot read is an error of the compile.
+    /// the loader cannot read is an error of the compile, reported once
+    /// however many files the compile checks.
     #[test]
     fn declaration_files_are_read_through_the_loader() {
-        let mut f = files(&[("game.d.nl", "declare fn host_hello(): String\n")]);
+        let mut f = files(&[("game.d.nl", "declare fn host_hello(): String\n"), ("/lib/a.nl", "pub fn f\n  1\nend\n")]);
         let ld = loader(&mut f);
-        let src = b"print host_hello()\n";
-        let name = c"=stdin";
+        let src = b"import { f } from 'lib/a'\nprint host_hello(), f\n";
+        let name = c"@/main.nl";
         let run = |names: &[&std::ffi::CStr]| {
             let ptrs: Vec<*const c_char> = names.iter().map(|n| n.as_ptr()).collect();
             let opts = NlcOptions { checks: 1, strip: 0, bytecode: 0, level: 0, decls: ptrs.as_ptr(), ndecls: ptrs.len(), localize: 1 };
@@ -829,6 +830,7 @@ mod tests {
         assert!(chunk, "{codes:?}");
         let (chunk, codes) = run(&[c"game.d.nl", c"missing.d.nl"]);
         assert!(!chunk && codes.first().map(String::as_str) == Some("missing-declaration-file"), "{codes:?}");
+        assert_eq!(codes.iter().filter(|c| *c == "missing-declaration-file").count(), 1, "{codes:?}");
     }
 
     #[test]

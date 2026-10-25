@@ -814,4 +814,22 @@ mod tests {
     fn indents() {
         assert_eq!(indent("a\n\nb"), "  a\n\n  b");
     }
+
+    /// A map key that names a function of the Table library (`count`) is
+    /// never assigned through a dot: on a map, `m.count` is the function,
+    /// and the analyzer rejects the assignment (seed 500206 did it).
+    #[test]
+    fn table_function_names_are_assigned_in_brackets() {
+        for seed in (0..300).chain([500206]) {
+            let src = generate(seed).source;
+            for line in src.lines() {
+                // `m.count = …`, `m.count += …`: a dotted target, then an
+                // assignment operator.
+                let t = line.trim_start();
+                let target = t.split_whitespace().next().unwrap_or("");
+                let assigns = target.ends_with(".count") && t.get(target.len()..).unwrap_or("").trim_start().starts_with(|c: char| "=+-|*%".contains(c));
+                assert!(!assigns, "seed {seed}: {line}");
+            }
+        }
+    }
 }

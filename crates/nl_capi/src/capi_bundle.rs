@@ -5,9 +5,10 @@
 //!
 //! The rules of `capi.rs` hold: nothing here enters a VM (the host's
 //! callbacks do, if they like), and no Rust panic crosses into C: every
-//! exported function runs its body under `catch_unwind`, and a panic is a
-//! NULL result or a diagnostic with the code `"internal-error"`. Memory
-//! this library returns is freed only by its own `nlb_*_free` functions.
+//! exported function that does more than read a field runs its body
+//! under `catch_unwind`, and a panic is a NULL result or a diagnostic
+//! with the code `"internal-error"`. Memory this library returns is freed
+//! only by its own `nlb_*_free` functions.
 
 use std::ffi::{CStr, CString, c_char, c_int, c_void};
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -132,7 +133,8 @@ unsafe fn c_str<'a>(p: *const c_char) -> Option<&'a CStr> {
     }
 }
 
-/// Copies `message` into `err[size]`, NUL-terminated and cut to fit.
+/// Copies `message` into `err[size]`, NUL-terminated and cut to fit, at a
+/// character boundary, so that what is written stays UTF-8.
 ///
 /// # Safety
 ///
@@ -141,7 +143,10 @@ unsafe fn write_error(err: *mut c_char, size: usize, message: &str) {
     if err.is_null() || size == 0 {
         return;
     }
-    let n = message.len().min(size - 1);
+    let mut n = message.len().min(size - 1);
+    while !message.is_char_boundary(n) {
+        n -= 1;
+    }
     // SAFETY: `err` has `size` writable bytes and `n + 1 <= size`.
     unsafe {
         ptr::copy_nonoverlapping(message.as_ptr().cast::<c_char>(), err, n);
@@ -881,6 +886,11 @@ mod tests {
             let mut tiny = [1 as c_char; 4];
             assert!(nlb_sourcemap_parse(c"x".as_ptr(), 1, tiny.as_mut_ptr(), tiny.len()).is_null());
             assert_eq!(cstr(tiny.as_ptr()).len(), 3);
+            // The cut keeps a character whole: `not JSON: … «…` ends
+            // before the two-byte `«` when only one byte of it would fit.
+            let mut small = [1 as c_char; 12];
+            write_error(small.as_mut_ptr(), small.len(), "not JSON: «x»");
+            assert_eq!(CStr::from_ptr(small.as_ptr()).to_bytes(), b"not JSON: ");
         }
     }
 }

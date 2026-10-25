@@ -79,14 +79,20 @@ fn multi(entries: &[(u32, Vec<char>)], out: &mut String) {
     }
 }
 
-/// Rust's case mappings, encoded.
+/// The last code point with a case mapping lies in the first two planes:
+/// what the tables are built from. `tables_round_trip` checks every code
+/// point against them, so a letter beyond this fails a test.
+const CASED_MAX: u32 = 0x1FFFF;
+
+/// Rust's case mappings, encoded. Built on every `nlc run` and in every
+/// bundle, so only the planes with cased letters are walked.
 pub fn case_tables() -> CaseTables {
     let mut up1 = Vec::new();
     let mut upx = Vec::new();
     let mut down1 = Vec::new();
     let mut downx = Vec::new();
     let mut swapx = Vec::new();
-    for c in (0..=0x10FFFFu32).filter_map(char::from_u32) {
+    for c in (0..=CASED_MAX).filter_map(char::from_u32) {
         let u: Vec<char> = c.to_uppercase().collect();
         let l: Vec<char> = c.to_lowercase().collect();
         let cp = u32::from(c);
@@ -144,8 +150,9 @@ mod tests {
         m
     }
 
-    /// Decoding gives back every mapping of every character, and the
-    /// swap rule with its exceptions gives `swapcase`.
+    /// Decoding gives back every mapping of every character (those past
+    /// `CASED_MAX` included, which must have none), and the swap rule
+    /// with its exceptions gives `swapcase`.
     #[test]
     fn tables_round_trip() {
         let t = case_tables();

@@ -1,7 +1,6 @@
-//! `nlc check` on the conformance suite (exit
-//! criterion): every entry program of `tests/run/` reports no error, and
-//! exactly the warnings and lints the table below expects, by diagnostic
-//! code. tests/run/README.md names the kinds of diagnostic that are
+//! `nlc check` on the conformance suite: every entry program of
+//! `tests/run/` reports no error, and exactly the warnings and lints the
+//! table below expects, by diagnostic code. tests/run/README.md names the kinds of diagnostic that are
 //! expected (shadowing in pattern tests, unused bindings, the use of a
 //! `global`, a file-level variable read in a `spawn do` block); this test
 //! pins them per file, so that a new false positive or a lost diagnostic

@@ -474,9 +474,6 @@ fn error_text(e: &mlua::Error) -> String {
         mlua::Error::RuntimeError(s) => s.clone(),
         mlua::Error::CallbackError { traceback, cause } => format!("{}\n{traceback}", error_text(cause)),
         mlua::Error::ExternalError(x) => x.to_string(),
-        other => {
-            let _ = Value::Nil;
-            other.to_string()
-        }
+        other => other.to_string(),
     }
 }

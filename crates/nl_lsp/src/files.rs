@@ -98,6 +98,12 @@ impl Files {
         self.open.contains_key(uri)
     }
 
+    /// The URI of the open document that is the file at `path` (a
+    /// canonical name), as the editor spelled it.
+    pub fn uri_of(&self, path: &Path) -> Option<&str> {
+        self.by_path.get(path).map(String::as_str)
+    }
+
     pub fn doc(&self, uri: &str) -> Option<&OpenDoc> {
         self.open.get(uri)
     }
