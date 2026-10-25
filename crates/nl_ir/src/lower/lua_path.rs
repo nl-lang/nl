@@ -74,11 +74,6 @@ impl Lowerer<'_> {
         }
     }
 
-
-    fn steps(node: &SyntaxNode) -> Vec<SyntaxNode> {
-        path_steps(node)
-    }
-
     /// The value of a path's root, or of its root and first step when the
     /// file localizes them (localize.rs), and how many steps that took.
     /// `keep_last`: the last step is not taken (an assignment target).
@@ -113,7 +108,7 @@ impl Lowerer<'_> {
     /// guard tested and the steps from that one on. `keep_last`: the last
     /// step is not taken by a localized head (an assignment target).
     fn lua_path_start(&mut self, node: &SyntaxNode, keep_last: bool) -> (Expr, Vec<SyntaxNode>) {
-        let mut steps = Self::steps(node);
+        let mut steps = path_steps(node);
         if let Some(i) = steps.iter().rposition(|s| self.preset(s).is_some()) {
             let rest = steps.split_off(i);
             if let Some(v) = rest.first().and_then(|s| self.preset(s)) {
@@ -148,7 +143,7 @@ impl Lowerer<'_> {
 
     /// A path on a line of its own: a call.
     pub(crate) fn lua_path_statement(&mut self, node: &SyntaxNode) -> Expr {
-        let ends_in_call = Self::steps(node).last().is_some_and(|s| matches!(s.kind(), LUA_CALL | LUA_METHOD));
+        let ends_in_call = path_steps(node).last().is_some_and(|s| matches!(s.kind(), LUA_CALL | LUA_METHOD));
         let e = self.lua_path(node);
         if ends_in_call { e } else { Expr::call(e, Vec::new()) }
     }

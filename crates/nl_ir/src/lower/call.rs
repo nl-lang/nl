@@ -168,22 +168,30 @@ impl Lowerer<'_> {
             }
         }
         // The keyed values, evaluated in their written order after the
-        // positional ones.
-        let mut pairs = Vec::new();
-        let mut sources = Vec::new();
+        // positional ones: they go through `vals` too, so that a keyed
+        // value that needs statements spills the positional values before
+        // it, and are taken off its end.
+        let first_keyed = vals.len();
+        let mut keys: Vec<Option<&str>> = Vec::new();
         for a in args {
             match a {
                 Arg::Keyed(k, e) => {
-                    let mut v = Vec::new();
-                    self.push_operand(&mut v, |l| l.expr1(e));
-                    pairs.push(TableEntry::Pair(Expr::str(k), v.pop().unwrap_or(Expr::Nil)));
+                    self.push_operand(vals, |l| l.expr1(e));
+                    keys.push(Some(k));
                 }
                 Arg::KeyedSpread(e) => {
-                    let mut v = Vec::new();
-                    self.push_operand(&mut v, |l| l.expr1(e));
-                    sources.push(v.pop().unwrap_or(Expr::Nil));
+                    self.push_operand(vals, |l| l.expr1(e));
+                    keys.push(None);
                 }
                 _ => {}
+            }
+        }
+        let mut pairs = Vec::new();
+        let mut sources = Vec::new();
+        for (k, v) in keys.into_iter().zip(vals.drain(first_keyed..)) {
+            match k {
+                Some(k) => pairs.push(TableEntry::Pair(Expr::str(k), v)),
+                None => sources.push(v),
             }
         }
         let mut keyed = if pairs.is_empty() && sources.is_empty() {

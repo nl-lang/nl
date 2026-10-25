@@ -178,9 +178,6 @@ pub(crate) struct FnState {
     /// The protected regions (`try` bodies, catches, finally blocks) being
     /// lowered in this function, innermost last.
     pub regions: Vec<error::Region>,
-    /// The function's name for messages (`Player.damage`).
-    #[allow(dead_code)]
-    pub name: String,
 }
 
 /// One loop being lowered.
@@ -519,6 +516,15 @@ impl<'a> Lowerer<'a> {
         out
     }
 
+    /// Lowers the values of a declaration, an assignment, a `return` or a
+    /// tail list: every value but the last gives one value; the last may
+    /// give several.
+    pub(crate) fn value_list(&mut self, nodes: &[SyntaxNode]) -> Vec<Expr> {
+        let vals = self.operands(nodes);
+        let n = vals.len();
+        vals.into_iter().enumerate().map(|(i, v)| if i + 1 < n { expr::single(v) } else { v }).collect()
+    }
+
     /// Declares a binding's local with an initial value, or assigns it when
     /// it was declared ahead (hoisting).
     pub(crate) fn define(&mut self, id: BindingId, value: Option<Expr>) -> LocalId {
@@ -580,7 +586,7 @@ impl<'a> Lowerer<'a> {
     }
 
     fn lower_main(&mut self, root: &SyntaxNode) -> Function {
-        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new(), name: "main chunk".to_string() });
+        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new() });
         if let Some(b) = block(root) {
             self.lower_block_with(&b, Tail::Discard, true);
         }
@@ -1085,9 +1091,7 @@ impl<'a> Lowerer<'a> {
     /// every position where the values would be discarded.
     fn value_list_stmt(&mut self, stmt: &SyntaxNode, list: &SyntaxNode, tail: Tail) {
         let nodes: Vec<SyntaxNode> = expr_children(list).collect();
-        let vals = self.operands(&nodes);
-        let n = vals.len();
-        let vals: Vec<Expr> = vals.into_iter().enumerate().map(|(i, v)| if i + 1 < n { expr::single(v) } else { v }).collect();
+        let vals = self.value_list(&nodes);
         match tail {
             Tail::Return => self.lower_return_values(stmt, vals),
             Tail::Discard => {

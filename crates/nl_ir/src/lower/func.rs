@@ -91,7 +91,7 @@ impl Lowerer<'_> {
     /// says `async`.
     pub(crate) fn function_value(&mut self, node: &SyntaxNode, spec: FnSpec) -> Expr {
         let f = Expr::Function(Box::new(self.function(node, spec)));
-        if has_token(node, ASYNC_KW) { self.wrap_async(node, f) } else { f }
+        if has_token(node, ASYNC_KW) { self.wrap_async(f) } else { f }
     }
 
     /// Lowers a function-like node (`FN_DECL`, `FN_EXPR`, `LAMBDA_EXPR`,
@@ -110,7 +110,7 @@ impl Lowerer<'_> {
             _ => None,
         };
         let check_fall_off = ret_check.is_some() && !nil_return;
-        self.fns.push(FnState { ret_check, loops: Vec::new(), regions: Vec::new(), name: spec.name.clone() });
+        self.fns.push(FnState { ret_check, loops: Vec::new(), regions: Vec::new() });
 
         let mut params = Vec::new();
         if let Some(sb) = spec.self_binding {
@@ -411,9 +411,7 @@ impl Lowerer<'_> {
     /// `return values`.
     pub(crate) fn lower_return(&mut self, node: &SyntaxNode) {
         let values: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
-        let vals = self.operands(&values);
-        let n = vals.len();
-        let vals = vals.into_iter().enumerate().map(|(i, v)| if i + 1 < n { super::expr::single(v) } else { v }).collect();
+        let vals = self.value_list(&values);
         self.lower_return_values(node, vals);
     }
 

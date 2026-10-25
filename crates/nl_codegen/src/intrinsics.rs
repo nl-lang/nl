@@ -13,8 +13,9 @@ pub const NAMES: &[&str] = &[
     "member", "method", "mget", "module", "negate", "new", "nokw", "nokwrest", "on", "opdef", "optional", "owner",
     "primmethod", "primop", "range", "record", "register", "rest", "ret", "retn", "shl", "shr", "spawn", "step",
     "submodule", "tostring", "try", "union", "unpack", "unpackkw", "ushr", "when",
-    // Added after the first release of the table, at the end (nlc.h: "New
-    // names go at the end"), so that the indices of the others stay put.
+    // The names after the sorted block stand in the order the VM's list
+    // gained them (nlc.h: "New names go at the end"), so that the indices
+    // of the others stay put.
     "nfloor", "nband", "nbor", "nbxor", "nlshift", "narshift", "nrshift",
 ];
 

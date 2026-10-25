@@ -166,6 +166,10 @@ struct Printer<'a> {
     line_map: Vec<(u32, u32)>,
     names: HashMap<LocalId, String>,
     used: HashSet<String>,
+    /// The next suffix to try for each base name that is taken: the
+    /// temporaries of a chunk share a few hints, so the search for a free
+    /// name must not start over at `_2` for each of them.
+    suffixes: HashMap<String, u32>,
     hoist_id: u32,
 }
 
@@ -206,7 +210,7 @@ impl<'a> Printer<'a> {
         let mut used = HashSet::new();
         used.insert("__rt".to_string());
         used.insert("__G".to_string());
-        Printer { chunk, out: String::new(), line: 1, line_nl: 1, line_map: Vec::new(), names: HashMap::new(), used, hoist_id: 0 }
+        Printer { chunk, out: String::new(), line: 1, line_nl: 1, line_map: Vec::new(), names: HashMap::new(), used, suffixes: HashMap::new(), hoist_id: 0 }
     }
 
     // ---- names ---------------------------------------------------------------
@@ -219,10 +223,15 @@ impl<'a> Printer<'a> {
         let base: String = hint.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' }).collect();
         let base = if is_lua_identifier(&base) && !base.starts_with("__") { base } else { format!("_{base}_") };
         let mut name = base.clone();
-        let mut n = 2;
-        while self.used.contains(&name) {
-            name = format!("{base}_{n}");
-            n += 1;
+        if self.used.contains(&name) {
+            let n = self.suffixes.entry(base.clone()).or_insert(2);
+            loop {
+                name = format!("{base}_{n}");
+                *n += 1;
+                if !self.used.contains(&name) {
+                    break;
+                }
+            }
         }
         self.used.insert(name.clone());
         self.names.insert(id, name);
@@ -1146,6 +1155,31 @@ mod tests {
         // A chunk without a map is left as it is.
         let plain = "local __rt = ...; return function(...) f() end\n";
         assert_eq!(take_line_map(plain), (plain.to_string(), Vec::new()));
+    }
+
+    /// Locals that share a hint get distinct names, also when a hint is
+    /// spelled like a name made from another one.
+    #[test]
+    fn shared_hints_get_distinct_names() {
+        let hints = ["c", "c", "c_2", "c", "c_3", "c"];
+        let locals: Vec<LocalId> = (0..hints.len()).map(|i| LocalId(i as u32)).collect();
+        let main = Function {
+            params: Vec::new(),
+            vararg: true,
+            body: Block::new(vec![Stmt { line: 1, kind: StmtKind::Local { locals: locals.clone(), values: Vec::new() } }]),
+            line: 1,
+            name: None,
+            method: false,
+            transient: false,
+        };
+        let chunk = Chunk { locals: hints.iter().map(|h| LocalInfo { hint: (*h).to_string() }).collect(), main, name: "=t".to_string(), owner: None };
+        let mut p = Printer::new(&chunk);
+        p.assign_names(&chunk.main);
+        let names: Vec<&str> = locals.iter().map(|l| p.local(*l)).collect();
+        let distinct: HashSet<&str> = names.iter().copied().collect();
+        assert_eq!(distinct.len(), names.len(), "{names:?}");
+        assert!(names.iter().all(|n| is_lua_identifier(n)), "{names:?}");
+        assert_eq!(names[0], "c");
     }
 
     #[test]

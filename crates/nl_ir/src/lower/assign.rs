@@ -78,7 +78,7 @@ impl Lowerer<'_> {
             return;
         }
         let locals: Vec<LocalId> = ids.iter().map(|id| self.local_of(*id)).collect();
-        let (stmts, values) = self.capture(|l| l.values_for(value_nodes, names.len()));
+        let (stmts, values) = self.capture(|l| l.value_list(value_nodes));
         let predeclared = ids.iter().all(|id| self.is_predeclared(*id));
         if predeclared {
             // The temporaries of the values end with the statement.
@@ -121,14 +121,6 @@ impl Lowerer<'_> {
         }
     }
 
-    /// Lowers the values of a declaration or assignment: every value but
-    /// the last gives one value; the last may give several.
-    pub(crate) fn values_for(&mut self, nodes: &[SyntaxNode], _wanted: usize) -> Vec<Expr> {
-        let vals = self.operands(nodes);
-        let n = vals.len();
-        vals.into_iter().enumerate().map(|(i, v)| if i + 1 < n { single(v) } else { v }).collect()
-    }
-
     /// `let` with destructuring patterns: the values go to
     /// temporaries, then each pattern binds from its value. The bound names
     /// are declared first, and the temporaries end with the statement.
@@ -146,7 +138,7 @@ impl Lowerer<'_> {
             }
         }
         let body = self.sub_block(|l| {
-            let values = l.values_for(value_nodes, pats.len());
+            let values = l.value_list(value_nodes);
             let temps: Vec<LocalId> = pats.iter().map(|_| l.new_local("value")).collect();
             l.emit(StmtKind::Local { locals: temps.clone(), values });
             for (p, t) in pats.iter().zip(temps) {
@@ -313,7 +305,7 @@ impl Lowerer<'_> {
         for t in &tnodes {
             lowered.push(self.capture(|l| l.target(t)));
         }
-        let (vstmts, values) = self.capture(|l| l.values_for(&vnodes, tnodes.len()));
+        let (vstmts, values) = self.capture(|l| l.value_list(&vnodes));
         // For each target: whether statements run after it, and what is
         // evaluated after it (the parts of later targets, the values).
         let mut after: Vec<(bool, Vec<Expr>)> = Vec::new();

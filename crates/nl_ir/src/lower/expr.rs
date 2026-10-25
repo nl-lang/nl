@@ -395,11 +395,16 @@ impl Lowerer<'_> {
         let ops = self.operands(&parts);
         let mut it = ops.into_iter();
         let (Some(o), Some(k)) = (it.next(), it.next()) else { return self.internal(node, "index") };
+        // A plain index reads its table where it indexes, after the key
+        // (as Lua does): a local the key's code can assign is pinned
+        // first, so that both levels read it before the key.
+        let (o, k) = (single(o), single(k));
+        let o = self.pin(o, &k);
         // A receiver certain to be a table: `rt.index` would only index it.
         if self.opts.hints.is_table_read(node.text_range()) {
-            return Expr::index(single(o), single(k));
+            return Expr::index(o, k);
         }
-        self.index_read(single(o), single(k))
+        self.index_read(o, k)
     }
 
     /// A raw `x[k]` read under NL's rules (the index of a string, the

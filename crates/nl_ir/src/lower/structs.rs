@@ -51,7 +51,7 @@ impl Lowerer<'_> {
     /// values.
     pub(crate) fn thunk(&mut self, f: impl FnOnce(&mut Self) -> Expr) -> Expr {
         let line = self.line;
-        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new(), name: "default value".to_string() });
+        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new() });
         let (mut stmts, value) = self.capture(f);
         self.fns.pop();
         stmts.push(Stmt { line, kind: StmtKind::Return(vec![value]) });
