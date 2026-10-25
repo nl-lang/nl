@@ -279,7 +279,7 @@ impl Parser<'_> {
             if !self.chain_link() {
                 break;
             }
-            ops.push((self.start(), self.nth_text(0).to_string()));
+            ops.push((self.start(), self.cur()));
             self.bump();
         }
         if ops.is_empty() {
@@ -287,7 +287,7 @@ impl Parser<'_> {
         }
         let operand = self.power(false);
         if operand.is_none() {
-            let after = ops.last().map(|o| o.1.clone()).unwrap_or_default();
+            let after = ops.last().and_then(|o| o.1.fixed_text()).unwrap_or("");
             self.missing_operand(&format!("`{after}`"));
         }
         let links = u32::try_from(ops.len()).unwrap_or(u32::MAX);

@@ -227,7 +227,8 @@ impl Parser<'_> {
         f.complete(self, PAT_FIELD);
     }
 
-    /// A default value inside a pattern is a deferred feature.
+    /// `= expr` after an item of a pattern: not part of NL; reported and
+    /// read into an `ERROR_NODE`.
     fn pattern_default(&mut self) {
         if self.at(EQ) {
             self.error("defaults inside patterns are not part of NL yet");

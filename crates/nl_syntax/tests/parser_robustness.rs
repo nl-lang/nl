@@ -12,11 +12,19 @@
 
 use std::path::Path;
 
-use nl_syntax::{Parse, lex, parse};
+use nl_syntax::{Parse, lex, parse, parse_decl_file};
 
 /// Parses `src` and checks the guarantees of `Parse`.
 fn check(src: &str) -> Parse {
-    let p = parse(src);
+    verify(src, parse(src))
+}
+
+/// [`check`] for a declaration file.
+fn check_decl(src: &str) -> Parse {
+    verify(src, parse_decl_file(src))
+}
+
+fn verify(src: &str, p: Parse) -> Parse {
     let root = p.syntax();
     let text = root.to_string();
     assert!(text == src, "tree text differs from the source for {:?}", short(src));
@@ -102,29 +110,34 @@ fn on_2mib<R: Send + 'static>(src: &str, f: fn(&str) -> R) -> R {
 
 /// The diagnostics of `src`, parsed on a 2 MiB thread.
 fn errors_2mib(src: &str) -> Vec<String> {
-    on_2mib(src, |s| check(s).diagnostics().iter().map(|d| d.message.clone()).collect())
+    on_2mib(src, |s| messages(&check(s)))
 }
 
-/// Shapes the review found to overflow the stack (B1 to B3), and inputs on
-/// which lookahead used to spend the fuel of a stuck parser (S6).
+fn messages(p: &Parse) -> Vec<String> {
+    p.diagnostics().iter().map(|d| d.message.clone()).collect()
+}
+
+/// Shapes that must not overflow the stack: runs of `async`, member chains
+/// after `spawn` and `|>`, junk mixed with prefix operators; and inputs on
+/// which a long lookahead must not be taken for a stuck parser.
 #[test]
-fn review_blocker_shapes() {
-    // B1: a long run of `async`.
+fn hostile_shapes() {
+    // A long run of `async`.
     let errs = errors_2mib(&format!("x = {}y", "async ".repeat(5000)));
     assert_eq!(errs.len(), 1, "{errs:?}");
-    // B2: member chains after `spawn` and `|>`.
+    // Member chains after `spawn` and `|>`.
     let errs = errors_2mib(&format!("spawn a{}()", ".b".repeat(20000)));
     assert!(!errs.is_empty() && errs.len() <= 2, "{errs:?}");
     assert!(errs.iter().any(|e| e.contains("too long")), "{errs:?}");
     assert!(errs.iter().all(|e| e.len() < 400), "messages quote at most a short piece of source");
     let errs = errors_2mib(&format!("x |> a{}", ".b".repeat(20000)));
     assert!(!errs.is_empty() && errs.len() <= 2, "{errs:?}");
-    // B3: junk and prefix operators.
+    // Junk and prefix operators.
     let errs = errors_2mib(&format!("x = {}y", "- * ".repeat(1000)));
     assert_eq!(errs.len(), 1, "{errs:?}");
     let errs = errors_2mib(&format!("x = {}y", "- * - async ".repeat(1000)));
     assert!(!errs.is_empty() && errs.len() <= 2, "{errs:?}");
-    // S6: long lookahead is not a stuck parser.
+    // Long lookahead is not a stuck parser.
     let src = format!("x = cond{}\nwhen x\n  y\nend", ";".repeat(100_000));
     let errs = errors_2mib(&src);
     assert!(errs.iter().all(|e| !e.contains("internal")), "{errs:?}");
@@ -137,8 +150,8 @@ fn review_blocker_shapes() {
     assert!(errs[0].contains("let"), "{errs:?}");
 }
 
-/// Inputs that used to take quadratic time (S4, S5). Linear, they take a
-/// fraction of a second; quadratic, minutes.
+/// Inputs on which the parser must take linear time: a fraction of a
+/// second; quadratic, they would take minutes.
 #[test]
 fn long_lines() {
     let src = "\"".repeat(300_000);
@@ -153,7 +166,7 @@ fn long_lines() {
     let _ = nl_syntax::dump_diagnostics(&src, p.diagnostics());
 }
 
-/// T4: a limit costs the statement it is reached in, not the rest of the
+/// A limit costs the statement it is reached in, not the rest of the
 /// file, and gives one error.
 #[test]
 fn limits_cost_one_statement() {
@@ -181,7 +194,7 @@ fn limits_cost_one_statement() {
     }
 }
 
-/// T4: 128 levels of any construct parse without a diagnostic; 64 levels of
+/// 128 levels of any construct parse without a diagnostic; 64 levels of
 /// `f(fn() … end)` (two levels each) too.
 #[test]
 fn nesting_up_to_the_limit_parses() {
@@ -267,6 +280,26 @@ fn deep_blocks() {
         ok.push_str("end\n");
     }
     assert!(!check(&ok).has_errors());
+}
+
+/// The containers of a declaration file nest through `decl_member`, which
+/// is guarded like a statement; a run of `declare` is one error node, not
+/// one level of recursion each.
+#[test]
+fn deep_declaration_files() {
+    let src = format!("declare module A\n{}{}", "module B\n".repeat(5_000), "end\n".repeat(5_001));
+    let errs = on_2mib(&src, |s| messages(&check_decl(s)));
+    assert_eq!(errs.len(), 1, "{errs:?}");
+    assert!(errs[0].contains("nested too deeply"), "{errs:?}");
+    let src = format!("declare struct Foo\n  {}fn f(): Number\n  x: Number\nend\n", "declare ".repeat(20_000));
+    let errs = on_2mib(&src, |s| messages(&check_decl(s)));
+    assert_eq!(errs.len(), 1, "{errs:?}");
+    let src = format!("declare struct Foo\n  {}\n  x: Number\nend\n", "declare ".repeat(20_000));
+    let errs = on_2mib(&src, |s| messages(&check_decl(s)));
+    assert_eq!(errs.len(), 1, "{errs:?}");
+    // Realistic nesting is fine.
+    let ok = format!("declare module A\n{}{}", "module B\n".repeat(30), "end\n".repeat(31));
+    assert!(!check_decl(&ok).has_errors());
 }
 
 #[test]

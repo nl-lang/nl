@@ -247,8 +247,6 @@ syntax_kinds! {
     /// `?` alone: the optional-type marker `T?`.
     QUESTION = "?",
     /// `->`, between the parameters and the body of a short function.
-    /// `a->b` used to lex as `a` `-` `>b`, an error, so
-    /// the token changes the meaning of no valid program.
     ARROW = "->",
     /// `?.`, the nil-safe step. In the tree it stands where
     /// the step's `.` would, or before its `[`, `(` or `:`, inside the

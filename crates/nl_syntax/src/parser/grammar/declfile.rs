@@ -145,17 +145,24 @@ impl Parser<'_> {
     }
 
     /// `member`: a field, a `const`, an `fn`, or a nested module,
-    /// struct or type.
+    /// struct or type. Guarded: nested containers recurse through here.
     fn decl_member(&mut self) {
+        let _ = self.guarded(|p| p.decl_member_inner());
+    }
+
+    fn decl_member_inner(&mut self) {
+        if self.at(DECLARE_KW) {
+            // One error for a run of them; the member follows on the line.
+            self.error("a nested declaration is written without `declare`");
+            let e = self.start();
+            while self.eat(DECLARE_KW) {}
+            e.complete(self, ERROR_NODE);
+            if self.nl() || self.at_block_end() {
+                return;
+            }
+        }
         let k = self.cur();
         match k {
-            DECLARE_KW => {
-                self.error("a nested declaration is written without `declare`");
-                let e = self.start();
-                self.bump();
-                e.complete(self, ERROR_NODE);
-                self.decl_member();
-            }
             FN_KW => {
                 let m = self.start();
                 self.decl_fn(m, false);

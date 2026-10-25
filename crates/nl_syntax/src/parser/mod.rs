@@ -282,7 +282,7 @@ fn significant_tokens(lexed: &Lexed<'_>) -> Vec<Tok> {
     let mut carry_sp = false;
     let mut carry_err = false;
     let mut line: u32 = 1;
-    // A byte-order mark is not part of the first line's indentation (S7).
+    // A byte-order mark is not part of the first line's indentation.
     if lexed.source.starts_with('\u{FEFF}') {
         line_start = 3;
     }
@@ -869,7 +869,7 @@ impl<'a> Parser<'a> {
 
     /// The current token is the closer keyword `kind`, and it belongs to the
     /// innermost construct: no indentation hint puts it in an enclosing one
-    /// (an `else` less indented than the `if` inside it, T5).
+    /// (an `else` less indented than the `if` inside it).
     pub(crate) fn takes_closer(&self, kind: SyntaxKind) -> bool {
         self.at(kind) && !self.hint_end_belongs_outside()
     }

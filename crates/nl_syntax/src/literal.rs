@@ -246,8 +246,10 @@ fn push_code_point(out: &mut Vec<u8>, c: u32) {
 }
 
 /// Decodes the escapes of `text` (no delimiters, no interpolation). An
-/// invalid escape is kept as written.
-fn decode_escapes(text: &[u8], out: &mut Vec<u8>) {
+/// invalid escape is kept as written. In a `"…"` string (`quoted`) a
+/// backslash before a line break continues the string and writes one `\n`;
+/// in a heredoc it is an error the lexer reported, kept as written.
+fn decode_escapes(text: &[u8], quoted: bool, out: &mut Vec<u8>) {
     let mut i = 0;
     while let Some(&b) = text.get(i) {
         if b != b'\\' {
@@ -255,9 +257,7 @@ fn decode_escapes(text: &[u8], out: &mut Vec<u8>) {
             i += 1;
             continue;
         }
-        // A backslash before a line break, in a `"…"` string: one `\n`.
-        // A heredoc's text is decoded line by line and never gets here.
-        let lb = line_break_len(text, i + 1);
+        let lb = if quoted { line_break_len(text, i + 1) } else { 0 };
         if lb > 0 {
             out.push(b'\n');
             i += 1 + lb;
@@ -441,7 +441,7 @@ fn decode_quoted_part(text: &str, first: bool) -> Vec<u8> {
     }
     let end = quoted_end(b);
     let mut out = Vec::new();
-    decode_escapes(b.get(1..end).unwrap_or(&[]), &mut out);
+    decode_escapes(b.get(1..end).unwrap_or(&[]), true, &mut out);
     out
 }
 
@@ -586,7 +586,7 @@ fn decode_heredoc(parts: &[&str], dedent: bool, raw: bool) -> Vec<Vec<u8>> {
         .iter()
         .map(|t| {
             let mut out = Vec::new();
-            decode_escapes(t, &mut out);
+            decode_escapes(t, false, &mut out);
             out
         })
         .collect()
@@ -668,6 +668,10 @@ mod tests {
         assert_eq!(one(&["\"\"\"-\n\t a\n\t\tb\n\"\"\""]), " a\n\tb");
         // `\"""` is content.
         assert_eq!(one(&["\"\"\"\n\\\"\"\"\n\"\"\""]), "\"\"\"");
+        // A backslash before a line break continues a `"…"` string only; in
+        // a heredoc it is an error, kept as written.
+        assert_eq!(one(&["\"a\\\nb\""]), "a\nb");
+        assert_eq!(one(&["\"\"\"\na\\\nb\n\"\"\""]), "a\\\nb");
     }
 
     #[test]
