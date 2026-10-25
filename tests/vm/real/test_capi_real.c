@@ -897,6 +897,62 @@ static void test_imports(void)
   lua_close(L);
 }
 
+/* A host that keeps rt (as Garry's Mod's lua_shared does, for rt.forget):
+** the start function of nl_sethostinit gets it, here as the global RT.
+*/
+static int keep_rt(lua_State *L)
+{
+  lua_pushvalue(L, 1);
+  lua_setglobal(L, "RT");
+  return 0;
+}
+
+static int host_keeps_rt(lua_State *L)
+{
+  lua_pushcfunction(L, keep_rt);
+  return 1;
+}
+
+/* rt.forget: a file and its importers, but not a file that imported it
+** once and no longer does.
+*/
+static void test_forget(void)
+{
+  lua_State *L = luaL_newstate();
+  nl_setreporter(L, reporter, NULL);
+  nl_sethostinit(L, host_keeps_rt);
+  lua_pushcfunction(L, openlibs);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  CHECK_LUA(L, "type(RT) == 'table' and type(RT.forget) == 'function'");
+  writefile("fl.nl", "pub fn v\n  1\nend\n");
+  writefile("fa.nl", "import { v } from './fl'\npub fn get\n  v()\nend\n");
+  nl_import(L, "fa");
+  CHECK(callf(L, -1, "get", 0, 1) == 0);
+  CHECK(lua_tonumber(L, -1) == 1);
+  lua_settop(L, 0);
+  /* fl's importers are forgotten with it. */
+  CHECK_LUA(L, "#RT.forget('fl.nl') == 2");
+  nl_import(L, "fa");
+  lua_settop(L, 0);
+  /* fa no longer imports fl: forgetting fl leaves fa alone. */
+  writefile("fa.nl", "pub fn get\n  2\nend\n");
+  CHECK_LUA(L, "#RT.forget('fa.nl') == 1");
+  nl_import(L, "fa");
+  CHECK(callf(L, -1, "get", 0, 1) == 0);
+  CHECK(lua_tonumber(L, -1) == 2);
+  lua_settop(L, 0);
+  CHECK_LUA(L, "#RT.forget('fl.nl') == 1");
+  /* It imports fl again: the link is back. */
+  writefile("fa.nl", "import { v } from './fl'\npub fn get\n  v() + 10\nend\n");
+  CHECK_LUA(L, "#RT.forget('fa.nl') == 1");
+  nl_import(L, "fa");
+  CHECK(callf(L, -1, "get", 0, 1) == 0);
+  CHECK(lua_tonumber(L, -1) == 11);
+  lua_settop(L, 0);
+  CHECK_LUA(L, "#RT.forget('fl.nl') == 2");
+  lua_close(L);
+}
+
 /* Garry's Mod's host (runtime/gmod/host.lua) on the fork, opened as
 ** lua_shared opens it: its fields over the VM's host table, its start
 ** called with rt. Its Think hook is the only pump: what workers send back
@@ -1260,6 +1316,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_events_from_nl);
   RUN_TEST(test_handler_awaits);
   RUN_TEST(test_imports);
+  RUN_TEST(test_forget);
 #ifdef NL_ROOT
   RUN_TEST(test_gmod_host);
 #endif

@@ -130,8 +130,9 @@ do
   -- Files imported by this state, by canonical name: their export tables.
   I.loaded = {}
   -- Who imports whom: importers[name][from] for each import of the file
-  -- `name` by the file `from` (canonical names), for rt.forget.
-  local importers = {}
+  -- `name` by the file `from` (canonical names), and the same links the
+  -- other way round, imports[from][name], for rt.forget.
+  local importers, imports = {}, {}
   -- Files whose main function is running, by canonical name, and the same
   -- names in the order they started (for the message of a cycle).
   local running, running_order = {}, {}
@@ -185,6 +186,9 @@ do
       local by = importers[name]
       if by == nil then by = {} importers[name] = by end
       by[from] = true
+      local of = imports[from]
+      if of == nil then of = {} imports[from] = of end
+      of[name] = true
     end
     return import_name(name)
   end
@@ -194,7 +198,10 @@ do
   -- the next import of each runs it again, with its source as it is then.
   -- A host that reloads a changed file calls it, then runs again the
   -- files it runs itself (entries) among those returned. Returns the
-  -- names, the file's first, then its importers outward.
+  -- names, the file's first, then its importers outward. A file that
+  -- runs again imports again: the imports it made before are dropped, so
+  -- that a file no longer imported does not bring back the one that
+  -- stopped importing it.
   function rt.forget(name)
     local out, seen, i = { name }, { [name] = true }, 1
     while out[i] ~= nil do
@@ -210,6 +217,17 @@ do
         for j = 1, #more do out[#out + 1] = more[j] end
       end
       i = i + 1
+    end
+    for j = 1, #out do
+      local n = out[j]
+      local of = imports[n]
+      if of ~= nil then
+        for dep in pairs(of) do
+          local by = importers[dep]
+          if by ~= nil then by[n] = nil end
+        end
+        imports[n] = nil
+      end
     end
     return out
   end
