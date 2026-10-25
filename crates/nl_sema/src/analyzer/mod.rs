@@ -245,8 +245,10 @@ pub(crate) struct Analyzer<'a> {
     /// The signature of each function node, by the node's range, with the
     /// declared return type (or `any` before inference).
     pub(crate) fn_sigs: HashMap<TextRange, Rc<FnType>>,
-    /// The signature of each `fn` binding and `fn`-initialized binding.
-    pub(crate) binding_sigs: HashMap<BindingId, Rc<FnType>>,
+    /// The signature of each `fn` binding and `fn`-initialized binding,
+    /// with the range of its function node (the key of `fn_sigs` and
+    /// `inferred_ret`).
+    pub(crate) binding_sigs: HashMap<BindingId, (TextRange, Rc<FnType>)>,
     /// The return type inferred for each function node in pass 1.
     pub(crate) inferred_ret: HashMap<TextRange, Type>,
     /// The declared (or initializer-inferred) type of each binding.
@@ -276,7 +278,7 @@ pub(crate) struct Analyzer<'a> {
     pub(crate) used: HashSet<BindingId>,
     /// The file has top-level statements other than declarations
     /// (a worker that loads it repeats them).
-    pub(crate) top_level_effects: Option<TextRange>,
+    pub(crate) top_level_effects: bool,
     /// The module each module function belongs to.
     pub(crate) module_of_binding: HashMap<BindingId, NamedId>,
     /// The nominal types of the nested declarations of declared modules,
@@ -333,7 +335,7 @@ impl<'a> Analyzer<'a> {
             hints: Hints::default(),
             pass: 0,
             used: HashSet::new(),
-            top_level_effects: None,
+            top_level_effects: false,
             module_of_binding: HashMap::new(),
             decl_nested: HashMap::new(),
             pending_replacements: Vec::new(),
@@ -559,13 +561,17 @@ impl<'a> Analyzer<'a> {
             }
         }
         // Type parameters are erased: their bindings have no nominal type.
-        // Fill the declarations in.
+        // Fill the declarations in: aliases first, since a struct's parent
+        // may be one (`struct C : Q` with `type Q = P`, in either order).
+        for n in root.descendants().filter(|n| n.kind() == TYPE_DECL) {
+            self.collect_alias(&n);
+        }
+        self.cut_alias_cycles();
         for n in root.descendants() {
             match n.kind() {
                 STRUCT_DECL => self.collect_struct(&n),
                 ENUM_DECL => self.collect_enum(&n),
                 INTERFACE_DECL => self.collect_interface(&n),
-                TYPE_DECL => self.collect_alias(&n),
                 _ => {}
             }
         }
@@ -792,9 +798,12 @@ impl<'a> Analyzer<'a> {
         let Some(name) = child(node, NAME) else { return };
         let Some(id) = self.res.declaration(name.text_range()) else { return };
         let Some(&nid) = self.named_of.get(&id) else { return };
-        let parent = child(node, STRUCT_PARENT).and_then(|p| type_child(&p)).and_then(|t| match self.type_of(&t) {
-            Type::Named(p) => Some(p),
-            _ => None,
+        let parent = child(node, STRUCT_PARENT).and_then(|p| type_child(&p)).and_then(|t| {
+            let ty = self.type_of(&t);
+            match self.types.expand(&ty) {
+                Type::Named(p) => Some(p),
+                _ => None,
+            }
         });
         let type_params: Vec<String> = child(node, TYPE_PARAMS).map(|tp| children(&tp, TYPE_PARAM).filter_map(|p| child(&p, NAME)).filter_map(|n| name_text(&n)).collect()).unwrap_or_default();
         let mut fields = Vec::new();
@@ -893,6 +902,45 @@ impl<'a> Analyzer<'a> {
         }
     }
 
+    /// An alias that refers to itself without a record in between
+    /// (`type A = ~A`, `type A = [A]`, two aliases naming each other) is
+    /// an error the lowering reports; here it is `any`, so that the
+    /// lattice, which is bounded, gives no answer about it that depends
+    /// on where the bound fell.
+    fn cut_alias_cycles(&mut self) {
+        let aliases: Vec<NamedId> = self.named_of.values().copied().filter(|n| matches!(self.types.kind(*n), Some(NamedKind::Alias(_)))).collect();
+        let cyclic: Vec<NamedId> = aliases.into_iter().filter(|a| self.alias_reaches(&Type::Named(*a), *a, &mut Vec::new())).collect();
+        for a in cyclic {
+            if let Some(n) = self.types.get_mut(a) {
+                n.kind = NamedKind::Alias(Type::Any);
+            }
+        }
+    }
+
+    /// True when `t` names the alias `target` outside every record, through
+    /// the aliases on `path`.
+    fn alias_reaches(&self, t: &Type, target: NamedId, path: &mut Vec<NamedId>) -> bool {
+        match t {
+            Type::Named(id) => match self.types.kind(*id) {
+                Some(NamedKind::Alias(inner)) => {
+                    if path.contains(id) {
+                        return *id == target;
+                    }
+                    path.push(*id);
+                    let found = self.alias_reaches(inner, target, path);
+                    path.pop();
+                    found
+                }
+                _ => false,
+            },
+            Type::Union(m) | Type::And(m) | Type::Tuple(m) => m.iter().any(|x| self.alias_reaches(x, target, path)),
+            Type::Not(x) | Type::Array(x) | Type::Task(x) => self.alias_reaches(x, target, path),
+            Type::Map(k, v) => self.alias_reaches(k, target, path) || self.alias_reaches(v, target, path),
+            Type::Fn(f) => f.params.iter().any(|p| self.alias_reaches(&p.ty, target, path)) || self.alias_reaches(&f.ret, target, path),
+            _ => false,
+        }
+    }
+
     /// The signature of a function-like node from its annotations:
     /// `PARAM_LIST`/`BLOCK_PARAMS`, `REST_PARAM`, `KEYED_PARAM`,
     /// `RETURN_TYPE`. `self_ty` is the type `Self` stands for.
@@ -924,14 +972,10 @@ impl<'a> Analyzer<'a> {
             }
         }
         let is_async = has_token(node, ASYNC_KW);
-        let (ret, nil_ret) = match child(node, RETURN_TYPE).and_then(|r| type_child(&r)) {
-            Some(t) => {
-                let ty = self.type_of_with_self(&t, self_ty.clone());
-                (ty.clone(), ty == Type::Nil)
-            }
-            None => (Type::Any, false),
+        let ret = match child(node, RETURN_TYPE).and_then(|r| type_child(&r)) {
+            Some(t) => self.type_of_with_self(&t, self_ty),
+            None => Type::Any,
         };
-        let _ = nil_ret;
         FnType { params, rest, keyed, ret, is_method, is_async, named, declared: false }
     }
 
@@ -1028,7 +1072,7 @@ impl<'a> Analyzer<'a> {
         let named = b.as_ref().is_some_and(|b| b.named);
         let sig = Rc::new(self.signature_of(node, is_method, named, self_ty));
         self.fn_sigs.insert(node.text_range(), sig.clone());
-        self.binding_sigs.insert(id, sig.clone());
+        self.binding_sigs.insert(id, (node.text_range(), sig.clone()));
         if let Some(m) = module_owner.and_then(|m| self.named_of.get(&m).copied()) {
             self.module_of_binding.insert(id, m);
             let text = name_text(&name).unwrap_or_default();
@@ -1188,7 +1232,7 @@ impl<'a> Analyzer<'a> {
             let Some(id) = child(&pat, NAME).and_then(|n| self.res.declaration(n.text_range())) else { continue };
             let sig = Rc::new(self.signature_of(v, false, false, None));
             self.fn_sigs.insert(v.text_range(), sig.clone());
-            self.binding_sigs.insert(id, sig);
+            self.binding_sigs.insert(id, (v.text_range(), sig));
         }
     }
 
@@ -1215,8 +1259,7 @@ impl<'a> Analyzer<'a> {
     /// The signature a binding holds (`fn name`, `let f = fn … end`), with
     /// the inferred return type.
     pub(crate) fn binding_fn_type(&self, id: BindingId) -> Option<Rc<FnType>> {
-        let base = self.binding_sigs.get(&id)?.clone();
-        let node_range = self.fn_sigs.iter().find(|(_, s)| Rc::ptr_eq(s, &base)).map(|(r, _)| *r)?;
+        let (node_range, base) = self.binding_sigs.get(&id)?.clone();
         if base.ret != Type::Any {
             return Some(base);
         }

@@ -341,12 +341,9 @@ pub fn check(root: &SyntaxNode, res: &Resolution, decls: &Declarations, profile:
     let dead = dead_ranges(root, res, profile);
     let mut lua_paths: Option<HashMap<String, Realm>> = None;
     for node in root.descendants() {
-        if is_dead(node.text_range(), &dead) {
-            continue;
-        }
         match node.kind() {
-            NAME_REF => check_name(&node, res, decls, profile, &mut out),
-            LUA_PATH if profile.is_gmod() => {
+            NAME_REF if !is_dead(node.text_range(), &dead) => check_name(&node, res, decls, profile, &mut out),
+            LUA_PATH if profile.is_gmod() && !is_dead(node.text_range(), &dead) => {
                 let index = lua_paths.get_or_insert_with(|| lua_path_realms(decls));
                 check_lua_path(&node, res, index, &mut out);
             }

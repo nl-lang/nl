@@ -4,7 +4,7 @@
 
 use std::rc::Rc;
 
-use nl_syntax::{SyntaxKind, SyntaxNode, TextRange};
+use nl_syntax::{SyntaxKind, SyntaxNode};
 
 use super::{Analyzer, Env, Ty};
 use crate::binding::*;
@@ -78,7 +78,7 @@ impl Analyzer<'_> {
                 let narrowed = self.types.narrow(&value.t, &Type::Table);
                 for c in pat.children() {
                     match c.kind() {
-                        PAT_FIELD => self.bind_pat_field(&c, &narrowed, value.certain, must),
+                        PAT_FIELD => self.bind_pat_field(&c, &narrowed, must),
                         k if is_pattern(k) => {
                             self.bind_pattern(&c, &Ty::any(), must);
                         }
@@ -94,7 +94,7 @@ impl Analyzer<'_> {
                 let narrowed = self.types.narrow(&value.t, &st);
                 for c in pat.children() {
                     if c.kind() == PAT_FIELD {
-                        self.bind_pat_field(&c, &narrowed, true, must);
+                        self.bind_pat_field(&c, &narrowed, must);
                     }
                 }
                 narrowed
@@ -142,14 +142,16 @@ impl Analyzer<'_> {
         }
     }
 
-    /// One keyed item of a brace or struct pattern.
-    fn bind_pat_field(&mut self, field: &SyntaxNode, owner: &Type, certain: bool, must: bool) {
+    /// One keyed item of a brace or struct pattern. What the key holds is
+    /// never certain: a declared field's type is checked at construction
+    /// only, and a record's keys are what a literal wrote.
+    fn bind_pat_field(&mut self, field: &SyntaxNode, owner: &Type, must: bool) {
         let key = name_token(field).map(|t| t.text().to_string()).or_else(|| first_token(field).map(|t| match t.kind() {
             STRING => crate::resolver::decode_plain_string(&t),
             _ => t.text().to_string(),
         }));
         let field_ty = key.as_deref().map(|k| self.field_type_of(owner, k)).unwrap_or(Type::Any);
-        let value = Ty::new(field_ty, certain && false);
+        let value = Ty::uncertain(field_ty);
         // `{name?}`, `{key?: p}`: an optional field matches when it is
         // `nil`, so what it binds may be `nil`, as in a must-match context.
         let must = must || has_token(field, QUESTION);
@@ -179,8 +181,6 @@ impl Analyzer<'_> {
             let t = self.type_of(&ty);
             let t = if has_token(field, QUESTION) { optional(&self.types, &t) } else { t };
             if let Some(id) = name_token(field).and_then(|k| self.res.declaration(k.text_range())) {
-                let fn_init = self.binding_sigs.contains_key(&id);
-                let _ = fn_init;
                 self.declare_type(id, Ty::certain(t));
             }
         }
@@ -285,7 +285,6 @@ impl Analyzer<'_> {
                     let mut unreachable = true;
                     let items: Vec<SyntaxNode> = c.children().filter(|i| is_pattern(i.kind()) || (is_expr(i.kind()) && i.kind() != WHEN_GUARD)).collect();
                     for item in &items {
-                        let before = self.diags.len();
                         let (m, cover, excludes) = self.when_item(item, &subject_ty, &remaining);
                         if guard.is_none() {
                             if let Some(cv) = cover {
@@ -300,7 +299,6 @@ impl Analyzer<'_> {
                         if !cannot_match || !self.types.is_definite(&subject_ty.t) {
                             unreachable = false;
                         }
-                        let _ = before;
                         matched.push(m);
                     }
                     if items.is_empty() {
@@ -544,9 +542,4 @@ enum Cover {
     All,
     Type(Type),
     Variant(String),
-}
-
-#[allow(dead_code)]
-fn range_of(n: &SyntaxNode) -> TextRange {
-    n.text_range()
 }

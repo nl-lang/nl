@@ -146,8 +146,7 @@ prelude! {
     "KeyError" => Runtime("KeyError"), Struct;
     "SendError" => Runtime("SendError"), Struct;
     "WorkerError" => Runtime("WorkerError"), Struct;
-    // `To<T>` and `From<T>` are taken to be prelude interfaces
-    // (`conv_custom.nl` assumes so).
+    // The conversion interfaces.
     "To" => Runtime("To"), Interface;
     "From" => Runtime("From"), Interface;
 }

@@ -200,16 +200,11 @@ impl Analyzer<'_> {
                 Ty::certain(Type::Nil)
             }
             AT_EXPR => {
-                let f = self.at_expr_value(e);
-                let _ = f;
+                self.expr(e);
                 Ty::any()
             }
             _ => self.expr(e),
         }
-    }
-
-    fn at_expr_value(&mut self, e: &SyntaxNode) -> Ty {
-        self.expr(e)
     }
 
     // ---- declarations -----------------------------------------------------------------
@@ -397,6 +392,10 @@ impl Analyzer<'_> {
         let saved_env = self.env.clone();
         let saved_div = self.diverges;
         self.diverges = false;
+        // The body runs later, and may run after an assignment the flow
+        // analysis did not see: a narrowing of an enclosing function's
+        // binding holds inside only when nothing assigns the binding.
+        self.env.retain(|id, _| !self.assigned.contains(id));
         if let (Some(sb), Some(st)) = (method_self, self_ty.clone()) {
             self.declare_type(sb, Ty::certain(st));
         }
@@ -463,9 +462,6 @@ impl Analyzer<'_> {
             let site = last.as_ref().map(|s| s.text_range());
             let single = last.as_ref().and_then(|s| if s.kind() == EXPR_STMT { expr_child(s) } else { None }).is_some_and(|e| self.single_valued(&e) || self.checked_call(&e));
             self.record_return(&t, site, true, single);
-        } else if !diverged && !tail_used && declared_ret.as_ref().is_some_and(|t| *t != Type::Nil) {
-            // A `: nil` function returns nothing; a handler's tail is
-            // discarded.
         }
         let ctx = self.fns.pop();
         self.env = saved_env;
@@ -551,7 +547,7 @@ impl Analyzer<'_> {
             return false;
         }
         let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else { return false };
-        let Some(sig) = self.binding_sigs.get(id) else { return false };
+        let Some((_, sig)) = self.binding_sigs.get(id) else { return false };
         let Some(Some(want)) = self.fns.last().map(|f| f.declared_ret.clone()) else { return false };
         let got = &sig.ret;
         if sig.is_async || matches!(got, Type::Any | Type::Tuple(_)) || matches!(want, Type::Tuple(_)) {
@@ -822,6 +818,7 @@ impl Analyzer<'_> {
     /// warning.
     fn store_field(&mut self, recv: &Ty, name: &str, target: &SyntaxNode, value: &Ty) {
         match self.types.expand(&recv.t) {
+            Type::Nil if recv.certain => self.error(target.text_range(), "index-nil", format!("`{name}` is stored in a value that is `nil` here")),
             Type::Named(nid) => {
                 if let Some(f) = self.types.field(nid, name) {
                     if recv.certain && self.opts.static_resolution && self.types.is_struct(nid) && !matches!(self.types.expand(&f.ty), Type::Function | Type::Fn(_) | Type::Any) {
@@ -835,7 +832,9 @@ impl Analyzer<'_> {
                     }
                 } else if let Some(key) = self.decl_key(nid, name) {
                     self.hints.members_declared.insert(target.text_range(), MemberHint::Field { key });
-                    if let super::expr::Lookup::Field(_, _) = self.lookup_member(recv, name, target.text_range()) {}
+                    // For tools: records which declared type the member
+                    // is looked up on.
+                    self.lookup_member(recv, name, target.text_range());
                     if matches!(self.types.kind(nid), Some(NamedKind::Module { .. })) {
                         let is_const = matches!(self.types.kind(nid), Some(NamedKind::Module { members }) if matches!(members.get(name), Some(Member::Const(_))));
                         if is_const {
@@ -955,8 +954,7 @@ impl Analyzer<'_> {
                     }
                     Some(EQ2 | NEQ) => {
                         let eq = op == Some(EQ2);
-                        let (name, lit) = if is_nil_literal(b) { (a, b) } else if is_nil_literal(a) { (b, a) } else { return };
-                        let _ = lit;
+                        let name = if is_nil_literal(b) { a } else if is_nil_literal(a) { b } else { return };
                         if let Some(id) = self.local_binding(name) {
                             let t = self.flow_in(env, id);
                             let is_nil = truth == eq;
@@ -1048,10 +1046,8 @@ impl Analyzer<'_> {
         // The env in which the next condition is evaluated.
         let saved = self.env.clone();
         let mut rest_env = saved.clone();
-        let mut clauses: Vec<(Option<SyntaxNode>, Option<SyntaxNode>)> = vec![(None, None)];
         // The first clause is the node itself.
-        clauses.clear();
-        clauses.push((child(node, LET_CONDITION).or_else(|| expr_child(node)), block(node)));
+        let mut clauses: Vec<(Option<SyntaxNode>, Option<SyntaxNode>)> = vec![(child(node, LET_CONDITION).or_else(|| expr_child(node)), block(node))];
         for c in node.children() {
             match c.kind() {
                 ELSEIF_CLAUSE => clauses.push((child(&c, LET_CONDITION).or_else(|| expr_child(&c)), block(&c))),

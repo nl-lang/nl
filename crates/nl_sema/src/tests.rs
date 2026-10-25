@@ -242,6 +242,13 @@ fn literal_mismatches_are_errors() {
 }
 
 #[test]
+fn members_of_certain_nil() {
+    assert!(has_code("let x = nil\nprint x.y\n", 2, "index-nil"));
+    assert!(has_code("let x = nil\nx.y = 1\n", 2, "index-nil"));
+    assert!(has_code("let x = nil\nprint x[1]\n", 2, "index-nil"));
+}
+
+#[test]
 fn narrowing_and_inference() {
     // `is` narrows; the else branch excludes.
     let src = "fn f(v: Number | String)\n  if v is Number\n    v + 1\n  else\n    v <> \"!\"\n  end\nend\n";
@@ -256,6 +263,43 @@ fn narrowing_and_inference() {
     // A record literal is a `{…}` type, a list a `[T]`.
     assert!(analyzer_errors("type P = {x: Number, y: Number}\nlet p: P = {x: 1, y: 2}\nlet l: [Number] = [1, 2]\nprint p, l\n").is_empty());
     assert!(has_code("type P = {x: Number, y: Number}\nlet p: P = {x: 1}\n", 2, "type-mismatch"));
+}
+
+/// A narrowing of an enclosing function's binding holds inside a closure
+/// only when nothing assigns the binding: the closure runs later.
+#[test]
+fn closures_drop_stale_narrowing() {
+    let src = "let x: Number? = nil\nif x == nil\n  let g = fn\n    case x\n    when is Number\n      print \"number\"\n    else\n      print \"none\"\n    end\n  end\n  x = 5\n  g()\nend\n";
+    assert!(!has_code(src, 5, "unreachable-when"), "{:?}", analyzer_codes(src));
+    // Never assigned: the narrowing holds, and the clause is unreachable.
+    let src = "let x: Number? = nil\nif x == nil\n  let g = fn\n    case x\n    when is Number\n      print \"number\"\n    else\n      print \"none\"\n    end\n  end\n  g()\nend\n";
+    assert!(has_code(src, 5, "unreachable-when"), "{:?}", analyzer_codes(src));
+}
+
+/// A struct's parent may be named through an alias, as the lowering and
+/// the runtime take it: the child has the parent's fields, and cannot
+/// redeclare one.
+#[test]
+fn alias_parents() {
+    let src = "struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\nend\nlet c = C { x: 1 }\nlet s: String = c.x\n";
+    assert!(!has_code(src, 7, "unknown-field"), "{:?}", analyzer_codes(src));
+    assert!(has_code(src, 8, "type-mismatch"));
+    // The alias below the struct.
+    let src = "struct C : Q\nend\nstruct P\n  x: Number\nend\ntype Q = P\nprint C { x: 1 }\n";
+    assert!(!has_code(src, 7, "unknown-field"), "{:?}", analyzer_codes(src));
+    assert_eq!(errors("struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n").len(), 1);
+    assert!(has_code("struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n", 6, "redeclared-field"));
+}
+
+/// An alias that refers to itself is an error of the lowering; the
+/// analyzer neither loops on it nor reports a type it cannot decide.
+#[test]
+fn cyclic_aliases_are_any() {
+    for src in ["type A = ~A\nlet x: A = 1\nprint x\n", "type A = B\ntype B = A\nfn f(x: A): B\n  x\nend\nprint f(1)\n", "type A = [A] | Number\nlet x: A = \"s\"\nprint x\n"] {
+        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != "type-mismatch" && *c != "return-type"), "{src}: {:?}", analyzer_codes(src));
+    }
+    // A record in between is a sound recursive type.
+    assert!(has_code("type Node = {next: Node?, v: Number}\nlet n: Node = {next: nil, v: \"s\"}\n", 2, "type-mismatch"));
 }
 
 #[test]

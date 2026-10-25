@@ -410,7 +410,7 @@ impl TypeTable {
             // `A & B` is assignable to itself).
             (_, And(m)) => m.iter().all(|t| self.assignable_depth(&from, t, depth + 1)),
             (And(m), _) => m.iter().any(|t| self.assignable_depth(t, &to, depth + 1)),
-            (_, Not(inner)) => !self.overlaps(&from, inner),
+            (_, Not(inner)) => !self.overlaps_depth(&from, inner, depth + 1),
             (Not(_), _) => false,
             (a, b) if a == b => true,
             // Tables.
@@ -500,9 +500,10 @@ impl TypeTable {
         self.overlaps_depth(a, b, 0)
     }
 
-    /// Bounded, as [`Self::assignable`] is: an alias that refers to
-    /// itself without a record in between (an error the lowering
-    /// reports) must not recurse forever here.
+    /// Bounded, as [`Self::assignable`] is, and the two share the depth
+    /// through their negation arms: an alias that refers to itself
+    /// without a record in between (an error the lowering reports) must
+    /// not recurse forever here.
     fn overlaps_depth(&self, a: &Type, b: &Type, depth: u32) -> bool {
         if depth > 12 {
             return true;
@@ -517,11 +518,11 @@ impl TypeTable {
             (_, Union(m)) => m.iter().any(|t| self.overlaps_depth(&a, t, depth + 1)),
             (And(m), _) => m.iter().all(|t| self.overlaps_depth(t, &b, depth + 1)),
             (_, And(m)) => m.iter().all(|t| self.overlaps_depth(&a, t, depth + 1)),
-            (Not(inner), _) => !self.assignable(&b, inner),
-            (_, Not(inner)) => !self.assignable(&a, inner),
+            (Not(inner), _) => !self.assignable_depth(&b, inner, depth + 1),
+            (_, Not(inner)) => !self.assignable_depth(&a, inner, depth + 1),
             (Tuple(m), _) => self.overlaps_depth(m.first().unwrap_or(&Nil), &b, depth + 1),
             (_, Tuple(m)) => self.overlaps_depth(&a, m.first().unwrap_or(&Nil), depth + 1),
-            _ => self.assignable(&a, &b) || self.assignable(&b, &a) || self.same_runtime_kind(&a, &b),
+            _ => self.assignable_depth(&a, &b, depth + 1) || self.assignable_depth(&b, &a, depth + 1) || self.same_runtime_kind(&a, &b),
         }
     }
 
@@ -531,14 +532,12 @@ impl TypeTable {
         use Type::*;
         let tableish = |t: &Type| matches!(t, Table | Record(_) | Array(_) | Map(..) | Static(_)) || matches!(t, Named(id) if !self.is_enum(*id));
         if tableish(a) && tableish(b) {
-            // Two different structs never overlap unless related.
+            // Two different structs never overlap unless related; a struct
+            // and an interface may (an implementation may be declared
+            // elsewhere), as any other two tables.
             if let (Named(x), Named(y)) = (a, b) {
                 if self.is_struct(*x) && self.is_struct(*y) {
                     return self.descends(*x, *y) || self.descends(*y, *x);
-                }
-                if self.is_struct(*x) && self.is_interface(*y) || self.is_interface(*x) && self.is_struct(*y) {
-                    // An implementation may be declared elsewhere.
-                    return true;
                 }
             }
             return true;
@@ -710,14 +709,10 @@ impl TypeTable {
         self.union_all(&out)
     }
 
-    /// The part of `t` that is truthy (`if x`): without `nil` and `false`.
+    /// The part of `t` that is truthy (`if x`): without `nil`. `Bool`
+    /// stays, since `true` is truthy.
     pub fn truthy(&self, t: &Type) -> Type {
-        let t = self.expand(t);
-        if matches!(t, Type::Any | Type::Unknown) {
-            return t;
-        }
-        let out: Vec<Type> = self.members(&t).into_iter().filter(|m| *m != Type::Nil).collect();
-        self.union_all(&out)
+        self.non_nil(t)
     }
 
     /// The part of `t` that is not `nil`: what a nil-safe step and `??`
@@ -753,7 +748,7 @@ impl TypeTable {
         match self.expand(t) {
             Type::Any | Type::Unknown | Type::Nil => true,
             Type::Union(m) => m.iter().any(|x| self.may_be_nil_depth(x, depth + 1)),
-            Type::Not(inner) => !self.assignable(&Type::Nil, &inner),
+            Type::Not(inner) => !self.assignable_depth(&Type::Nil, &inner, depth + 1),
             _ => false,
         }
     }
@@ -998,6 +993,22 @@ mod tests {
         assert!(t.assignable(&Type::Array(Rc::new(Type::Never)), &Type::Array(Rc::new(Type::Number))));
         // Functions.
         assert!(t.assignable(&Type::Fn(Rc::new(FnType::unknown())), &Type::Function));
+    }
+
+    #[test]
+    fn self_negating_alias_ends() {
+        // `type A = ~A`: the negation arms of `assignable` and `overlaps`
+        // call each other, and the alias expands to the same negation
+        // every time, so only the shared depth ends the recursion.
+        let mut t = TypeTable::default();
+        let a = t.add("A", NamedKind::Alias(Type::Any));
+        if let Some(n) = t.get_mut(a) {
+            n.kind = NamedKind::Alias(Type::Not(Rc::new(Type::Named(a))));
+        }
+        let _ = t.assignable(&Type::Number, &Type::Named(a));
+        let _ = t.overlaps(&Type::Number, &Type::Named(a));
+        let _ = t.narrow(&Type::Named(a), &Type::Number);
+        let _ = t.may_be_nil(&Type::Named(a));
     }
 
     #[test]

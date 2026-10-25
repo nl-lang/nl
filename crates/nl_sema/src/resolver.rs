@@ -13,7 +13,7 @@ use nl_syntax::{SyntaxKind, SyntaxNode, SyntaxToken, TextRange};
 
 use crate::binding::*;
 use crate::decl::{DeclId, DeclItemKind, Declarations};
-use crate::prelude::{self, Prelude};
+use crate::prelude;
 use crate::util::*;
 use crate::{ExportInfo, ExtensionInfo, ImportProvider};
 
@@ -62,6 +62,10 @@ pub(crate) struct Resolver<'a> {
     unnamed_handlers: HashSet<String>,
     /// Field names of the structs of this file, and their parents.
     struct_fields: HashMap<BindingId, (Option<BindingId>, Vec<String>)>,
+    /// The `TYPE_PARAMS` of each struct of this file that has them.
+    struct_type_params: HashMap<BindingId, SyntaxNode>,
+    /// The type each alias of this file stands for, by its binding.
+    aliases: HashMap<BindingId, SyntaxNode>,
     /// Methods declared on structs of this file (`fn Owner.name`, and the
     /// methods of `interface I for Owner`), for [`Self::check_field_methods`].
     struct_methods: Vec<(BindingId, String, TextRange)>,
@@ -98,6 +102,8 @@ impl<'a> Resolver<'a> {
             decls,
             unnamed_handlers: HashSet::new(),
             struct_fields: HashMap::new(),
+            struct_type_params: HashMap::new(),
+            aliases: HashMap::new(),
             struct_methods: Vec::new(),
             share: None,
             recording: None,
@@ -130,10 +136,8 @@ impl<'a> Resolver<'a> {
     fn check_field_methods(&mut self) {
         let methods = std::mem::take(&mut self.struct_methods);
         for (id, name, range) in methods {
-            let mut fields: Vec<String> = self.inherited_fields(Some(id));
-            if let Some((_, own)) = self.struct_fields.get(&id) {
-                fields.extend(own.iter().cloned());
-            }
+            // The struct's own fields and its parents'.
+            let fields = self.inherited_fields(Some(id));
             if fields.contains(&name) {
                 let owner = self.binding(id).map(|b| b.name.clone()).unwrap_or_default();
                 self.error(range, "field-method-clash", format!("`{owner}` has a field named `{name}`, which would hide this method: a struct's fields and methods share one namespace"));
@@ -163,8 +167,9 @@ impl<'a> Resolver<'a> {
     }
 
     fn at_file_level(&self) -> bool {
-        // The file's main function, outside any nested block scope that a
-        // module body opens.
+        // The file's own block: not a function, a module body or a nested
+        // block (the items of a file-level `if` are declared from the
+        // file's block, see `hoist_conditional_pubs`).
         self.fns.len() == 1 && self.modules.is_empty() && self.scopes.len() <= 1
     }
 
@@ -526,6 +531,12 @@ impl<'a> Resolver<'a> {
                         if decl == DeclKind::Enum {
                             let variants = children(&stmt, VARIANT).filter_map(|v| child(&v, NAME)).filter_map(|n| name_text(&n)).collect();
                             self.enum_variants.insert(id, variants);
+                        }
+                        if let Some(tp) = child(&stmt, TYPE_PARAMS).filter(|_| decl == DeclKind::Struct) {
+                            self.struct_type_params.insert(id, tp);
+                        }
+                        if let Some(ty) = type_child(&stmt).filter(|_| decl == DeclKind::TypeAlias) {
+                            self.aliases.insert(id, ty);
                         }
                     }
                 }
@@ -1038,7 +1049,7 @@ impl<'a> Resolver<'a> {
                 self.resolve_type(&t);
                 if let Some(q) = child(&t, QUAL_NAME) {
                     if let Some(Ref::Binding(pid)) = self.res.type_refs.get(&q.text_range()) {
-                        parent = Some(*pid);
+                        parent = self.through_aliases(*pid);
                     }
                 }
             }
@@ -1080,6 +1091,20 @@ impl<'a> Resolver<'a> {
                 self.error(name.text_range(), "duplicate-variant", format!("`{text}` is declared twice in this enum"));
             }
         }
+    }
+
+    /// The binding a type name stands for through the aliases of this
+    /// file (`type Q = P`, then `struct C : Q` has the parent `P`), as the
+    /// lowering follows them; `None` for an alias of anything else.
+    fn through_aliases(&self, mut id: BindingId) -> Option<BindingId> {
+        for _ in 0..16 {
+            let Some(ty) = self.aliases.get(&id) else { return Some(id) };
+            let q = child(ty, QUAL_NAME).filter(|_| ty.kind() == NAMED_TYPE)?;
+            let segs = qual_segments(&q);
+            let [name] = segs.as_slice() else { return None };
+            id = self.lookup_binding(name.text())?;
+        }
+        None
     }
 
     fn inherited_fields(&self, mut parent: Option<BindingId>) -> Vec<String> {
@@ -1148,7 +1173,7 @@ impl<'a> Resolver<'a> {
         // struct's own type parameters are in scope under their declared
         // names.
         if let Some(Ref::Binding(id)) = target {
-            if let Some(tp) = self.struct_type_params(node, id) {
+            if let Some(tp) = self.struct_type_params.get(&id).cloned() {
                 self.declare_type_params(&tp);
             }
             if self.binding(id).is_some_and(|b| b.decl == DeclKind::Struct) {
@@ -1165,19 +1190,6 @@ impl<'a> Resolver<'a> {
         }
         self.self_targets.pop();
         self.pop_scope();
-    }
-
-    /// The `TYPE_PARAMS` of the struct declared in this file under `id`.
-    fn struct_type_params(&self, at: &SyntaxNode, id: BindingId) -> Option<SyntaxNode> {
-        let b = self.binding(id)?;
-        if b.decl != DeclKind::Struct {
-            return None;
-        }
-        let root = at.ancestors().last()?;
-        root.descendants()
-            .filter(|d| d.kind() == STRUCT_DECL)
-            .find(|d| child(d, NAME).is_some_and(|n| n.text_range() == b.range))
-            .and_then(|d| child(&d, TYPE_PARAMS))
     }
 
     fn walk_type_decl(&mut self, node: &SyntaxNode) {
@@ -1691,6 +1703,7 @@ impl<'a> Resolver<'a> {
                 let msg = match prelude::lua_library_hint(&name) {
                     Some(hint) => hint.to_string(),
                     None if prelude::lookup(&name).is_some() => format!("`{name}` is a type, not a value"),
+                    None if self.decls.lookup(&name).is_some() => format!("`{name}` is a declared host type, not a value"),
                     None => format!("`{name}` is not declared in this file, an import or the prelude; NL has no fallback to Lua globals (use a Lua path, `:{name}`, for one)"),
                 };
                 self.error(range, "undeclared-name", msg);
@@ -2137,11 +2150,6 @@ pub fn decode_plain_string(tok: &SyntaxToken) -> String {
     String::from_utf8_lossy(parts.first().map_or(&[][..], |v| v.as_slice())).into_owned()
 }
 
-#[allow(dead_code)]
-fn is_prelude_struct(p: &Prelude) -> bool {
-    matches!(p.class, crate::prelude::PreludeClass::Struct)
-}
-
 /// A `const` pattern that `Resolver::hoist_consts` declares ahead: a
 /// name, or a name with a type. The name node and the type node.
 fn simple_const_pattern(pat: &SyntaxNode) -> Option<(SyntaxNode, Option<SyntaxNode>)> {
@@ -2188,16 +2196,16 @@ pub(crate) fn branch_blocks(construct: &SyntaxNode) -> Vec<SyntaxNode> {
     out
 }
 
-/// The names a `pub` item declares, as `hoist` would declare them: the
-/// declaring range, the name, the binding and declaration kinds, the
-/// annotation and what is known of a function's parameters.
-#[allow(clippy::type_complexity)]
 /// The member `name` of a declared item (`DECL_MODULE`, `DECL_STRUCT`,
 /// `DECL_TYPE`): an `fn`, a field, a `const` or a nested declaration.
 fn decl_member_node(item: &SyntaxNode, name: &str) -> Option<SyntaxNode> {
     item.children().find(|m| matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE) && child(m, NAME).and_then(|n| name_text(&n)).as_deref() == Some(name))
 }
 
+/// The names a `pub` item declares, as `hoist` would declare them: the
+/// declaring range, the name, the binding and declaration kinds, the
+/// annotation and what is known of a function's parameters.
+#[allow(clippy::type_complexity)]
 fn pub_item_names(item: &SyntaxNode) -> Vec<(TextRange, String, BindingKind, DeclKind, Option<SyntaxNode>, Option<FnParams>)> {
     let mut out = Vec::new();
     match item.kind() {

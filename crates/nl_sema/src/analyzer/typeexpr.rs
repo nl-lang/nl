@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use nl_syntax::{SyntaxKind, SyntaxNode};
 
-use super::Analyzer;
+use super::{Analyzer, Ty};
 use crate::binding::*;
 use crate::decl::DeclId;
 use crate::types::*;
@@ -34,24 +34,51 @@ impl Analyzer<'_> {
     pub(crate) fn type_of_with_self(&mut self, ty: &SyntaxNode, self_ty: Option<Type>) -> Type {
         match ty.kind() {
             NAMED_TYPE => self.named_type(ty, self_ty),
-            FN_TYPE => Type::Fn(Rc::new(self.fn_type_of(ty, self_ty))),
+            _ => self.compound_type(ty, &mut |a, t| a.type_of_with_self(t, self_ty.clone())),
+        }
+    }
+
+    /// A type expression other than a name (a signature, a union, a
+    /// record, …), its parts read by `part`: the file's and the
+    /// declaration files' types differ only in what a name resolves to.
+    fn compound_type(&mut self, ty: &SyntaxNode, part: &mut dyn FnMut(&mut Self, &SyntaxNode) -> Type) -> Type {
+        let mut parts = |a: &mut Self| -> Vec<Type> { ty.children().filter(|c| is_type(c.kind())).map(|c| part(a, &c)).collect() };
+        match ty.kind() {
+            FN_TYPE => {
+                let mut params = Vec::new();
+                let mut rest = None;
+                let mut keyed = None;
+                if let Some(list) = child(ty, FN_TYPE_PARAMS) {
+                    for p in children(&list, FN_TYPE_PARAM) {
+                        let t = type_child(&p).map(|t| part(self, &t)).unwrap_or(Type::Any);
+                        let name = tokens(&p).find(|t| t.kind() == LNAME).map(|t| t.text().to_string()).unwrap_or_default();
+                        if has_token(&p, STAR2) {
+                            keyed = Some(Some(t));
+                        } else if has_token(&p, STAR) {
+                            rest = Some(t);
+                        } else {
+                            let optional = self.types.may_be_nil(&t) && t != Type::Any;
+                            params.push(Param { name, ty: t, optional });
+                        }
+                    }
+                }
+                let ret = child(ty, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| part(self, &t)).unwrap_or(Type::Any);
+                Type::Fn(Rc::new(FnType { params, rest, keyed, ret, is_method: false, is_async: false, named: false, declared: false }))
+            }
             UNION_TYPE => {
-                let members: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.type_of_with_self(&c, self_ty.clone())).collect();
+                let members = parts(self);
                 self.types.union_all(&members)
             }
             NOT_TYPE => {
-                let inner = type_child(ty).map(|t| self.type_of_with_self(&t, self_ty)).unwrap_or(Type::Any);
+                let inner = type_child(ty).map(|t| part(self, &t)).unwrap_or(Type::Any);
                 self.types.negate(&inner)
             }
             OPTIONAL_TYPE => {
-                let inner = type_child(ty).map(|t| self.type_of_with_self(&t, self_ty)).unwrap_or(Type::Any);
+                let inner = type_child(ty).map(|t| part(self, &t)).unwrap_or(Type::Any);
                 optional(&self.types, &inner)
             }
-            PAREN_TYPE => type_child(ty).map(|t| self.type_of_with_self(&t, self_ty)).unwrap_or(Type::Any),
-            TUPLE_TYPE => {
-                let members: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.type_of_with_self(&c, self_ty.clone())).collect();
-                Type::Tuple(members.into())
-            }
+            PAREN_TYPE => type_child(ty).map(|t| part(self, &t)).unwrap_or(Type::Any),
+            TUPLE_TYPE => Type::Tuple(parts(self).into()),
             RECORD_TYPE => {
                 let mut fields: Vec<(String, Type)> = Vec::new();
                 for f in children(ty, RECORD_FIELD) {
@@ -60,46 +87,24 @@ impl Analyzer<'_> {
                         Some(t) => t.text().to_string(),
                         None => continue,
                     };
-                    let v = type_child(&f).map(|t| self.type_of_with_self(&t, self_ty.clone())).unwrap_or(Type::Any);
+                    let v = type_child(&f).map(|t| part(self, &t)).unwrap_or(Type::Any);
                     fields.push((key, v));
                 }
                 fields.sort_by(|a, b| a.0.cmp(&b.0));
                 Type::Record(fields.into())
             }
             MAP_TYPE => {
-                let parts: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.type_of_with_self(&c, self_ty.clone())).collect();
-                let k = parts.first().cloned().unwrap_or(Type::Any);
-                let v = parts.get(1).cloned().unwrap_or(Type::Any);
+                let mut parts = parts(self).into_iter();
+                let k = parts.next().unwrap_or(Type::Any);
+                let v = parts.next().unwrap_or(Type::Any);
                 Type::Map(Rc::new(k), Rc::new(v))
             }
             ARRAY_TYPE => {
-                let e = type_child(ty).map(|t| self.type_of_with_self(&t, self_ty)).unwrap_or(Type::Any);
+                let e = type_child(ty).map(|t| part(self, &t)).unwrap_or(Type::Any);
                 Type::Array(Rc::new(e))
             }
             _ => Type::Any,
         }
-    }
-
-    fn fn_type_of(&mut self, ty: &SyntaxNode, self_ty: Option<Type>) -> FnType {
-        let mut params = Vec::new();
-        let mut rest = None;
-        let mut keyed = None;
-        if let Some(list) = child(ty, FN_TYPE_PARAMS) {
-            for p in children(&list, FN_TYPE_PARAM) {
-                let t = type_child(&p).map(|t| self.type_of_with_self(&t, self_ty.clone())).unwrap_or(Type::Any);
-                let name = tokens(&p).find(|t| t.kind() == LNAME).map(|t| t.text().to_string()).unwrap_or_default();
-                if has_token(&p, STAR2) {
-                    keyed = Some(Some(t));
-                } else if has_token(&p, STAR) {
-                    rest = Some(t);
-                } else {
-                    let optional = self.types.may_be_nil(&t) && t != Type::Any;
-                    params.push(Param { name, ty: t, optional });
-                }
-            }
-        }
-        let ret = child(ty, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| self.type_of_with_self(&t, self_ty)).unwrap_or(Type::Any);
-        FnType { params, rest, keyed, ret, is_method: false, is_async: false, named: false, declared: false }
     }
 
     fn named_type(&mut self, ty: &SyntaxNode, self_ty: Option<Type>) -> Type {
@@ -177,102 +182,47 @@ impl Analyzer<'_> {
     /// types and the declared structs and types.
     pub(crate) fn decl_type_of(&mut self, ty: &SyntaxNode, ctx: &DeclCtx) -> Type {
         match ty.kind() {
-            NAMED_TYPE => {
-                if has_token(ty, NIL_KW) {
-                    return Type::Nil;
-                }
-                if has_token(ty, SELF_TYPE_KW) {
-                    return ctx.self_named.map(Type::Named).unwrap_or(Type::Any);
-                }
-                let Some(q) = child(ty, QUAL_NAME) else {
-                    return match first_token(ty).map(|t| t.text().to_string()).as_deref() {
-                        Some("unknown") => Type::Unknown,
-                        Some("never") => Type::Never,
-                        _ => Type::Any,
-                    };
-                };
-                let segs = qual_segments(&q);
-                let Some(first) = segs.first() else { return Type::Any };
-                if first.kind() == SELF_TYPE_KW {
-                    return ctx.self_named.map(Type::Named).unwrap_or(Type::Any);
-                }
-                let name = first.text().to_string();
-                if segs.len() > 1 {
-                    // `Module.Type`: a nested declared type.
-                    return self.decl_nested_type(&segs.iter().map(|s| s.text().to_string()).collect::<Vec<_>>());
-                }
-                if ctx.type_params.contains(&name) {
-                    return Type::Any;
-                }
-                let args: Vec<Type> = child(ty, TYPE_ARGS).map(|a| a.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect()).unwrap_or_default();
-                if let Some(p) = crate::prelude::lookup(&name).filter(|p| p.is_type()) {
-                    return match p.name {
-                        "Task" => Type::Task(Rc::new(args.first().cloned().unwrap_or(Type::Any))),
-                        _ => self.prelude_type(p),
-                    };
-                }
-                match self.decls.lookup(&name) {
-                    Some(id) if self.decls.is_type(id) => self.decl_named.get(&id).map(|n| Type::Named(*n)).unwrap_or(Type::Any),
-                    _ => Type::Any,
-                }
-            }
-            FN_TYPE => {
-                let mut params = Vec::new();
-                let mut rest = None;
-                let mut keyed = None;
-                if let Some(list) = child(ty, FN_TYPE_PARAMS) {
-                    for p in children(&list, FN_TYPE_PARAM) {
-                        let t = type_child(&p).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any);
-                        let name = tokens(&p).find(|t| t.kind() == LNAME).map(|t| t.text().to_string()).unwrap_or_default();
-                        if has_token(&p, STAR2) {
-                            keyed = Some(Some(t));
-                        } else if has_token(&p, STAR) {
-                            rest = Some(t);
-                        } else {
-                            let optional = self.types.may_be_nil(&t) && t != Type::Any;
-                            params.push(Param { name, ty: t, optional });
-                        }
-                    }
-                }
-                let ret = child(ty, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any);
-                Type::Fn(Rc::new(FnType { params, rest, keyed, ret, is_method: false, is_async: false, named: false, declared: false }))
-            }
-            UNION_TYPE => {
-                let members: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect();
-                self.types.union_all(&members)
-            }
-            NOT_TYPE => {
-                let inner = type_child(ty).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any);
-                self.types.negate(&inner)
-            }
-            OPTIONAL_TYPE => {
-                let inner = type_child(ty).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any);
-                optional(&self.types, &inner)
-            }
-            PAREN_TYPE => type_child(ty).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any),
-            TUPLE_TYPE => {
-                let members: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect();
-                Type::Tuple(members.into())
-            }
-            RECORD_TYPE => {
-                let mut fields: Vec<(String, Type)> = Vec::new();
-                for f in children(ty, RECORD_FIELD) {
-                    let key = match first_token(&f) {
-                        Some(t) if t.kind() == STRING => crate::resolver::decode_plain_string(&t),
-                        Some(t) => t.text().to_string(),
-                        None => continue,
-                    };
-                    let v = type_child(&f).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any);
-                    fields.push((key, v));
-                }
-                fields.sort_by(|a, b| a.0.cmp(&b.0));
-                Type::Record(fields.into())
-            }
-            MAP_TYPE => {
-                let parts: Vec<Type> = ty.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect();
-                Type::Map(Rc::new(parts.first().cloned().unwrap_or(Type::Any)), Rc::new(parts.get(1).cloned().unwrap_or(Type::Any)))
-            }
-            ARRAY_TYPE => Type::Array(Rc::new(type_child(ty).map(|t| self.decl_type_of(&t, ctx)).unwrap_or(Type::Any))),
+            NAMED_TYPE => self.decl_named_type(ty, ctx),
+            _ => self.compound_type(ty, &mut |a, t| a.decl_type_of(t, ctx)),
+        }
+    }
+
+    fn decl_named_type(&mut self, ty: &SyntaxNode, ctx: &DeclCtx) -> Type {
+        if has_token(ty, NIL_KW) {
+            return Type::Nil;
+        }
+        if has_token(ty, SELF_TYPE_KW) {
+            return ctx.self_named.map(Type::Named).unwrap_or(Type::Any);
+        }
+        let Some(q) = child(ty, QUAL_NAME) else {
+            return match first_token(ty).map(|t| t.text().to_string()).as_deref() {
+                Some("unknown") => Type::Unknown,
+                Some("never") => Type::Never,
+                _ => Type::Any,
+            };
+        };
+        let segs = qual_segments(&q);
+        let Some(first) = segs.first() else { return Type::Any };
+        if first.kind() == SELF_TYPE_KW {
+            return ctx.self_named.map(Type::Named).unwrap_or(Type::Any);
+        }
+        let name = first.text().to_string();
+        if segs.len() > 1 {
+            // `Module.Type`: a nested declared type.
+            return self.decl_nested_type(&segs.iter().map(|s| s.text().to_string()).collect::<Vec<_>>());
+        }
+        if ctx.type_params.contains(&name) {
+            return Type::Any;
+        }
+        let args: Vec<Type> = child(ty, TYPE_ARGS).map(|a| a.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect()).unwrap_or_default();
+        if let Some(p) = crate::prelude::lookup(&name).filter(|p| p.is_type()) {
+            return match p.name {
+                "Task" => Type::Task(Rc::new(args.first().cloned().unwrap_or(Type::Any))),
+                _ => self.prelude_type(p),
+            };
+        }
+        match self.decls.lookup(&name) {
+            Some(id) if self.decls.is_type(id) => self.decl_named.get(&id).map(|n| Type::Named(*n)).unwrap_or(Type::Any),
             _ => Type::Any,
         }
     }
@@ -467,8 +417,5 @@ fn lua_key(member: &SyntaxNode) -> Option<String> {
     Some(crate::resolver::decode_plain_string(&s))
 }
 
-/// Imported type of a struct's field or method lookups through a
-/// declared module member path.
+/// The Lua key of each declared member, by its owner and name.
 pub(crate) type DeclKeys = HashMap<(NamedId, String), String>;
-
-pub(crate) use super::Ty;

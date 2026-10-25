@@ -265,11 +265,9 @@ impl Analyzer<'_> {
     fn list(&mut self, node: &SyntaxNode) -> Ty {
         let mut elems = Vec::new();
         let mut certain = true;
-        let mut spread = false;
         for c in node.children() {
             match c.kind() {
                 SPREAD_ARG => {
-                    spread = true;
                     if let Some(e) = expr_child(&c) {
                         let t = self.expr1(&e);
                         match self.types.expand(&t.t) {
@@ -291,7 +289,6 @@ impl Analyzer<'_> {
                 _ => {}
             }
         }
-        let _ = spread;
         let elem = self.types.union_all(&elems);
         Ty::new(Type::Array(Rc::new(elem)), certain)
     }
@@ -1464,7 +1461,6 @@ impl Analyzer<'_> {
     /// Checks the arguments of a call against a signature. `bare`: the call is a bare function-kind name, which
     /// takes no arguments.
     pub(crate) fn check_call(&mut self, sig: &FnType, desc: &str, args: &[ArgTy], block: Option<(Ty, TextRange)>, at: TextRange, bare: bool) {
-        let _ = bare;
         let spread = args.iter().any(|a| a.spread);
         let positional: Vec<&ArgTy> = args.iter().filter(|a| !a.spread && a.keyed.is_none() && !a.keyed_spread).collect();
         let keyed: Vec<&ArgTy> = args.iter().filter(|a| a.keyed.is_some() || a.keyed_spread).collect();
@@ -1765,12 +1761,11 @@ impl Analyzer<'_> {
                 Ty::any()
             }
             Type::Named(nid) if self.types.is_struct(*nid) => {
-                let name = op.fixed_text().unwrap_or("").trim_end_matches('=').to_string();
-                let name = if name.is_empty() { String::new() } else { name };
+                let name = op.fixed_text().unwrap_or("").trim_end_matches('=');
                 if compare {
                     return Ty::certain(Type::Bool);
                 }
-                match self.types.operator(*nid, &name) {
+                match self.types.operator(*nid, name) {
                     Some(sig) => Ty::uncertain(sig.ret.clone()),
                     None => Ty::any(),
                 }
@@ -1976,8 +1971,7 @@ impl Analyzer<'_> {
     /// A `spawn` that makes workers load this file, which
     /// has top-level statements that a worker would run again.
     fn check_spawn_loads_this_file(&mut self, node: &SyntaxNode) {
-        if let Some(at) = self.top_level_effects {
-            let _ = at;
+        if self.top_level_effects {
             self.warn(token(node, SPAWN_KW).map_or(node.text_range(), |t| t.text_range()), "spawn-loads-file", "this `spawn` makes a worker load this file, whose top level has statements that would run again there; keep a worker file free of top-level effects, or guard them with `unless Worker.parent`");
         }
     }

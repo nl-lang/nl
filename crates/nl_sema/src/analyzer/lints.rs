@@ -153,9 +153,7 @@ impl Analyzer<'_> {
             }
             let name = b.name.clone();
             let range = b.range;
-            if self.pass == 2 {
-                self.diags.push(SemaDiagnostic { range, code: "unused-binding", message: format!("the {what} `{name}` is never used; prefix it with `_` if that is intended"), error: false, lint: true });
-            }
+            self.lint(range, "unused-binding", format!("the {what} `{name}` is never used; prefix it with `_` if that is intended"));
         }
     }
 
@@ -176,7 +174,7 @@ impl Analyzer<'_> {
                 _ => false,
             };
             if effect {
-                self.top_level_effects = Some(s.text_range());
+                self.top_level_effects = true;
                 return;
             }
         }
