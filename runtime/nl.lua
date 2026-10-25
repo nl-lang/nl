@@ -93,6 +93,10 @@
 --       The wall clock, in seconds since the Unix epoch, possibly
 --       fractional, for `Time.now` (nl_86_time.lua). Without it,
 --       `os.time()`, in whole seconds.
+--   host.pump() -> boolean                      (optional; the fork)
+--       nl_pump: the callbacks posted to the state, a step of the workers
+--       that have no thread, then rt.pump; true when it ran anything.
+--       rt.pumpall calls it.
 --   host.vm                                     (optional; the fork)
 --       The VM's method mark: `markmethod(f)` sets it
 --       on a function, `ismethod(f)` reads it. The runtime marks every
@@ -179,6 +183,9 @@
 --                                               there was nothing to do. Raises nothing: each
 --                                               item runs protected, and an error goes to the
 --                                               unhandled hook
+--   rt.pumpall() -> boolean                     one pump of everything the state is sent, for a
+--                                               host that pumps from Lua: host.pump (nl_pump)
+--                                               where the host has it, otherwise rt.pump
 --   rt.post(f) -> true                          queues f() for the next rt.pump (nl_post)
 --   rt.searcher(modname) -> loader | message    the `.nl` searcher of `require`; the fork's
 --                                               sandbox `require` calls it (lj_nlsandbox.c)

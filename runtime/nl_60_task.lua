@@ -2,7 +2,7 @@
 --
 -- Fixed names: rt.newtask, rt.resolve, rt.reject, rt.taskstate,
 -- rt.settimer, rt.setunhandled, rt.unhandled, rt.pending. Additions:
--- rt.pump, rt.post. Intrinsic: rt.async. The library table: rt.Task (`Task`).
+-- rt.pump, rt.pumpall, rt.post. Intrinsic: rt.async. The library table: rt.Task (`Task`).
 --
 -- A task is a table whose metatable is `Task`; its state is kept in
 -- fields with a leading underscore:
@@ -88,6 +88,18 @@ do
       if not ok then rt.unhandled(e) end
     end
     return true
+  end
+
+  -- Addition: one pump of everything this state is sent, for a host that
+  -- pumps from Lua (runtime/gmod/host.lua). On the fork it is the host's
+  -- host.pump, nl_pump: the callbacks posted to the state (the results and
+  -- events of workers arrive that way), a step of the workers that have no
+  -- thread, then rt.pump. Elsewhere it is rt.pump.
+  local host_pump = type(host) == "table" and host.pump or nil
+  if type(host_pump) == "function" then
+    function rt.pumpall() return host_pump() == true end
+  else
+    rt.pumpall = rt.pump
   end
 
   local function istask(t)

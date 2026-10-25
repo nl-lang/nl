@@ -209,7 +209,7 @@ cargo build -q -p nl_capi --release --manifest-path "$ROOT/Cargo.toml" &&
   B=$T/real-assert/src
   for t in test_capi_real test_sandbox test_transfer test_workers; do
     echo "== $t (real, assertions)"
-    if $CC -g -Wall -Wno-unused-parameter -I"$B" -I"$ROOT/tests/vm" -o "$T/$t-assert" \
+    if $CC -g -Wall -Wno-unused-parameter -I"$B" -I"$ROOT/tests/vm" -DNL_ROOT="\"$ROOT\"" -o "$T/$t-assert" \
          "$ROOT/tests/vm/real/$t.c" "$B/libluajit.a" "$ROOT/target/release/libnl_capi.a" $RNATIVE $LIBS -lpthread; then
       "$T/$t-assert" "$(mktemp -d "$T/tmp/assert.XXXXXX")" >"$T/$t-assert.out" 2>&1 || fail "$t (assertions)"
       grep -v '^ok' "$T/$t-assert.out"

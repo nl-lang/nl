@@ -232,11 +232,14 @@ do
     -- The pump, once per frame. What a pumped callback queues runs in
     -- the same frame, up to a bound, so that a chain of resumed tasks
     -- does not take a frame per step and a callback that queues itself
-    -- does not hold the frame. Returns nothing: a Think handler that
-    -- returned a value would end the run of the other Think handlers.
+    -- does not hold the frame. On the fork (the server of lua_shared)
+    -- rt.pumpall is nl_pump, which also delivers what workers send back
+    -- and steps the workers that have no thread. Returns nothing: a Think
+    -- handler that returned a value would end the run of the other Think
+    -- handlers.
     local hook = global("hook")
     if type(hook) == "table" then
-      local pump = rt.pump
+      local pump = rt.pumpall or rt.pump
       hook.Add("Think", "NL.pump", function()
         for _ = 1, 64 do
           if not pump() then break end

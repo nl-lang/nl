@@ -897,6 +897,98 @@ static void test_imports(void)
   lua_close(L);
 }
 
+/* Garry's Mod's host (runtime/gmod/host.lua) on the fork, opened as
+** lua_shared opens it: its fields over the VM's host table, its start
+** called with rt. Its Think hook is the only pump: what workers send back
+** arrives through it (nl_pump), and it returns nothing. Its include reads
+** the global where it is used, so a later detour counts.
+*/
+#ifdef NL_ROOT
+static int gmod_start(lua_State *L)
+{
+  lua_pushvalue(L, lua_upvalueindex(1));
+  lua_pushvalue(L, 1);
+  lua_call(L, 1, 0);
+  return 0;
+}
+
+static int gmod_hostinit(lua_State *L)
+{
+  static const char *const fields[] = { "skip_globals", "event", "include", NULL };
+  int i;
+  if (luaL_loadfile(L, NL_ROOT "/runtime/gmod/host.lua") != 0) lua_error(L);
+  lua_call(L, 0, 2);
+  for (i = 0; fields[i]; i++) {
+    lua_getfield(L, -2, fields[i]);
+    if (lua_isnil(L, -1)) lua_pop(L, 1); else lua_setfield(L, 1, fields[i]);
+  }
+  lua_pushcclosure(L, gmod_start, 1);
+  return 1;
+}
+
+static void test_gmod_host(void)
+{
+  lua_State *L = luaL_newstate();
+  int frame;
+  nl_setreporter(L, reporter, NULL);
+  nl_setworkers(L, 1);
+  CHECK(nl_setoption(L, NL_OPT_OPENLIBS, 0) == 1);
+  lua_pushcfunction(L, openlibs);
+  CHECK(lua_pcall(L, 0, 0, 0) == 0);
+  /* gmod's hook library, as far as the host uses it: a handler that
+  ** returns a value ends the run.
+  */
+  dolua(L,
+    "hook = { t = {} }\n"
+    "function hook.Add(n, id, f) hook.t[n] = hook.t[n] or {}; hook.t[n][id] = f end\n"
+    "function hook.Remove(n, id) if hook.t[n] then hook.t[n][id] = nil end end\n"
+    "function hook.Run(n, ...)\n"
+    "  for _, f in pairs(hook.t[n] or {}) do\n"
+    "    local a = f(...)\n"
+    "    if a ~= nil then return a end\n"
+    "  end\n"
+    "end\n"
+    "include = function(path) return 'first ' .. path end\n");
+  nl_sethostinit(L, gmod_hostinit);
+  lua_pushcfunction(L, luaopen_nl);
+  if (lua_pcall(L, 0, 0, 0) != 0) {
+    fprintf(stderr, "  luaopen_nl: %s\n", lua_tostring(L, -1));
+    CHECK(0);
+    lua_close(L);
+    return;
+  }
+  CHECK_LUA(L, "type(hook.t.Think['NL.pump']) == 'function'");
+  writefile("gm_spawn.nl",
+    "fn square(x: Number): Number\n"
+    "  x * x\n"
+    "end\n"
+    "async fn main\n"
+    "  let a = spawn square(7)\n"
+    "  :_G.Got = a.await\n"
+    "end\n"
+    "unless Worker.parent\n"
+    "  main()\n"
+    "end\n");
+  CHECK(nl_loadfile(L, "gm_spawn.nl") == 0);
+  CHECK(nl_pcall(L, 0, 0) == 0 || (fprintf(stderr, "  %s\n", errtext(L)), 0));
+  lua_settop(L, 0);
+  for (frame = 0; frame < 5000; frame++) {
+    CHECK_LUA(L, "hook.Run('Think') == nil");
+    lua_getglobal(L, "Got");
+    if (!lua_isnil(L, -1)) { lua_pop(L, 1); break; }
+    lua_pop(L, 1);
+    usleep(1000);
+  }
+  CHECK_LUA(L, "Got == 49");
+  /* include: the global as it is when NL's include runs. */
+  CHECK(donl(L, "pub fn inc\n  include(\"x.lua\")\nend\n", "=gm_include") == 0);
+  dolua(L, "include = function(path) return 'second ' .. path end");
+  CHECK(callf(L, -1, "inc", 0, 1) == 0);
+  CHECK_STR(lua_tostring(L, -1), "second x.lua");
+  lua_close(L);
+}
+#endif
+
 /* The intrinsic table of KINTR is out of scripts' reach: no table in the
 ** registry holds the String library at an index (a script could resize or
 ** free it), and NL code finds it after full collections.
@@ -1168,6 +1260,9 @@ int main(int argc, char **argv)
   RUN_TEST(test_events_from_nl);
   RUN_TEST(test_handler_awaits);
   RUN_TEST(test_imports);
+#ifdef NL_ROOT
+  RUN_TEST(test_gmod_host);
+#endif
   RUN_TEST(test_intrinsics_out_of_reach);
   RUN_TEST(test_adddecl);
   RUN_TEST(test_compile_errors);

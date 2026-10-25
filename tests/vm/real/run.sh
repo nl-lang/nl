@@ -40,7 +40,7 @@ for v in jit nojit; do
   fi
   B=$T/$P-$v/src
   # shellcheck disable=SC2086
-  $CC -g -Wall -Wno-unused-parameter -I"$B" -I"$ROOT/tests/vm" -o "$T/test_capi_real-$v" \
+  $CC -g -Wall -Wno-unused-parameter -I"$B" -I"$ROOT/tests/vm" -DNL_ROOT="\"$ROOT\"" -o "$T/test_capi_real-$v" \
     "$ROOT/tests/vm/real/test_capi_real.c" "$B/libluajit.a" "$LIBNLC" $NATIVE -lm ||
     { echo "cannot build test_capi_real"; STATUS=1; continue; }
   echo "-- test_capi_real ($v)"
