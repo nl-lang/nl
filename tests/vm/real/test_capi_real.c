@@ -786,6 +786,39 @@ static void test_unhandled(void)
   lua_close(L);
 }
 
+/* An await whose yield fails (across a C call) leaves the task as observed
+** as it was: when the task then fails with nothing else waiting, the failure
+** is still reported.
+*/
+static void test_await_failed_yield(void)
+{
+  lua_State *L = newstate();
+  int t;
+  lua_pushcfunction(L, unhandled_hook);
+  nl_setunhandled(L);
+  unhandled_calls = 0;
+  CHECK(donl(L,
+    "pub async fn waits(t)\n"
+    "  try\n"
+    "    :string.gsub(\"a\", \".\", fn(c) t.await end)\n"
+    "  catch e\n"
+    "    :_G.Caught = e.message\n"
+    "  end\n"
+    "end\n", "=awaitc") == 0);
+  nl_newtask(L);
+  t = lua_gettop(L);
+  lua_pushvalue(L, t);
+  CHECK(callf(L, 1, "waits", 1, 1) == 0);
+  lua_pop(L, 1);
+  CHECK_LUA(L, "type(Caught) == 'string' and Caught:find('yield') ~= nil");
+  lua_pushliteral(L, "failed later");
+  nl_reject(L, t);
+  CHECK(nl_pump(L) >= 1);
+  CHECK(unhandled_calls == 1);
+  CHECK_STR(unhandled_msg, "failed later");
+  lua_close(L);
+}
+
 /* -- Events from NL files ------------------------------------------------- */
 
 static void test_events_from_nl(void)
@@ -1313,6 +1346,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_tasks);
   RUN_TEST(test_timer);
   RUN_TEST(test_unhandled);
+  RUN_TEST(test_await_failed_yield);
   RUN_TEST(test_events_from_nl);
   RUN_TEST(test_handler_awaits);
   RUN_TEST(test_imports);

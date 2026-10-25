@@ -339,6 +339,7 @@ do
       -- The error has no type of its own; it is a plain Exception.
       I.throw("Exception", ".await outside a task: only code running in an async function or block can wait")
     end
+    local observed = rawget(t, "_observed")
     rawset(t, "_observed", true)
     if rawget(t, "_state") == "pending" then
       local w = function() step(co) end
@@ -346,13 +347,16 @@ do
       local ok, err = pcall(coyield, AWAIT)
       if not ok then
         -- The yield failed (across a C call, for instance): nothing is
-        -- waiting, so the waiter is withdrawn before the error goes on.
+        -- waiting, so the waiter is withdrawn, and the task is as observed
+        -- as it was, before the error goes on. A failure of the task is
+        -- then still reported when nothing else handles it.
         local ws = rawget(t, "_waiters")
         if ws ~= nil then
           for i = #ws, 1, -1 do
             if ws[i] == w then tremove(ws, i) break end
           end
         end
+        rawset(t, "_observed", observed)
         error(err, 0)
       end
     end
