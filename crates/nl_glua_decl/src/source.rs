@@ -13,13 +13,13 @@ use serde_json::Value;
 /// One argument of a function or callback.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Arg {
+    pub callback: Option<Callback>,
     pub name: String,
     /// The wiki's type, such as `number`, `Entity`, `table<Player>`,
     /// `number{DMG}` or `vararg`.
     pub ty: String,
     /// The wiki gives a default value: the argument may be left out.
     pub optional: bool,
-    pub callback: Option<Callback>,
 }
 
 /// The signature of a function passed or returned.
@@ -43,17 +43,17 @@ pub enum FuncKind {
 
 #[derive(Clone, Debug)]
 pub struct Func {
-    pub kind: FuncKind,
     /// The library, class, panel or hook table.
     pub parent: String,
     pub name: String,
     /// The wiki's name of the page (`Entity:GetPos`, `Global.Vector`).
     pub address: String,
     pub realm: Option<String>,
-    pub deprecated: bool,
     /// The argument lists of each form of the function.
     pub overloads: Vec<Vec<Arg>>,
     pub rets: Vec<Arg>,
+    pub kind: FuncKind,
+    pub deprecated: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

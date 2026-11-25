@@ -28,10 +28,10 @@ use SyntaxKind::*;
 /// One method or operator defined on a primitive type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PrimMethod {
-    /// `Number`, `String`, `Bool` or `Table`.
-    pub owner: &'static str,
     /// The method's name, or the operator (`+`, `<>`, `[]`).
     pub name: String,
+    /// `Number`, `String`, `Bool` or `Table`.
+    pub owner: &'static str,
     /// The declared return type when it is `Number`, `String` or `Bool`.
     pub ret: Option<&'static str>,
 }

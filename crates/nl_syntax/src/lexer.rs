@@ -22,8 +22,8 @@ use crate::{Diagnostic, SyntaxKind, keyword_kind, name_case};
 /// `EOF` always has both flags set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Token {
-    pub kind: SyntaxKind,
     pub range: TextRange,
+    pub kind: SyntaxKind,
     pub nl_before: bool,
     pub sp_before: bool,
 }
@@ -66,12 +66,12 @@ impl Token {
 ///   `STR_END` tokens are empty.
 #[derive(Clone, Debug)]
 pub struct Lexed<'a> {
-    /// The source text.
-    pub source: &'a str,
     /// All tokens, trivia included, ending with `EOF`.
     pub tokens: Vec<Token>,
     /// Lexical errors, in source order of detection.
     pub diagnostics: Vec<Diagnostic>,
+    /// The source text.
+    pub source: &'a str,
 }
 
 impl<'a> Lexed<'a> {
@@ -237,14 +237,14 @@ const OPERATORS: &[(&str, SyntaxKind)] = {
 /// An open interpolation `#{ … }`.
 #[derive(Clone, Copy, Debug)]
 struct Frame {
-    /// The string is a heredoc (else a one-line `"…"` string).
-    heredoc: bool,
-    /// Depth of `{` opened inside the interpolation and not yet closed.
-    depth: u32,
     /// Offset of the `#{`.
     open: usize,
     /// Offset of the string's opening quote.
     string_start: usize,
+    /// Depth of `{` opened inside the interpolation and not yet closed.
+    depth: u32,
+    /// The string is a heredoc (else a one-line `"…"` string).
+    heredoc: bool,
     /// A line break inside this interpolation of a one-line string was
     /// already reported (the interpolation went on, see
     /// `line_break_in_interpolation`).
@@ -252,19 +252,19 @@ struct Frame {
 }
 
 struct Lexer<'a> {
-    src: &'a str,
-    b: &'a [u8],
-    pos: usize,
     tokens: Vec<Token>,
     diags: Vec<Diagnostic>,
     /// Open interpolations, innermost last.
     frames: Vec<Frame>,
-    /// A line break / any trivia since the last non-trivia token.
-    pend_nl: bool,
-    pend_sp: bool,
+    src: &'a str,
+    b: &'a [u8],
+    pos: usize,
     /// The last two non-trivia token kinds, most recent first.
     prev: Option<SyntaxKind>,
     prev2: Option<SyntaxKind>,
+    /// A line break / any trivia since the last non-trivia token.
+    pend_nl: bool,
+    pend_sp: bool,
 }
 
 impl Lexer<'_> {

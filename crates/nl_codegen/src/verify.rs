@@ -31,9 +31,9 @@ const PROTO_BITOP: u8 = 0x80;
 pub struct VerifyError {
     /// The function's descriptive name.
     pub function: String,
+    pub message: String,
     /// The instruction, when the problem is one.
     pub pc: Option<u32>,
-    pub message: String,
 }
 
 impl std::fmt::Display for VerifyError {

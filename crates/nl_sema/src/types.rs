@@ -215,8 +215,8 @@ pub enum NamedKind {
 /// One nominal type.
 #[derive(Clone, Debug)]
 pub struct Named {
-    pub name: String,
     pub kind: NamedKind,
+    pub name: String,
 }
 
 /// The nominal types of one analysis.

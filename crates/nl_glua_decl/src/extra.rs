@@ -16,13 +16,13 @@ pub struct ExtraMember {
 
 pub struct ExtraItem {
     pub name: String,
-    pub is_block: bool,
     pub doc: Option<String>,
     /// The `declare …` line of a block.
     pub header: Option<String>,
     pub members: Vec<ExtraMember>,
     /// The item's text as written, doc comments included.
     pub text: String,
+    pub is_block: bool,
 }
 
 pub struct Extra {

@@ -508,8 +508,8 @@ static void test_import_and_search_order(void)
 
 /* An in-memory loader. */
 typedef struct MemLoader {
-  int resolves, reads, releases;
   char lastfrom[256];
+  int resolves, reads, releases;
 } MemLoader;
 
 static const char *mem_file(const char *name)
@@ -1146,11 +1146,11 @@ static void test_unhandled(void)
 }
 
 typedef struct TimerCall {
-  int calls;
   double seconds;
   lua_State *L;
   nl_Callback wake;
   void *arg;
+  int calls;
 } TimerCall;
 
 static void timer(void *data, lua_State *L, double seconds, nl_Callback wake,

@@ -49,37 +49,37 @@ unsafe impl Sync for StatePtr {}
 
 #[derive(Default)]
 struct Parked {
-    depth: usize,
     panics: Vec<Box<dyn Any + Send>>,
+    depth: usize,
 }
 
 struct InboxState {
-    closed: bool,
     active: usize,
+    closed: bool,
 }
 
 /// What the state shares with other threads: the right to post to its
 /// inbox while it is open (`Remote`), and the panics of
 /// callbacks that no Rust frame could receive when they happened.
 pub(crate) struct Shared {
-    /// A thread of the state, anchored in its registry, so alive until
-    /// `lua_close`; `nl_post` takes any live thread.
-    state: StatePtr,
-    inbox: Mutex<InboxState>,
-    idle: Condvar,
     /// Per thread (several, with mlua's `send` feature: mlua's lock lets
     /// threads take turns inside one state, between which their calls of
     /// the crate interleave): the panics parked there, and how many calls of
     /// the crate that run script code are in progress there
     /// (`crate::state::Scope`).
     parked: Mutex<HashMap<std::thread::ThreadId, Parked>>,
+    inbox: Mutex<InboxState>,
+    /// A thread of the state, anchored in its registry, so alive until
+    /// `lua_close`; `nl_post` takes any live thread.
+    state: StatePtr,
+    /// The posted closure that the runner (`post_runner`) takes next.
+    current_post: AtomicPtr<c_void>,
+    idle: Condvar,
+    /// The registry reference of the runner.
+    runner_ref: AtomicI32,
     /// A worker's state: no Rust frame can receive a panic there, so a
     /// parked one is dropped.
     worker: AtomicBool,
-    /// The posted closure that the runner (`post_runner`) takes next.
-    current_post: AtomicPtr<c_void>,
-    /// The registry reference of the runner.
-    runner_ref: AtomicI32,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -857,9 +857,9 @@ pub(crate) fn setwakeup(lua: &Lua, f: *const Box<WakeupFn>) -> Result<()> {
 // -- Loader and reporter ---------------------------------------------------------
 
 pub(crate) struct LoaderBox {
-    pub(crate) loader: Box<dyn Loader>,
     /// Owned contents handed to the compiler, by address, until release.
     pub(crate) owned: Mutex<HashMap<usize, Box<[u8]>>>,
+    pub(crate) loader: Box<dyn Loader>,
 }
 
 /// Drops a value of the host's inside a callback of the VM, where a panic

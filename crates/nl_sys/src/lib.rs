@@ -110,10 +110,10 @@ pub struct nl_Loader {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct nl_Diagnostic {
-    pub severity: c_int,
     pub code: *const c_char,
     pub message: *const c_char,
     pub file: *const c_char,
+    pub severity: c_int,
     pub line: c_int,
     pub column: c_int,
     pub endline: c_int,

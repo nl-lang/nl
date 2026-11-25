@@ -19,8 +19,8 @@ pub type SyntaxElement = rowan::SyntaxElement<NlLanguage>;
 /// parts are `ERROR_NODE`s or incomplete nodes, with diagnostics.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Parse {
-    green: GreenNode,
     diagnostics: Vec<Diagnostic>,
+    green: GreenNode,
 }
 
 impl Parse {

@@ -65,8 +65,8 @@ pub(crate) use stmt::compile_chunk;
 /// A limit the generated code would exceed, or an inconsistency in the IR.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Error {
-    pub line: u32,
     pub message: String,
+    pub line: u32,
 }
 
 pub(crate) type R<T> = Result<T, Error>;
@@ -205,12 +205,12 @@ pub(crate) struct Goto {
 /// A block scope (`FuncScope`).
 #[derive(Debug, Default)]
 pub(crate) struct Scope {
-    /// The number of active locals outside the scope.
-    pub nactvar: u32,
-    pub flags: u8,
     /// The pending gotos of this scope, including those propagated out of
     /// inner scopes.
     pub gotos: Vec<Goto>,
+    /// The number of active locals outside the scope.
+    pub nactvar: u32,
+    pub flags: u8,
 }
 
 /// An active local variable, indexed by slot.
@@ -230,8 +230,20 @@ struct Upval {
 
 /// The state of one function being compiled (`FuncState`).
 pub(crate) struct FuncState {
+    knum_map: HashMap<u64, u32>,
+    kstr_map: HashMap<Vec<u8>, u32>,
+    uv_map: HashMap<VarId, u32>,
+    var_slots: HashMap<VarId, u32>,
     pub bc: Vec<Ins>,
     pub lines: Vec<u32>,
+    pub name: String,
+    knum: Vec<f64>,
+    kgc: Vec<KGc>,
+    children: Vec<Proto>,
+    upvals: Vec<Upval>,
+    actvars: Vec<ActVar>,
+    vars: Vec<VarInfo>,
+    pub scopes: Vec<Scope>,
     /// Pending jumps to the next instruction.
     pub jpc: u32,
     /// The last pc that was a jump target.
@@ -240,24 +252,12 @@ pub(crate) struct FuncState {
     pub nactvar: u32,
     pub framesize: u32,
     pub numparams: u32,
+    pub linedefined: u32,
     pub vararg: bool,
     /// The function creates closures: returns must close upvalues.
     pub has_closures: bool,
     /// A method (`FLAG_METHOD` at level 1).
     pub method: bool,
-    pub linedefined: u32,
-    pub name: String,
-    knum: Vec<f64>,
-    knum_map: HashMap<u64, u32>,
-    kgc: Vec<KGc>,
-    kstr_map: HashMap<Vec<u8>, u32>,
-    children: Vec<Proto>,
-    upvals: Vec<Upval>,
-    uv_map: HashMap<VarId, u32>,
-    actvars: Vec<ActVar>,
-    var_slots: HashMap<VarId, u32>,
-    vars: Vec<VarInfo>,
-    pub scopes: Vec<Scope>,
 }
 
 impl FuncState {
@@ -327,11 +327,11 @@ impl FuncState {
 
 /// The generator over a chunk: the stack of functions being compiled.
 pub(crate) struct Gen<'a> {
-    pub chunk: &'a Chunk,
-    pub funcs: Vec<FuncState>,
     /// The locals assigned after their declaration anywhere in the chunk:
     /// the others are immutable upvalues.
     pub assigned: HashSet<LocalId>,
+    pub funcs: Vec<FuncState>,
+    pub chunk: &'a Chunk,
     /// The line of the statement being compiled.
     pub line: u32,
     /// The feature level (the crate documentation).

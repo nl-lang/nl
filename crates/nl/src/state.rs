@@ -16,18 +16,18 @@ pub use nl_capi::{Localize, Severity};
 /// Rust data of an opened state, in mlua's app data. It is dropped after
 /// `lua_close`, so whatever the VM holds a pointer to lives here.
 pub(crate) struct NlState {
-    pub(crate) shared: Arc<Shared>,
+    /// The names `register_type` gave Rust types, for `register_transfer`.
+    pub(crate) types: RefCell<HashMap<TypeId, String>>,
     /// Boxes the VM holds pointers to (timer, loader, reporter), kept until
     /// the state closes: a replaced one may still be running.
     kept: RefCell<Vec<Kept>>,
+    #[cfg(feature = "async")]
+    pub(crate) spawner: RefCell<Option<Box<crate::future::SpawnFn>>>,
     wakeup: RefCell<Option<Box<Box<raw::WakeupFn>>>>,
-    /// The names `register_type` gave Rust types, for `register_transfer`.
-    pub(crate) types: RefCell<HashMap<TypeId, String>>,
     /// In a worker's state: the state as mlua sees it, to find, when the
     /// state closes, a `Lua` that outlived it (`Drop`).
     pub(crate) worker_lua: RefCell<Option<mlua::WeakLua>>,
-    #[cfg(feature = "async")]
-    pub(crate) spawner: RefCell<Option<Box<crate::future::SpawnFn>>>,
+    pub(crate) shared: Arc<Shared>,
 }
 
 /// What app data may hold: anything, and with mlua's `send` feature only
@@ -343,16 +343,16 @@ pub(crate) fn set_loader(lua: &Lua, loader: Box<dyn Loader>) -> Result<()> {
 /// columns are 1-based.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diagnostic {
-    pub severity: Severity,
-    /// A stable identifier, such as `"undeclared-name"`.
-    pub code: &'static str,
     pub message: String,
     /// The resolved name of the file.
     pub file: String,
+    /// A stable identifier, such as `"undeclared-name"`.
+    pub code: &'static str,
     pub line: u32,
     pub column: u32,
     pub end_line: u32,
     pub end_column: u32,
+    pub severity: Severity,
 }
 
 /// The codes are few and stable: each is leaked once, so that

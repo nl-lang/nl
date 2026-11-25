@@ -88,8 +88,8 @@ impl OptKey {
 pub struct Key {
     chunk_name: String,
     source: Vec<u8>,
-    options: OptKey,
     decls: Vec<String>,
+    options: OptKey,
 }
 
 impl Key {
@@ -104,8 +104,8 @@ impl Key {
 
 struct Entry {
     key: Key,
-    deps: Vec<Dep>,
     out: CompileOutput,
+    deps: Vec<Dep>,
     bytes: usize,
     used: u64,
 }
@@ -129,8 +129,8 @@ fn with_cache<T>(f: impl FnOnce(&mut Cache) -> T) -> T {
 
 /// A loader that notes every answer of the one it wraps.
 struct Recorder<'a> {
-    inner: &'a dyn Loader,
     deps: RefCell<Vec<Dep>>,
+    inner: &'a dyn Loader,
 }
 
 impl Loader for Recorder<'_> {

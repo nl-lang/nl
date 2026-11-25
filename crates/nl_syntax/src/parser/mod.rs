@@ -88,19 +88,19 @@ fn closer_bit(kind: SyntaxKind) -> u8 {
 /// One significant token as the parser sees it.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Tok {
-    pub kind: SyntaxKind,
     pub range: TextRange,
-    /// A line break lies before it. Lexer `ERROR` tokens that the
-    /// parser skips pass their flags on to the next token.
-    pub nl: bool,
-    /// Whitespace, a comment or a line break lies before it.
-    pub sp: bool,
     /// Column (in bytes; indentation is ASCII) of the first token of its line.
     pub indent: u32,
     /// Its own column.
     pub col: u32,
     /// Its 1-based line, for messages.
     pub line: u32,
+    pub kind: SyntaxKind,
+    /// A line break lies before it. Lexer `ERROR` tokens that the
+    /// parser skips pass their flags on to the next token.
+    pub nl: bool,
+    /// Whitespace, a comment or a line break lies before it.
+    pub sp: bool,
     /// A lexer `ERROR` token (already reported) lies directly before it, or
     /// it is the empty `STR_END` with which the lexer cuts off an unclosed
     /// interpolation (also reported). A missing operand here is not reported
@@ -133,18 +133,22 @@ pub(crate) struct Ctx {
 pub(crate) struct Construct {
     /// Token index of the opening keyword.
     pub opener: usize,
-    /// Indentation of the opener's line.
-    pub indent: u32,
     /// Its header holds a `do … end` without parameters, all on the
     /// header's line: Lua's `while x do y end`. Used for the message when
     /// the construct then has no `end`.
     pub header_do: Option<TextRange>,
+    /// Indentation of the opener's line.
+    pub indent: u32,
 }
 
 pub(crate) struct Parser<'a> {
-    src: &'a str,
+    /// Token indices where a postfix chain or Lua path that holds a `?.`
+    /// step starts: such a chain is an assignment target only
+    /// in an assignment of its own.
+    pub(crate) safe_chain_starts: std::collections::HashSet<usize>,
+    /// Start offsets of the errors reported, for "one error per position".
+    error_starts: std::collections::HashSet<TextSize>,
     toks: Vec<Tok>,
-    pos: usize,
     pub(crate) events: Vec<Event>,
     diags: Vec<Diagnostic>,
     ctx: Vec<Ctx>,
@@ -153,6 +157,19 @@ pub(crate) struct Parser<'a> {
     constructs: Vec<Construct>,
     /// How many open constructs accept each closer keyword, by bit index.
     open_closers: [u32; 6],
+    /// Positions where an indentation hint closes constructs (token index,
+    /// column); sorted.
+    hints: Vec<(usize, u32)>,
+    /// Openers of constructs whose `end` was missing at the end of the file.
+    pub(crate) unclosed_at_eof: Vec<usize>,
+    src: &'a str,
+    /// Token index where the expression body of the innermost short
+    /// function being parsed starts: a command call there gets a
+    /// targeted error.
+    pub(crate) lambda_body: Option<usize>,
+    pos: usize,
+    /// Missing-`end` errors reported (to compare runs).
+    pub(crate) missing_end_errors: usize,
     rec_depth: u32,
     tree_depth: u32,
     fuel: Cell<u32>,
@@ -163,28 +180,11 @@ pub(crate) struct Parser<'a> {
     /// A statement other than `import` was seen at the file's top level:
     /// an `import` from here on is misplaced.
     pub(crate) past_imports: bool,
-    /// Token indices where a postfix chain or Lua path that holds a `?.`
-    /// step starts: such a chain is an assignment target only
-    /// in an assignment of its own.
-    pub(crate) safe_chain_starts: std::collections::HashSet<usize>,
     /// The misplaced `import` was reported (once per file).
     pub(crate) import_order_reported: bool,
-    /// Start offsets of the errors reported, for "one error per position".
-    error_starts: std::collections::HashSet<TextSize>,
-    /// Positions where an indentation hint closes constructs (token index,
-    /// column); sorted.
-    hints: Vec<(usize, u32)>,
-    /// Openers of constructs whose `end` was missing at the end of the file.
-    pub(crate) unclosed_at_eof: Vec<usize>,
     /// After an error about a missing statement separator, further ones are
     /// not reported until the next line.
     pub(crate) sep_error_reported: bool,
-    /// Missing-`end` errors reported (to compare runs).
-    pub(crate) missing_end_errors: usize,
-    /// Token index where the expression body of the innermost short
-    /// function being parsed starts: a command call there gets a
-    /// targeted error.
-    pub(crate) lambda_body: Option<usize>,
 }
 
 /// Index into `open_brackets`.
@@ -201,12 +201,12 @@ fn bracket_slot(closer: SyntaxKind) -> usize {
 
 /// The result of one parser run, before choosing between runs.
 pub(crate) struct RunOutput {
-    pub green: GreenNode,
     pub diags: Vec<Diagnostic>,
     pub unclosed_at_eof: Vec<usize>,
-    pub stuck: bool,
+    pub green: GreenNode,
     /// Errors other than a missing `end`.
     pub other_errors: usize,
+    pub stuck: bool,
 }
 
 /// Parses `source` into a green tree and the sorted diagnostics (lexer and
@@ -1051,10 +1051,10 @@ impl<'a> Parser<'a> {
 /// Parsed expression with what the grammar needs to know about its shape.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Expr {
-    pub cm: CompletedMarker,
-    pub shape: Shape,
     /// Index of its first token.
     pub start: usize,
+    pub cm: CompletedMarker,
+    pub shape: Shape,
 }
 
 /// The last step of a Lua path, which decides whether the path is a command

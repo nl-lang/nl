@@ -76,8 +76,8 @@ use nl_syntax::SyntaxNode;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExportInfo {
     pub name: String,
-    pub kind: BindingKind,
     pub params: Option<FnParams>,
+    pub kind: BindingKind,
     /// What declares it in the exporting file (`Fn`, `Const`, `Struct`,
     /// `Enum`, `Interface`, `TypeAlias`, `Module`);
     /// [`Resolution::declared_as`] gives it for the importing binding.
@@ -99,17 +99,17 @@ pub struct ExtensionInfo {
     /// The declared name it extends.
     pub owner: String,
     pub name: String,
-    /// A method of the type's values (a declared struct or host type), or
-    /// a plain function of a declared module.
-    pub method: bool,
     /// The parameters' names, and whether each has a default.
     pub params: Vec<(String, bool)>,
-    pub rest: bool,
-    pub keyed: bool,
-    pub is_async: bool,
     /// The import path of the file that defines it, as the importing file
     /// wrote it; `None` in the file that defines it.
     pub origin: Option<String>,
+    /// A method of the type's values (a declared struct or host type), or
+    /// a plain function of a declared module.
+    pub method: bool,
+    pub rest: bool,
+    pub keyed: bool,
+    pub is_async: bool,
 }
 
 /// How the resolver learns what an imported file exports.

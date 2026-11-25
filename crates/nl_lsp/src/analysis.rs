@@ -30,19 +30,19 @@ use SyntaxKind::*;
 
 /// An analyzed document.
 pub struct Doc {
-    pub uri: String,
-    /// The document's file, for a `file:` URI.
-    pub path: Option<PathBuf>,
-    pub text: String,
-    pub lines: LineMap,
-    pub root: SyntaxNode,
+    pub res: Resolution,
+    /// `None` when the analyzer did not run (a declaration file).
+    pub info: Option<TypeInfo>,
     pub decls: Declarations,
     /// The text of each declaration file, by canonical name, for
     /// positions in them.
     pub decl_texts: HashMap<String, String>,
-    pub res: Resolution,
-    /// `None` when the analyzer did not run (a declaration file).
-    pub info: Option<TypeInfo>,
+    pub lines: LineMap,
+    pub uri: String,
+    /// The document's file, for a `file:` URI.
+    pub path: Option<PathBuf>,
+    pub text: String,
+    pub root: SyntaxNode,
 }
 
 /// True for a declaration file, which has its own parser and
@@ -93,8 +93,8 @@ pub fn load_declarations(files: &Files, doc_dir: Option<&Path>) -> (Declarations
 /// without reading the files they import in turn (as the pipeline does
 /// for a file two imports away).
 struct Exports<'a> {
-    files: &'a Files,
     from: Option<String>,
+    files: &'a Files,
 }
 
 impl ImportProvider for Exports<'_> {

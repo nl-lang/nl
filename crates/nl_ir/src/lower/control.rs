@@ -17,13 +17,13 @@ use SyntaxKind::*;
 /// One branch of an `if` chain: statements that compute its condition
 /// (run only when the earlier conditions failed), the condition, the body.
 struct Clause {
+    cond: Expr,
+    stmts: Vec<Stmt>,
+    body: Block,
     /// The line of the clause (`if`, `elseif`, `when`): its test and the
     /// `if` statement carry it, so that a branch's statements follow their
     /// test in line order (the Lua backend cannot move back a line).
     line: u32,
-    stmts: Vec<Stmt>,
-    cond: Expr,
-    body: Block,
 }
 
 impl Lowerer<'_> {

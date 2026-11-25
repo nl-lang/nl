@@ -268,11 +268,11 @@ impl std::fmt::Display for Kind {
 /// description.
 #[derive(Clone, Debug)]
 pub struct Finding {
-    pub kind: Kind,
     /// The label of the run (`bc-checked-static-jithot`, `check`,
     /// `parse`, `build-bc`, ...).
     pub run: String,
     pub detail: String,
+    pub kind: Kind,
 }
 
 /// Every run of one program and the findings among them.

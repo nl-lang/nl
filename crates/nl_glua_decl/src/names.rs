@@ -143,8 +143,8 @@ pub fn is_lname(name: &str) -> bool {
 /// NL name to use, or `-` to leave the item out.
 #[derive(Debug, Default)]
 pub struct Overrides {
-    names: BTreeMap<String, String>,
     used: std::cell::RefCell<BTreeSet<String>>,
+    names: BTreeMap<String, String>,
 }
 
 pub enum Override<'a> {

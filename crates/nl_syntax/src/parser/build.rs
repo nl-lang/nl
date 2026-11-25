@@ -59,15 +59,15 @@ pub(crate) fn takes_doc_comment(kind: SyntaxKind) -> bool {
 }
 
 struct Builder<'a> {
-    lexed: &'a Lexed<'a>,
     inner: GreenNodeBuilder<'static>,
+    /// The open nodes below the root: each one's kind, and whether it is a
+    /// `BLOCK` that takes the trivia before its closing token.
+    stack: Vec<(SyntaxKind, bool)>,
+    lexed: &'a Lexed<'a>,
     /// Next lexer token not yet in the tree.
     lex_idx: usize,
     /// Open nodes, the root included.
     depth: usize,
-    /// The open nodes below the root: each one's kind, and whether it is a
-    /// `BLOCK` that takes the trivia before its closing token.
-    stack: Vec<(SyntaxKind, bool)>,
     /// The kind of the last token the parser consumed.
     last_token: Option<SyntaxKind>,
     /// A doc comment run is being held back for a declaration node that

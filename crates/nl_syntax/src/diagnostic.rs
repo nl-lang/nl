@@ -20,9 +20,9 @@ pub enum Severity {
 /// be empty (a point, such as "missing `}` here").
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Diagnostic {
-    pub severity: Severity,
-    pub range: TextRange,
     pub message: String,
+    pub range: TextRange,
+    pub severity: Severity,
 }
 
 impl Diagnostic {

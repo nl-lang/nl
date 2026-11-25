@@ -51,6 +51,10 @@ fn in_realm(realm: Option<&str>, side: Option<Side>) -> bool {
 /// What the generator saw and did, for its report.
 #[derive(Debug, Default)]
 pub struct Stats {
+    /// Items left out, with the reason.
+    pub skipped: Vec<String>,
+    /// Wiki type names with no declaration, typed `any`.
+    pub unknown_types: BTreeSet<String>,
     pub classes: usize,
     pub class_methods: usize,
     pub panels: usize,
@@ -63,15 +67,11 @@ pub struct Stats {
     pub enums: usize,
     pub enum_constants: usize,
     pub structures: usize,
-    /// Items left out, with the reason.
-    pub skipped: Vec<String>,
-    /// Wiki type names with no declaration, typed `any`.
-    pub unknown_types: BTreeSet<String>,
 }
 
 pub struct Generated {
-    pub text: String,
     pub stats: Stats,
+    pub text: String,
 }
 
 /// The tables of hooks whose fields a structure of the wiki lists.
@@ -91,14 +91,14 @@ struct Container {
 }
 
 struct Gen<'a> {
-    ov: &'a Overrides,
-    side: Option<Side>,
+    stats: Stats,
     /// Lua class name → NL type name.
     class_names: BTreeMap<String, String>,
     /// Top-level NL names, to keep them unique and clear of the built-in
     /// declarations.
     taken: BTreeSet<String>,
-    stats: Stats,
+    ov: &'a Overrides,
+    side: Option<Side>,
 }
 
 /// The wiki's realm and deprecation, and the page, as a doc comment.

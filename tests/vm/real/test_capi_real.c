@@ -690,11 +690,11 @@ static void test_tasks(void)
 }
 
 typedef struct TimerCall {
-  int calls;
   double seconds;
   lua_State *L;
   nl_Callback wake;
   void *arg;
+  int calls;
 } TimerCall;
 
 static void timer(void *data, lua_State *L, double seconds, nl_Callback wake, void *arg)

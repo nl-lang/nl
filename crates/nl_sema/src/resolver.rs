@@ -36,29 +36,21 @@ enum FnKind {
 }
 
 struct FnCtx {
-    index: u32,
-    kind: FnKind,
-    loop_depth: u32,
     self_binding: Option<BindingId>,
+    index: u32,
+    loop_depth: u32,
+    kind: FnKind,
 }
 
 /// A module body being walked: its binding, and the function depth of the
 /// body (an `fn` at that depth is a method of the module).
 struct ModuleCtx {
-    binding: BindingId,
     fn_depth: usize,
+    binding: BindingId,
 }
 
 pub(crate) struct Resolver<'a> {
     res: Resolution,
-    scopes: Vec<Scope>,
-    fns: Vec<FnCtx>,
-    next_fn: u32,
-    self_targets: Vec<Option<SelfTarget>>,
-    modules: Vec<ModuleCtx>,
-    imports: &'a dyn ImportProvider,
-    /// The declaration files in scope after the prelude.
-    decls: &'a Declarations,
     unnamed_handlers: HashSet<String>,
     /// Field names of the structs of this file, and their parents.
     struct_fields: HashMap<BindingId, (Option<BindingId>, Vec<String>)>,
@@ -66,27 +58,35 @@ pub(crate) struct Resolver<'a> {
     struct_type_params: HashMap<BindingId, SyntaxNode>,
     /// The type each alias of this file stands for, by its binding.
     aliases: HashMap<BindingId, SyntaxNode>,
-    /// Methods declared on structs of this file (`fn Owner.name`, and the
-    /// methods of `interface I for Owner`), for [`Self::check_field_methods`].
-    struct_methods: Vec<(BindingId, String, TextRange)>,
     /// While the items of one `when` are declared: the names the first
     /// item bound, which the later items bind again.
     share: Option<HashMap<String, BindingId>>,
-    /// While the items of one `when` are declared: the names declared.
-    recording: Option<Vec<String>>,
     /// What is known about the functions of each module of this file, by
     /// name, for the block rule.
     module_members: HashMap<BindingId, HashMap<String, FnParams>>,
     /// The exports of each `import from … as Name`.
     import_exports: HashMap<BindingId, Vec<ExportInfo>>,
-    /// Trailing blocks on `M.name …` calls: the block, the binding of `M`
-    /// and the member name, checked when the whole file is known.
-    pending_blocks: Vec<(TextRange, BindingId, String)>,
     /// The variant names of the enums of this file.
     enum_variants: HashMap<BindingId, Vec<String>>,
     /// Each `const` declared at the top of its block (see [`Self::hoist`]),
     /// with the range of its `CONST_DECL`.
     hoisted_consts: HashMap<BindingId, TextRange>,
+    scopes: Vec<Scope>,
+    fns: Vec<FnCtx>,
+    self_targets: Vec<Option<SelfTarget>>,
+    modules: Vec<ModuleCtx>,
+    /// Methods declared on structs of this file (`fn Owner.name`, and the
+    /// methods of `interface I for Owner`), for [`Self::check_field_methods`].
+    struct_methods: Vec<(BindingId, String, TextRange)>,
+    /// While the items of one `when` are declared: the names declared.
+    recording: Option<Vec<String>>,
+    /// Trailing blocks on `M.name …` calls: the block, the binding of `M`
+    /// and the member name, checked when the whole file is known.
+    pending_blocks: Vec<(TextRange, BindingId, String)>,
+    imports: &'a dyn ImportProvider,
+    /// The declaration files in scope after the prelude.
+    decls: &'a Declarations,
+    next_fn: u32,
 }
 
 impl<'a> Resolver<'a> {

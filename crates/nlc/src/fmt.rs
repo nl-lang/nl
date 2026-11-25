@@ -31,10 +31,10 @@ use std::process::ExitCode;
 use nl_syntax::{FormatOptions, LineIndex, Severity, TextSize, format, format_decl, source_from_bytes};
 
 struct Args {
+    files: Vec<String>,
     check: bool,
     stdout: bool,
     fix: bool,
-    files: Vec<String>,
 }
 
 fn parse_args(args: &[String], usage: &str) -> Result<Args, ExitCode> {

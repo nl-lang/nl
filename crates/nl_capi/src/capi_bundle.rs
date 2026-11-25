@@ -39,40 +39,40 @@ pub type NlbCheck = unsafe extern "C" fn(data: *mut c_void, chunkname: *const c_
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct NlbOptions {
-    pub profile: c_int,
     pub name: *const c_char,
-    pub checks: c_int,
-    pub minify: c_int,
-    pub case_tables: c_int,
     pub part_limit: usize,
-    pub sourcemap: c_int,
-    pub localize: c_int,
     pub decls: *const *const c_char,
     pub ndecls: usize,
     pub check: Option<NlbCheck>,
     pub check_data: *mut c_void,
     pub runtime_include: *const c_char,
     pub include_parts: *const c_char,
+    pub profile: c_int,
+    pub checks: c_int,
+    pub minify: c_int,
+    pub case_tables: c_int,
+    pub sourcemap: c_int,
+    pub localize: c_int,
 }
 
 /// `nlb_Result`: opaque to C.
 pub struct NlbResult {
     /// (file name, NUL-terminated text) of each part.
     parts: Vec<(CString, Vec<u8>)>,
-    build: CString,
     diagnostics: Vec<NlcDiagnostic>,
     /// Owns the strings that `diagnostics` points into.
     _strings: Vec<CString>,
+    build: CString,
     sourcemap: Option<Box<NlbSourceMap>>,
 }
 
 /// `nlb_SourceMap`: opaque to C.
 pub struct NlbSourceMap {
     map: SourceMap,
-    bundle: CString,
-    build: CString,
     /// The source files, for `nlb_sourcemap_lookup`'s `file`.
     files: Vec<CString>,
+    bundle: CString,
+    build: CString,
 }
 
 impl NlbSourceMap {

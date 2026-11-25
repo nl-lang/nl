@@ -45,6 +45,10 @@ pub struct NlcLoader {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct NlcOptions {
+    /// The declaration files in scope: `ndecls`
+    /// names, read through the loader's `read` ([`Loader::declarations`]).
+    pub decls: *const *const c_char,
+    pub ndecls: usize,
     pub checks: c_int,
     pub strip: c_int,
     /// 1: a bytecode dump ([`driver::Emit::Bytecode`]); 0: Lua source.
@@ -52,10 +56,6 @@ pub struct NlcOptions {
     /// The feature level of a dump ([`CompileOptions::level`]): 0 for
     /// stock LuaJIT, 1 for the fork.
     pub level: c_int,
-    /// The declaration files in scope: `ndecls`
-    /// names, read through the loader's `read` ([`Loader::declarations`]).
-    pub decls: *const *const c_char,
-    pub ndecls: usize,
     /// `NL_OPT_LOCALIZE` ([`CompileOptions::localize`]): 0 none, 1 the
     /// standard libraries, 2 every Lua global; another value is 1.
     pub localize: c_int,
@@ -65,10 +65,10 @@ pub struct NlcOptions {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct NlcDiagnostic {
-    pub severity: c_int,
     pub code: *const c_char,
     pub message: *const c_char,
     pub file: *const c_char,
+    pub severity: c_int,
     pub line: c_int,
     pub column: c_int,
     pub endline: c_int,
@@ -179,8 +179,8 @@ fn internal_error(chunk_name: &str, payload: &(dyn Any + Send)) -> CompileOutput
 /// the compiler as a text that stands for it, and `names` maps that text
 /// back, so the loader always gets back exactly the bytes it returned.
 pub(crate) struct CLoader {
-    raw: NlcLoader,
     names: RefCell<HashMap<String, Vec<u8>>>,
+    raw: NlcLoader,
     /// The declaration files (`nlc_Options.decls`), as text names.
     pub(crate) decls: RefCell<Vec<String>>,
     /// The declaration files `read` returned nothing for.
@@ -518,9 +518,9 @@ mod tests {
     /// A C loader over an in-memory file table, counting reads and releases.
     struct Files {
         files: HashMap<String, Vec<u8>>,
+        last_from: RefCell<Option<String>>,
         reads: usize,
         releases: usize,
-        last_from: RefCell<Option<String>>,
     }
 
     unsafe extern "C" fn t_resolve(

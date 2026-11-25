@@ -73,17 +73,17 @@ use SyntaxKind::*;
 
 /// Options of one analysis.
 pub struct AnalyzeOptions<'a> {
+    /// How to read the file of `Worker.new 'literal'`.
+    pub imports: Option<&'a dyn ImportProvider>,
+    /// The declaration files in scope (the built-in prelude ones
+    /// included); `None` for none.
+    pub decls: Option<&'a Declarations>,
     /// Record the hints (proven checks, static resolution).
     /// Off, only the member keys of declared names are recorded, which the
     /// lowering needs whatever the mode.
     pub static_resolution: bool,
-    /// The declaration files in scope (the built-in prelude ones
-    /// included); `None` for none.
-    pub decls: Option<&'a Declarations>,
     /// Report lints (naming, shadowing, unused bindings, …).
     pub lints: bool,
-    /// How to read the file of `Worker.new 'literal'`.
-    pub imports: Option<&'a dyn ImportProvider>,
     /// Fill [`Analysis::info`], the side tables tools read (the language
     /// server). Off for a build, so that it costs
     /// nothing there.
@@ -101,10 +101,10 @@ impl Default for AnalyzeOptions<'_> {
 /// What the analyzer produced.
 #[derive(Debug, Default)]
 pub struct Analysis {
-    pub diagnostics: Vec<SemaDiagnostic>,
-    pub hints: Hints,
     /// The side tables of [`AnalyzeOptions::record`]; `None` otherwise.
     pub info: Option<TypeInfo>,
+    pub hints: Hints,
+    pub diagnostics: Vec<SemaDiagnostic>,
 }
 
 /// What the analyzer knows about a file, for tools (the language
@@ -113,8 +113,6 @@ pub struct Analysis {
 /// like the [`Resolution`].
 #[derive(Debug, Default)]
 pub struct TypeInfo {
-    /// The nominal types, which render the types below (`TypeTable::show`).
-    pub types: TypeTable,
     /// The type of each expression node, by its range, as the second pass
     /// saw it.
     pub expr_types: HashMap<TextRange, Type>,
@@ -143,6 +141,8 @@ pub struct TypeInfo {
     pub prelude_named: HashMap<&'static str, NamedId>,
     /// Methods this file defines on `Number`, `String` and `Bool`.
     pub prim_methods: HashMap<&'static str, HashMap<String, Rc<FnType>>>,
+    /// The nominal types, which render the types below (`TypeTable::show`).
+    pub types: TypeTable,
 }
 
 impl Analysis {
@@ -203,29 +203,25 @@ pub(crate) type Env = HashMap<BindingId, Type>;
 
 /// One function being analyzed.
 pub(crate) struct FnCtx {
-    /// The node of the function (`FN_DECL`, `FN_EXPR`, `LAMBDA_EXPR`,
-    /// `TRAILING_BLOCK`, `ON_EXPR`, `SPAWN_EXPR`); `None` for the file's main
-    /// function.
-    pub node: Option<TextRange>,
     pub declared_ret: Option<Type>,
-    /// `: nil`: the tail value is discarded.
-    pub nil_ret: bool,
     /// The types of every `return` and of the tail, for inference.
     pub returns: Vec<Type>,
     /// The type of `self` in a method.
     pub self_type: Option<Type>,
+    /// The node of the function (`FN_DECL`, `FN_EXPR`, `LAMBDA_EXPR`,
+    /// `TRAILING_BLOCK`, `ON_EXPR`, `SPAWN_EXPR`); `None` for the file's main
+    /// function.
+    pub node: Option<TextRange>,
+    pub loop_depth: u32,
+    /// `: nil`: the tail value is discarded.
+    pub nil_ret: bool,
     /// A `spawn do` block.
     pub spawn_block: bool,
-    pub loop_depth: u32,
 }
 
 /// The analyzer's state.
 pub(crate) struct Analyzer<'a> {
-    pub(crate) res: &'a Resolution,
-    pub(crate) opts: &'a AnalyzeOptions<'a>,
-    /// `opts.decls`, or an empty table.
-    pub(crate) decls: &'a Declarations,
-    pub(crate) types: TypeTable,
+    pub(crate) hints: Hints,
     /// The nominal type of each type-level binding of this file.
     pub(crate) named_of: HashMap<BindingId, NamedId>,
     /// The nominal types of prelude names (`Exception`, the library
@@ -260,36 +256,16 @@ pub(crate) struct Analyzer<'a> {
     /// `**opts` parameters: tables of options passed by name, whose
     /// members are their keys, never functions of `Table`.
     pub(crate) keyed_params: HashSet<BindingId>,
-    /// The `FIELD_EXPR` target of a compound assignment while its current
-    /// value is typed: a place, whose store reports a function of `Table`
-    /// (`t.count += 1` on a `Table` is refused, as `t.count = 1` is), so
-    /// its read reports nothing.
-    pub(crate) place_read: Option<TextRange>,
     /// The function node each binding belongs to.
     pub(crate) binding_fn: HashMap<BindingId, Option<TextRange>>,
     pub(crate) env: Env,
-    pub(crate) fns: Vec<FnCtx>,
-    /// The current statement leaves its block (`return`, `break`, …).
-    pub(crate) diverges: bool,
-    pub(crate) diags: Vec<SemaDiagnostic>,
-    pub(crate) hints: Hints,
-    pub(crate) pass: u8,
     /// Bindings referenced as values (for the unused-binding lint).
     pub(crate) used: HashSet<BindingId>,
-    /// The file has top-level statements other than declarations
-    /// (a worker that loads it repeats them).
-    pub(crate) top_level_effects: bool,
     /// The module each module function belongs to.
     pub(crate) module_of_binding: HashMap<BindingId, NamedId>,
     /// The nominal types of the nested declarations of declared modules,
     /// by node range.
     pub(crate) decl_nested: HashMap<TextRange, NamedId>,
-    /// Methods that replace one of the same name, reported
-    /// in pass 2.
-    pub(crate) pending_replacements: Vec<(TextRange, String, String)>,
-    /// Errors found while the file's declarations are collected, reported
-    /// in pass 2.
-    pub(crate) pending_errors: Vec<(TextRange, &'static str, String)>,
     /// The signatures of top-level `declare fn`s, by name.
     pub(crate) decl_fn_sigs: HashMap<String, Rc<FnType>>,
     /// The types of top-level `declare let`/`const`, by name.
@@ -304,6 +280,30 @@ pub(crate) struct Analyzer<'a> {
     pub(crate) members: HashMap<TextRange, (NamedId, String)>,
     pub(crate) member_decls: HashMap<(NamedId, String), TextRange>,
     pub(crate) decl_nodes: HashMap<NamedId, (DeclId, TextRange)>,
+    pub(crate) types: TypeTable,
+    pub(crate) fns: Vec<FnCtx>,
+    pub(crate) diags: Vec<SemaDiagnostic>,
+    /// Methods that replace one of the same name, reported
+    /// in pass 2.
+    pub(crate) pending_replacements: Vec<(TextRange, String, String)>,
+    /// Errors found while the file's declarations are collected, reported
+    /// in pass 2.
+    pub(crate) pending_errors: Vec<(TextRange, &'static str, String)>,
+    pub(crate) res: &'a Resolution,
+    pub(crate) opts: &'a AnalyzeOptions<'a>,
+    /// `opts.decls`, or an empty table.
+    pub(crate) decls: &'a Declarations,
+    /// The `FIELD_EXPR` target of a compound assignment while its current
+    /// value is typed: a place, whose store reports a function of `Table`
+    /// (`t.count += 1` on a `Table` is refused, as `t.count = 1` is), so
+    /// its read reports nothing.
+    pub(crate) place_read: Option<TextRange>,
+    /// The current statement leaves its block (`return`, `break`, …).
+    pub(crate) diverges: bool,
+    pub(crate) pass: u8,
+    /// The file has top-level statements other than declarations
+    /// (a worker that loads it repeats them).
+    pub(crate) top_level_effects: bool,
 }
 
 impl<'a> Analyzer<'a> {

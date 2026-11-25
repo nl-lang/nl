@@ -447,9 +447,9 @@ fn decode_quoted_part(text: &str, first: bool) -> Vec<u8> {
 
 /// One line, or piece of a line, of heredoc content.
 struct HLine<'a> {
-    part: usize,
     /// The text, without its line break.
     text: &'a [u8],
+    part: usize,
     /// The line starts here (as opposed to continuing after a `}`).
     starts_line: bool,
     /// The piece ends at an interpolation `#{` (so the line is not blank).

@@ -58,10 +58,10 @@ typedef struct nlb_Loader {
 
 /* Same layout as nl_Diagnostic (nl.h). */
 typedef struct nlb_Diagnostic {
-  int severity;			/* NLB_DIAG_* */
   const char *code;		/* Stable identifier: "wrong-realm", "not-in-gmod", ... */
   const char *message;
   const char *file;		/* Canonical name of the file. */
+  int severity;			/* NLB_DIAG_* */
   int line, column;		/* 1-based; the column counts characters. */
   int endline, endcolumn;
 } nlb_Diagnostic;
@@ -98,21 +98,13 @@ typedef int (*nlb_Check)(void *data, const char *chunkname,
 			 char *err, size_t errsize);
 
 typedef struct nlb_Options {
-  int profile;			/* NLB_PROFILE_*; default PORTABLE */
   /* The bundle's name: its files are "<name>.lua", "<name>_2.lua", ...;
   ** the key under which its parts meet; the sourcemap's "bundle". No `/`,
   ** `\`, backquote or control character. NULL: "bundle". */
   const char *name;
-  int checks;			/* Runtime type checks (NL_OPT_CHECKS); default 1 */
-  int minify;			/* Minify a portable bundle; gmod always is. */
-  int case_tables;		/* The String library's Unicode case tables; default 1 */
   /* gmod: the most bytes a file may take, LZMA-compressed; 0 for the
   ** default (60000: gmod takes 65536, and its encoder is not this one). */
   size_t part_limit;
-  /* Make the sourcemap (nlb_take_sourcemap). The chunks then carry no
-  ** line maps of their own: the map is the one translation of positions. */
-  int sourcemap;
-  int localize;			/* NL_OPT_LOCALIZE: 0, 1 (default), 2 */
   /* Declaration files in scope (`declare ...`): names read through the
   ** loader. gmod's are built in for the gmod profile. */
   const char *const *decls;
@@ -131,6 +123,14 @@ typedef struct nlb_Options {
   ** running or including the first file alone runs the bundle. NULL: the
   ** parts run by themselves (lua/autorun/client/), in any order. */
   const char *include_parts;
+  int profile;			/* NLB_PROFILE_*; default PORTABLE */
+  int checks;			/* Runtime type checks (NL_OPT_CHECKS); default 1 */
+  int minify;			/* Minify a portable bundle; gmod always is. */
+  int case_tables;		/* The String library's Unicode case tables; default 1 */
+  /* Make the sourcemap (nlb_take_sourcemap). The chunks then carry no
+  ** line maps of their own: the map is the one translation of positions. */
+  int sourcemap;
+  int localize;			/* NL_OPT_LOCALIZE: 0, 1 (default), 2 */
 } nlb_Options;
 
 typedef struct nlb_Result nlb_Result;

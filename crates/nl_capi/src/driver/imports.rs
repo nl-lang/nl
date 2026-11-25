@@ -29,28 +29,28 @@ use super::pipeline::{self, Mode};
 use super::{CompileOptions, Diagnostic, Loader, Severity};
 
 pub(crate) struct DriverImports<'a> {
-    loader: &'a dyn Loader,
-    /// The canonical name of the file being compiled, or `None`.
-    from: Option<&'a str>,
-    options: &'a CompileOptions,
-    /// How this file is being compiled: the file asked for (its imports
-    /// are checked) or a file it imports (its imports are only parsed).
-    mode: Mode<'a>,
     /// What each imported file gave, by canonical name, so a file named by
     /// several imports is read and checked once: its exports, and the
     /// `global` names it and the files it imports declare.
     cache: RefCell<HashMap<String, Result<Imported, String>>>,
-    /// The `global` names of the files imported so far ([`Self::globals`]).
-    globals: RefCell<Vec<String>>,
-    /// The errors of the imported files.
-    diagnostics: RefCell<Vec<Diagnostic>>,
-    /// The declaration files in scope, loaded once by the main file: the
-    /// imported files are checked against the same ones.
-    decls: &'a Declarations,
     /// The primitive methods and imports of each file looked at for
     /// [`ImportProvider::primitive_methods`], by canonical name (`None`:
     /// it cannot be read or parsed), so that each is parsed once.
     scans: RefCell<HashMap<String, Option<nl_sema::FileScan>>>,
+    /// The `global` names of the files imported so far ([`Self::globals`]).
+    globals: RefCell<Vec<String>>,
+    /// The errors of the imported files.
+    diagnostics: RefCell<Vec<Diagnostic>>,
+    /// How this file is being compiled: the file asked for (its imports
+    /// are checked) or a file it imports (its imports are only parsed).
+    mode: Mode<'a>,
+    loader: &'a dyn Loader,
+    /// The canonical name of the file being compiled, or `None`.
+    from: Option<&'a str>,
+    options: &'a CompileOptions,
+    /// The declaration files in scope, loaded once by the main file: the
+    /// imported files are checked against the same ones.
+    decls: &'a Declarations,
 }
 
 impl<'a> DriverImports<'a> {

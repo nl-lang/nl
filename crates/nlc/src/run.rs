@@ -30,27 +30,27 @@ enum Jit {
 
 struct Args {
     file: String,
+    /// `build -o path`.
+    output: Option<String>,
+    /// `--decl` paths: declaration files or directories of them.
+    decls: Vec<String>,
     options: CompileOptions,
     /// `build`: `--emit=lua` or `--emit=bc` was given.
     emit_given: bool,
-    /// `build -o path`.
-    output: Option<String>,
     /// `build --minify`.
     minify: bool,
     jit: Jit,
-    /// `--decl` paths: declaration files or directories of them.
-    decls: Vec<String>,
 }
 
 /// The options of `check`, `build` and `run` as written.
 struct Parsed {
     files: Vec<String>,
+    output: Option<String>,
+    decls: Vec<String>,
     options: CompileOptions,
     emit_given: bool,
-    output: Option<String>,
     minify: bool,
     jit: Jit,
-    decls: Vec<String>,
 }
 
 /// Parses the options shared by `check`, `build` and `run`; `many`: the

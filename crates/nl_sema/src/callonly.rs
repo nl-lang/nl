@@ -52,10 +52,10 @@ type Needs = (BindingId, usize);
 
 /// What is known about one written parameter.
 struct ParamUses {
+    needs: Vec<Needs>,
     /// A use that is neither a call nor a passing on, or a pattern
     /// parameter: never call-only.
     leak: bool,
-    needs: Vec<Needs>,
 }
 
 /// Records [`FnParams::call_only`] for every `fn` declaration of the file

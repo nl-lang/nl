@@ -18,9 +18,9 @@ pub const RUNTIME: &str = nl_capi::bundle::RUNTIME;
 /// (`nl_capi::search`), on disk and with names from `fs::canonicalize`.
 pub struct Files {
     search: RefCell<Vec<PathBuf>>,
-    cwd: PathBuf,
     /// `--decl` paths: declaration files, or directories of them.
     decls: RefCell<Vec<PathBuf>>,
+    cwd: PathBuf,
 }
 
 impl Files {

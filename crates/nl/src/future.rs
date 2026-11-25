@@ -79,8 +79,8 @@ where
             return Err(Error::runtime("nl: the spawner was replaced while a task function started"));
         };
         struct PutBack<'a> {
-            lua: &'a Lua,
             spawn: Option<Box<SpawnFn>>,
+            lua: &'a Lua,
         }
         impl Drop for PutBack<'_> {
             fn drop(&mut self) {

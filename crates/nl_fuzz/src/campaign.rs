@@ -28,20 +28,20 @@ use crate::runner::{self, Config, Finding, Kind, Nlc, Outcome, Report, Status};
 #[derive(Clone, Debug)]
 pub struct Options {
     pub nlc: PathBuf,
+    /// The directory for findings and work files (`target/fuzz`).
+    pub out: PathBuf,
+    pub timeout: Duration,
     /// The seed of the first program.
     pub seed: u64,
     /// How many programs.
     pub count: u64,
-    /// Also run mutants of each program.
-    pub mutate: bool,
     /// Mutants per program.
     pub mutants: u64,
+    pub jobs: usize,
+    /// Also run mutants of each program.
+    pub mutate: bool,
     /// Save every generated program, not only those with findings.
     pub keep_passing: bool,
-    /// The directory for findings and work files (`target/fuzz`).
-    pub out: PathBuf,
-    pub jobs: usize,
-    pub timeout: Duration,
     /// Minimize each finding (costs runs only when something is found).
     pub minimize: bool,
 }
@@ -73,11 +73,11 @@ impl Record {
 
 #[derive(Clone, Debug, Default)]
 pub struct Summary {
+    pub records: Vec<Record>,
+    pub elapsed: Duration,
     pub programs: u64,
     pub mutants: u64,
     pub runs: u64,
-    pub records: Vec<Record>,
-    pub elapsed: Duration,
 }
 
 /// Runs the campaign; `log` gets one line per finding as it is found.

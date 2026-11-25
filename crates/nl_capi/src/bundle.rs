@@ -175,25 +175,9 @@ pub type Check<'a> = &'a dyn Fn(&str, &str) -> Result<(), String>;
 /// What [`bundle`] makes.
 #[derive(Clone, Copy)]
 pub struct BundleOptions<'a> {
-    /// The compile's options; the profile is [`Self::profile`] and the
-    /// backend Lua source, whatever these say.
-    pub compile: CompileOptions,
-    /// [`Profile::Portable`] or [`Profile::GmodClient`]; the full profile
-    /// is taken as the portable one, as a bundle runs on stock LuaJIT.
-    pub profile: Profile,
     /// The bundle's name: the key of its parts, the names of their files
     /// (`<name>.lua`, `<name>_2.lua`), the sourcemap's `bundle`.
     pub name: &'a str,
-    /// Minify; always for gmod.
-    pub minify: bool,
-    /// The String library's Unicode case tables; without them, case
-    /// mapping is ASCII only.
-    pub case_tables: bool,
-    /// gmod: the most bytes a file of the bundle may take, compressed.
-    pub part_limit: usize,
-    /// Make the sourcemap; the chunks then carry no line maps of their own
-    /// (sourcemap.rs).
-    pub sourcemap: bool,
     /// Whether a chunk loads on LuaJIT; `None` takes it on trust.
     pub check: Option<Check<'a>>,
     /// Leave the runtime out: the bundle runs gmod's `include` of this Lua
@@ -204,6 +188,22 @@ pub struct BundleOptions<'a> {
     /// (`autorun/client/x.lua`): the first part of a bundle in parts then
     /// includes the others (`autorun/client/x_2.lua`, ...) by their paths.
     pub include_parts: Option<&'a str>,
+    /// The compile's options; the profile is [`Self::profile`] and the
+    /// backend Lua source, whatever these say.
+    pub compile: CompileOptions,
+    /// gmod: the most bytes a file of the bundle may take, compressed.
+    pub part_limit: usize,
+    /// [`Profile::Portable`] or [`Profile::GmodClient`]; the full profile
+    /// is taken as the portable one, as a bundle runs on stock LuaJIT.
+    pub profile: Profile,
+    /// Minify; always for gmod.
+    pub minify: bool,
+    /// The String library's Unicode case tables; without them, case
+    /// mapping is ASCII only.
+    pub case_tables: bool,
+    /// Make the sourcemap; the chunks then carry no line maps of their own
+    /// (sourcemap.rs).
+    pub sourcemap: bool,
 }
 
 impl Default for BundleOptions<'_> {
@@ -234,13 +234,13 @@ pub struct Part {
 /// What [`bundle`] made.
 #[derive(Clone, Debug, Default)]
 pub struct Bundle {
+    /// With [`BundleOptions::sourcemap`], when the bundle was made.
+    pub sourcemap: Option<SourceMap>,
     /// The files of the bundle, in order; none when a diagnostic is an
     /// error.
     pub parts: Vec<Part>,
     /// Every diagnostic of every file, then the bundle's own.
     pub diagnostics: Vec<Diagnostic>,
-    /// With [`BundleOptions::sourcemap`], when the bundle was made.
-    pub sourcemap: Option<SourceMap>,
     /// A hash of the bundle's content (sourcemap.rs, `build_hash`).
     pub build: String,
 }
@@ -254,8 +254,8 @@ impl Bundle {
 /// The loader of a bundle's compiles: the host's, with every resolution
 /// recorded.
 struct Recording<'a> {
-    inner: &'a dyn Loader,
     resolved: RefCell<Vec<(Option<String>, String, String)>>,
+    inner: &'a dyn Loader,
 }
 
 impl Loader for Recording<'_> {

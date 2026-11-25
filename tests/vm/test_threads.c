@@ -28,8 +28,8 @@ typedef struct Msg {
 
 typedef struct Poster {
   lua_State *L;
-  int id;
   Msg *msgs;
+  int id;
   int nposts;
   int yield_every;
 } Poster;
@@ -99,8 +99,8 @@ static void test_many_posters(void)
 
 /* An event-loop host: it sleeps until the wakeup fires, then pumps. */
 typedef struct Loop {
-  pthread_mutex_t mtx;
   pthread_cond_t cond;
+  pthread_mutex_t mtx;
   int signalled, wakeups;
 } Loop;
 
@@ -164,10 +164,10 @@ static void test_wakeup_driven_loop(void)
 */
 typedef struct Request {
   lua_State *L;
+  pthread_t th;
   int task;
   int input;
   int result;
-  pthread_t th;
 } Request;
 
 static int finished_requests, freed_requests;
@@ -260,8 +260,8 @@ static void test_close_with_queued_callbacks(void)
 
 /* Several states, each with its own inbox and posters, in parallel. */
 typedef struct Owner {
-  int id, sum;
   pthread_t th;
+  int id, sum;
 } Owner;
 
 static void add_one(lua_State *L, void *data)
@@ -324,8 +324,8 @@ static void test_independent_states(void)
 */
 #define WAKE_LIVE 0x57414b45
 typedef struct WakeData {
-  int magic;
   long hits;
+  int magic;
 } WakeData;
 
 static volatile int race_stop;

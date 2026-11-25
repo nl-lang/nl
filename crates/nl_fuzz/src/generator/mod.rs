@@ -50,8 +50,8 @@ use crate::rng::Rng;
 /// A generated program.
 #[derive(Clone, Debug)]
 pub struct Program {
-    pub seed: u64,
     pub source: String,
+    pub seed: u64,
     /// The program catches a `TypeError` from a runtime check on purpose,
     /// so it is not run with `--unchecked` (tests/run/README.md).
     pub checked_only: bool,
@@ -106,14 +106,14 @@ struct Ex {
     bound: f64,
     /// Lists and maps: the bound of an item.
     elem: f64,
+    /// Lists: the fewest items (a literal's count).
+    min_len: usize,
     /// Strings: every character is ASCII, so byte positions are character
     /// positions.
     ascii: bool,
     /// The text is a single token or a call, so it needs no parentheses
     /// as an operand.
     atomic: bool,
-    /// Lists: the fewest items (a literal's count).
-    min_len: usize,
 }
 
 impl Ex {
@@ -145,15 +145,15 @@ struct Var {
     ty: Ty,
     bound: f64,
     elem: f64,
-    ascii: bool,
     /// The fewest items a list has: `l[i] = v` stays inside it.
     min_len: usize,
+    /// The function depth it was declared at (0: file level).
+    fn_depth: usize,
+    ascii: bool,
     /// `let`, a parameter: may be assigned. `const` and pattern
     /// variables of a `case` are never assigned here.
     mutable: bool,
     used: bool,
-    /// The function depth it was declared at (0: file level).
-    fn_depth: usize,
     /// Declared with a type: what is assigned to it is checked, so a
     /// string the analyzer thinks may be `nil` is given a default.
     typed: bool,
@@ -163,9 +163,9 @@ struct Var {
 #[derive(Clone, Debug, Default)]
 struct Param {
     name: String,
+    default: Option<String>,
     ty: Ty,
     bound: f64,
-    default: Option<String>,
 }
 
 /// What a function returns.
@@ -197,15 +197,9 @@ enum FnKind {
 struct Func {
     name: String,
     params: Vec<Param>,
-    /// `*rest`: extra integer arguments.
-    rest: bool,
     /// `**opts` and the option keys the body reads.
     opts: Vec<String>,
     ret: Ret,
-    /// Trace lines and iterations of one call.
-    cost: f64,
-    /// It may raise, so it is only called inside a `try` body.
-    raises: bool,
     /// File-level variables it assigns: it is not called while one of
     /// them is frozen.
     assigns: Vec<String>,
@@ -213,6 +207,12 @@ struct Func {
     /// the block gets an integer within `.0` and must return one within
     /// `.1`.
     block: Option<(f64, f64)>,
+    /// Trace lines and iterations of one call.
+    cost: f64,
+    /// `*rest`: extra integer arguments.
+    rest: bool,
+    /// It may raise, so it is only called inside a `try` body.
+    raises: bool,
     kind: FnKind,
     /// Its parameters are annotated (all or none).
     typed: bool,
@@ -222,10 +222,10 @@ struct Func {
 #[derive(Clone, Debug)]
 struct Field {
     name: String,
+    default: Option<String>,
     ty: Ty,
     bound: f64,
     typed: bool,
-    default: Option<String>,
 }
 
 /// A method of a generated struct.
@@ -243,23 +243,23 @@ struct Method {
 #[derive(Clone, Debug)]
 struct StructDef {
     name: String,
-    parent: Option<usize>,
     fields: Vec<Field>,
     methods: Vec<Method>,
+    /// `fn S.make(k): Self`.
+    make: Option<String>,
+    parent: Option<usize>,
+    /// `fn S.len`.
+    len: Option<f64>,
     /// `interface To<String> for` it: interpolation and `as String` work.
     to_string: bool,
     /// `fn S.+`: adds two instances field by field.
     plus: bool,
-    /// `fn S.len`.
-    len: Option<f64>,
     /// `fn S.<` and `fn S.<=`.
     lt: bool,
     /// `fn S.==`.
     eq: bool,
     /// `fn S.()(k)`: an instance can be called.
     call_op: bool,
-    /// `fn S.make(k): Self`.
-    make: Option<String>,
 }
 
 /// An interface with one method returning a string.
@@ -297,21 +297,21 @@ struct Scope {
 /// Where a statement is being generated.
 #[derive(Clone, Debug)]
 struct Ctx {
+    /// Inside a method of this struct: `@field` is allowed.
+    method_of: Option<usize>,
+    /// How many times this point runs per run of the enclosing function
+    /// (or of the file).
+    mult: f64,
     /// How deeply blocks nest here; it limits recursion.
     depth: u32,
     /// Loops around this point inside the current function.
     loops: u32,
-    /// How many times this point runs per run of the enclosing function
-    /// (or of the file).
-    mult: f64,
     /// `raise` is allowed here, and so are calls of functions that may
     /// raise: inside a `try` body, or in a function allowed to raise.
     raise_ok: bool,
     /// A `try` of the current function encloses this point: what is
     /// raised here does not leave the function.
     caught: bool,
-    /// Inside a method of this struct: `@field` is allowed.
-    method_of: Option<usize>,
 }
 
 impl Frame {
@@ -337,19 +337,16 @@ impl Ctx {
 #[derive(Debug)]
 struct Frame {
     ret: Ret,
+    assigns: Vec<String>,
     /// Every returned integer is wrapped to stay within this.
     ret_cap: f64,
     /// The largest bound of a returned value so far.
     ret_bound: f64,
     cost: f64,
     raises: bool,
-    assigns: Vec<String>,
 }
 
 struct Gen {
-    rng: Rng,
-    seed: u64,
-    names: u32,
     scopes: Vec<Scope>,
     structs: Vec<StructDef>,
     /// Exception structs (`struct E : Exception` with a `code` field).
@@ -357,12 +354,9 @@ struct Gen {
     enums: Vec<EnumDef>,
     /// The function being generated, innermost last.
     frames: Vec<Frame>,
-    /// Trace lines and iterations of the file's own code.
-    cost: f64,
     /// Variables that must not change here: loop counters and the
     /// collections being walked.
     frozen: Vec<String>,
-    checked_only: bool,
     /// Methods defined on `Number` (one integer parameter) and on
     /// `String` (none).
     prim_num: Vec<String>,
@@ -372,6 +366,12 @@ struct Gen {
     ifaces: Vec<Iface>,
     /// Generic functions of two parameters of one type.
     generics: Vec<String>,
+    rng: Rng,
+    seed: u64,
+    /// Trace lines and iterations of the file's own code.
+    cost: f64,
+    names: u32,
+    checked_only: bool,
 }
 
 impl Gen {

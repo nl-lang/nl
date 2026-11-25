@@ -101,11 +101,6 @@ pub struct VarInfo {
 /// A function prototype.
 #[derive(Clone, Debug, Default)]
 pub struct Proto {
-    /// `PROTO_CHILD | PROTO_VARARG`, plus `FLAG_METHOD` and `FLAG_NL` at
-    /// level 1 (the dump's bits for them).
-    pub flags: u8,
-    pub numparams: u8,
-    pub framesize: u8,
     /// The instructions, without the `FUNCF`/`FUNCV` header the loader
     /// adds. Positions in jumps count from this vector's start.
     pub bc: Vec<Ins>,
@@ -118,12 +113,17 @@ pub struct Proto {
     pub kgc: Vec<KGc>,
     pub knum: Vec<f64>,
     pub vars: Vec<VarInfo>,
-    pub firstline: u32,
-    /// The last line minus the first.
-    pub numline: u32,
     pub children: Vec<Proto>,
     /// A descriptive name for messages.
     pub name: String,
+    pub firstline: u32,
+    /// The last line minus the first.
+    pub numline: u32,
+    /// `PROTO_CHILD | PROTO_VARARG`, plus `FLAG_METHOD` and `FLAG_NL` at
+    /// level 1 (the dump's bits for them).
+    pub flags: u8,
+    pub numparams: u8,
+    pub framesize: u8,
 }
 
 impl Proto {

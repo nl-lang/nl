@@ -13,14 +13,14 @@ use SyntaxKind::*;
 
 /// The work done at function entry for one parameter.
 struct ParamEntry {
-    local: LocalId,
+    /// The parameter's name; for a pattern, how messages describe it
+    /// (`parameter 1 of describe`).
+    name: String,
     default: Option<SyntaxNode>,
     ty: Option<SyntaxNode>,
     /// A destructuring pattern bound from the parameter.
     pattern: Option<SyntaxNode>,
-    /// The parameter's name; for a pattern, how messages describe it
-    /// (`parameter 1 of describe`).
-    name: String,
+    local: LocalId,
 }
 
 /// How to lower one function node.

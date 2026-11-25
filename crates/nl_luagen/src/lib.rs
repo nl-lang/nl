@@ -155,21 +155,21 @@ fn is_lua_identifier(s: &str) -> bool {
 }
 
 struct Printer<'a> {
-    chunk: &'a Chunk,
-    out: String,
-    line: u32,
-    /// The NL line of the current output line: `line`, unless the output
-    /// line is in the line map.
-    line_nl: u32,
-    /// Output lines that hold a statement of an earlier NL line, and that
-    /// line: (output line, NL line), in order.
-    line_map: Vec<(u32, u32)>,
     names: HashMap<LocalId, String>,
     used: HashSet<String>,
     /// The next suffix to try for each base name that is taken: the
     /// temporaries of a chunk share a few hints, so the search for a free
     /// name must not start over at `_2` for each of them.
     suffixes: HashMap<String, u32>,
+    out: String,
+    /// Output lines that hold a statement of an earlier NL line, and that
+    /// line: (output line, NL line), in order.
+    line_map: Vec<(u32, u32)>,
+    chunk: &'a Chunk,
+    line: u32,
+    /// The NL line of the current output line: `line`, unless the output
+    /// line is in the line map.
+    line_nl: u32,
     hoist_id: u32,
 }
 

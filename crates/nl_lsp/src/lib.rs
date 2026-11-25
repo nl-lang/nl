@@ -99,18 +99,18 @@ pub fn run(conn: Connection) -> Result<(), Box<dyn Error + Send + Sync>> {
 
 /// The server's state (module docs).
 pub struct Server {
-    conn: Connection,
     files: Files,
     /// The analyses of open documents, by URI.
     docs: HashMap<String, Rc<Doc>>,
-    /// For each file that is not open: what each open document's compile
-    /// reported about it, by the document's URI.
-    foreign: BTreeMap<String, BTreeMap<String, Vec<Diagnostic>>>,
     /// The files each open document contributed to, by URI.
     contributed: HashMap<String, BTreeSet<String>>,
     /// What was last published for each file that is not open, so that an
     /// unchanged union is not published again.
     last_foreign: HashMap<String, Vec<Diagnostic>>,
+    conn: Connection,
+    /// For each file that is not open: what each open document's compile
+    /// reported about it, by the document's URI.
+    foreign: BTreeMap<String, BTreeMap<String, Vec<Diagnostic>>>,
 }
 
 /// An error answer to a request.

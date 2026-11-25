@@ -163,10 +163,10 @@ struct Facts {
 impl Facts {
     fn of(main: &Function) -> Facts {
         struct V {
-            next: usize,
-            stack: Vec<usize>,
             decl: HashMap<LocalId, usize>,
+            stack: Vec<usize>,
             assigns: Vec<(LocalId, usize)>,
+            next: usize,
         }
         impl Visitor for V {
             fn enter(&mut self) {
@@ -203,9 +203,9 @@ impl Facts {
 /// one id can be declared in two places.)
 fn free_vars(f: &Function, out: &mut HashMap<LocalId, bool>) {
     struct V<'a> {
-        depth: usize,
         active: Vec<LocalId>,
         marks: Vec<usize>,
+        depth: usize,
         out: &'a mut HashMap<LocalId, bool>,
     }
     impl Visitor for V<'_> {
@@ -377,11 +377,17 @@ fn visit_expr(e: &Expr, v: &mut dyn Visitor) {
 
 /// A block being walked.
 struct Frame {
+    /// The locals the block declares, removed from the scope at its end.
+    declared: Vec<LocalId>,
+    /// Statements to insert before the statement at an index (the length:
+    /// at the end), in order.
+    inserts: Vec<(usize, Stmt)>,
+    /// Statements to put first among the definitions of the `Hoist` at an
+    /// index, in order.
+    defs_inserts: Vec<(usize, Stmt)>,
     /// The depth of the function the block belongs to (the main function
     /// is 1).
     fn_depth: usize,
-    /// A part of a `Hoist`, where no local is inserted.
-    hoist_part: bool,
     /// How many times the block runs for one run of the function's body,
     /// counted as the loops and function bodies entered: the main
     /// function's body is 1, a loop body in it 2, the body of a function
@@ -391,15 +397,9 @@ struct Frame {
     /// is a `Hoist`.
     cur: usize,
     cur_line: u32,
+    /// A part of a `Hoist`, where no local is inserted.
+    hoist_part: bool,
     cur_is_hoist: bool,
-    /// The locals the block declares, removed from the scope at its end.
-    declared: Vec<LocalId>,
-    /// Statements to insert before the statement at an index (the length:
-    /// at the end), in order.
-    inserts: Vec<(usize, Stmt)>,
-    /// Statements to put first among the definitions of the `Hoist` at an
-    /// index, in order.
-    defs_inserts: Vec<(usize, Stmt)>,
     /// The block runs once per load of the file: the main function's body,
     /// a block in it outside loops, or the body of a `try`, `catch` or
     /// `finally` there.
@@ -424,6 +424,7 @@ struct Decl {
 
 /// A function being walked.
 struct FnInfo {
+    added_upvalues: HashSet<LocalId>,
     /// The most locals it has active at once, and the locals lifting gave
     /// it: each costs at most one more at the peak.
     base_locals: usize,
@@ -433,7 +434,6 @@ struct FnInfo {
     /// Its upvalues before lifting, and the locals of enclosing functions
     /// that lifting made it use.
     upvalues: usize,
-    added_upvalues: HashSet<LocalId>,
     /// Its table of lifted closures, once it has one, and the entries.
     table: Option<LocalId>,
     slots: usize,
@@ -462,21 +462,21 @@ enum Store {
 }
 
 struct Lifter<'a> {
-    locals: &'a mut Vec<LocalInfo>,
     facts: Facts,
-    frames: Vec<Frame>,
-    fns: Vec<FnInfo>,
     scope: HashMap<LocalId, Decl>,
-    /// [`Chunk::owner`].
-    owner: Option<LocalId>,
     /// The locals this pass made: closures, tables and the copies of
     /// rebound variables. A block captures them as they are.
     made: HashSet<LocalId>,
+    frames: Vec<Frame>,
+    fns: Vec<FnInfo>,
+    /// `spawn do` blocks that cannot be made when the file loads.
+    errors: Vec<(u32, String)>,
+    locals: &'a mut Vec<LocalInfo>,
+    /// [`Chunk::owner`].
+    owner: Option<LocalId>,
     /// Inside the condition of a `while`, which runs before each
     /// iteration: a statement inserted before the loop would not.
     cond_depth: usize,
-    /// `spawn do` blocks that cannot be made when the file loads.
-    errors: Vec<(u32, String)>,
     /// The function walked next is a closure of a `try` (rt.xpcall, rt.try)
     /// whose call runs where this is the current frame: `Some(true)` for
     /// the `catch` closure of `rt.try`, which runs only on an error.

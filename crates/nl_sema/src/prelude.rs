@@ -35,8 +35,8 @@ pub enum PreludeClass {
 /// One prelude name.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Prelude {
-    pub name: &'static str,
     pub access: Access,
+    pub name: &'static str,
     pub class: PreludeClass,
 }
 

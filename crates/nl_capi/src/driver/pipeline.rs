@@ -37,9 +37,9 @@ pub(crate) fn file_label(chunk_name: &str) -> String {
 
 /// Turns byte ranges into the line and column positions of [`Diagnostic`].
 pub(crate) struct Positions<'a> {
-    text: &'a str,
     index: LineIndex,
     file: String,
+    text: &'a str,
 }
 
 impl<'a> Positions<'a> {
@@ -178,6 +178,10 @@ fn internal_error(chunk_name: &str) -> CompileOutput {
 /// that far), which `imports.rs` hands to the importing file.
 pub(crate) struct Staged {
     pub(crate) output: CompileOutput,
+    /// The primitive methods the file defines and the paths it imports
+    /// (`nl_sema::scan_file`), so that an importer follows them without
+    /// reading the file again.
+    pub(crate) scan: Option<nl_sema::FileScan>,
     pub(crate) exports: Option<Vec<ExportInfo>>,
     /// The `global` names the file and the files it imports declare
     /// (`imports.rs`, `DriverImports::globals`).
@@ -185,10 +189,6 @@ pub(crate) struct Staged {
     /// The functions it and its imports add to declared modules and types
     /// (`Resolution::extensions`).
     pub(crate) extensions: Vec<ExtensionInfo>,
-    /// The primitive methods the file defines and the paths it imports
-    /// (`nl_sema::scan_file`), so that an importer follows them without
-    /// reading the file again.
-    pub(crate) scan: Option<nl_sema::FileScan>,
 }
 
 impl From<CompileOutput> for Staged {

@@ -161,8 +161,8 @@ enum Kind {
 
 #[derive(Debug)]
 struct Token<'a> {
-    kind: Kind,
     text: &'a [u8],
+    kind: Kind,
 }
 
 /// A byte that continues a name or a number: LuaJIT takes every byte

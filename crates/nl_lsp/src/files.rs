@@ -35,15 +35,15 @@ pub struct OpenDoc {
 
 #[derive(Debug, Default)]
 pub struct Files {
+    /// The open documents, by URI.
+    open: HashMap<String, OpenDoc>,
+    /// The URI of each open document that is a file, by canonical path.
+    by_path: HashMap<PathBuf, String>,
     search: Vec<PathBuf>,
     /// `declarations` of the initialization options: files or directories.
     decl_paths: Vec<PathBuf>,
     roots: Vec<PathBuf>,
     cwd: PathBuf,
-    /// The open documents, by URI.
-    open: HashMap<String, OpenDoc>,
-    /// The URI of each open document that is a file, by canonical path.
-    by_path: HashMap<PathBuf, String>,
 }
 
 impl Files {
@@ -175,9 +175,9 @@ impl Files {
 
 /// The compiler's view of [`Files`] while one document is compiled.
 pub struct DocLoader<'a> {
-    pub files: &'a Files,
     /// The document's directory, for its declaration files.
     pub dir: Option<PathBuf>,
+    pub files: &'a Files,
 }
 
 impl Loader for DocLoader<'_> {

@@ -91,23 +91,23 @@ impl Mode {
 struct Case {
     name: String,
     path: PathBuf,
+    /// `--localize=` this setting; `None`: the default.
+    localize: Option<&'static str>,
     kind: Kind,
     mode: Mode,
     /// Run with the analyzer's static resolution; `false` adds
     /// `--no-static-resolution`.
     sr: bool,
-    /// `--localize=` this setting; `None`: the default.
-    localize: Option<&'static str>,
 }
 
 struct Outcome {
     name: String,
+    detail: String,
+    localize: Option<&'static str>,
     kind: Kind,
     mode: Mode,
     sr: bool,
-    localize: Option<&'static str>,
     pass: bool,
-    detail: String,
 }
 
 /// The mode column: the backend and JIT mode, `-sr` without static

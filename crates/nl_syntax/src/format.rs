@@ -148,32 +148,32 @@ fn format_parse(source: &str, parse: &Parse, options: FormatOptions) -> Result<F
 }
 
 struct Formatter<'a> {
-    src: &'a str,
     index: LineIndex,
-    fix: bool,
-    /// The file's line break, used for every line break the formatter
-    /// writes.
-    newline: &'a str,
-    out: String,
-    /// Something was printed: the next line break is written out.
-    started: bool,
-    /// The indentation given to each source line (1-based) whose first token
-    /// has been printed. Later lines are indented relative to these.
-    line_indent: Vec<Option<usize>>,
-    /// Line breaks seen since the last printed token or comment.
-    pending_newlines: usize,
-    /// The whitespace seen since the last line break, token or comment.
-    last_ws: Option<&'a str>,
-    /// The last printed non-trivia token.
-    prev: Option<SyntaxToken>,
     /// The last printed comment: its source column, its new column and its
     /// source line, for a comment line aligned under it.
     last_comment: Option<(usize, usize, usize)>,
+    out: String,
+    /// The indentation given to each source line (1-based) whose first token
+    /// has been printed. Later lines are indented relative to these.
+    line_indent: Vec<Option<usize>>,
     /// The openers of the brackets open at the current position, innermost
     /// last (see [`bracket_step`]): kept as the tokens are printed, so that
     /// no line start rescans its bracket.
     brackets: Vec<SyntaxToken>,
     continued: Vec<Continued>,
+    src: &'a str,
+    /// The file's line break, used for every line break the formatter
+    /// writes.
+    newline: &'a str,
+    /// The whitespace seen since the last line break, token or comment.
+    last_ws: Option<&'a str>,
+    /// Line breaks seen since the last printed token or comment.
+    pending_newlines: usize,
+    /// The last printed non-trivia token.
+    prev: Option<SyntaxToken>,
+    fix: bool,
+    /// Something was printed: the next line break is written out.
+    started: bool,
 }
 
 impl<'a> Formatter<'a> {

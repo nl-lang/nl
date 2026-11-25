@@ -42,17 +42,24 @@ pub use localize::{LUA_LIBRARY_FIELDS, Localize, STD_LIBRARIES, declared_globals
 /// Options of one lowering.
 #[derive(Clone, Debug)]
 pub struct LowerOptions {
-    /// Emit the runtime type checks. `false` is the unchecked
-    /// build.
-    pub checks: bool,
+    /// What the analyzer proved and resolved; empty without
+    /// it, and then everything is tested at runtime.
+    pub hints: nl_sema::Hints,
+    /// The fields of Lua's libraries that the declarations list
+    /// (`nl_sema::Declarations::library_fields`), which `Localize::Std`
+    /// reads once besides Lua's own (localize.rs).
+    pub library_fields: std::collections::HashSet<(String, String)>,
     /// The chunk name (`@name` or `=text`).
     pub chunk_name: String,
     /// The file name as messages and handler names give it (the chunk name
     /// without its `@` or `=`).
     pub file_label: String,
-    /// What the analyzer proved and resolved; empty without
-    /// it, and then everything is tested at runtime.
-    pub hints: nl_sema::Hints,
+    /// The names of the `global` declarations of the files this file
+    /// imports, which `Localize::All` leaves alone.
+    pub imported_globals: Vec<String>,
+    /// Emit the runtime type checks. `false` is the unchecked
+    /// build.
+    pub checks: bool,
     /// The feature level of the target. At 0,
     /// stock LuaJIT: `x[k]`, `.len`, `==` and the ordering operators go
     /// through runtime helpers that give them NL's rules. At 1, the fork's
@@ -62,13 +69,6 @@ pub struct LowerOptions {
     /// Which Lua paths are read once, into hidden locals of the file
     /// (localize.rs).
     pub localize: Localize,
-    /// The names of the `global` declarations of the files this file
-    /// imports, which `Localize::All` leaves alone.
-    pub imported_globals: Vec<String>,
-    /// The fields of Lua's libraries that the declarations list
-    /// (`nl_sema::Declarations::library_fields`), which `Localize::Std`
-    /// reads once besides Lua's own (localize.rs).
-    pub library_fields: std::collections::HashSet<(String, String)>,
     /// The profile the file is compiled for. In a realm of Garry's Mod, a
     /// branch whose condition realm constants decide (`if SERVER`) is
     /// lowered only if it runs, and the code that never runs is left out
@@ -80,9 +80,9 @@ pub struct LowerOptions {
 /// an error that only the lowering finds.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LowerDiagnostic {
-    pub range: TextRange,
-    pub code: &'static str,
     pub message: String,
+    pub code: &'static str,
+    pub range: TextRange,
 }
 
 /// What a lowering produced. The chunk is only meant to be used when
@@ -189,20 +189,13 @@ pub(crate) struct LoopState {
 
 /// The lowering context.
 pub struct Lowerer<'a> {
-    pub(crate) res: &'a Resolution,
-    pub(crate) opts: &'a LowerOptions,
-    source: &'a str,
+    /// What the file localizes (localize.rs).
+    pub(crate) localize: localize::Plan,
     lines: LineIndex,
-    pub(crate) locals: Vec<LocalInfo>,
     bindings: HashMap<BindingId, LocalId>,
     /// Bindings whose `local` statement was emitted at the start of their
     /// block (hoisting); their declarations become assignments.
     predeclared: HashSet<BindingId>,
-    next_label: u32,
-    pub(crate) stmts: Vec<Stmt>,
-    pub(crate) line: u32,
-    pub(crate) fns: Vec<FnState>,
-    pub(crate) diags: Vec<LowerDiagnostic>,
     /// The type of each `type` alias of the file.
     pub(crate) aliases: HashMap<BindingId, SyntaxNode>,
     /// Locals of bindings that another function assigns, so that a call can
@@ -210,20 +203,11 @@ pub struct Lowerer<'a> {
     volatile: HashSet<LocalId>,
     /// Temporaries made by [`Self::spill`], which nothing assigns again.
     spilled: HashSet<LocalId>,
-    /// The type pools of the blocks being lowered, outermost first
-    /// (types.rs).
-    pub(crate) pools: Vec<types::TypePool>,
     /// The pool depth of each type binding whose block has a pool.
     pub(crate) binding_pool: HashMap<BindingId, usize>,
     /// The expansion of each alias (types.rs).
     pub(crate) alias_memo: HashMap<BindingId, types::AliasState>,
     pub(crate) alias_depth_memo: HashMap<BindingId, Option<usize>>,
-    /// Pools at depths from 1 up to this one are not used: they belong to
-    /// the function around a `spawn` block, which a worker does not run.
-    pub(crate) pool_barrier: usize,
-    /// The local holding the chunk's owner (`rt.owner`), made by the first
-    /// definition that needs it ([`Self::owner_value`]).
-    owner: Option<LocalId>,
     /// The registry name of each struct and module that has one (spawn.rs).
     pub(crate) registry_names: HashMap<BindingId, String>,
     /// The names registered so far, with the place each stands for
@@ -232,39 +216,55 @@ pub struct Lowerer<'a> {
     /// The NL name of each declared name the file uses as a type
     /// (types.rs, `declared_type_value`).
     pub(crate) decl_names: HashMap<nl_sema::DeclId, String>,
-    /// Every `try` takes the packed form (error.rs), which needs fewer
-    /// locals: the second lowering of a file whose first one exceeded a
-    /// limit ([`lower`]).
-    pub(crate) packed_try: bool,
-    /// The `spawn do` blocks being lowered: in one, a struct the block
-    /// captures is a copy, so its literals and checks go through the
-    /// runtime (structs.rs, types.rs).
-    pub(crate) spawn_depth: u32,
     /// The fields of each struct of the file whose literals are built
     /// inline (structs.rs), its parents' first; `None` for a struct whose
     /// fields are not all known (an imported parent).
     pub(crate) struct_layouts: HashMap<BindingId, Option<std::rc::Rc<[structs::FieldLayout]>>>,
-    /// Runtime values the inline checks read (`rt.type`, `rt.getmetatable`,
-    /// `rt.KW`, `rt.setmetatable`), each copied once into a local of the
-    /// main function when the chunk starts ([`Self::rt_cached`]).
-    rt_cache: Vec<(&'static str, LocalId)>,
     /// The rest parameters whose count is a hidden local of their function
     /// rather than the table's `n` (func.rs), with that local.
     pub(crate) rest_counts: HashMap<BindingId, LocalId>,
-    /// What the file localizes (localize.rs).
-    pub(crate) localize: localize::Plan,
-    /// The locals of the localized paths, in the order they were made, each
-    /// with the root and field it holds ([`Self::localized_path`]).
-    localized: Vec<(LocalId, String, Option<String>)>,
-    /// Where the main function declares the localized paths: the index of
-    /// its statement after the imports, and the line ([`Self::lower_main`]).
-    prologue_at: Option<(usize, u32)>,
     /// The values the nil-safe guards being lowered hold, by the node each
     /// one tested (nilsafe.rs): [`Self::expr`] takes them instead of
     /// lowering the node again.
     pub(crate) presets: HashMap<nilsafe::PresetKey, Expr>,
     /// The nil-safe chains being lowered under their guards (nilsafe.rs).
     pub(crate) safe_active: HashSet<nilsafe::PresetKey>,
+    pub(crate) locals: Vec<LocalInfo>,
+    pub(crate) stmts: Vec<Stmt>,
+    pub(crate) fns: Vec<FnState>,
+    pub(crate) diags: Vec<LowerDiagnostic>,
+    /// The type pools of the blocks being lowered, outermost first
+    /// (types.rs).
+    pub(crate) pools: Vec<types::TypePool>,
+    /// Runtime values the inline checks read (`rt.type`, `rt.getmetatable`,
+    /// `rt.KW`, `rt.setmetatable`), each copied once into a local of the
+    /// main function when the chunk starts ([`Self::rt_cached`]).
+    rt_cache: Vec<(&'static str, LocalId)>,
+    /// The locals of the localized paths, in the order they were made, each
+    /// with the root and field it holds ([`Self::localized_path`]).
+    localized: Vec<(LocalId, String, Option<String>)>,
+    /// Where the main function declares the localized paths: the index of
+    /// its statement after the imports, and the line ([`Self::lower_main`]).
+    prologue_at: Option<(usize, u32)>,
+    source: &'a str,
+    pub(crate) res: &'a Resolution,
+    pub(crate) opts: &'a LowerOptions,
+    /// Pools at depths from 1 up to this one are not used: they belong to
+    /// the function around a `spawn` block, which a worker does not run.
+    pub(crate) pool_barrier: usize,
+    /// The local holding the chunk's owner (`rt.owner`), made by the first
+    /// definition that needs it ([`Self::owner_value`]).
+    owner: Option<LocalId>,
+    next_label: u32,
+    pub(crate) line: u32,
+    /// The `spawn do` blocks being lowered: in one, a struct the block
+    /// captures is a copy, so its literals and checks go through the
+    /// runtime (structs.rs, types.rs).
+    pub(crate) spawn_depth: u32,
+    /// Every `try` takes the packed form (error.rs), which needs fewer
+    /// locals: the second lowering of a file whose first one exceeded a
+    /// limit ([`lower`]).
+    pub(crate) packed_try: bool,
 }
 
 impl<'a> Lowerer<'a> {

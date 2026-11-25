@@ -60,10 +60,10 @@ impl std::error::Error for Error {}
 /// A compiled pattern.
 #[derive(Debug)]
 pub struct Regex {
-    inner: meta::Regex,
     pattern: String,
     /// The name of each capture group, group 0 included (unnamed).
     names: Vec<Option<String>>,
+    inner: meta::Regex,
 }
 
 /// A group that did not participate in a match, in the spans that

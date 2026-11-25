@@ -41,8 +41,8 @@ pub(crate) const UPVALUES_BUDGET: usize = 56;
 
 /// A function over a limit: its line, and the message.
 pub(crate) struct Overflow {
-    pub line: u32,
     pub message: String,
+    pub line: u32,
 }
 
 /// Fits `chunk` into the limits (see the module documentation). Returns

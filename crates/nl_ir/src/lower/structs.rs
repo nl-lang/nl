@@ -29,11 +29,11 @@ use SyntaxKind::*;
 /// inline.
 #[derive(Clone, Debug)]
 pub(crate) struct FieldLayout {
+    pub default: Option<FieldDefault>,
     pub name: String,
     /// The declared type, when the field is checked at runtime (a checked
     /// build, and a type with a runtime value).
     pub ty: Option<SyntaxNode>,
-    pub default: Option<FieldDefault>,
 }
 
 /// A field's default value.

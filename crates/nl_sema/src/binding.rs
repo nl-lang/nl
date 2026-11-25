@@ -53,38 +53,38 @@ pub enum DeclKind {
 /// the block rule.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct FnParams {
-    /// Some parameter is annotated `Function` or `Function(...)`.
-    pub has_function_param: bool,
-    /// The function is anonymous (`let f = fn ... end`).
-    pub anonymous: bool,
     /// The written parameters the function only calls (`callonly.rs`),
     /// one bit per position from the first: a block or `fn` literal
     /// passed there is referenced by nothing once the call returns.
     pub call_only: u64,
+    /// Some parameter is annotated `Function` or `Function(...)`.
+    pub has_function_param: bool,
+    /// The function is anonymous (`let f = fn ... end`).
+    pub anonymous: bool,
 }
 
 /// One declared name.
 #[derive(Clone, Debug)]
 pub struct Binding {
     pub name: String,
-    pub kind: BindingKind,
-    pub decl: DeclKind,
+    /// For a function binding: what its parameter list declares.
+    pub params: Option<FnParams>,
     /// The range of the declaring name (or of the declaration, for hidden
     /// bindings such as `self`).
     pub range: TextRange,
-    pub mutable: bool,
-    /// Declared at file level (not inside a function, module or block).
-    pub file_level: bool,
-    /// The index of the function the binding belongs to, `0` being the
-    /// file's main function. Used for `spawn` capture checks.
-    pub function: u32,
     /// The written type annotation, checked at runtime on assignment.
     pub annotation: Option<SyntaxNode>,
-    /// For a function binding: what its parameter list declares.
-    pub params: Option<FnParams>,
     /// For an `fn` in a module body: the module binding. A bare call passes
     /// the module as `self`.
     pub module_owner: Option<BindingId>,
+    /// The index of the function the binding belongs to, `0` being the
+    /// file's main function. Used for `spawn` capture checks.
+    pub function: u32,
+    pub kind: BindingKind,
+    pub decl: DeclKind,
+    pub mutable: bool,
+    /// Declared at file level (not inside a function, module or block).
+    pub file_level: bool,
     /// A named function: a file-level `fn` or a module method.
     pub named: bool,
 }
@@ -142,9 +142,9 @@ pub enum MethodOwner {
 /// A diagnostic of the resolver.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SemaDiagnostic {
-    pub range: TextRange,
-    pub code: &'static str,
     pub message: String,
+    pub code: &'static str,
+    pub range: TextRange,
     pub error: bool,
     /// A lint (`NL_DIAG_LINT`): not an error and not a warning about the
     /// program's behaviour, but about its style (unused bindings, …).
@@ -154,7 +154,6 @@ pub struct SemaDiagnostic {
 /// The result of [`crate::resolve`].
 #[derive(Debug, Default)]
 pub struct Resolution {
-    pub bindings: Vec<Binding>,
     /// `NAME_REF` nodes, `SELF_EXPR`/`AT_EXPR` nodes (to the `self`
     /// binding) and the first-name tokens of Lua paths, by range.
     pub(crate) refs: HashMap<TextRange, Ref>,
@@ -199,12 +198,6 @@ pub struct Resolution {
     /// lowering declares their locals at the top of the block, so that
     /// the function captures them.
     pub(crate) forward_consts: HashSet<BindingId>,
-    /// The file's `pub` items in source order, each with the binding that
-    /// holds its value. The one place where the name and kind
-    /// of an export are decided: the driver hands [`Resolution::exports`]
-    /// to the files that import this one, and the lowering builds the
-    /// export table from it.
-    pub(crate) exports: Vec<(BindingId, ExportInfo)>,
     /// The Lua path of each declared name the file uses.
     pub(crate) decl_paths: HashMap<DeclId, LuaRoot>,
     /// What each declared name the file uses declares.
@@ -212,6 +205,13 @@ pub struct Resolution {
     /// The binding kind of each declared name the file uses (a `declare
     /// fn` is function-kind).
     pub(crate) decl_binding_kinds: HashMap<DeclId, BindingKind>,
+    pub bindings: Vec<Binding>,
+    /// The file's `pub` items in source order, each with the binding that
+    /// holds its value. The one place where the name and kind
+    /// of an export are decided: the driver hands [`Resolution::exports`]
+    /// to the files that import this one, and the lowering builds the
+    /// export table from it.
+    pub(crate) exports: Vec<(BindingId, ExportInfo)>,
     /// The functions added to declared modules and types: those of the
     /// files this one imports (with their origin), then this file's own.
     pub(crate) extensions: Vec<ExtensionInfo>,

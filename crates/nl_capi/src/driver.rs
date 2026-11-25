@@ -122,16 +122,16 @@ pub enum Severity {
 /// columns are 1-based; a column counts characters.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diagnostic {
-    pub severity: Severity,
-    /// A stable identifier, such as `"undeclared-name"`.
-    pub code: &'static str,
     pub message: String,
     /// The canonical name of the file, or the chunk name without its `=`.
     pub file: String,
+    /// A stable identifier, such as `"undeclared-name"`.
+    pub code: &'static str,
     pub line: u32,
     pub column: u32,
     pub end_line: u32,
     pub end_column: u32,
+    pub severity: Severity,
 }
 
 /// What a compile produced.

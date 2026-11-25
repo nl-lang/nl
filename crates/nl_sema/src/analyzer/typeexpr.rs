@@ -17,10 +17,10 @@ use SyntaxKind::*;
 /// Where the names of a type in a declaration file resolve.
 #[derive(Clone, Default)]
 pub(crate) struct DeclCtx {
-    /// What `Self` is: the struct or type whose member is declared.
-    pub self_named: Option<NamedId>,
     /// Type parameters in scope (erased: `any`).
     pub type_params: Vec<String>,
+    /// What `Self` is: the struct or type whose member is declared.
+    pub self_named: Option<NamedId>,
 }
 
 impl Analyzer<'_> {

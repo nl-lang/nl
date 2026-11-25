@@ -22,16 +22,16 @@ use crate::run::{Sources, lua_check, report};
 
 struct Args {
     entries: Vec<String>,
-    compile: CompileOptions,
-    profile: Profile,
     output: Option<String>,
     map: Option<String>,
     decls: Vec<String>,
-    case_tables: bool,
-    minify: bool,
-    part_limit: usize,
     runtime_include: Option<String>,
     include_parts: Option<String>,
+    compile: CompileOptions,
+    part_limit: usize,
+    profile: Profile,
+    case_tables: bool,
+    minify: bool,
 }
 
 /// `--include-parts` without a path: the first file's Lua path is the `-o`

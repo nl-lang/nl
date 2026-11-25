@@ -52,12 +52,12 @@ use SyntaxKind::*;
 
 /// One pool of type values (see the module documentation).
 pub(crate) struct TypePool {
-    /// The table holding the values, created with the first one.
-    pub table: Option<LocalId>,
-    /// `table[k] = value`, in the order the values were made.
-    pub defs: Vec<(usize, Expr)>,
     /// The index of each value made from an expression, by its text.
     memo: HashMap<String, usize>,
+    /// `table[k] = value`, in the order the values were made.
+    pub defs: Vec<(usize, Expr)>,
+    /// The table holding the values, created with the first one.
+    pub table: Option<LocalId>,
     /// The next free index.
     next: usize,
     /// The line the pool's statements carry: the block's first.

@@ -72,23 +72,23 @@ pub struct LuaRoot {
 /// One declared top-level name.
 #[derive(Clone, Debug)]
 pub struct DeclItem {
+    /// The Lua value the name stands for. A host type has none.
+    pub root: Option<LuaRoot>,
     pub name: String,
-    pub kind: DeclItemKind,
     /// The canonical name of the declaration file.
     pub file: String,
     /// The range of the declaring name, in that file.
     pub range: TextRange,
     /// The `DECL_*` node, for the analyzer.
     pub node: SyntaxNode,
-    /// The Lua value the name stands for. A host type has none.
-    pub root: Option<LuaRoot>,
+    pub kind: DeclItemKind,
 }
 
 /// The names of a set of declaration files.
 #[derive(Clone, Debug, Default)]
 pub struct Declarations {
-    pub items: Vec<DeclItem>,
     by_name: HashMap<String, DeclId>,
+    pub items: Vec<DeclItem>,
 }
 
 impl Declarations {

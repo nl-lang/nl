@@ -95,11 +95,11 @@ pub fn new_local(locals: &mut Vec<LocalInfo>, hint: &str) -> LocalId {
 /// A compiled file.
 #[derive(Clone, Debug)]
 pub struct Chunk {
-    /// Every local of every function, indexed by [`LocalId`].
-    pub locals: Vec<LocalInfo>,
     /// The file's main function. It takes no parameters and returns the
     /// export table.
     pub main: Function,
+    /// Every local of every function, indexed by [`LocalId`].
+    pub locals: Vec<LocalInfo>,
     /// The chunk name (`@path` or `=text`).
     pub name: String,
     /// A local that holds `rt.owner(name)`, set once when the chunk is
@@ -120,13 +120,13 @@ impl Chunk {
 #[derive(Clone, Debug, Default)]
 pub struct Function {
     pub params: Vec<LocalId>,
-    /// Takes `...` after its parameters.
-    pub vararg: bool,
     pub body: Block,
-    /// The NL line of the definition.
-    pub line: u32,
     /// A descriptive name for tracebacks (`Player.damage`).
     pub name: Option<String>,
+    /// The NL line of the definition.
+    pub line: u32,
+    /// Takes `...` after its parameters.
+    pub vararg: bool,
     /// A method: a function with a `self` parameter, which
     /// the runtime marks (`rt.method`, `rt.opdef`, …). The bytecode
     /// backend at level 1 marks the prototype instead, so its closures are
@@ -155,8 +155,8 @@ impl Block {
 /// A statement and its NL source line.
 #[derive(Clone, Debug)]
 pub struct Stmt {
-    pub line: u32,
     pub kind: StmtKind,
+    pub line: u32,
 }
 
 #[derive(Clone, Debug)]

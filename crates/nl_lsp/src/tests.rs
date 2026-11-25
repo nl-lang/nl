@@ -20,9 +20,9 @@ type ServerResult = Result<(), Box<dyn Error + Send + Sync>>;
 
 struct Client {
     conn: Connection,
-    next: i32,
     pending: Vec<Notification>,
     thread: Option<JoinHandle<ServerResult>>,
+    next: i32,
 }
 
 const WAIT: Duration = Duration::from_secs(120);

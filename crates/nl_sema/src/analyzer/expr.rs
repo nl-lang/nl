@@ -65,13 +65,13 @@ fn bracket_key(node: &SyntaxNode, name: &str) -> String {
 /// One argument of a call, typed.
 pub(crate) struct ArgTy {
     pub ty: Ty,
-    pub range: TextRange,
-    pub spread: bool,
     pub keyed: Option<String>,
-    pub keyed_spread: bool,
     /// A bare function-kind name (`register callback`): called, not
     /// passed.
     pub fn_kind_name: Option<String>,
+    pub range: TextRange,
+    pub spread: bool,
+    pub keyed_spread: bool,
     /// A `fn … end` literal, which cannot be sent to a worker.
     pub is_fn_literal: bool,
 }
