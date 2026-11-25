@@ -325,7 +325,7 @@ fn a_value_of_a_worker_kept_past_the_worker_fails_safely() -> LuaResult<()> {
 #[test]
 fn a_worker_close_keeps_mlua_s_drop_order() -> LuaResult<()> {
     // The abort of NlState::drop (crates/nl/src/state.rs) relies on mlua
-    // 0.12.2 dropping its own Lua of a worker's state before the app data
+    // 0.12.3 dropping its own Lua of a worker's state before the app data
     // (crates/nl/Cargo.toml pins mlua for that). If the order changed, the
     // close below would abort the test process, as would every other test
     // here that ends a worker.

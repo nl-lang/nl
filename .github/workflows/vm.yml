@@ -25,7 +25,7 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # luajit-src-rs without its own luajit2 submodule: the tests copy
       # LuaJIT/ in its place.
       - name: Submodules
@@ -47,7 +47,7 @@ jobs:
         run: tests/vm/nl_sys_link/run.sh --stock
       - name: Logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-${{ matrix.os }}
           path: |

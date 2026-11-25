@@ -143,7 +143,7 @@ report() unless Worker.parent
 
 ### Requirements
 
-- Rust 1.85 or newer
+- Rust 1.100 or newer
 - A C compiler and GNU make (to build the VM fork)
 - Git, with submodules
 

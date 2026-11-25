@@ -24,16 +24,16 @@ send = ["mlua/send"]
 macros = ["mlua/macros"]
 
 [dependencies]
-# The mlua of nl_sys's mlua-sys (0.13): a graph holds one crate that links
+# The mlua of nl_sys's mlua-sys (0.14): a graph holds one crate that links
 # "lua". A host links the fork by patching luajit-src.
 # Pinned to the exact version that was checked: the abort in
 # src/state.rs (`impl Drop for NlState`) relies on a private detail of
-# mlua 0.12.2, that ExtraData::drop drops its own Lua before the app data.
+# mlua 0.12.3, that ExtraData::drop drops its own Lua before the app data.
 # If a later mlua drops them the other way, every worker close aborts, and
 # tests/vm/nl_host (tests/workers.rs, `a_worker_close_keeps_mlua_s_drop_order`
 # and every test that ends a worker) fails at once. Check that before
 # moving the pin, with mlua-sys in crates/nl_sys/Cargo.toml.
-mlua = { version = "=0.12.2", features = ["luajit", "vendored"] }
+mlua = { version = "=0.12.3", features = ["luajit", "vendored"] }
 nl_sys = { path = "../nl_sys" }
 # Localize and Severity are the compiler's.
 nl_capi = { path = "../nl_capi" }
