@@ -51,7 +51,10 @@ impl Lowerer<'_> {
             ON_EXPR => self.lower_on(node),
             IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR => {
                 let t = self.new_local("v");
-                self.emit(StmtKind::Local { locals: vec![t], values: Vec::new() });
+                self.emit(StmtKind::Local {
+                    locals: vec![t],
+                    values: Vec::new(),
+                });
                 self.construct(node, Tail::Assign(t));
                 Expr::Local(t)
             }
@@ -62,7 +65,11 @@ impl Lowerer<'_> {
     /// Lowers an expression to exactly one value.
     pub(crate) fn expr1(&mut self, node: &SyntaxNode) -> Expr {
         let e = self.expr(node);
-        if e.is_multi() { Expr::Paren(Box::new(e)) } else { e }
+        if e.is_multi() {
+            Expr::Paren(Box::new(e))
+        } else {
+            e
+        }
     }
 
     /// An expression whose value is discarded: a statement that is not
@@ -105,7 +112,9 @@ impl Lowerer<'_> {
     // ---- literals and strings ---------------------------------------------
 
     fn literal(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(tok) = first_token(node) else { return self.internal(node, "empty literal") };
+        let Some(tok) = first_token(node) else {
+            return self.internal(node, "empty literal");
+        };
         match tok.kind() {
             NUMBER => Expr::Number(nl_syntax::number_value(tok.text()).unwrap_or(0.0)),
             STRING => {
@@ -126,7 +135,9 @@ impl Lowerer<'_> {
         let mut exprs = Vec::new();
         for c in node.children_with_tokens() {
             match c {
-                rowan::NodeOrToken::Token(t) if t.kind().is_string_part() => texts.push(t.text().to_string()),
+                rowan::NodeOrToken::Token(t) if t.kind().is_string_part() => {
+                    texts.push(t.text().to_string())
+                }
                 rowan::NodeOrToken::Node(n) if is_expr(n.kind()) => exprs.push(n),
                 _ => {}
             }
@@ -139,7 +150,11 @@ impl Lowerer<'_> {
                 let v = l.expr1(e);
                 // A value the analyzer knows to be a string needs no
                 // conversion.
-                if l.opts.hints.is_string_interp(e.text_range()) { v } else { Expr::intrinsic_call("tostring", vec![v]) }
+                if l.opts.hints.is_string_interp(e.text_range()) {
+                    v
+                } else {
+                    Expr::intrinsic_call("tostring", vec![v])
+                }
             });
         }
         let mut parts: Vec<Expr> = Vec::new();
@@ -172,7 +187,9 @@ impl Lowerer<'_> {
     pub(crate) fn ref_value(&mut self, node: &SyntaxNode, r: Option<Ref>) -> Expr {
         match r {
             Some(Ref::Binding(id)) => {
-                let Some(b) = self.res.binding(id) else { return self.internal(node, "binding") };
+                let Some(b) = self.res.binding(id) else {
+                    return self.internal(node, "binding");
+                };
                 if b.decl == DeclKind::Global {
                     Expr::Global(b.name.clone())
                 } else {
@@ -203,7 +220,9 @@ impl Lowerer<'_> {
             v = match step {
                 nl_sema::LuaStep::Field(name) => Expr::index(v, Expr::str(name)),
                 nl_sema::LuaStep::Index(a) => Expr::index(v, arg(a)),
-                nl_sema::LuaStep::Call(args) => Expr::Paren(Box::new(Expr::call(v, args.iter().map(arg).collect()))),
+                nl_sema::LuaStep::Call(args) => {
+                    Expr::Paren(Box::new(Expr::call(v, args.iter().map(arg).collect())))
+                }
             };
         }
         v
@@ -219,7 +238,11 @@ impl Lowerer<'_> {
     fn name_value(&mut self, node: &SyntaxNode) -> Expr {
         let r = self.res.reference(node.text_range()).cloned();
         if let Some(Ref::Binding(id)) = &r {
-            if self.res.binding(*id).is_some_and(|b| b.kind == BindingKind::Function) {
+            if self
+                .res
+                .binding(*id)
+                .is_some_and(|b| b.kind == BindingKind::Function)
+            {
                 return self.call_name(node, Vec::new());
             }
         }
@@ -262,7 +285,9 @@ impl Lowerer<'_> {
 
     /// `@name`: `self.name`, a plain field access.
     pub(crate) fn at_expr(&mut self, node: &SyntaxNode) -> Expr {
-        let name = token(node, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+        let name = token(node, AT_NAME)
+            .map(|t| t.text().trim_start_matches('@').to_string())
+            .unwrap_or_default();
         let this = self.name_raw(node);
         Expr::index(this, Expr::str(&name))
     }
@@ -273,7 +298,10 @@ impl Lowerer<'_> {
     /// last item expands in place; one elsewhere makes the list from its
     /// parts with `rt.listcat`.
     fn list(&mut self, node: &SyntaxNode) -> Expr {
-        let items: Vec<SyntaxNode> = node.children().filter(|c| c.kind() == SPREAD_ARG || is_expr(c.kind())).collect();
+        let items: Vec<SyntaxNode> = node
+            .children()
+            .filter(|c| c.kind() == SPREAD_ARG || is_expr(c.kind()))
+            .collect();
         let mut values = Vec::new();
         for c in &items {
             if c.kind() == SPREAD_ARG {
@@ -285,7 +313,10 @@ impl Lowerer<'_> {
                 self.push_operand(&mut values, |l| l.expr(c));
             }
         }
-        let spread_inside = items.iter().enumerate().any(|(i, c)| c.kind() == SPREAD_ARG && i + 1 < items.len());
+        let spread_inside = items
+            .iter()
+            .enumerate()
+            .any(|(i, c)| c.kind() == SPREAD_ARG && i + 1 < items.len());
         let mut entries = Vec::new();
         if !spread_inside {
             let n = items.len();
@@ -311,7 +342,11 @@ impl Lowerer<'_> {
                 }
                 parts.push(v);
             } else {
-                let v = if v.is_multi() { Expr::Paren(Box::new(v)) } else { v };
+                let v = if v.is_multi() {
+                    Expr::Paren(Box::new(v))
+                } else {
+                    v
+                };
                 run.push(TableEntry::Item(v));
             }
         }
@@ -340,7 +375,9 @@ impl Lowerer<'_> {
                 TABLE_PAIR => {
                     let key = child(&c, TABLE_KEY);
                     let value = expr_child(&c);
-                    let (Some(key), Some(value)) = (key, value) else { continue };
+                    let (Some(key), Some(value)) = (key, value) else {
+                        continue;
+                    };
                     slots.push(Slot::Pair);
                     self.push_operand(&mut values, |l| l.table_key(&key));
                     self.push_operand(&mut values, |l| l.expr1(&value));
@@ -356,7 +393,11 @@ impl Lowerer<'_> {
                 Slot::Item => {
                     let v = it.next().unwrap_or(Expr::Nil);
                     // Only the last positional item may expand.
-                    let v = if i + 1 < count && v.is_multi() { Expr::Paren(Box::new(v)) } else { v };
+                    let v = if i + 1 < count && v.is_multi() {
+                        Expr::Paren(Box::new(v))
+                    } else {
+                        v
+                    };
                     entries.push(TableEntry::Item(v));
                 }
                 Slot::Pair => {
@@ -375,10 +416,15 @@ impl Lowerer<'_> {
             return self.expr1(&e);
         }
         match first_token(key) {
-            Some(t) if t.kind() == NUMBER => Expr::Number(nl_syntax::number_value(t.text()).unwrap_or(0.0)),
-            Some(t) if t.kind() == STRING => {
-                Expr::Str(nl_syntax::decode_string(&[t.text()]).into_iter().next().unwrap_or_default())
+            Some(t) if t.kind() == NUMBER => {
+                Expr::Number(nl_syntax::number_value(t.text()).unwrap_or(0.0))
             }
+            Some(t) if t.kind() == STRING => Expr::Str(
+                nl_syntax::decode_string(&[t.text()])
+                    .into_iter()
+                    .next()
+                    .unwrap_or_default(),
+            ),
             Some(t) => Expr::str(t.text()),
             None => self.internal(key, "table key"),
         }
@@ -394,7 +440,9 @@ impl Lowerer<'_> {
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
         let ops = self.operands(&parts);
         let mut it = ops.into_iter();
-        let (Some(o), Some(k)) = (it.next(), it.next()) else { return self.internal(node, "index") };
+        let (Some(o), Some(k)) = (it.next(), it.next()) else {
+            return self.internal(node, "index");
+        };
         // A plain index reads its table where it indexes, after the key
         // (as Lua does): a local the key's code can assign is pinned
         // first, so that both levels read it before the key.
@@ -410,14 +458,22 @@ impl Lowerer<'_> {
     /// A raw `x[k]` read under NL's rules (the index of a string, the
     /// `[]` of a struct): the level decides who applies them.
     pub(crate) fn index_read(&mut self, o: Expr, k: Expr) -> Expr {
-        if self.opts.level >= 1 { Expr::index(o, k) } else { Expr::intrinsic_call("index", vec![o, k]) }
+        if self.opts.level >= 1 {
+            Expr::index(o, k)
+        } else {
+            Expr::intrinsic_call("index", vec![o, k])
+        }
     }
 
     /// `x.member` whose value is used: `.len` is the length;
     /// any other member is auto-called when it is a method.
     fn field_value(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(recv) = expr_child(node) else { return self.internal(node, "member access") };
-        let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
+        let Some(recv) = expr_child(node) else {
+            return self.internal(node, "member access");
+        };
+        let name = field_name(node)
+            .map(|t| t.text().to_string())
+            .unwrap_or_default();
         // `args.len` of a rest parameter is the count of arguments it
         // received, nils included: the hidden local, or for a table that
         // escapes rt.restlen.
@@ -446,17 +502,28 @@ impl Lowerer<'_> {
         // never called with the library as `self`: `String.shout` is the
         // function, as `String.upcase` is.
         if self.res.plain_primitive_member(&recv, &name).is_some() {
-            let key = self.opts.hints.member(node.text_range()).map_or(name, |h| h.key().to_string());
+            let key = self
+                .opts
+                .hints
+                .member(node.text_range())
+                .map_or(name, |h| h.key().to_string());
             return Expr::index(r, Expr::str(&key));
         }
         // A member the analyzer resolved from the receiver's declared
         // type, or a declared member with a Lua key.
         match self.opts.hints.member(node.text_range()).cloned() {
-            Some(MemberHint::Field { key } | MemberHint::Function { key }) => Expr::index(r, Expr::str(&key)),
+            Some(MemberHint::Field { key } | MemberHint::Function { key }) => {
+                Expr::index(r, Expr::str(&key))
+            }
             Some(MemberHint::Method { key }) => Expr::MethodCall(Box::new(r), key, Vec::new()),
             Some(MemberHint::TableFn { key }) => Expr::call(table_fn(&key), vec![r]),
-            None if self.opts.level == 0 && self.opts.hints.is_table_read(node.text_range()) => self.table_field(r, &name),
-            None => Expr::AutoGet { receiver: Box::new(r), key: Box::new(Expr::str(&name)) },
+            None if self.opts.level == 0 && self.opts.hints.is_table_read(node.text_range()) => {
+                self.table_field(r, &name)
+            }
+            None => Expr::AutoGet {
+                receiver: Box::new(r),
+                key: Box::new(Expr::str(&name)),
+            },
         }
     }
 
@@ -466,7 +533,9 @@ impl Lowerer<'_> {
         if node.kind() != NAME_REF {
             return None;
         }
-        let Some(Ref::Binding(id)) = self.res.reference(node.text_range()).cloned() else { return None };
+        let Some(Ref::Binding(id)) = self.res.reference(node.text_range()).cloned() else {
+            return None;
+        };
         let b = self.res.binding(id)?;
         (b.decl == DeclKind::RestParam && !self.res.reassigned(id)).then_some(id)
     }
@@ -486,7 +555,11 @@ impl Lowerer<'_> {
     fn table_len(&mut self, r: Expr) -> Expr {
         let t = self.stable(r);
         let mt = Expr::call(self.rt_cached("getmetatable"), vec![t.clone()]);
-        let plain = Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, mt, Expr::Nil), Expr::Unary(UnOp::Len, Box::new(t.clone())));
+        let plain = Expr::binary(
+            BinOp::And,
+            Expr::binary(BinOp::Eq, mt, Expr::Nil),
+            Expr::Unary(UnOp::Len, Box::new(t.clone())),
+        );
         Expr::binary(BinOp::Or, plain, Expr::intrinsic_call("len", vec![t]))
     }
 
@@ -502,12 +575,26 @@ impl Lowerer<'_> {
     fn table_field(&mut self, r: Expr, name: &str) -> Expr {
         let t = self.stable(r);
         let v = self.fresh_temp(Expr::index(t.clone(), Expr::str(name)), "v");
-        let cond = Expr::binary(BinOp::Eq, Expr::call(self.rt_cached("type"), vec![Expr::Local(v)]), Expr::str("function"));
+        let cond = Expr::binary(
+            BinOp::Eq,
+            Expr::call(self.rt_cached("type"), vec![Expr::Local(v)]),
+            Expr::str("function"),
+        );
         let then = self.sub_block(|l| {
-            let get = Expr::AutoGet { receiver: Box::new(t), key: Box::new(Expr::str(name)) };
-            l.emit(StmtKind::Assign { targets: vec![Place::Local(v)], values: vec![get] });
+            let get = Expr::AutoGet {
+                receiver: Box::new(t),
+                key: Box::new(Expr::str(name)),
+            };
+            l.emit(StmtKind::Assign {
+                targets: vec![Place::Local(v)],
+                values: vec![get],
+            });
         });
-        self.emit(StmtKind::If { cond, then, otherwise: None });
+        self.emit(StmtKind::If {
+            cond,
+            then,
+            otherwise: None,
+        });
         Expr::Local(v)
     }
 
@@ -516,15 +603,21 @@ impl Lowerer<'_> {
     /// the module as `self`, as `M.f(args)` does. A field, a plain
     /// function and a library's function are read as they are.
     fn bang(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(inner) = expr_child(node) else { return self.internal(node, "`!`") };
+        let Some(inner) = expr_child(node) else {
+            return self.internal(node, "`!`");
+        };
         match inner.kind() {
             NAME_REF => self.name_raw(&inner),
             FIELD_EXPR => {
-                let Some(recv) = expr_child(&inner) else { return self.internal(node, "member access") };
+                let Some(recv) = expr_child(&inner) else {
+                    return self.internal(node, "member access");
+                };
                 let hint = self.opts.hints.member(inner.text_range()).cloned();
                 let name = match &hint {
                     Some(h) => h.key().to_string(),
-                    None => field_name(&inner).map(|t| t.text().to_string()).unwrap_or_default(),
+                    None => field_name(&inner)
+                        .map(|t| t.text().to_string())
+                        .unwrap_or_default(),
                 };
                 let plain_library = self.res.plain_primitive_member(&recv, &name).is_some();
                 let r = self.expr1(&recv);
@@ -537,14 +630,18 @@ impl Lowerer<'_> {
                         }
                         table_fn(&key)
                     }
-                    Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => self.index_read(r, Expr::str(&name)),
+                    Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => {
+                        self.index_read(r, Expr::str(&name))
+                    }
                     // `String.shout!`, `Self.half!` in `fn Number.x`: the
                     // library's function, whose first parameter is `self`.
                     _ if plain_library => self.index_read(r, Expr::str(&name)),
                     // A method the receiver's declared type has (a host
                     // method under its Lua key, unmarked) is bound whatever
                     // the runtime would say of it.
-                    Some(MemberHint::Method { .. }) => Expr::intrinsic_call("bound", vec![r, Expr::str(&name), Expr::Bool(true)]),
+                    Some(MemberHint::Method { .. }) => {
+                        Expr::intrinsic_call("bound", vec![r, Expr::str(&name), Expr::Bool(true)])
+                    }
                     _ => Expr::intrinsic_call("bound", vec![r, Expr::str(&name)]),
                 }
             }
@@ -552,10 +649,15 @@ impl Lowerer<'_> {
             // struct is bound; otherwise the runtime decides, which binds a
             // method and leaves a field's value as it is.
             AT_EXPR => {
-                let name = token(&inner, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+                let name = token(&inner, AT_NAME)
+                    .map(|t| t.text().trim_start_matches('@').to_string())
+                    .unwrap_or_default();
                 let this = self.name_raw(&inner);
                 match self.opts.hints.member(inner.text_range()) {
-                    Some(MemberHint::Method { .. }) => Expr::intrinsic_call("bound", vec![this, Expr::str(&name), Expr::Bool(true)]),
+                    Some(MemberHint::Method { .. }) => Expr::intrinsic_call(
+                        "bound",
+                        vec![this, Expr::str(&name), Expr::Bool(true)],
+                    ),
                     _ => Expr::intrinsic_call("bound", vec![this, Expr::str(&name)]),
                 }
             }
@@ -589,7 +691,9 @@ pub(crate) fn concat_all(mut parts: Vec<Expr>) -> Expr {
 /// `a .. (b .. (c .. d))`: printed without parentheses.
 fn concat_chain(parts: Vec<Expr>) -> Expr {
     let mut it = parts.into_iter().rev();
-    let Some(mut acc) = it.next() else { return Expr::str("") };
+    let Some(mut acc) = it.next() else {
+        return Expr::str("");
+    };
     for p in it {
         acc = Expr::binary(BinOp::Concat, p, acc);
     }
@@ -609,5 +713,9 @@ pub(crate) fn is_len(node: &SyntaxNode) -> bool {
 
 /// Truncates a multi-value expression to one value.
 pub(crate) fn single(e: Expr) -> Expr {
-    if e.is_multi() { Expr::Paren(Box::new(e)) } else { e }
+    if e.is_multi() {
+        Expr::Paren(Box::new(e))
+    } else {
+        e
+    }
 }

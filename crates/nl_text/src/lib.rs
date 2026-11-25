@@ -50,7 +50,12 @@ fn ascii_prefix(bytes: &[u8]) -> usize {
         }
         n += 8;
     }
-    n + bytes.get(n..).unwrap_or(&[]).iter().take_while(|&&b| b < 0x80).count()
+    n + bytes
+        .get(n..)
+        .unwrap_or(&[])
+        .iter()
+        .take_while(|&&b| b < 0x80)
+        .count()
 }
 
 /// The number of characters: the bytes that start one.
@@ -59,7 +64,13 @@ pub fn count(bytes: &[u8]) -> usize {
     if ascii == bytes.len() {
         return ascii;
     }
-    ascii + bytes.get(ascii..).unwrap_or(&[]).iter().filter(|&&b| is_start(b)).count()
+    ascii
+        + bytes
+            .get(ascii..)
+            .unwrap_or(&[])
+            .iter()
+            .filter(|&&b| is_start(b))
+            .count()
 }
 
 /// The byte offset where the character with 0-based index `pos` starts;
@@ -132,8 +143,16 @@ pub fn encode(cp: u32) -> Option<([u8; 4], usize)> {
 /// when nothing is selected.
 pub fn clamp(first: i64, last: i64, n: usize, exclusive: bool) -> Option<(usize, usize)> {
     let n_i = i64::try_from(n).unwrap_or(i64::MAX);
-    let mut first = if first < 0 { n_i.saturating_add(first).saturating_add(1) } else { first };
-    let mut last = if last < 0 { n_i.saturating_add(last).saturating_add(1) } else { last };
+    let mut first = if first < 0 {
+        n_i.saturating_add(first).saturating_add(1)
+    } else {
+        first
+    };
+    let mut last = if last < 0 {
+        n_i.saturating_add(last).saturating_add(1)
+    } else {
+        last
+    };
     if exclusive {
         last = last.saturating_sub(1);
     }
@@ -146,7 +165,10 @@ pub fn clamp(first: i64, last: i64, n: usize, exclusive: bool) -> Option<(usize,
     if first > last {
         return None;
     }
-    Some((usize::try_from(first).unwrap_or(0), usize::try_from(last).unwrap_or(0)))
+    Some((
+        usize::try_from(first).unwrap_or(0),
+        usize::try_from(last).unwrap_or(0),
+    ))
 }
 
 /// `s[first..last]` and `s[first...last]`: the byte range of the characters
@@ -163,12 +185,19 @@ pub fn slice(bytes: &[u8], first: i64, last: i64, exclusive: bool) -> Option<(us
 pub fn char_at(bytes: &[u8], pos: i64) -> Option<(usize, usize)> {
     let n = count(bytes);
     let n_i = i64::try_from(n).unwrap_or(i64::MAX);
-    let pos = if pos < 0 { n_i.saturating_add(pos).saturating_add(1) } else { pos };
+    let pos = if pos < 0 {
+        n_i.saturating_add(pos).saturating_add(1)
+    } else {
+        pos
+    };
     if pos < 1 || pos > n_i {
         return None;
     }
     let start = offset(bytes, usize::try_from(pos).unwrap_or(0) - 1);
-    let len = bytes.get(start).map_or(0, |&b| char_len(b)).min(bytes.len() - start);
+    let len = bytes
+        .get(start)
+        .map_or(0, |&b| char_len(b))
+        .min(bytes.len() - start);
     Some((start, start + len))
 }
 
@@ -213,7 +242,16 @@ pub fn map_case(text: &str, mode: CaseMode) -> String {
                 out.get_mut(..1).map(str::make_ascii_uppercase);
                 out
             }
-            CaseMode::Swap => text.chars().map(|c| if c.is_ascii_uppercase() { c.to_ascii_lowercase() } else { c.to_ascii_uppercase() }).collect(),
+            CaseMode::Swap => text
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_uppercase() {
+                        c.to_ascii_lowercase()
+                    } else {
+                        c.to_ascii_uppercase()
+                    }
+                })
+                .collect(),
         };
     }
     match mode {
@@ -245,7 +283,12 @@ pub fn map_case(text: &str, mode: CaseMode) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -297,7 +340,10 @@ mod tests {
         assert_eq!(decode(s, 2), None, "inside a character");
         assert_eq!(decode(b"\xff", 0), None);
         assert_eq!(encode(0x1F600), Some((*b"\xf0\x9f\x98\x80", 4)));
-        assert_eq!(encode(0x41).map(|(b, n)| b[..n].to_vec()), Some(b"A".to_vec()));
+        assert_eq!(
+            encode(0x41).map(|(b, n)| b[..n].to_vec()),
+            Some(b"A".to_vec())
+        );
         assert_eq!(encode(0xD800), None);
         assert_eq!(encode(0x110000), None);
     }
@@ -305,7 +351,9 @@ mod tests {
     #[test]
     fn slicing() {
         let s = "héllo".as_bytes();
-        let text = |r: Option<(usize, usize)>| r.map(|(a, b)| std::str::from_utf8(&s[a..b]).unwrap().to_owned());
+        let text = |r: Option<(usize, usize)>| {
+            r.map(|(a, b)| std::str::from_utf8(&s[a..b]).unwrap().to_owned())
+        };
         assert_eq!(text(slice(s, 1, 2, false)), Some("hé".into()));
         assert_eq!(text(slice(s, 1, 2, true)), Some("h".into()));
         assert_eq!(text(slice(s, -3, -1, false)), Some("llo".into()));

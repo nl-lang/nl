@@ -11,8 +11,8 @@
 //!   `local ok = false; while true do … if not test then break end … ok =
 //!   true; break end`, and the condition is `ok`.
 
-use nl_sema::util::*;
 use nl_sema::Ref;
+use nl_sema::util::*;
 use nl_syntax::{SyntaxKind, SyntaxNode};
 
 use super::Lowerer;
@@ -35,12 +35,20 @@ enum Mode {
 /// The description of a part of a value, for messages: `field 'hp'` of
 /// `ctx` (empty: the value being destructured).
 fn part_of(part: String, ctx: &str) -> String {
-    if ctx.is_empty() { part } else { format!("{part} of {ctx}") }
+    if ctx.is_empty() {
+        part
+    } else {
+        format!("{part} of {ctx}")
+    }
 }
 
 /// The description of the whole value.
 fn whole(ctx: &str) -> &str {
-    if ctx.is_empty() { "the destructured value" } else { ctx }
+    if ctx.is_empty() {
+        "the destructured value"
+    } else {
+        ctx
+    }
 }
 
 impl Lowerer<'_> {
@@ -59,17 +67,27 @@ impl Lowerer<'_> {
             };
             let l = self.define(id, Some(value));
             if let Some(t) = ty {
-                let what = if ctx.is_empty() { format!("variable '{}'", name_text(&name).unwrap_or_default()) } else { ctx.to_string() };
+                let what = if ctx.is_empty() {
+                    format!("variable '{}'", name_text(&name).unwrap_or_default())
+                } else {
+                    ctx.to_string()
+                };
                 self.emit_check(Expr::Local(l), &t, &what);
             }
             return;
         }
         let mut ids = Vec::new();
         self.pattern_bindings(pat, &mut ids);
-        let fresh: Vec<_> = ids.into_iter().filter(|id| !self.is_predeclared(*id)).collect();
+        let fresh: Vec<_> = ids
+            .into_iter()
+            .filter(|id| !self.is_predeclared(*id))
+            .collect();
         if !fresh.is_empty() {
             let locals = fresh.iter().map(|id| self.local_of(*id)).collect();
-            self.emit(StmtKind::Local { locals, values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals,
+                values: Vec::new(),
+            });
             for id in fresh {
                 self.mark_predeclared(id);
             }
@@ -85,8 +103,12 @@ impl Lowerer<'_> {
     /// returns the condition under which they hold.
     pub(crate) fn bind_may(&mut self, pat: &SyntaxNode, value: Expr) -> Expr {
         if pat.kind() == BIND_PAT {
-            let Some((name, _)) = simple_binding(pat) else { return self.internal(pat, "pattern") };
-            let Some(id) = self.res.declaration(name.text_range()) else { return self.internal(pat, "pattern binding") };
+            let Some((name, _)) = simple_binding(pat) else {
+                return self.internal(pat, "pattern");
+            };
+            let Some(id) = self.res.declaration(name.text_range()) else {
+                return self.internal(pat, "pattern binding");
+            };
             let l = self.define(id, Some(value));
             // Binding requires a non-nil value in a may-match context.
             return Expr::binary(BinOp::Ne, Expr::Local(l), Expr::Nil);
@@ -102,10 +124,19 @@ impl Lowerer<'_> {
         let ok = self.fresh_temp(Expr::Bool(false), "matched");
         let mut body = self.sub_block(|l| {
             l.pattern(pat, v, Mode::May, "");
-            l.emit(StmtKind::Assign { targets: vec![Place::Local(ok)], values: vec![Expr::Bool(true)] });
+            l.emit(StmtKind::Assign {
+                targets: vec![Place::Local(ok)],
+                values: vec![Expr::Bool(true)],
+            });
         });
-        body.stmts.push(Stmt { line: self.line, kind: StmtKind::Break });
-        self.emit(StmtKind::While { cond: Expr::Bool(true), body });
+        body.stmts.push(Stmt {
+            line: self.line,
+            kind: StmtKind::Break,
+        });
+        self.emit(StmtKind::While {
+            cond: Expr::Bool(true),
+            body,
+        });
         Expr::Local(ok)
     }
 
@@ -130,7 +161,11 @@ impl Lowerer<'_> {
             Mode::May => StmtKind::Break,
             Mode::Must => StmtKind::Expr(Expr::intrinsic_call("matcherror", vec![Expr::str(what)])),
         };
-        self.emit(StmtKind::If { cond: Expr::lnot(cond), then: Block::new(vec![Stmt { line, kind: fail }]), otherwise: None });
+        self.emit(StmtKind::If {
+            cond: Expr::lnot(cond),
+            then: Block::new(vec![Stmt { line, kind: fail }]),
+            otherwise: None,
+        });
     }
 
     /// Requires `v` to be of type `ty`. In a must-match context that is a
@@ -148,7 +183,13 @@ impl Lowerer<'_> {
     }
 
     /// Binds a name declared by the pattern.
-    fn bind_name(&mut self, decl_range: nl_syntax::TextRange, v: Expr, mode: Mode, node: &SyntaxNode) {
+    fn bind_name(
+        &mut self,
+        decl_range: nl_syntax::TextRange,
+        v: Expr,
+        mode: Mode,
+        node: &SyntaxNode,
+    ) {
         let Some(id) = self.res.declaration(decl_range) else {
             self.internal(node, "pattern binding");
             return;
@@ -156,7 +197,11 @@ impl Lowerer<'_> {
         let l = self.define(id, Some(v));
         if mode == Mode::May {
             // A name bound to a missing key is a mismatch.
-            self.require(Expr::binary(BinOp::Ne, Expr::Local(l), Expr::Nil), mode, "a value");
+            self.require(
+                Expr::binary(BinOp::Ne, Expr::Local(l), Expr::Nil),
+                mode,
+                "a value",
+            );
         }
     }
 
@@ -171,7 +216,11 @@ impl Lowerer<'_> {
             }
             TYPED_PAT => {
                 if let Some(t) = type_child(pat) {
-                    let name = pattern_children(pat).next().filter(|i| i.kind() == BIND_PAT).and_then(|i| child(&i, NAME)).and_then(|n| name_text(&n));
+                    let name = pattern_children(pat)
+                        .next()
+                        .filter(|i| i.kind() == BIND_PAT)
+                        .and_then(|i| child(&i, NAME))
+                        .and_then(|n| name_text(&n));
                     let what = match name {
                         Some(n) if ctx.is_empty() => format!("variable '{n}'"),
                         Some(n) => format!("variable '{n}' ({ctx})"),
@@ -203,17 +252,29 @@ impl Lowerer<'_> {
                 };
                 let excl = has_token(pat, DOT3);
                 let (a, b) = (self.literal_pattern_value(a), self.literal_pattern_value(b));
-                self.require(Expr::intrinsic_call("inrange", vec![v, a, b, Expr::Bool(excl)]), mode, "a range pattern");
+                self.require(
+                    Expr::intrinsic_call("inrange", vec![v, a, b, Expr::Bool(excl)]),
+                    mode,
+                    "a range pattern",
+                );
             }
             IS_PAT => {
                 if let Some(tv) = type_child(pat).and_then(|t| self.type_value(&t)) {
-                    self.require(Expr::intrinsic_call("isa", vec![v, tv]), mode, "an `is` pattern");
+                    self.require(
+                        Expr::intrinsic_call("isa", vec![v, tv]),
+                        mode,
+                        "an `is` pattern",
+                    );
                 }
             }
             BRACE_PAT => {
                 let keyed = children(pat, PAT_FIELD).next().is_some();
                 if keyed {
-                    self.require(Expr::intrinsic_call("istable", vec![v.clone()]), mode, "a table");
+                    self.require(
+                        Expr::intrinsic_call("istable", vec![v.clone()]),
+                        mode,
+                        "a table",
+                    );
                     for f in children(pat, PAT_FIELD) {
                         self.pattern_field(&f, &v, mode, ctx);
                     }
@@ -225,12 +286,22 @@ impl Lowerer<'_> {
             BRACKET_PAT => {
                 let items: Vec<SyntaxNode> = pattern_children(pat).collect();
                 let rest = child(pat, REST_PAT);
-                self.positional(&items, rest.as_ref().map(|r| (r, child(r, NAME))), &v, mode, ctx);
+                self.positional(
+                    &items,
+                    rest.as_ref().map(|r| (r, child(r, NAME))),
+                    &v,
+                    mode,
+                    ctx,
+                );
             }
             STRUCT_PAT => {
                 let ty = child(pat, QUAL_NAME).and_then(|q| self.qual_type_value(pat, &q));
                 if let Some(t) = ty {
-                    self.require(Expr::intrinsic_call("isa", vec![v.clone(), t]), mode, "a struct pattern");
+                    self.require(
+                        Expr::intrinsic_call("isa", vec![v.clone(), t]),
+                        mode,
+                        "a struct pattern",
+                    );
                 }
                 for f in children(pat, PAT_FIELD) {
                     self.pattern_field(&f, &v, mode, ctx);
@@ -249,11 +320,26 @@ impl Lowerer<'_> {
 
     /// `[P1, P2]`, `[P1, *rest]` and positional `{L1, L2}`: exact length
     /// unless there is a rest.
-    fn positional(&mut self, items: &[SyntaxNode], rest: Option<(&SyntaxNode, Option<SyntaxNode>)>, v: &Expr, mode: Mode, ctx: &str) {
-        self.require(Expr::intrinsic_call("istable", vec![v.clone()]), mode, "a table");
+    fn positional(
+        &mut self,
+        items: &[SyntaxNode],
+        rest: Option<(&SyntaxNode, Option<SyntaxNode>)>,
+        v: &Expr,
+        mode: Mode,
+        ctx: &str,
+    ) {
+        self.require(
+            Expr::intrinsic_call("istable", vec![v.clone()]),
+            mode,
+            "a table",
+        );
         let n = items.len() as f64;
         let len = Expr::Unary(UnOp::Len, Box::new(v.clone()));
-        let cond = if rest.is_some() { Expr::binary(BinOp::Ge, len, Expr::Number(n)) } else { Expr::binary(BinOp::Eq, len, Expr::Number(n)) };
+        let cond = if rest.is_some() {
+            Expr::binary(BinOp::Ge, len, Expr::Number(n))
+        } else {
+            Expr::binary(BinOp::Eq, len, Expr::Number(n))
+        };
         self.require(cond, mode, "a table of the right length");
         for (i, item) in items.iter().enumerate() {
             let sub = Expr::index(v.clone(), Expr::Number((i + 1) as f64));
@@ -297,10 +383,17 @@ impl Lowerer<'_> {
             }
             return;
         }
-        let Some(key_tok) = first_token(f) else { return };
+        let Some(key_tok) = first_token(f) else {
+            return;
+        };
         let key = match key_tok.kind() {
             NUMBER => Expr::Number(nl_syntax::number_value(key_tok.text()).unwrap_or(0.0)),
-            STRING => Expr::Str(nl_syntax::decode_string(&[key_tok.text()]).into_iter().next().unwrap_or_default()),
+            STRING => Expr::Str(
+                nl_syntax::decode_string(&[key_tok.text()])
+                    .into_iter()
+                    .next()
+                    .unwrap_or_default(),
+            ),
             _ => Expr::str(key_tok.text()),
         };
         let sub = Expr::index(v.clone(), key);
@@ -309,7 +402,11 @@ impl Lowerer<'_> {
             // The names were declared ahead (`bind_must`, `bind_may`), so
             // they stay `nil` when the field is.
             let body = self.sub_block(|l| l.pattern_field_value(f, &key_tok, &sub, mode, ctx));
-            self.emit(StmtKind::If { cond: Expr::binary(BinOp::Ne, sub, Expr::Nil), then: body, otherwise: None });
+            self.emit(StmtKind::If {
+                cond: Expr::binary(BinOp::Ne, sub, Expr::Nil),
+                then: body,
+                otherwise: None,
+            });
             return;
         }
         self.pattern_field_value(f, &key_tok, &sub, mode, ctx);
@@ -317,7 +414,14 @@ impl Lowerer<'_> {
 
     /// The value part of a keyed item, against the field's stable value
     /// `sub`.
-    fn pattern_field_value(&mut self, f: &SyntaxNode, key_tok: &nl_syntax::SyntaxToken, sub: &Expr, mode: Mode, ctx: &str) {
+    fn pattern_field_value(
+        &mut self,
+        f: &SyntaxNode,
+        key_tok: &nl_syntax::SyntaxToken,
+        sub: &Expr,
+        mode: Mode,
+        ctx: &str,
+    ) {
         let sub = sub.clone();
         let field = part_of(format!("field '{}'", key_label(key_tok)), ctx);
         if let Some(p) = pattern_children(f).next() {
@@ -325,7 +429,9 @@ impl Lowerer<'_> {
             // `{key: Mod.Type}` also binds the key, unless the dotted name is
             // an enum variant (the resolver decides).
             if let Some(q) = child(&p, QUAL_NAME).filter(|_| p.kind() == QUALIFIED_PAT) {
-                if !self.res.is_enum_variant(q.text_range()) && self.res.declaration(key_tok.text_range()).is_some() {
+                if !self.res.is_enum_variant(q.text_range())
+                    && self.res.declaration(key_tok.text_range()).is_some()
+                {
                     self.bind_name(key_tok.text_range(), sub, mode, f);
                 }
             }
@@ -351,8 +457,13 @@ impl Lowerer<'_> {
     /// `==`; a type is tested with `is`. Which one it is, the resolver
     /// decided.
     fn qualified(&mut self, pat: &SyntaxNode, q: &SyntaxNode, v: Expr, mode: Mode) {
-        let segs: Vec<String> = qual_segments(q).iter().map(|t| t.text().to_string()).collect();
-        let Some(base) = self.qual_base(pat, q) else { return };
+        let segs: Vec<String> = qual_segments(q)
+            .iter()
+            .map(|t| t.text().to_string())
+            .collect();
+        let Some(base) = self.qual_base(pat, q) else {
+            return;
+        };
         let mut value = base;
         for s in segs.iter().skip(1) {
             value = Expr::index(value, Expr::str(s));
@@ -381,7 +492,10 @@ impl Lowerer<'_> {
 
     /// The struct a struct pattern names.
     fn qual_type_value(&mut self, pat: &SyntaxNode, q: &SyntaxNode) -> Option<Expr> {
-        let segs: Vec<String> = qual_segments(q).iter().map(|t| t.text().to_string()).collect();
+        let segs: Vec<String> = qual_segments(q)
+            .iter()
+            .map(|t| t.text().to_string())
+            .collect();
         let mut base = self.qual_base(pat, q)?;
         for s in segs.iter().skip(1) {
             base = Expr::index(base, Expr::str(s));
@@ -399,7 +513,12 @@ impl Lowerer<'_> {
                     let n = nl_syntax::number_value(t.text()).unwrap_or(0.0);
                     Expr::Number(if negative { -n } else { n })
                 }
-                STRING => Expr::Str(nl_syntax::decode_string(&[t.text()]).into_iter().next().unwrap_or_default()),
+                STRING => Expr::Str(
+                    nl_syntax::decode_string(&[t.text()])
+                        .into_iter()
+                        .next()
+                        .unwrap_or_default(),
+                ),
                 TRUE_KW => Expr::Bool(true),
                 FALSE_KW => Expr::Bool(false),
                 NIL_KW => Expr::Nil,
@@ -413,7 +532,13 @@ impl Lowerer<'_> {
 /// A pattern key as messages show it: the name, number or decoded string.
 fn key_label(tok: &nl_syntax::SyntaxToken) -> String {
     match tok.kind() {
-        STRING => String::from_utf8_lossy(&nl_syntax::decode_string(&[tok.text()]).into_iter().next().unwrap_or_default()).into_owned(),
+        STRING => String::from_utf8_lossy(
+            &nl_syntax::decode_string(&[tok.text()])
+                .into_iter()
+                .next()
+                .unwrap_or_default(),
+        )
+        .into_owned(),
         _ => tok.text().to_string(),
     }
 }

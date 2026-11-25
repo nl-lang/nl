@@ -66,7 +66,13 @@ pub(crate) struct TypePool {
 
 impl TypePool {
     pub(crate) fn new(line: u32) -> Self {
-        TypePool { table: None, defs: Vec::new(), memo: HashMap::new(), next: 1, line }
+        TypePool {
+            table: None,
+            defs: Vec::new(),
+            memo: HashMap::new(),
+            next: 1,
+            line,
+        }
     }
 }
 
@@ -76,7 +82,11 @@ pub(crate) enum AliasState {
     /// Being expanded: the pool it goes to (when it can be pooled), the
     /// slot reserved for a reference to itself, and the record nesting at
     /// the start of its expansion.
-    InProgress { depth: Option<usize>, slot: Option<usize>, record_level: u32 },
+    InProgress {
+        depth: Option<usize>,
+        slot: Option<usize>,
+        record_level: u32,
+    },
     /// Expanded: its value, and the depth of the pool it refers to.
     Done(Option<Expr>, Option<usize>),
 }
@@ -87,7 +97,9 @@ impl Lowerer<'_> {
     pub(crate) fn collect_aliases(&mut self, root: &SyntaxNode) {
         let mut decls = Vec::new();
         for d in root.descendants().filter(|d| d.kind() == TYPE_DECL) {
-            let (Some(name), Some(ty)) = (child(&d, NAME), type_child(&d)) else { continue };
+            let (Some(name), Some(ty)) = (child(&d, NAME), type_child(&d)) else {
+                continue;
+            };
             if let Some(id) = self.res.declaration(name.text_range()) {
                 self.aliases.insert(id, ty);
                 decls.push((id, name));
@@ -142,7 +154,9 @@ impl Lowerer<'_> {
         match ty.kind() {
             RECORD_TYPE => {}
             NAMED_TYPE => {
-                let Some(q) = child(ty, QUAL_NAME) else { return };
+                let Some(q) = child(ty, QUAL_NAME) else {
+                    return;
+                };
                 if qual_segments(&q).len() != 1 {
                     return;
                 }
@@ -177,19 +191,36 @@ impl Lowerer<'_> {
     /// the table's `local` first.
     pub(crate) fn pop_pool(&mut self) -> (Option<Stmt>, Vec<Stmt>) {
         let depth = self.pools.len().saturating_sub(1);
-        let Some(pool) = self.pools.pop() else { return (None, Vec::new()) };
+        let Some(pool) = self.pools.pop() else {
+            return (None, Vec::new());
+        };
         let line = pool.line;
         self.binding_pool.retain(|_, d| *d < depth);
         // Expansions that refer to this pool, or to locals of its block, end
         // with it.
-        self.alias_memo.retain(|_, st| matches!(st, AliasState::Done(_, Some(d)) if *d < depth));
+        self.alias_memo
+            .retain(|_, st| matches!(st, AliasState::Done(_, Some(d)) if *d < depth));
         self.alias_depth_memo.clear();
-        let Some(table) = pool.table else { return (None, Vec::new()) };
-        let decl = Stmt { line, kind: StmtKind::Local { locals: vec![table], values: vec![Expr::Table(Vec::new())] } };
+        let Some(table) = pool.table else {
+            return (None, Vec::new());
+        };
+        let decl = Stmt {
+            line,
+            kind: StmtKind::Local {
+                locals: vec![table],
+                values: vec![Expr::Table(Vec::new())],
+            },
+        };
         let defs = pool
             .defs
             .into_iter()
-            .map(|(k, v)| Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Index(Expr::Local(table), Expr::Number(k as f64))], values: vec![v] } })
+            .map(|(k, v)| Stmt {
+                line,
+                kind: StmtKind::Assign {
+                    targets: vec![Place::Index(Expr::Local(table), Expr::Number(k as f64))],
+                    values: vec![v],
+                },
+            })
             .collect();
         (Some(decl), defs)
     }
@@ -228,7 +259,12 @@ impl Lowerer<'_> {
     /// value there.
     fn intern(&mut self, depth: usize, value: Expr) -> Option<Expr> {
         let key = format!("{value:?}");
-        if let Some(k) = self.pools.get(depth).and_then(|p| p.memo.get(&key)).copied() {
+        if let Some(k) = self
+            .pools
+            .get(depth)
+            .and_then(|p| p.memo.get(&key))
+            .copied()
+        {
             return self.slot_ref(depth, k);
         }
         let k = self.reserve_slot(depth)?;
@@ -245,7 +281,11 @@ impl Lowerer<'_> {
     /// variable), or a pool a `spawn` block cannot use.
     fn type_depth(&mut self, ty: &SyntaxNode) -> Option<usize> {
         let d = self.type_depth_at(ty, &mut Vec::new())?;
-        if d > 0 && d < self.pool_barrier { None } else { Some(d) }
+        if d > 0 && d < self.pool_barrier {
+            None
+        } else {
+            Some(d)
+        }
     }
 
     fn type_depth_at(&mut self, ty: &SyntaxNode, visiting: &mut Vec<BindingId>) -> Option<usize> {
@@ -257,8 +297,13 @@ impl Lowerer<'_> {
                 if has_token(ty, SELF_TYPE_KW) {
                     return self.self_depth(ty);
                 }
-                let Some(q) = child(ty, QUAL_NAME) else { return Some(0) };
-                if qual_segments(&q).first().is_some_and(|s| s.text() == "Self") {
+                let Some(q) = child(ty, QUAL_NAME) else {
+                    return Some(0);
+                };
+                if qual_segments(&q)
+                    .first()
+                    .is_some_and(|s| s.text() == "Self")
+                {
                     return self.self_depth(&q);
                 }
                 let segs = qual_segments(&q).len();
@@ -269,7 +314,10 @@ impl Lowerer<'_> {
                         match decl {
                             DeclKind::TypeParam => Some(0),
                             DeclKind::TypeAlias if segs == 1 => self.alias_depth(id, visiting),
-                            DeclKind::Struct | DeclKind::Enum | DeclKind::Interface | DeclKind::Import => self.binding_pool.get(&id).copied(),
+                            DeclKind::Struct
+                            | DeclKind::Enum
+                            | DeclKind::Interface
+                            | DeclKind::Import => self.binding_pool.get(&id).copied(),
                             _ => None,
                         }
                     }
@@ -357,13 +405,17 @@ impl Lowerer<'_> {
                 let mut fields = Vec::new();
                 for f in children(ty, RECORD_FIELD) {
                     let key = match first_token(&f) {
-                        Some(t) if t.kind() == STRING => {
-                            Expr::Str(nl_syntax::decode_string(&[t.text()]).into_iter().next().unwrap_or_default())
-                        }
+                        Some(t) if t.kind() == STRING => Expr::Str(
+                            nl_syntax::decode_string(&[t.text()])
+                                .into_iter()
+                                .next()
+                                .unwrap_or_default(),
+                        ),
                         Some(t) => Expr::str(t.text()),
                         None => continue,
                     };
-                    let value = match type_child(&f).and_then(|t| self.type_expr(&t, record_level)) {
+                    let value = match type_child(&f).and_then(|t| self.type_expr(&t, record_level))
+                    {
                         Some(v) => v,
                         None => self.lua_type("Any"),
                     };
@@ -396,7 +448,10 @@ impl Lowerer<'_> {
             // `any`, `unknown`, `never`: nothing to check at runtime.
             return None;
         };
-        let segs: Vec<String> = qual_segments(&q).iter().map(|t| t.text().to_string()).collect();
+        let segs: Vec<String> = qual_segments(&q)
+            .iter()
+            .map(|t| t.text().to_string())
+            .collect();
         if segs.first().is_some_and(|s| s == "Self") {
             let t = self.res.self_target(q.text_range()).cloned();
             return Some(self.self_type_value(ty, t));
@@ -408,7 +463,9 @@ impl Lowerer<'_> {
                 let b = self.res.binding(id)?.clone();
                 match b.decl {
                     DeclKind::TypeParam => return None,
-                    DeclKind::TypeAlias if segs.len() == 1 => return self.alias_value(id, &b.name, record_level),
+                    DeclKind::TypeAlias if segs.len() == 1 => {
+                        return self.alias_value(id, &b.name, record_level);
+                    }
                     _ => Expr::Local(self.local_of(id)),
                 }
             }
@@ -449,12 +506,22 @@ impl Lowerer<'_> {
                     transient: false,
                     params: Vec::new(),
                     vararg: false,
-                    body: Block::new(vec![Stmt { line, kind: StmtKind::Return(vec![class]) }]),
+                    body: Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Return(vec![class]),
+                    }]),
                     line,
                     name: None,
                 };
                 let name = self.declared_name(id);
-                Some(Expr::intrinsic_call("luaclass", vec![Expr::str(&name), Expr::Function(Box::new(get)), Expr::Bool(keeps_class(&root))]))
+                Some(Expr::intrinsic_call(
+                    "luaclass",
+                    vec![
+                        Expr::str(&name),
+                        Expr::Function(Box::new(get)),
+                        Expr::Bool(keeps_class(&root)),
+                    ],
+                ))
             }
             nl_sema::decl::DeclItemKind::HostType => {
                 let type_name = self.declared_name(id);
@@ -464,11 +531,20 @@ impl Lowerer<'_> {
                     transient: false,
                     params: Vec::new(),
                     vararg: false,
-                    body: Block::new(vec![Stmt { line, kind: StmtKind::Return(vec![Expr::intrinsic_call("gettype", vec![Expr::str(&type_name)])]) }]),
+                    body: Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Return(vec![Expr::intrinsic_call(
+                            "gettype",
+                            vec![Expr::str(&type_name)],
+                        )]),
+                    }]),
                     line,
                     name: None,
                 };
-                Some(Expr::intrinsic_call("lazy", vec![Expr::str(&type_name), Expr::Function(Box::new(get))]))
+                Some(Expr::intrinsic_call(
+                    "lazy",
+                    vec![Expr::str(&type_name), Expr::Function(Box::new(get))],
+                ))
             }
             _ => None,
         }
@@ -485,7 +561,11 @@ impl Lowerer<'_> {
     fn alias_value(&mut self, id: BindingId, name: &str, record_level: &mut u32) -> Option<Expr> {
         match self.alias_memo.get(&id).cloned() {
             Some(AliasState::Done(v, _)) => return v,
-            Some(AliasState::InProgress { depth, slot, record_level: start }) => {
+            Some(AliasState::InProgress {
+                depth,
+                slot,
+                record_level: start,
+            }) => {
                 if *record_level <= start {
                     // Reported by `collect_aliases`.
                     return None;
@@ -500,21 +580,49 @@ impl Lowerer<'_> {
                     Some(k) => k,
                     None => {
                         let k = self.reserve_slot(depth)?;
-                        self.alias_memo.insert(id, AliasState::InProgress { depth: Some(depth), slot: Some(k), record_level: start });
+                        self.alias_memo.insert(
+                            id,
+                            AliasState::InProgress {
+                                depth: Some(depth),
+                                slot: Some(k),
+                                record_level: start,
+                            },
+                        );
                         k
                     }
                 };
                 let target = self.slot_ref(depth, k)?;
                 // The getter is part of the pool's statements.
                 let line = self.pools.get(depth).map_or(self.line, |p| p.line);
-                let get = Function { params: Vec::new(), vararg: false, body: Block::new(vec![Stmt { line, kind: StmtKind::Return(vec![target]) }]), line, name: None, method: false, transient: false };
-                return Some(Expr::intrinsic_call("lazy", vec![Expr::str(name), Expr::Function(Box::new(get))]));
+                let get = Function {
+                    params: Vec::new(),
+                    vararg: false,
+                    body: Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Return(vec![target]),
+                    }]),
+                    line,
+                    name: None,
+                    method: false,
+                    transient: false,
+                };
+                return Some(Expr::intrinsic_call(
+                    "lazy",
+                    vec![Expr::str(name), Expr::Function(Box::new(get))],
+                ));
             }
             None => {}
         }
         let ty = self.aliases.get(&id).cloned()?;
         let depth = self.type_depth(&ty);
-        self.alias_memo.insert(id, AliasState::InProgress { depth, slot: None, record_level: *record_level });
+        self.alias_memo.insert(
+            id,
+            AliasState::InProgress {
+                depth,
+                slot: None,
+                record_level: *record_level,
+            },
+        );
         let value = self.type_expr(&ty, record_level);
         let slot = match self.alias_memo.get(&id) {
             Some(AliasState::InProgress { slot, .. }) => *slot,
@@ -531,7 +639,8 @@ impl Lowerer<'_> {
             },
             (v, _) => v,
         };
-        self.alias_memo.insert(id, AliasState::Done(result.clone(), depth));
+        self.alias_memo
+            .insert(id, AliasState::Done(result.clone(), depth));
         result
     }
 
@@ -576,7 +685,13 @@ impl Lowerer<'_> {
     /// inline test `test` in front of `rt.check` when there is one and
     /// `value` can be read twice (a local or a constant). A constant the
     /// test accepts is not checked.
-    pub(crate) fn emit_check_value(&mut self, value: Expr, t: Expr, test: Option<Inline>, what: &str) {
+    pub(crate) fn emit_check_value(
+        &mut self,
+        value: Expr,
+        t: Expr,
+        test: Option<Inline>,
+        what: &str,
+    ) {
         let pure = value.is_constant() || matches!(value, Expr::Local(_));
         match test {
             Some(test) if pure => {
@@ -585,11 +700,21 @@ impl Lowerer<'_> {
                 }
                 let line = self.line;
                 let call = Expr::intrinsic_call("check", vec![value.clone(), t, Expr::str(what)]);
-                let then = Block::new(vec![Stmt { line, kind: StmtKind::Expr(call) }]);
+                let then = Block::new(vec![Stmt {
+                    line,
+                    kind: StmtKind::Expr(call),
+                }]);
                 let cond = self.inline_fails(&test, &value);
-                self.emit(StmtKind::If { cond, then, otherwise: None });
+                self.emit(StmtKind::If {
+                    cond,
+                    then,
+                    otherwise: None,
+                });
             }
-            _ => self.emit(StmtKind::Expr(Expr::intrinsic_call("check", vec![value, t, Expr::str(what)]))),
+            _ => self.emit(StmtKind::Expr(Expr::intrinsic_call(
+                "check",
+                vec![value, t, Expr::str(what)],
+            ))),
         }
     }
 
@@ -702,7 +827,9 @@ impl Lowerer<'_> {
         }
         let decl = self.res.binding(id).map(|b| b.decl)?;
         match (decl, self.res.declared_as(id)?) {
-            (DeclKind::Struct | DeclKind::Import, DeclKind::Struct) => Some(Inline::Struct(Expr::Local(self.local_of(id)))),
+            (DeclKind::Struct | DeclKind::Import, DeclKind::Struct) => {
+                Some(Inline::Struct(Expr::Local(self.local_of(id))))
+            }
             (DeclKind::Enum, DeclKind::Enum) => Some(Inline::Enum(Expr::Local(self.local_of(id)))),
             _ => None,
         }
@@ -715,26 +842,46 @@ impl Lowerer<'_> {
     /// the alias does not name a struct. A struct reached through an
     /// `import … as` table or a module is not known here; the runtime
     /// checks it, as for a literal written with that path.
-    pub(crate) fn alias_literal_target(&mut self, path: &SyntaxNode) -> Option<Result<Expr, String>> {
+    pub(crate) fn alias_literal_target(
+        &mut self,
+        path: &SyntaxNode,
+    ) -> Option<Result<Expr, String>> {
         if path.kind() != NAME_REF {
             return None;
         }
-        let Some(Ref::Binding(first)) = self.res.reference(path.text_range()).cloned() else { return None };
+        let Some(Ref::Binding(first)) = self.res.reference(path.text_range()).cloned() else {
+            return None;
+        };
         if self.res.binding(first).map(|b| b.decl) != Some(DeclKind::TypeAlias) {
             return None;
         }
-        let alias = self.res.binding(first).map(|b| b.name.clone()).unwrap_or_default();
+        let alias = self
+            .res
+            .binding(first)
+            .map(|b| b.name.clone())
+            .unwrap_or_default();
         let mut id = first;
         for _ in 0..=self.aliases.len() {
-            let Some(mut ty) = self.aliases.get(&id).cloned() else { break };
+            let Some(mut ty) = self.aliases.get(&id).cloned() else {
+                break;
+            };
             while ty.kind() == PAREN_TYPE {
                 match type_child(&ty) {
                     Some(t) => ty = t,
                     None => break,
                 }
             }
-            let not_struct = || Err(format!("`{alias}` is an alias of `{}`, which is not a struct, so `{alias} {{ … }}` cannot construct it", ty.text().to_string().trim()));
-            let Some(q) = child(&ty, QUAL_NAME).filter(|_| ty.kind() == NAMED_TYPE && !has_token(&ty, SELF_TYPE_KW)) else { return Some(not_struct()) };
+            let not_struct = || {
+                Err(format!(
+                    "`{alias}` is an alias of `{}`, which is not a struct, so `{alias} {{ … }}` cannot construct it",
+                    ty.text().to_string().trim()
+                ))
+            };
+            let Some(q) = child(&ty, QUAL_NAME)
+                .filter(|_| ty.kind() == NAMED_TYPE && !has_token(&ty, SELF_TYPE_KW))
+            else {
+                return Some(not_struct());
+            };
             let segs = qual_segments(&q).len();
             match self.res.type_ref(q.text_range()).cloned() {
                 Some(Ref::Prelude(p)) if segs == 1 && p.class == nl_sema::PreludeClass::Struct => {
@@ -744,7 +891,9 @@ impl Lowerer<'_> {
                     let is_alias = self.res.binding(b).map(|x| x.decl) == Some(DeclKind::TypeAlias);
                     match self.res.declared_as(b) {
                         _ if segs == 1 && is_alias => id = b,
-                        Some(DeclKind::Struct) if segs == 1 => return Some(Ok(Expr::Local(self.local_of(b)))),
+                        Some(DeclKind::Struct) if segs == 1 => {
+                            return Some(Ok(Expr::Local(self.local_of(b))));
+                        }
                         Some(DeclKind::Import | DeclKind::Module) if segs > 1 => {
                             return Some(Ok(self.type_value(&ty).unwrap_or(Expr::Nil)));
                         }
@@ -760,7 +909,9 @@ impl Lowerer<'_> {
 
     /// `x is T`.
     pub(crate) fn is_expr(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(value) = expr_child(node) else { return self.internal(node, "is") };
+        let Some(value) = expr_child(node) else {
+            return self.internal(node, "is");
+        };
         let v = self.expr1(&value);
         match type_child(node).and_then(|t| self.type_value(&t)) {
             Some(t) => Expr::intrinsic_call("isa", vec![v, t]),
@@ -770,7 +921,9 @@ impl Lowerer<'_> {
 
     /// `x as T`.
     pub(crate) fn as_expr(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(value) = expr_child(node) else { return self.internal(node, "as") };
+        let Some(value) = expr_child(node) else {
+            return self.internal(node, "as");
+        };
         let v = self.expr1(&value);
         // The value is a `T` already by its declared type: `rt.as` would
         // return it unchanged.
@@ -815,17 +968,29 @@ impl Lowerer<'_> {
     /// The condition under which `v` (read more than once) fails `test`.
     pub(crate) fn inline_fails(&mut self, test: &Inline, v: &Expr) -> Expr {
         match test {
-            Inline::LuaType(name) => Expr::binary(BinOp::Ne, Expr::call(self.rt_cached("type"), vec![v.clone()]), Expr::str(name)),
+            Inline::LuaType(name) => Expr::binary(
+                BinOp::Ne,
+                Expr::call(self.rt_cached("type"), vec![v.clone()]),
+                Expr::str(name),
+            ),
             Inline::Nil => Expr::binary(BinOp::Ne, v.clone(), Expr::Nil),
             Inline::Struct(s) => Expr::binary(
                 BinOp::Or,
-                Expr::binary(BinOp::Ne, Expr::call(self.rt_cached("getmetatable"), vec![v.clone()]), s.clone()),
+                Expr::binary(
+                    BinOp::Ne,
+                    Expr::call(self.rt_cached("getmetatable"), vec![v.clone()]),
+                    s.clone(),
+                ),
                 Expr::binary(BinOp::Eq, s.clone(), Expr::Nil),
             ),
             Inline::Enum(e) => Expr::binary(
                 BinOp::Or,
                 Expr::binary(BinOp::Eq, e.clone(), Expr::Nil),
-                Expr::binary(BinOp::Eq, Expr::call(Expr::index(e.clone(), Expr::str("name")), vec![v.clone()]), Expr::Nil),
+                Expr::binary(
+                    BinOp::Eq,
+                    Expr::call(Expr::index(e.clone(), Expr::str("name")), vec![v.clone()]),
+                    Expr::Nil,
+                ),
             ),
             Inline::Any(parts) => {
                 let mut acc: Option<Expr> = None;
@@ -851,7 +1016,10 @@ impl Lowerer<'_> {
             | (Inline::LuaType("boolean"), Expr::Bool(_))
             | (Inline::Nil, Expr::Nil) => true,
             (Inline::Struct(Expr::Local(s)), Expr::Paren(inner)) => match inner.as_ref() {
-                Expr::Call(f, args) => self.is_rt_cached(f, "setmetatable") && matches!(args.as_slice(), [_, Expr::Local(m)] if m == s),
+                Expr::Call(f, args) => {
+                    self.is_rt_cached(f, "setmetatable")
+                        && matches!(args.as_slice(), [_, Expr::Local(m)] if m == s)
+                }
                 _ => false,
             },
             (Inline::Any(parts), _) => parts.iter().any(|p| self.accepts_statically(p, v)),
@@ -880,7 +1048,6 @@ impl Inline {
             Inline::Any(parts) => parts.iter().all(Inline::excludes_nil),
         }
     }
-
 }
 
 /// The inline test of a descriptor of `rt.T`, by its key.
@@ -911,5 +1078,7 @@ fn is_combination(e: &Expr) -> bool {
 /// table every time). A path of fields is read at every test, so that a
 /// class table the file's Lua replaces is seen.
 fn keeps_class(root: &nl_sema::LuaRoot) -> bool {
-    root.steps.iter().any(|s| matches!(s, nl_sema::LuaStep::Call(_)))
+    root.steps
+        .iter()
+        .any(|s| matches!(s, nl_sema::LuaStep::Call(_)))
 }

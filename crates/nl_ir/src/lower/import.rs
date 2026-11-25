@@ -54,7 +54,10 @@ impl Lowerer<'_> {
                 return;
             };
             if !whole {
-                let text = self.res.binding(id).map_or_else(|| name_text(n).unwrap_or_default(), |b| b.name.clone());
+                let text = self
+                    .res
+                    .binding(id)
+                    .map_or_else(|| name_text(n).unwrap_or_default(), |b| b.name.clone());
                 args.push(Expr::str(&text));
             }
             ids.push(id);
@@ -69,14 +72,26 @@ impl Lowerer<'_> {
 
         // Hoisting declares every name of a block or none of them.
         if ids.iter().all(|id| self.is_predeclared(*id)) {
-            let targets = ids.iter().map(|id| Place::Local(self.local_of(*id))).collect();
-            self.emit(StmtKind::Assign { targets, values: vec![call] });
+            let targets = ids
+                .iter()
+                .map(|id| Place::Local(self.local_of(*id)))
+                .collect();
+            self.emit(StmtKind::Assign {
+                targets,
+                values: vec![call],
+            });
         } else if ids.iter().all(|id| !self.is_predeclared(*id)) {
             let locals = ids.iter().map(|id| self.local_of(*id)).collect();
-            self.emit(StmtKind::Local { locals, values: vec![call] });
+            self.emit(StmtKind::Local {
+                locals,
+                values: vec![call],
+            });
         } else {
             let temps: Vec<LocalId> = ids.iter().map(|_| self.new_local("import")).collect();
-            self.emit(StmtKind::Local { locals: temps.clone(), values: vec![call] });
+            self.emit(StmtKind::Local {
+                locals: temps.clone(),
+                values: vec![call],
+            });
             for (id, t) in ids.iter().zip(temps) {
                 self.define(*id, Some(Expr::Local(t)));
             }
@@ -87,7 +102,11 @@ impl Lowerer<'_> {
     /// names and kinds are the resolver's (`Resolution::exports`), the same
     /// list the driver hands to the files that import this one.
     pub(crate) fn emit_exports(&mut self) {
-        let exports: Vec<(BindingId, String, DeclKind)> = self.res.export_bindings().map(|(id, e)| (id, e.name.clone(), e.decl)).collect();
+        let exports: Vec<(BindingId, String, DeclKind)> = self
+            .res
+            .export_bindings()
+            .map(|(id, e)| (id, e.name.clone(), e.decl))
+            .collect();
         let mut entries = Vec::new();
         for (id, name, decl) in exports {
             let value = if decl == DeclKind::TypeAlias {

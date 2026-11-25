@@ -14,18 +14,28 @@
 //!
 //! A file with syntax errors (`tests/syntax/err/`) must be refused.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::{Path, PathBuf};
 
-use nl_syntax::{DumpOptions, FormatOptions, Formatted, Parse, SyntaxKind, decode_string, dump_tree, format, format_decl, parse, parse_decl_file};
+use nl_syntax::{
+    DumpOptions, FormatOptions, Formatted, Parse, SyntaxKind, decode_string, dump_tree, format,
+    format_decl, parse, parse_decl_file,
+};
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
 fn files_with_ext(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
-    let Ok(read) = std::fs::read_dir(dir) else { return };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut entries: Vec<PathBuf> = read.map(|e| e.unwrap().path()).collect();
     entries.sort();
     for path in entries {
@@ -40,7 +50,12 @@ fn files_with_ext(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
 fn corpus() -> Vec<PathBuf> {
     let root = repo_root();
     let mut files = Vec::new();
-    for dir in ["tests/run", "tests/syntax", "crates/nlc/tests/cases", "decl"] {
+    for dir in [
+        "tests/run",
+        "tests/syntax",
+        "crates/nlc/tests/cases",
+        "decl",
+    ] {
         files_with_ext(&root.join(dir), "nl", &mut files);
     }
     files.push(root.join("example.nl"));
@@ -52,13 +67,26 @@ fn is_decl(path: &Path) -> bool {
 }
 
 fn parse_any(decl: bool, src: &str) -> Parse {
-    if decl { parse_decl_file(src) } else { parse(src) }
+    if decl {
+        parse_decl_file(src)
+    } else {
+        parse(src)
+    }
 }
 
 fn format_any(decl: bool, src: &str, fix: bool) -> Result<Formatted, String> {
     let options = FormatOptions { fix };
-    let r = if decl { format_decl(src, options) } else { format(src, options) };
-    r.map_err(|d| d.iter().map(|d| d.message.clone()).collect::<Vec<_>>().join("; "))
+    let r = if decl {
+        format_decl(src, options)
+    } else {
+        format(src, options)
+    };
+    r.map_err(|d| {
+        d.iter()
+            .map(|d| d.message.clone())
+            .collect::<Vec<_>>()
+            .join("; ")
+    })
 }
 
 /// A tree dump without its byte offsets.
@@ -106,8 +134,12 @@ fn shape_with_values(p: &Parse) -> (String, Vec<Vec<Vec<u8>>>) {
         .descendants()
         .filter(|n| matches!(n.kind(), SyntaxKind::LITERAL | SyntaxKind::INTERP_STRING))
         .filter_map(|n| {
-            let parts: Vec<String> =
-                n.children_with_tokens().filter_map(|e| e.into_token()).filter(|t| t.kind().is_string_part()).map(|t| t.text().to_string()).collect();
+            let parts: Vec<String> = n
+                .children_with_tokens()
+                .filter_map(|e| e.into_token())
+                .filter(|t| t.kind().is_string_part())
+                .map(|t| t.text().to_string())
+                .collect();
             if parts.is_empty() {
                 return None;
             }
@@ -124,13 +156,20 @@ fn messages(p: &Parse) -> Vec<String> {
 
 fn rel(path: &Path) -> String {
     let root = repo_root().canonicalize().unwrap();
-    path.canonicalize().ok().and_then(|p| p.strip_prefix(&root).ok().map(|p| p.display().to_string())).unwrap_or_else(|| path.display().to_string())
+    path.canonicalize()
+        .ok()
+        .and_then(|p| p.strip_prefix(&root).ok().map(|p| p.display().to_string()))
+        .unwrap_or_else(|| path.display().to_string())
 }
 
 #[test]
 fn formatter_invariants_on_every_corpus_file() {
     let files = corpus();
-    assert!(files.len() > 400, "expected the whole corpus, found {} files", files.len());
+    assert!(
+        files.len() > 400,
+        "expected the whole corpus, found {} files",
+        files.len()
+    );
     let mut problems = Vec::new();
     let mut formatted = 0usize;
     let mut refused = 0usize;
@@ -167,24 +206,51 @@ fn formatter_invariants_on_every_corpus_file() {
                     problems.push(format!("{name}{mode}: the tree or a string value changed"));
                 }
             } else if shape(&first) != shape(&second) {
-                problems.push(format!("{name}{mode}: the tree changed:\n{}", first_difference(&shape(&first), &shape(&second))));
+                problems.push(format!(
+                    "{name}{mode}: the tree changed:\n{}",
+                    first_difference(&shape(&first), &shape(&second))
+                ));
             }
             if messages(&first) != messages(&second) {
-                problems.push(format!("{name}{mode}: the diagnostics changed: {:?} -> {:?}", messages(&first), messages(&second)));
+                problems.push(format!(
+                    "{name}{mode}: the diagnostics changed: {:?} -> {:?}",
+                    messages(&first),
+                    messages(&second)
+                ));
             }
             match format_any(decl, &out.text, fix) {
                 Ok(again) if again.text == out.text => {}
-                Ok(again) => problems.push(format!("{name}{mode}: not idempotent:\n{}", first_difference(&out.text, &again.text))),
-                Err(e) => problems.push(format!("{name}{mode}: the formatted text is refused: {e}")),
+                Ok(again) => problems.push(format!(
+                    "{name}{mode}: not idempotent:\n{}",
+                    first_difference(&out.text, &again.text)
+                )),
+                Err(e) => {
+                    problems.push(format!("{name}{mode}: the formatted text is refused: {e}"))
+                }
             }
-            if fix && out.continued.iter().any(|c| !c.fixed && !c.in_interpolation) {
-                problems.push(format!("{name}{mode}: a continued string outside an interpolation was not fixed"));
+            if fix
+                && out
+                    .continued
+                    .iter()
+                    .any(|c| !c.fixed && !c.in_interpolation)
+            {
+                problems.push(format!(
+                    "{name}{mode}: a continued string outside an interpolation was not fixed"
+                ));
             }
         }
     }
     assert!(formatted > 350, "only {formatted} files formatted");
-    assert!(refused > 100, "only {refused} files refused (tests/syntax/err)");
-    assert!(problems.is_empty(), "{} problem(s):\n{}", problems.len(), problems.join("\n"));
+    assert!(
+        refused > 100,
+        "only {refused} files refused (tests/syntax/err)"
+    );
+    assert!(
+        problems.is_empty(),
+        "{} problem(s):\n{}",
+        problems.len(),
+        problems.join("\n")
+    );
 }
 
 /// The first differing line of two texts, for a message.
@@ -194,7 +260,12 @@ fn first_difference(a: &str, b: &str) -> String {
     for i in 0..al.len().max(bl.len()) {
         let (x, y) = (al.get(i).copied(), bl.get(i).copied());
         if x != y {
-            return format!("line {}: {:?} vs {:?}", i + 1, x.unwrap_or("<end>"), y.unwrap_or("<end>"));
+            return format!(
+                "line {}: {:?} vs {:?}",
+                i + 1,
+                x.unwrap_or("<end>"),
+                y.unwrap_or("<end>")
+            );
         }
     }
     "no line differs".to_string()

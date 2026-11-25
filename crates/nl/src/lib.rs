@@ -30,7 +30,8 @@ use std::path::Path;
 use std::time::Duration;
 
 use mlua::{
-    AnyUserData, FromLuaMulti, Function, IntoLuaMulti, Lua, MaybeSend, MaybeSync, Result, Table, UserData, Value,
+    AnyUserData, FromLuaMulti, Function, IntoLuaMulti, Lua, MaybeSend, MaybeSync, Result, Table,
+    UserData, Value,
 };
 
 mod exception;
@@ -59,11 +60,14 @@ pub use worker::WorkerInit;
 /// everything this crate adds.
 pub mod prelude {
     pub use crate::{
-        Diagnostic, Exception, Loader, Localize, NlErrorExt, NlExt, NlFunctionExt, NlObjectExt, NlOption, NlOptionKind,
-        Range, Remote, Resolver, Severity, Task, TaskState, Transfer, Type, Wake, WorkerInit,
+        Diagnostic, Exception, Loader, Localize, NlErrorExt, NlExt, NlFunctionExt, NlObjectExt,
+        NlOption, NlOptionKind, Range, Remote, Resolver, Severity, Task, TaskState, Transfer, Type,
+        Wake, WorkerInit,
     };
     pub use mlua::prelude::*;
-    pub use mlua::{AnyUserData, Function, MultiValue, Table, UserData, UserDataFields, UserDataMethods, Value};
+    pub use mlua::{
+        AnyUserData, Function, MultiValue, Table, UserData, UserDataFields, UserDataMethods, Value,
+    };
 }
 
 /// What NL adds to `mlua::Lua`. The methods need a
@@ -268,7 +272,9 @@ impl NlExt for Lua {
 
     fn set_loader(&self, loader: impl Loader) -> Result<()> {
         if self.is_worker() {
-            return Err(mlua::Error::runtime("set_loader has no effect in a worker: it uses the main state's loader"));
+            return Err(mlua::Error::runtime(
+                "set_loader has no effect in a worker: it uses the main state's loader",
+            ));
         }
         state::unless_frozen(self, "set_loader")?;
         state::set_loader(self, Box::new(loader))
@@ -382,7 +388,10 @@ impl NlExt for Lua {
 
     #[cfg(feature = "send")]
     #[allow(unsafe_code)] // The caller keeps the contract of the trait method.
-    unsafe fn set_worker_init(&self, f: impl Fn(&WorkerInit) -> Result<()> + Send + Sync + 'static) {
+    unsafe fn set_worker_init(
+        &self,
+        f: impl Fn(&WorkerInit) -> Result<()> + Send + Sync + 'static,
+    ) {
         let _ = state::set_worker_init(self, Box::new(f));
     }
 

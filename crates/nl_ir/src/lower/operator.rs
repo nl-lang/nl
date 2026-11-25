@@ -38,7 +38,9 @@ use SyntaxKind::*;
 impl Lowerer<'_> {
     pub(crate) fn prefix(&mut self, node: &SyntaxNode) -> Expr {
         let op = first_token(node).map(|t| t.kind());
-        let Some(operand) = expr_child(node) else { return self.internal(node, "prefix operator") };
+        let Some(operand) = expr_child(node) else {
+            return self.internal(node, "prefix operator");
+        };
         // `-5` is a constant.
         if op == Some(MINUS) && operand.kind() == LITERAL {
             if let Some(t) = first_token(&operand).filter(|t| t.kind() == NUMBER) {
@@ -51,16 +53,22 @@ impl Lowerer<'_> {
             Some(BANG | NOT_KW) => Expr::lnot(v),
             // A proven number: `bit.bnot` as the runtime holds
             // it, `BNOT` at level 1 (nl_codegen).
-            Some(TILDE) if self.opts.hints.is_direct_op(node.text_range()) => Expr::intrinsic_call("nbnot", vec![v]),
+            Some(TILDE) if self.opts.hints.is_direct_op(node.text_range()) => {
+                Expr::intrinsic_call("nbnot", vec![v])
+            }
             Some(TILDE) => Expr::intrinsic_call("bnot", vec![v]),
             _ => self.internal(node, "prefix operator"),
         }
     }
 
     pub(crate) fn binary(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(op) = bin_op(node).map(|t| t.kind()) else { return self.internal(node, "binary operator") };
+        let Some(op) = bin_op(node).map(|t| t.kind()) else {
+            return self.internal(node, "binary operator");
+        };
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else { return self.internal(node, "binary operands") };
+        let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else {
+            return self.internal(node, "binary operands");
+        };
         if matches!(op, AND_KW | AMP2 | OR_KW | PIPE2) {
             return self.logical(op, a, b);
         }
@@ -69,14 +77,22 @@ impl Lowerer<'_> {
         }
         let ops = self.operands(&parts);
         let mut it = ops.into_iter().map(single);
-        let (Some(x), Some(y)) = (it.next(), it.next()) else { return self.internal(node, "binary operands") };
+        let (Some(x), Some(y)) = (it.next(), it.next()) else {
+            return self.internal(node, "binary operands");
+        };
         let x = self.pin(x, &y);
         self.binary_op(node, op, x, y)
     }
 
     /// The operation of a binary operator token on two lowered operands.
     /// Shared with compound assignment.
-    pub(crate) fn binary_op(&mut self, node: &SyntaxNode, op: SyntaxKind, x: Expr, y: Expr) -> Expr {
+    pub(crate) fn binary_op(
+        &mut self,
+        node: &SyntaxNode,
+        op: SyntaxKind,
+        x: Expr,
+        y: Expr,
+    ) -> Expr {
         let lua = |op| Expr::binary(op, x.clone(), y.clone());
         // Two numbers, or two strings, by the analyzer: Lua's
         // own comparison, which is what the runtime helper does for them;
@@ -123,20 +139,20 @@ impl Lowerer<'_> {
             PERCENT | PERCENT_EQ => lua(BinOp::Mod),
             STAR2 | STAR2_EQ => lua(BinOp::Pow),
             CONCAT | CONCAT_EQ => lua(BinOp::Concat),
-            EQ2 | NEQ if is_primitive_literal(&x) || is_primitive_literal(&y) => lua(if op == EQ2 { BinOp::Eq } else { BinOp::Ne }),
+            EQ2 | NEQ if is_primitive_literal(&x) || is_primitive_literal(&y) => {
+                lua(if op == EQ2 { BinOp::Eq } else { BinOp::Ne })
+            }
             EQ2 => Expr::intrinsic_call("eq", vec![x, y]),
             NEQ => Expr::lnot(Expr::intrinsic_call("eq", vec![x, y])),
             // Two numbers or two strings compare as Lua compares them;
             // other constants may reach a primitive operator definition
             // (`fn Number.<`), so they go through the runtime.
-            LT | LT_EQ | GT | GT_EQ if same_primitive_constants(&x, &y) => {
-                lua(match op {
-                    LT => BinOp::Lt,
-                    LT_EQ => BinOp::Le,
-                    GT => BinOp::Gt,
-                    _ => BinOp::Ge,
-                })
-            }
+            LT | LT_EQ | GT | GT_EQ if same_primitive_constants(&x, &y) => lua(match op {
+                LT => BinOp::Lt,
+                LT_EQ => BinOp::Le,
+                GT => BinOp::Gt,
+                _ => BinOp::Ge,
+            }),
             LT => Expr::intrinsic_call("lt", vec![x, y]),
             LT_EQ => Expr::intrinsic_call("le", vec![x, y]),
             GT => Expr::intrinsic_call("gt", vec![x, y]),
@@ -164,9 +180,22 @@ impl Lowerer<'_> {
     /// bench/floordiv.nl with declared types) and costs about 3% in the
     /// JIT.
     fn floor_div(&mut self, x: Expr, y: Expr) -> Expr {
-        let q = self.fresh_temp(Expr::intrinsic_call("nfloor", vec![Expr::binary(BinOp::Div, x, y)]), "q");
-        let zero = Stmt { line: self.line, kind: StmtKind::Assign { targets: vec![Place::Local(q)], values: vec![Expr::Number(0.0)] } };
-        self.emit(StmtKind::If { cond: Expr::binary(BinOp::Eq, Expr::Local(q), Expr::Number(0.0)), then: Block::new(vec![zero]), otherwise: None });
+        let q = self.fresh_temp(
+            Expr::intrinsic_call("nfloor", vec![Expr::binary(BinOp::Div, x, y)]),
+            "q",
+        );
+        let zero = Stmt {
+            line: self.line,
+            kind: StmtKind::Assign {
+                targets: vec![Place::Local(q)],
+                values: vec![Expr::Number(0.0)],
+            },
+        };
+        self.emit(StmtKind::If {
+            cond: Expr::binary(BinOp::Eq, Expr::Local(q), Expr::Number(0.0)),
+            then: Block::new(vec![zero]),
+            otherwise: None,
+        });
         Expr::Local(q)
     }
 
@@ -181,19 +210,39 @@ impl Lowerer<'_> {
         }
         let t = self.fresh_temp(x, "c");
         let mut body = stmts;
-        body.push(Stmt { line: self.line, kind: StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![y] } });
-        let cond = if is_and { Expr::Local(t) } else { Expr::lnot(Expr::Local(t)) };
-        self.emit(StmtKind::If { cond, then: Block::new(body), otherwise: None });
+        body.push(Stmt {
+            line: self.line,
+            kind: StmtKind::Assign {
+                targets: vec![Place::Local(t)],
+                values: vec![y],
+            },
+        });
+        let cond = if is_and {
+            Expr::Local(t)
+        } else {
+            Expr::lnot(Expr::Local(t))
+        };
+        self.emit(StmtKind::If {
+            cond,
+            then: Block::new(body),
+            otherwise: None,
+        });
         Expr::Local(t)
     }
 }
 
 /// A literal number, string, boolean or `nil`.
 fn is_primitive_literal(e: &Expr) -> bool {
-    matches!(e, Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_))
+    matches!(
+        e,
+        Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_)
+    )
 }
 
 /// Two number constants or two string constants.
 fn same_primitive_constants(x: &Expr, y: &Expr) -> bool {
-    matches!((x, y), (Expr::Number(_), Expr::Number(_)) | (Expr::Str(_), Expr::Str(_)))
+    matches!(
+        (x, y),
+        (Expr::Number(_), Expr::Number(_)) | (Expr::Str(_), Expr::Str(_))
+    )
 }

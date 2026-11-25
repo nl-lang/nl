@@ -32,7 +32,9 @@ impl Token {
     /// The token's text in `source` (the source it was lexed from); empty if
     /// the range does not fit `source`.
     pub fn text<'a>(&self, source: &'a str) -> &'a str {
-        source.get(std::ops::Range::<usize>::from(self.range)).unwrap_or("")
+        source
+            .get(std::ops::Range::<usize>::from(self.range))
+            .unwrap_or("")
     }
 
     /// The length in bytes.
@@ -89,7 +91,11 @@ impl<'a> Lexed<'a> {
     /// This is the token stream the parser reads; trivia between two of
     /// these indices goes into the tree before the second one.
     pub fn significant(&self) -> impl Iterator<Item = usize> + '_ {
-        self.tokens.iter().enumerate().filter(|(_, t)| !t.kind.is_trivia()).map(|(i, _)| i)
+        self.tokens
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| !t.kind.is_trivia())
+            .map(|(i, _)| i)
     }
 }
 
@@ -102,7 +108,10 @@ impl<'a> Lexed<'a> {
 pub fn source_from_bytes(bytes: &[u8]) -> Result<&str, Diagnostic> {
     std::str::from_utf8(bytes).map_err(|e| {
         let start = e.valid_up_to();
-        let len = e.error_len().unwrap_or(bytes.len().saturating_sub(start)).max(1);
+        let len = e
+            .error_len()
+            .unwrap_or(bytes.len().saturating_sub(start))
+            .max(1);
         Diagnostic::error(
             make_range(start, start.saturating_add(len)),
             format!(
@@ -142,7 +151,11 @@ pub fn lex(source: &str) -> Lexed<'_> {
         prev2: None,
     };
     lexer.run();
-    Lexed { source, tokens: lexer.tokens, diagnostics: lexer.diags }
+    Lexed {
+        source,
+        tokens: lexer.tokens,
+        diagnostics: lexer.diags,
+    }
 }
 
 fn size(n: usize) -> TextSize {
@@ -299,7 +312,8 @@ impl Lexer<'_> {
     }
 
     fn error(&mut self, a: usize, b: usize, message: impl Into<String>) {
-        self.diags.push(Diagnostic::error(make_range(a, b), message));
+        self.diags
+            .push(Diagnostic::error(make_range(a, b), message));
     }
 
     fn push(&mut self, kind: SyntaxKind, start: usize, end: usize) {
@@ -319,7 +333,12 @@ impl Lexer<'_> {
             self.prev = Some(kind);
             flags
         };
-        self.tokens.push(Token { kind, range: make_range(start, end), nl_before, sp_before });
+        self.tokens.push(Token {
+            kind,
+            range: make_range(start, end),
+            nl_before,
+            sp_before,
+        });
     }
 
     fn run(&mut self) {
@@ -366,7 +385,11 @@ impl Lexer<'_> {
             b'#' => {
                 // Exactly two `#` start a doc comment; `###`
                 // and longer runs are plain comments, as `////` is in Rust.
-                let kind = if self.peek(1) == Some(b'#') && self.peek(2) != Some(b'#') { DOC_COMMENT } else { COMMENT };
+                let kind = if self.peek(1) == Some(b'#') && self.peek(2) != Some(b'#') {
+                    DOC_COMMENT
+                } else {
+                    COMMENT
+                };
                 while self.cur().is_some_and(|b| !is_line_break(b)) {
                     self.pos += 1;
                 }
@@ -426,8 +449,9 @@ impl Lexer<'_> {
             b'!' => self.bang(),
             _ => {
                 let rest = self.b.get(start..).unwrap_or(&[]);
-                if let Some(&(op, kind)) =
-                    OPERATORS.iter().find(|(op, _)| rest.starts_with(op.as_bytes()))
+                if let Some(&(op, kind)) = OPERATORS
+                    .iter()
+                    .find(|(op, _)| rest.starts_with(op.as_bytes()))
                 {
                     self.pos += op.len();
                     self.push(kind, start, self.pos);
@@ -451,17 +475,29 @@ impl Lexer<'_> {
         let postfix = touches
             && self.prev.is_some_and(|k| {
                 k.is_name()
-                    || matches!(k, SyntaxKind::AT_NAME | SyntaxKind::R_PAREN | SyntaxKind::R_BRACK)
-                    || (k.is_keyword() && matches!(self.prev2, Some(SyntaxKind::DOT | SyntaxKind::QUESTION_DOT)))
+                    || matches!(
+                        k,
+                        SyntaxKind::AT_NAME | SyntaxKind::R_PAREN | SyntaxKind::R_BRACK
+                    )
+                    || (k.is_keyword()
+                        && matches!(self.prev2, Some(SyntaxKind::DOT | SyntaxKind::QUESTION_DOT)))
             });
-        let kind = if postfix { SyntaxKind::BANG_POSTFIX } else { SyntaxKind::BANG };
+        let kind = if postfix {
+            SyntaxKind::BANG_POSTFIX
+        } else {
+            SyntaxKind::BANG
+        };
         self.push(kind, start, self.pos);
     }
 
     /// A run of characters that start no token.
     fn stray(&mut self) {
         let start = self.pos;
-        let first = self.src.get(start..).and_then(|s| s.chars().next()).unwrap_or('\u{FFFD}');
+        let first = self
+            .src
+            .get(start..)
+            .and_then(|s| s.chars().next())
+            .unwrap_or('\u{FFFD}');
         loop {
             self.pos += self.char_len(self.pos).max(1);
             let Some(next) = self.src.get(self.pos..).and_then(|s| s.chars().next()) else {
@@ -623,7 +659,13 @@ impl Lexer<'_> {
                     let open = self.pos;
                     self.pos += 2;
                     self.push(if first { STR_BEGIN } else { STR_MID }, tok_start, self.pos);
-                    self.frames.push(Frame { heredoc: false, depth: 0, open, string_start, reported: false });
+                    self.frames.push(Frame {
+                        heredoc: false,
+                        depth: 0,
+                        open,
+                        string_start,
+                        reported: false,
+                    });
                     return;
                 }
                 Some(_) => self.pos += 1,
@@ -639,7 +681,11 @@ impl Lexer<'_> {
             match self.cur() {
                 None => {
                     self.push(SyntaxKind::STRING, start, self.pos);
-                    self.error(start, self.pos, "unterminated string: the file ends before the closing `'`");
+                    self.error(
+                        start,
+                        self.pos,
+                        "unterminated string: the file ends before the closing `'`",
+                    );
                     return;
                 }
                 Some(b'\'') => {
@@ -749,7 +795,10 @@ impl Lexer<'_> {
                     if is_line_break(b) {
                         break;
                     }
-                    if b == b'"' && self.at(line_end + 1) == Some(b'"') && self.at(line_end + 2) == Some(b'"') {
+                    if b == b'"'
+                        && self.at(line_end + 1) == Some(b'"')
+                        && self.at(line_end + 2) == Some(b'"')
+                    {
                         closer = Some(line_end);
                         break;
                     }
@@ -825,7 +874,13 @@ impl Lexer<'_> {
                     let open = self.pos;
                     self.pos += 2;
                     self.push(if first { STR_BEGIN } else { STR_MID }, tok_start, self.pos);
-                    self.frames.push(Frame { heredoc: true, depth: 0, open, string_start, reported: false });
+                    self.frames.push(Frame {
+                        heredoc: true,
+                        depth: 0,
+                        open,
+                        string_start,
+                        reported: false,
+                    });
                     return;
                 }
                 Some(_) => self.pos += 1,
@@ -846,8 +901,11 @@ impl Lexer<'_> {
         };
         if radix != 10 {
             self.pos += 2;
-            let is_digit: fn(u8) -> bool =
-                if radix == 16 { |b| b.is_ascii_hexdigit() } else { |b| b == b'0' || b == b'1' };
+            let is_digit: fn(u8) -> bool = if radix == 16 {
+                |b| b.is_ascii_hexdigit()
+            } else {
+                |b| b == b'0' || b == b'1'
+            };
             let digits = self.digit_run(is_digit, &mut bad_underscore);
             if digits == 0 {
                 let prefix = self.text(start, start + 2).to_string();
@@ -865,7 +923,9 @@ impl Lexer<'_> {
                 }
                 let text = snippet(self.text(start, self.pos));
                 let name = if radix == 16 { "hexadecimal" } else { "binary" };
-                message = Some(format!("`{text}` is not a number: a {name} number has no fraction"));
+                message = Some(format!(
+                    "`{text}` is not a number: a {name} number has no fraction"
+                ));
             }
         } else {
             self.digit_run(|b| b.is_ascii_digit(), &mut bad_underscore);
@@ -879,7 +939,10 @@ impl Lexer<'_> {
             }
             if matches!(self.cur(), Some(b'e' | b'E')) {
                 let sign = usize::from(matches!(self.peek(1), Some(b'+' | b'-')));
-                if self.peek(1 + sign).is_some_and(|b| b.is_ascii_digit() || b == b'_') {
+                if self
+                    .peek(1 + sign)
+                    .is_some_and(|b| b.is_ascii_digit() || b == b'_')
+                {
                     self.pos += 1 + sign;
                     self.digit_run(|b| b.is_ascii_digit(), &mut bad_underscore);
                 }
@@ -893,7 +956,10 @@ impl Lexer<'_> {
             let text = snippet(self.text(start, self.pos));
             let first = self.at(junk).unwrap_or(b'_');
             message = Some(if radix == 2 && first.is_ascii_digit() {
-                format!("`{text}` is not a number: `{}` is not a binary digit", char::from(first))
+                format!(
+                    "`{text}` is not a number: `{}` is not a binary digit",
+                    char::from(first)
+                )
             } else if radix == 10 && matches!(first, b'e' | b'E') {
                 format!("`{text}` is not a number: an exponent needs digits, as in `1e5` or `1e-3`")
             } else if message.is_some() {
@@ -965,7 +1031,9 @@ fn stray_message(c: char) -> String {
             "`{c}` is a typographic quotation mark; strings are written with a straight `\"` or `'`"
         ),
         '\u{2018}' | '\u{2019}' | '\u{201A}' => {
-            format!("`{c}` is a typographic quotation mark; raw strings are written with a straight `'`")
+            format!(
+                "`{c}` is a typographic quotation mark; raw strings are written with a straight `'`"
+            )
         }
         '\u{FEFF}' => {
             "a byte-order mark (U+FEFF) may only stand at the very start of the file".to_string()

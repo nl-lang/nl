@@ -30,26 +30,62 @@ const WAIT: Duration = Duration::from_secs(120);
 impl Client {
     fn start(root: Option<&Path>) -> Client {
         let (server, client) = Connection::memory();
-        let thread = std::thread::Builder::new().stack_size(crate::STACK_SIZE).spawn(move || crate::run(server)).unwrap();
-        let mut c = Client { conn: client, next: 1, pending: Vec::new(), thread: Some(thread) };
+        let thread = std::thread::Builder::new()
+            .stack_size(crate::STACK_SIZE)
+            .spawn(move || crate::run(server))
+            .unwrap();
+        let mut c = Client {
+            conn: client,
+            next: 1,
+            pending: Vec::new(),
+            thread: Some(thread),
+        };
         #[allow(deprecated)]
-        let params = InitializeParams { root_uri: root.and_then(path_to_uri), ..InitializeParams::default() };
+        let params = InitializeParams {
+            root_uri: root.and_then(path_to_uri),
+            ..InitializeParams::default()
+        };
         let result = c.request::<request::Initialize>(params).unwrap();
-        assert_eq!(result.capabilities.hover_provider, Some(HoverProviderCapability::Simple(true)));
+        assert_eq!(
+            result.capabilities.hover_provider,
+            Some(HoverProviderCapability::Simple(true))
+        );
         c.notify::<notification::Initialized>(InitializedParams {});
         c
     }
 
     fn notify<N: notification::Notification>(&self, params: N::Params) {
-        self.conn.sender.send(Message::Notification(Notification::new(N::METHOD.to_string(), params))).unwrap();
+        self.conn
+            .sender
+            .send(Message::Notification(Notification::new(
+                N::METHOD.to_string(),
+                params,
+            )))
+            .unwrap();
     }
 
-    fn raw_request(&mut self, method: &str, params: serde_json::Value) -> Result<serde_json::Value, ResponseError> {
+    fn raw_request(
+        &mut self,
+        method: &str,
+        params: serde_json::Value,
+    ) -> Result<serde_json::Value, ResponseError> {
         let id = RequestId::from(self.next);
         self.next += 1;
-        self.conn.sender.send(Message::Request(Request { id: id.clone(), method: method.to_string(), params })).unwrap();
+        self.conn
+            .sender
+            .send(Message::Request(Request {
+                id: id.clone(),
+                method: method.to_string(),
+                params,
+            }))
+            .unwrap();
         loop {
-            match self.conn.receiver.recv_timeout(WAIT).expect("the server answers") {
+            match self
+                .conn
+                .receiver
+                .recv_timeout(WAIT)
+                .expect("the server answers")
+            {
                 Message::Response(r) if r.id == id => return r.response_result,
                 Message::Response(r) => panic!("unexpected response {r:?}"),
                 Message::Notification(n) => self.pending.push(n),
@@ -58,7 +94,10 @@ impl Client {
         }
     }
 
-    fn request<R: request::Request>(&mut self, params: R::Params) -> Result<R::Result, ResponseError> {
+    fn request<R: request::Request>(
+        &mut self,
+        params: R::Params,
+    ) -> Result<R::Result, ResponseError> {
         let value = self.raw_request(R::METHOD, serde_json::to_value(params).unwrap())?;
         Ok(serde_json::from_value(value).unwrap())
     }
@@ -70,40 +109,64 @@ impl Client {
     }
 
     fn open_uri(&mut self, uri: Uri, text: &str) {
-        self.notify::<notification::DidOpenTextDocument>(DidOpenTextDocumentParams { text_document: TextDocumentItem::new(uri, "nl".to_string(), 1, text.to_string()) });
+        self.notify::<notification::DidOpenTextDocument>(DidOpenTextDocumentParams {
+            text_document: TextDocumentItem::new(uri, "nl".to_string(), 1, text.to_string()),
+        });
     }
 
     fn close(&self, uri: &Uri) {
-        self.notify::<notification::DidCloseTextDocument>(DidCloseTextDocumentParams { text_document: TextDocumentIdentifier::new(uri.clone()) });
+        self.notify::<notification::DidCloseTextDocument>(DidCloseTextDocumentParams {
+            text_document: TextDocumentIdentifier::new(uri.clone()),
+        });
     }
 
     /// True when a `publishDiagnostics` for `uri` is waiting unread.
     fn pending_for(&self, uri: &Uri) -> bool {
-        self.pending.iter().any(|n| n.method == notification::PublishDiagnostics::METHOD && serde_json::from_value::<PublishDiagnosticsParams>(n.params.clone()).is_ok_and(|p| &p.uri == uri))
+        self.pending.iter().any(|n| {
+            n.method == notification::PublishDiagnostics::METHOD
+                && serde_json::from_value::<PublishDiagnosticsParams>(n.params.clone())
+                    .is_ok_and(|p| &p.uri == uri)
+        })
     }
 
     fn change(&self, uri: &Uri, text: &str) {
         self.notify::<notification::DidChangeTextDocument>(DidChangeTextDocumentParams {
             text_document: VersionedTextDocumentIdentifier::new(uri.clone(), 2),
-            content_changes: vec![TextDocumentContentChangeEvent { range: None, range_length: None, text: text.to_string() }],
+            content_changes: vec![TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: text.to_string(),
+            }],
         });
     }
 
     fn save(&self, uri: &Uri) {
-        self.notify::<notification::DidSaveTextDocument>(DidSaveTextDocumentParams { text_document: TextDocumentIdentifier::new(uri.clone()), text: None });
+        self.notify::<notification::DidSaveTextDocument>(DidSaveTextDocumentParams {
+            text_document: TextDocumentIdentifier::new(uri.clone()),
+            text: None,
+        });
     }
 
     /// The next `publishDiagnostics` for `uri`.
     fn diagnostics(&mut self, uri: &Uri) -> Vec<Diagnostic> {
         loop {
             let found = self.pending.iter().position(|n| {
-                n.method == notification::PublishDiagnostics::METHOD && serde_json::from_value::<PublishDiagnosticsParams>(n.params.clone()).is_ok_and(|p| &p.uri == uri)
+                n.method == notification::PublishDiagnostics::METHOD
+                    && serde_json::from_value::<PublishDiagnosticsParams>(n.params.clone())
+                        .is_ok_and(|p| &p.uri == uri)
             });
             if let Some(i) = found {
                 let n = self.pending.remove(i);
-                return serde_json::from_value::<PublishDiagnosticsParams>(n.params).unwrap().diagnostics;
+                return serde_json::from_value::<PublishDiagnosticsParams>(n.params)
+                    .unwrap()
+                    .diagnostics;
             }
-            match self.conn.receiver.recv_timeout(WAIT).expect("diagnostics are published") {
+            match self
+                .conn
+                .receiver
+                .recv_timeout(WAIT)
+                .expect("diagnostics are published")
+            {
                 Message::Notification(n) => self.pending.push(n),
                 other => panic!("unexpected message {other:?}"),
             }
@@ -111,14 +174,24 @@ impl Client {
     }
 
     fn position_params(uri: &Uri, pos: Position) -> TextDocumentPositionParams {
-        TextDocumentPositionParams { text_document: TextDocumentIdentifier::new(uri.clone()), position: pos }
+        TextDocumentPositionParams {
+            text_document: TextDocumentIdentifier::new(uri.clone()),
+            position: pos,
+        }
     }
 
     fn hover(&mut self, uri: &Uri, pos: Position) -> Result<Option<Hover>, ResponseError> {
-        self.request::<request::HoverRequest>(HoverParams { text_document_position_params: Self::position_params(uri, pos), work_done_progress_params: WorkDoneProgressParams::default() })
+        self.request::<request::HoverRequest>(HoverParams {
+            text_document_position_params: Self::position_params(uri, pos),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        })
     }
 
-    fn definition(&mut self, uri: &Uri, pos: Position) -> Result<Option<GotoDefinitionResponse>, ResponseError> {
+    fn definition(
+        &mut self,
+        uri: &Uri,
+        pos: Position,
+    ) -> Result<Option<GotoDefinitionResponse>, ResponseError> {
         self.request::<request::GotoDefinition>(GotoDefinitionParams {
             text_document_position_params: Self::position_params(uri, pos),
             work_done_progress_params: WorkDoneProgressParams::default(),
@@ -126,7 +199,11 @@ impl Client {
         })
     }
 
-    fn complete(&mut self, uri: &Uri, pos: Position) -> Result<Option<CompletionResponse>, ResponseError> {
+    fn complete(
+        &mut self,
+        uri: &Uri,
+        pos: Position,
+    ) -> Result<Option<CompletionResponse>, ResponseError> {
         self.request::<request::Completion>(CompletionParams {
             text_document_position: Self::position_params(uri, pos),
             work_done_progress_params: WorkDoneProgressParams::default(),
@@ -159,7 +236,9 @@ fn location(d: Option<GotoDefinitionResponse>) -> Location {
 
 fn labels(c: Option<CompletionResponse>) -> Vec<(String, Option<String>)> {
     match c.expect("a completion list") {
-        CompletionResponse::Array(items) => items.into_iter().map(|i| (i.label, i.detail)).collect(),
+        CompletionResponse::Array(items) => {
+            items.into_iter().map(|i| (i.label, i.detail)).collect()
+        }
         other => panic!("unexpected completion {other:?}"),
     }
 }
@@ -169,7 +248,9 @@ fn at(text: &str, needle: &str, nth: usize) -> Position {
     let mut offset = 0;
     let mut from = 0;
     for _ in 0..=nth {
-        let i = text[from..].find(needle).unwrap_or_else(|| panic!("{needle:?} occurrence {nth} not in text"));
+        let i = text[from..]
+            .find(needle)
+            .unwrap_or_else(|| panic!("{needle:?} occurrence {nth} not in text"));
         offset = from + i;
         from = offset + needle.len();
     }
@@ -179,17 +260,33 @@ fn at(text: &str, needle: &str, nth: usize) -> Position {
 /// The range of the `nth` occurrence of `needle`.
 fn range_of(text: &str, needle: &str, nth: usize) -> Range {
     let start = at(text, needle, nth);
-    Range { start, end: Position::new(start.line, start.character + needle.encode_utf16().count() as u32) }
+    Range {
+        start,
+        end: Position::new(
+            start.line,
+            start.character + needle.encode_utf16().count() as u32,
+        ),
+    }
 }
 
 /// The range of `word` inside the first occurrence of `context`.
 fn word(text: &str, context: &str, word: &str) -> Range {
-    let ctx = text.find(context).unwrap_or_else(|| panic!("{context:?} not in text"));
-    let inner = context.find(word).unwrap_or_else(|| panic!("{word:?} not in {context:?}"));
+    let ctx = text
+        .find(context)
+        .unwrap_or_else(|| panic!("{context:?} not in text"));
+    let inner = context
+        .find(word)
+        .unwrap_or_else(|| panic!("{word:?} not in {context:?}"));
     let offset = ctx + inner;
     let lines = LineMap::new(text);
     let start = lines.position(text, nl_syntax::TextSize::new(offset as u32));
-    Range { start, end: Position::new(start.line, start.character + word.encode_utf16().count() as u32) }
+    Range {
+        start,
+        end: Position::new(
+            start.line,
+            start.character + word.encode_utf16().count() as u32,
+        ),
+    }
 }
 
 fn temp_dir(name: &str) -> PathBuf {
@@ -211,7 +308,10 @@ fn diagnostics_on_open_change_save_and_through_imports() {
     let diags = c.diagnostics(&main);
     assert_eq!(diags.len(), 1, "{diags:?}");
     assert_eq!(diags[0].severity, Some(DiagnosticSeverity::ERROR));
-    assert_eq!(diags[0].code, Some(NumberOrString::String("undeclared-name".to_string())));
+    assert_eq!(
+        diags[0].code,
+        Some(NumberOrString::String("undeclared-name".to_string()))
+    );
     assert_eq!(diags[0].range, range_of(text, "unknown_name", 0));
 
     c.change(&main, "import { helper } from 'lib'\nprint helper\n");
@@ -221,7 +321,11 @@ fn diagnostics_on_open_change_save_and_through_imports() {
     let bad_uri = path_to_uri(&dir.join("bad.nl")).unwrap();
     let main2 = c.open(&dir.join("main2.nl"), "import { f } from 'bad'\nprint f\n");
     let own = c.diagnostics(&main2);
-    assert!(own.iter().any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))), "{own:?}");
+    assert!(
+        own.iter()
+            .any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))),
+        "{own:?}"
+    );
     let theirs = c.diagnostics(&bad_uri);
     assert_eq!(theirs.len(), 1, "{theirs:?}");
     assert_eq!(theirs[0].range.start, Position::new(3, 6));
@@ -232,7 +336,10 @@ fn diagnostics_on_open_change_save_and_through_imports() {
     assert!(c.diagnostics(&bad_uri).is_empty());
     c.change(&main2, "import { f } from 'bad'\nprint f\n");
     assert!(c.diagnostics(&main2).is_empty());
-    assert!(c.diagnostics(&bad_uri).is_empty(), "the stale diagnostics of bad.nl are cleared");
+    assert!(
+        c.diagnostics(&bad_uri).is_empty(),
+        "the stale diagnostics of bad.nl are cleared"
+    );
 
     // A save compiles every open document again.
     c.save(&bad_uri);
@@ -246,13 +353,28 @@ fn diagnostics_on_open_change_save_and_through_imports() {
     let decl_text = "declare module A = :a\n  fn f(x: Number): Number\nend\ndeclare module A = :b\nend\ndeclare fn g(\n";
     let decl = c.open(&dir.join("api.d.nl"), decl_text);
     let diags = c.diagnostics(&decl);
-    assert!(diags.iter().any(|d| d.code == Some(NumberOrString::String("syntax".to_string()))), "{diags:?}");
+    assert!(
+        diags
+            .iter()
+            .any(|d| d.code == Some(NumberOrString::String("syntax".to_string()))),
+        "{diags:?}"
+    );
     assert!(c.hover(&decl, at(decl_text, "f(x", 0)).unwrap().is_none());
-    assert!(c.definition(&decl, at(decl_text, "Number", 0)).unwrap().is_none());
-    c.change(&decl, "declare module A = :a\nend\ndeclare module A = :b\nend\n");
+    assert!(
+        c.definition(&decl, at(decl_text, "Number", 0))
+            .unwrap()
+            .is_none()
+    );
+    c.change(
+        &decl,
+        "declare module A = :a\nend\ndeclare module A = :b\nend\n",
+    );
     let diags = c.diagnostics(&decl);
     assert_eq!(diags.len(), 1, "{diags:?}");
-    assert_eq!(diags[0].code, Some(NumberOrString::String("decl-duplicate".to_string())));
+    assert_eq!(
+        diags[0].code,
+        Some(NumberOrString::String("decl-duplicate".to_string()))
+    );
     c.shutdown();
 }
 
@@ -309,37 +431,101 @@ fn definitions_in_one_file() {
     let dir = temp_dir("definitions");
     let mut c = Client::start(Some(&dir));
     let uri = c.open(&dir.join("one.nl"), ONE_FILE);
-    let def = |c: &mut Client, needle: &str, nth: usize| location(c.definition(&uri, at(ONE_FILE, needle, nth)).unwrap());
+    let def = |c: &mut Client, needle: &str, nth: usize| {
+        location(c.definition(&uri, at(ONE_FILE, needle, nth)).unwrap())
+    };
 
     let d = def(&mut c, "inc(2)", 0);
     assert_eq!(d.uri, uri);
     assert_eq!(d.range, word(ONE_FILE, "fn inc", "inc"));
-    assert_eq!(def(&mut c, "x\nfn Number", 0).range, word(ONE_FILE, "let x", "x"));
+    assert_eq!(
+        def(&mut c, "x\nfn Number", 0).range,
+        word(ONE_FILE, "let x", "x")
+    );
     // A method through a member, a field through a member, a variant.
-    assert_eq!(def(&mut c, "length\n", 0).range, word(ONE_FILE, "length(self)", "length"));
-    assert_eq!(def(&mut c, "p.x", 0).range, word(ONE_FILE, "let p", "p"), "the receiver");
+    assert_eq!(
+        def(&mut c, "length\n", 0).range,
+        word(ONE_FILE, "length(self)", "length")
+    );
+    assert_eq!(
+        def(&mut c, "p.x", 0).range,
+        word(ONE_FILE, "let p", "p"),
+        "the receiver"
+    );
     let px = at(ONE_FILE, "p.x", 0);
-    let field = location(c.definition(&uri, Position { character: px.character + 2, ..px }).unwrap());
+    let field = location(
+        c.definition(
+            &uri,
+            Position {
+                character: px.character + 2,
+                ..px
+            },
+        )
+        .unwrap(),
+    );
     assert_eq!(field.range, word(ONE_FILE, "x: Number", "x"));
-    assert_eq!(def(&mut c, "Easy\n  Hard", 0).range, word(ONE_FILE, "Easy\n  Hard", "Easy"));
+    assert_eq!(
+        def(&mut c, "Easy\n  Hard", 0).range,
+        word(ONE_FILE, "Easy\n  Hard", "Easy")
+    );
     let easy = at(ONE_FILE, "Mode.Easy", 0);
-    let variant = location(c.definition(&uri, Position { character: easy.character + 5, ..easy }).unwrap());
+    let variant = location(
+        c.definition(
+            &uri,
+            Position {
+                character: easy.character + 5,
+                ..easy
+            },
+        )
+        .unwrap(),
+    );
     assert_eq!(variant.range, word(ONE_FILE, "Easy\n  Hard", "Easy"));
     // `self` in a method is the hidden parameter: its range is the method.
     let s = location(c.definition(&uri, at(ONE_FILE, "self * 2", 0)).unwrap());
     assert_eq!(s.range.start, at(ONE_FILE, "fn Number.dbl", 0));
     // A primitive method through a member goes to its definition.
     let dbl = at(ONE_FILE, "3.dbl", 0);
-    let d = location(c.definition(&uri, Position { character: dbl.character + 2, ..dbl }).unwrap());
+    let d = location(
+        c.definition(
+            &uri,
+            Position {
+                character: dbl.character + 2,
+                ..dbl
+            },
+        )
+        .unwrap(),
+    );
     assert_eq!(d.range, word(ONE_FILE, "dbl(self)", "dbl"));
     // A method call `x:m()` goes to the method too.
     let call = at(ONE_FILE, "p:length()", 0);
-    let d = location(c.definition(&uri, Position { character: call.character + 2, ..call }).unwrap());
+    let d = location(
+        c.definition(
+            &uri,
+            Position {
+                character: call.character + 2,
+                ..call
+            },
+        )
+        .unwrap(),
+    );
     assert_eq!(d.range, word(ONE_FILE, "length(self)", "length"));
-    let h = hover_text(c.hover(&uri, Position { character: call.character + 2, ..call }).unwrap());
+    let h = hover_text(
+        c.hover(
+            &uri,
+            Position {
+                character: call.character + 2,
+                ..call
+            },
+        )
+        .unwrap(),
+    );
     assert!(h.contains("fn Pt.length(): Number"), "{h}");
     // Nothing under a keyword or a literal.
-    assert!(c.definition(&uri, at(ONE_FILE, "struct", 0)).unwrap().is_none());
+    assert!(
+        c.definition(&uri, at(ONE_FILE, "struct", 0))
+            .unwrap()
+            .is_none()
+    );
     assert!(c.definition(&uri, at(ONE_FILE, "2)", 0)).unwrap().is_none());
     c.shutdown();
 }
@@ -349,7 +535,9 @@ fn hover_shows_kind_type_and_doc_comment() {
     let dir = temp_dir("hover");
     let mut c = Client::start(Some(&dir));
     let uri = c.open(&dir.join("one.nl"), ONE_FILE);
-    let hov = |c: &mut Client, needle: &str, nth: usize| hover_text(c.hover(&uri, at(ONE_FILE, needle, nth)).unwrap());
+    let hov = |c: &mut Client, needle: &str, nth: usize| {
+        hover_text(c.hover(&uri, at(ONE_FILE, needle, nth)).unwrap())
+    };
 
     let h = hov(&mut c, "inc(2)", 0);
     assert!(h.contains("fn inc(n: Number): Number"), "{h}");
@@ -361,7 +549,16 @@ fn hover_shows_kind_type_and_doc_comment() {
     let h = hov(&mut c, "Pt {", 0);
     assert!(h.contains("struct Pt") && h.contains("A point."), "{h}");
     let px = at(ONE_FILE, "p.x", 0);
-    let h = hover_text(c.hover(&uri, Position { character: px.character + 2, ..px }).unwrap());
+    let h = hover_text(
+        c.hover(
+            &uri,
+            Position {
+                character: px.character + 2,
+                ..px
+            },
+        )
+        .unwrap(),
+    );
     assert!(h.contains("Pt.x: Number") && h.contains("Across."), "{h}");
     let h = hov(&mut c, "length\n", 0);
     assert!(h.contains("fn Pt.length(): Number"), "{h}");
@@ -370,13 +567,27 @@ fn hover_shows_kind_type_and_doc_comment() {
     let h = hov(&mut c, "p.length", 0);
     assert_eq!(h, "```nl\nlet p: Pt\n```");
     // The hover range is the token.
-    let r = c.hover(&uri, at(ONE_FILE, "inc(2)", 0)).unwrap().unwrap().range.unwrap();
+    let r = c
+        .hover(&uri, at(ONE_FILE, "inc(2)", 0))
+        .unwrap()
+        .unwrap()
+        .range
+        .unwrap();
     assert_eq!(r, range_of(ONE_FILE, "inc", 1));
     // A member after `?.` hovers as after `.`.
     let text = format!("{ONE_FILE}let q: Pt? = p\nprint q?.x\n");
     c.change(&uri, &text);
     let qx = at(&text, "q?.x", 0);
-    let h = hover_text(c.hover(&uri, Position { character: qx.character + 3, ..qx }).unwrap());
+    let h = hover_text(
+        c.hover(
+            &uri,
+            Position {
+                character: qx.character + 3,
+                ..qx
+            },
+        )
+        .unwrap(),
+    );
     assert!(h.contains("Pt.x: Number") && h.contains("Across."), "{h}");
     c.shutdown();
 }
@@ -391,12 +602,23 @@ fn short_function_parameters() {
     let mut c = Client::start(Some(&dir));
     let uri = c.open(&dir.join("one.nl"), LAMBDAS);
     assert!(c.diagnostics(&uri).is_empty());
-    let def = |c: &mut Client, needle: &str| location(c.definition(&uri, at(LAMBDAS, needle, 0)).unwrap());
+    let def = |c: &mut Client, needle: &str| {
+        location(c.definition(&uri, at(LAMBDAS, needle, 0)).unwrap())
+    };
     assert_eq!(def(&mut c, "w * h").range, word(LAMBDAS, "|w:", "w"));
-    assert_eq!(def(&mut c, "h * scale").range, word(LAMBDAS, "h: Number|", "h"));
-    assert_eq!(def(&mut c, "scale\n").range, word(LAMBDAS, "let scale", "scale"));
+    assert_eq!(
+        def(&mut c, "h * scale").range,
+        word(LAMBDAS, "h: Number|", "h")
+    );
+    assert_eq!(
+        def(&mut c, "scale\n").range,
+        word(LAMBDAS, "let scale", "scale")
+    );
     assert_eq!(def(&mut c, "x + 1").range, word(LAMBDAS, "x ->", "x"));
-    assert_eq!(def(&mut c, "area(1").range, word(LAMBDAS, "let area", "area"));
+    assert_eq!(
+        def(&mut c, "area(1").range,
+        word(LAMBDAS, "let area", "area")
+    );
     let h = hover_text(c.hover(&uri, at(LAMBDAS, "w * h", 0)).unwrap());
     assert_eq!(h, "```nl\nparam w: Number\n```");
     let h = hover_text(c.hover(&uri, at(LAMBDAS, "x + 1", 0)).unwrap());
@@ -404,7 +626,8 @@ fn short_function_parameters() {
     c.shutdown();
 }
 
-const LIB: &str = "## The helper.\npub fn helper(a: Number): Number\n  a\nend\npub const limit = 3\n";
+const LIB: &str =
+    "## The helper.\npub fn helper(a: Number): Number\n  a\nend\npub const limit = 3\n";
 const DECL: &str = "## The game API.\ndeclare module Foo = :foo\n  ## Largest of two.\n  fn return_largest(a: Number, b: Number): Number as 'ReturnLargest'\n  const limit: Number\n  module Sub\n    fn deep(): Number\n  end\nend\ndeclare fn local_player(): Number = :LocalPlayer\n";
 const MAIN: &str = "import { helper, limit } from 'lib'\nimport from 'lib' as Lib\nprint helper(limit)\nprint Foo.return_largest(1, 2)\nprint Foo.limit\nprint local_player\nprint Number.floor(1.5)\nprint Lib.helper(1)\nprint Foo.Sub.deep()\nprint \"a\".upcase\n";
 
@@ -419,34 +642,73 @@ fn definitions_across_files_and_declaration_files() {
     let lib_uri = path_to_uri(&dir.join("lib.nl")).unwrap();
     let decl_uri = path_to_uri(&dir.join("game.d.nl")).unwrap();
     let def = |c: &mut Client, pos: Position| location(c.definition(&uri, pos).unwrap());
-    let after = |p: Position, n: u32| Position { character: p.character + n, ..p };
+    let after = |p: Position, n: u32| Position {
+        character: p.character + n,
+        ..p
+    };
 
     // An imported name goes to its export.
     let d = def(&mut c, at(MAIN, "helper(limit)", 0));
-    assert_eq!((d.uri.clone(), d.range), (lib_uri.clone(), word(LIB, "pub fn helper", "helper")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (lib_uri.clone(), word(LIB, "pub fn helper", "helper"))
+    );
     let d = def(&mut c, at(MAIN, "limit)", 0));
-    assert_eq!((d.uri.clone(), d.range), (lib_uri.clone(), word(LIB, "pub const limit", "limit")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (lib_uri.clone(), word(LIB, "pub const limit", "limit"))
+    );
     // The name at the import itself goes there too.
     let d = def(&mut c, at(MAIN, "helper", 0));
     assert_eq!(d.uri, lib_uri);
     // The export table: the start of the file; a member of it: the export.
     let d = def(&mut c, at(MAIN, "Lib.helper", 0));
-    assert_eq!((d.uri.clone(), d.range), (lib_uri.clone(), Range::default()));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (lib_uri.clone(), Range::default())
+    );
     let d = def(&mut c, after(at(MAIN, "Lib.helper", 0), 4));
-    assert_eq!((d.uri.clone(), d.range), (lib_uri.clone(), word(LIB, "pub fn helper", "helper")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (lib_uri.clone(), word(LIB, "pub fn helper", "helper"))
+    );
     let h = hover_text(c.hover(&uri, after(at(MAIN, "Lib.helper", 0), 4)).unwrap());
-    assert!(h.contains("fn helper(a: Number): Number") && h.contains("The helper."), "{h}");
+    assert!(
+        h.contains("fn helper(a: Number): Number") && h.contains("The helper."),
+        "{h}"
+    );
     // A declared module, its members and a nested module's member.
     let d = def(&mut c, at(MAIN, "Foo.return_largest", 0));
-    assert_eq!((d.uri.clone(), d.range), (decl_uri.clone(), word(DECL, "declare module Foo", "Foo")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (decl_uri.clone(), word(DECL, "declare module Foo", "Foo"))
+    );
     let d = def(&mut c, after(at(MAIN, "Foo.return_largest", 0), 4));
-    assert_eq!((d.uri.clone(), d.range), (decl_uri.clone(), word(DECL, "fn return_largest", "return_largest")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (
+            decl_uri.clone(),
+            word(DECL, "fn return_largest", "return_largest")
+        )
+    );
     let d = def(&mut c, after(at(MAIN, "Foo.limit", 0), 4));
-    assert_eq!((d.uri.clone(), d.range), (decl_uri.clone(), word(DECL, "const limit", "limit")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (decl_uri.clone(), word(DECL, "const limit", "limit"))
+    );
     let d = def(&mut c, after(at(MAIN, "Foo.Sub.deep", 0), 8));
-    assert_eq!((d.uri.clone(), d.range), (decl_uri.clone(), word(DECL, "fn deep", "deep")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (decl_uri.clone(), word(DECL, "fn deep", "deep"))
+    );
     let d = def(&mut c, at(MAIN, "local_player", 0));
-    assert_eq!((d.uri.clone(), d.range), (decl_uri.clone(), word(DECL, "declare fn local_player", "local_player")));
+    assert_eq!(
+        (d.uri.clone(), d.range),
+        (
+            decl_uri.clone(),
+            word(DECL, "declare fn local_player", "local_player")
+        )
+    );
     // A prelude library's function goes to the built-in declaration file.
     let d = def(&mut c, after(at(MAIN, "Number.floor", 0), 7));
     let path = uri_to_path(&d.uri).unwrap();
@@ -454,21 +716,40 @@ fn definitions_across_files_and_declaration_files() {
     let lua = std::fs::read_to_string(&path).unwrap();
     assert_eq!(d.range, word(&lua, "fn floor(", "floor"));
     let d = def(&mut c, at(MAIN, "Number.floor", 0));
-    assert_eq!((uri_to_path(&d.uri).unwrap(), d.range), (path, word(&lua, "declare module Number", "Number")));
+    assert_eq!(
+        (uri_to_path(&d.uri).unwrap(), d.range),
+        (path, word(&lua, "declare module Number", "Number"))
+    );
     // A string method goes to NL's own declaration file.
     let d = def(&mut c, after(at(MAIN, "\"a\".upcase", 0), 4));
     let path = uri_to_path(&d.uri).unwrap();
     assert!(path.ends_with("decl/nl.d.nl"), "{path:?}");
 
     // Hover on declared names shows the declaration and its doc comment.
-    let h = hover_text(c.hover(&uri, after(at(MAIN, "Foo.return_largest", 0), 4)).unwrap());
-    assert!(h.contains("fn Foo.return_largest(a: Number, b: Number): Number") && h.contains("Largest of two."), "{h}");
+    let h = hover_text(
+        c.hover(&uri, after(at(MAIN, "Foo.return_largest", 0), 4))
+            .unwrap(),
+    );
+    assert!(
+        h.contains("fn Foo.return_largest(a: Number, b: Number): Number")
+            && h.contains("Largest of two."),
+        "{h}"
+    );
     let h = hover_text(c.hover(&uri, at(MAIN, "Foo.limit", 0)).unwrap());
-    assert!(h.contains("declare module Foo = :foo") && h.contains("The game API."), "{h}");
+    assert!(
+        h.contains("declare module Foo = :foo") && h.contains("The game API."),
+        "{h}"
+    );
     let h = hover_text(c.hover(&uri, at(MAIN, "local_player", 0)).unwrap());
-    assert!(h.contains("declare fn local_player(): Number = :LocalPlayer"), "{h}");
+    assert!(
+        h.contains("declare fn local_player(): Number = :LocalPlayer"),
+        "{h}"
+    );
     let h = hover_text(c.hover(&uri, at(MAIN, "helper(limit)", 0)).unwrap());
-    assert!(h.contains("import helper") && h.contains("a function imported from 'lib'"), "{h}");
+    assert!(
+        h.contains("import helper") && h.contains("a function imported from 'lib'"),
+        "{h}"
+    );
     let h = hover_text(c.hover(&uri, at(MAIN, "Number.floor", 0)).unwrap());
     assert!(h.contains("declare module Number = :math"), "{h}");
     c.shutdown();
@@ -488,60 +769,144 @@ fn completion_of_members_and_names_in_scope() {
         let text = format!("{head}{line}\n");
         c.change(&uri, &text);
         let p = at(&text, line, 0);
-        labels(c.complete(&uri, Position { character: p.character + line.encode_utf16().count() as u32, ..p }).unwrap())
+        labels(
+            c.complete(
+                &uri,
+                Position {
+                    character: p.character + line.encode_utf16().count() as u32,
+                    ..p
+                },
+            )
+            .unwrap(),
+        )
     };
     let items = complete_at_end(&mut c, "print p.");
-    assert!(items.contains(&("x".to_string(), Some("Number".to_string()))), "{items:?}");
-    assert!(items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("x".to_string(), Some("Number".to_string()))),
+        "{items:?}"
+    );
+    assert!(
+        items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))),
+        "{items:?}"
+    );
 
     let items = complete_at_end(&mut c, "print Foo.");
     let names: Vec<&str> = items.iter().map(|(l, _)| l.as_str()).collect();
     assert_eq!(names, ["Sub", "limit", "return_largest"], "{items:?}");
-    assert_eq!(items[2].1.as_deref(), Some("Function(a: Number, b: Number): Number"));
+    assert_eq!(
+        items[2].1.as_deref(),
+        Some("Function(a: Number, b: Number): Number")
+    );
 
     // A partial name after the dot: the whole list, the client filters.
     let items = complete_at_end(&mut c, "print s.up");
-    assert!(items.iter().any(|(l, _)| l == "upcase") && items.iter().any(|(l, _)| l == "length"), "{items:?}");
+    assert!(
+        items.iter().any(|(l, _)| l == "upcase") && items.iter().any(|(l, _)| l == "length"),
+        "{items:?}"
+    );
 
     let items = complete_at_end(&mut c, "print Mode.");
-    assert!(items.contains(&("Easy".to_string(), Some("Mode".to_string()))) && items.iter().any(|(l, _)| l == "values"), "{items:?}");
+    assert!(
+        items.contains(&("Easy".to_string(), Some("Mode".to_string())))
+            && items.iter().any(|(l, _)| l == "values"),
+        "{items:?}"
+    );
     let items = complete_at_end(&mut c, "print Pt.");
-    assert!(items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))),
+        "{items:?}"
+    );
     let items = complete_at_end(&mut c, "print Number.");
-    assert!(items.iter().any(|(l, _)| l == "floor") && items.contains(&("pi".to_string(), Some("Number".to_string()))), "{items:?}");
+    assert!(
+        items.iter().any(|(l, _)| l == "floor")
+            && items.contains(&("pi".to_string(), Some("Number".to_string()))),
+        "{items:?}"
+    );
     // After `:`, a method call: the members of the receiver.
     let items = complete_at_end(&mut c, "print p:");
-    assert!(items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))),
+        "{items:?}"
+    );
     // After `?.` and `?.:`, as after `.` and `:`: the members of the
     // receiver without `nil`.
     let items = complete_at_end(&mut c, "let q: Pt? = p; print q?.");
-    assert!(items.contains(&("x".to_string(), Some("Number".to_string()))), "{items:?}");
-    assert!(items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("x".to_string(), Some("Number".to_string()))),
+        "{items:?}"
+    );
+    assert!(
+        items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))),
+        "{items:?}"
+    );
     let items = complete_at_end(&mut c, "let q: Pt? = p; print q?.:");
-    assert!(items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("len2".to_string(), Some("Function(): Number".to_string()))),
+        "{items:?}"
+    );
     // After `Lib.`, the exports of the file, with their types.
     let items = complete_at_end(&mut c, "print Lib.");
-    assert_eq!(items, [("helper".to_string(), Some("Function(a: Number): Number".to_string())), ("limit".to_string(), Some("Number".to_string()))]);
+    assert_eq!(
+        items,
+        [
+            (
+                "helper".to_string(),
+                Some("Function(a: Number): Number".to_string())
+            ),
+            ("limit".to_string(), Some("Number".to_string()))
+        ]
+    );
     // A `:` that is no method call (an annotation): the names in scope.
     let items = complete_at_end(&mut c, "let q:");
-    assert!(items.iter().any(|(l, _)| l == "Pt") && items.iter().any(|(l, _)| l == "Number"), "{items:?}");
+    assert!(
+        items.iter().any(|(l, _)| l == "Pt") && items.iter().any(|(l, _)| l == "Number"),
+        "{items:?}"
+    );
 
     // Names in scope inside `main`: `inner`, `p`, `main`, `Pt`, the
     // declared `Foo` and the prelude; not `outer`, declared later.
     let text = format!("{head}fn main\n  let inner = 1\n  print \nend\nlet outer = 2\nprint 1\n");
     c.change(&uri, &text);
     let inside = at(&text, "  print \nend", 0);
-    let items = labels(c.complete(&uri, Position { character: inside.character + 8, ..inside }).unwrap());
+    let items = labels(
+        c.complete(
+            &uri,
+            Position {
+                character: inside.character + 8,
+                ..inside
+            },
+        )
+        .unwrap(),
+    );
     let names: Vec<&str> = items.iter().map(|(l, _)| l.as_str()).collect();
-    for expected in ["inner", "p", "main", "Pt", "Foo", "local_player", "print", "Number", "Exception"] {
-        assert!(names.contains(&expected), "{expected} missing from {names:?}");
+    for expected in [
+        "inner",
+        "p",
+        "main",
+        "Pt",
+        "Foo",
+        "local_player",
+        "print",
+        "Number",
+        "Exception",
+    ] {
+        assert!(
+            names.contains(&expected),
+            "{expected} missing from {names:?}"
+        );
     }
     assert!(!names.contains(&"outer"), "{names:?}");
-    assert!(items.contains(&("inner".to_string(), Some("Number".to_string()))), "{items:?}");
+    assert!(
+        items.contains(&("inner".to_string(), Some("Number".to_string()))),
+        "{items:?}"
+    );
     // At file level after `let outer`, `outer` is in scope and `inner` is not.
     let items = labels(c.complete(&uri, at(&text, "print 1", 0)).unwrap());
     let names: Vec<&str> = items.iter().map(|(l, _)| l.as_str()).collect();
-    assert!(names.contains(&"outer") && !names.contains(&"inner"), "{names:?}");
+    assert!(
+        names.contains(&"outer") && !names.contains(&"inner"),
+        "{names:?}"
+    );
     c.shutdown();
 }
 
@@ -565,8 +930,17 @@ fn malformed_input_and_requests_never_break_the_server() {
     // Bad parameters are an error response; an unknown method too; a
     // document that is not open answers null. Then the server still
     // answers.
-    assert!(c.raw_request(request::HoverRequest::METHOD, serde_json::json!({ "bogus": 1 })).is_err());
-    assert!(c.raw_request("nl/unknown", serde_json::json!(null)).is_err());
+    assert!(
+        c.raw_request(
+            request::HoverRequest::METHOD,
+            serde_json::json!({ "bogus": 1 })
+        )
+        .is_err()
+    );
+    assert!(
+        c.raw_request("nl/unknown", serde_json::json!(null))
+            .is_err()
+    );
     let other = path_to_uri(&dir.join("not-open.nl")).unwrap();
     assert_eq!(c.hover(&other, Position::new(0, 0)).unwrap(), None);
     assert_eq!(c.definition(&other, Position::new(0, 0)).unwrap(), None);
@@ -597,9 +971,19 @@ fn untitled_documents() {
 #[test]
 fn exit_without_shutdown_is_an_error() {
     let (server, client) = Connection::memory();
-    let thread = std::thread::Builder::new().stack_size(crate::STACK_SIZE).spawn(move || crate::run(server)).unwrap();
-    let mut c = Client { conn: client, next: 1, pending: Vec::new(), thread: None };
-    let _ = c.request::<request::Initialize>(InitializeParams::default()).unwrap();
+    let thread = std::thread::Builder::new()
+        .stack_size(crate::STACK_SIZE)
+        .spawn(move || crate::run(server))
+        .unwrap();
+    let mut c = Client {
+        conn: client,
+        next: 1,
+        pending: Vec::new(),
+        thread: None,
+    };
+    let _ = c
+        .request::<request::Initialize>(InitializeParams::default())
+        .unwrap();
     c.notify::<notification::Initialized>(InitializedParams {});
     c.notify::<notification::Exit>(());
     assert!(thread.join().unwrap().is_err());
@@ -620,7 +1004,10 @@ fn open_documents_own_their_uris() {
     let lib = c.open(&dir.join("lib.nl"), lib_text);
     let own = c.diagnostics(&lib);
     let is_error = |d: &Diagnostic| d.severity == Some(DiagnosticSeverity::ERROR);
-    assert!(own.iter().any(is_error) && own.iter().any(|d| !is_error(d)), "an error and a lint: {own:?}");
+    assert!(
+        own.iter().any(is_error) && own.iter().any(|d| !is_error(d)),
+        "an error and a lint: {own:?}"
+    );
     let full = own.len();
 
     // main imports lib: lib's errors are forwarded to main's compile, but
@@ -629,7 +1016,12 @@ fn open_documents_own_their_uris() {
     let main = c.open(&dir.join("main.nl"), "import { f } from 'lib'\nprint f\n");
     assert_eq!(c.diagnostics(&lib).len(), full);
     let main_diags = c.diagnostics(&main);
-    assert!(main_diags.iter().any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))), "{main_diags:?}");
+    assert!(
+        main_diags
+            .iter()
+            .any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))),
+        "{main_diags:?}"
+    );
     assert!(!c.pending_for(&lib));
 
     // A broken declaration file buffer in the directory: its syntax error
@@ -638,9 +1030,19 @@ fn open_documents_own_their_uris() {
     // the moment). Closing it compiles the others again.
     let api = c.open(&dir.join("api.d.nl"), "declare fn g(\n");
     let api_diags = c.diagnostics(&api);
-    assert!(api_diags.iter().any(|d| d.code == Some(NumberOrString::String("syntax".to_string()))), "{api_diags:?}");
+    assert!(
+        api_diags
+            .iter()
+            .any(|d| d.code == Some(NumberOrString::String("syntax".to_string()))),
+        "{api_diags:?}"
+    );
     let lib_diags = c.diagnostics(&lib);
-    assert!(lib_diags.iter().all(|d| d.code != Some(NumberOrString::String("syntax".to_string()))), "{lib_diags:?}");
+    assert!(
+        lib_diags
+            .iter()
+            .all(|d| d.code != Some(NumberOrString::String("syntax".to_string()))),
+        "{lib_diags:?}"
+    );
     let _ = c.diagnostics(&main);
     assert!(!c.pending_for(&lib));
     c.close(&api);
@@ -652,12 +1054,20 @@ fn open_documents_own_their_uris() {
     // Fixing lib in its buffer updates main (stale diagnostics), and
     // removing the export again does too.
     c.change(&lib, "pub fn f\n  1\nend\nlet unused = 1\n");
-    assert!(c.diagnostics(&lib).iter().all(|d| !is_error(d)), "only lints stay");
+    assert!(
+        c.diagnostics(&lib).iter().all(|d| !is_error(d)),
+        "only lints stay"
+    );
     assert!(c.diagnostics(&main).is_empty());
     c.change(&lib, "fn f\n  1\nend\nprint f\n");
     assert!(c.diagnostics(&lib).iter().all(|d| !is_error(d)));
     let main_diags = c.diagnostics(&main);
-    assert!(main_diags.iter().any(|d| d.code == Some(NumberOrString::String("not-exported".to_string()))), "{main_diags:?}");
+    assert!(
+        main_diags
+            .iter()
+            .any(|d| d.code == Some(NumberOrString::String("not-exported".to_string()))),
+        "{main_diags:?}"
+    );
 
     // Closing main does not clear lib: lib is compiled again (its buffer
     // may have imported main), never emptied.
@@ -666,7 +1076,10 @@ fn open_documents_own_their_uris() {
     assert!(c.diagnostics(&lib).iter().all(|d| !is_error(d)));
     assert!(!c.pending_for(&lib));
     c.change(&lib, "fn f\n  1\nend\nprint nope\n");
-    assert!(c.diagnostics(&lib).iter().any(is_error), "no empty publication for lib came first");
+    assert!(
+        c.diagnostics(&lib).iter().any(is_error),
+        "no empty publication for lib came first"
+    );
 
     // A file that is not open: the union of what the open documents
     // report about it, until the last of them closes.
@@ -679,7 +1092,10 @@ fn open_documents_own_their_uris() {
     // The open compiles a again too.
     let _ = c.diagnostics(&a);
     let _ = c.diagnostics(&b);
-    assert!(!c.pending_for(&dep), "one error, reported by two documents: unchanged");
+    assert!(
+        !c.pending_for(&dep),
+        "one error, reported by two documents: unchanged"
+    );
     c.close(&a);
     assert!(c.diagnostics(&a).is_empty());
     let _ = c.diagnostics(&b);
@@ -706,11 +1122,23 @@ fn open_documents_are_known_by_the_editors_uri() {
     assert_eq!(c.diagnostics(&editors).len(), 1);
     let main = c.open(&dir.join("main.nl"), "import { f } from 'lib'\nprint f\n");
     let main_diags = c.diagnostics(&main);
-    assert!(main_diags.iter().any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))), "{main_diags:?}");
-    assert_eq!(c.diagnostics(&editors).len(), 1, "lib's own compile, under the editor's URI");
+    assert!(
+        main_diags
+            .iter()
+            .any(|d| d.code == Some(NumberOrString::String("import-failed".to_string()))),
+        "{main_diags:?}"
+    );
+    assert_eq!(
+        c.diagnostics(&editors).len(),
+        1,
+        "lib's own compile, under the editor's URI"
+    );
     // A request answers after every notification sent before it.
     let _ = c.hover(&main, Position::new(0, 0));
-    assert!(!c.pending_for(&own), "nothing is published under the server's spelling");
+    assert!(
+        !c.pending_for(&own),
+        "nothing is published under the server's spelling"
+    );
     assert!(!c.pending_for(&editors));
     c.shutdown();
 }
@@ -721,15 +1149,39 @@ fn open_documents_are_known_by_the_editors_uri() {
 fn open_declaration_buffers_are_in_scope() {
     let dir = temp_dir("declbuffer");
     let mut c = Client::start(Some(&dir));
-    let api = c.open(&dir.join("api.d.nl"), "declare module Api = :api\n  ## Answers.\n  fn f(): Number\nend\n");
+    let api = c.open(
+        &dir.join("api.d.nl"),
+        "declare module Api = :api\n  ## Answers.\n  fn f(): Number\nend\n",
+    );
     assert!(c.diagnostics(&api).is_empty());
     let text = "print Api.f\n";
     let main = c.open(&dir.join("main.nl"), text);
     assert!(c.diagnostics(&main).is_empty());
     let p = at(text, "Api.f", 0);
-    let h = hover_text(c.hover(&main, Position { character: p.character + 4, ..p }).unwrap());
-    assert!(h.contains("fn Api.f(): Number") && h.contains("Answers."), "{h}");
-    let d = location(c.definition(&main, Position { character: p.character + 4, ..p }).unwrap());
+    let h = hover_text(
+        c.hover(
+            &main,
+            Position {
+                character: p.character + 4,
+                ..p
+            },
+        )
+        .unwrap(),
+    );
+    assert!(
+        h.contains("fn Api.f(): Number") && h.contains("Answers."),
+        "{h}"
+    );
+    let d = location(
+        c.definition(
+            &main,
+            Position {
+                character: p.character + 4,
+                ..p
+            },
+        )
+        .unwrap(),
+    );
     assert_eq!(d.uri, api);
     c.shutdown();
 }
@@ -769,26 +1221,55 @@ fn every_program_hovers_and_defines() {
         let uri = c.open(&path, &text);
         let _ = c.diagnostics(&uri);
         let doc = crate::analysis::analyze(&plain, uri.as_str(), Some(&path), &text);
-        for tok in doc.root.descendants_with_tokens().filter_map(|e| e.into_token()).filter(is_word) {
+        for tok in doc
+            .root
+            .descendants_with_tokens()
+            .filter_map(|e| e.into_token())
+            .filter(is_word)
+        {
             let pos = doc.lines.position(&text, tok.text_range().start());
             let hover = c.hover(&uri, pos);
-            assert!(hover.is_ok(), "hover in {} at {pos:?}: {hover:?}", path.display());
+            assert!(
+                hover.is_ok(),
+                "hover in {} at {pos:?}: {hover:?}",
+                path.display()
+            );
             let def = c.definition(&uri, pos);
-            assert!(def.is_ok(), "definition in {} at {pos:?}: {def:?}", path.display());
+            assert!(
+                def.is_ok(),
+                "definition in {} at {pos:?}: {def:?}",
+                path.display()
+            );
             let Some(parent) = tok.parent() else { continue };
             let bound = match parent.kind() {
-                nl_syntax::SyntaxKind::NAME_REF | nl_syntax::SyntaxKind::SELF_EXPR => doc.res.reference(parent.text_range()),
+                nl_syntax::SyntaxKind::NAME_REF | nl_syntax::SyntaxKind::SELF_EXPR => {
+                    doc.res.reference(parent.text_range())
+                }
                 nl_syntax::SyntaxKind::LUA_PATH => doc.res.reference(tok.text_range()),
                 _ => None,
             };
-            let Some(nl_sema::Ref::Binding(id)) = bound else { continue };
+            let Some(nl_sema::Ref::Binding(id)) = bound else {
+                continue;
+            };
             let b = doc.res.binding(*id).unwrap();
             if b.decl == nl_sema::DeclKind::Import {
                 continue;
             }
             let loc = location(def.unwrap());
-            assert_eq!(loc.uri, uri, "definition of `{}` in {} at {pos:?}", tok.text(), path.display());
-            assert_eq!(loc.range, doc.lines.range(&text, b.range), "definition of `{}` in {} at {pos:?}", tok.text(), path.display());
+            assert_eq!(
+                loc.uri,
+                uri,
+                "definition of `{}` in {} at {pos:?}",
+                tok.text(),
+                path.display()
+            );
+            assert_eq!(
+                loc.range,
+                doc.lines.range(&text, b.range),
+                "definition of `{}` in {} at {pos:?}",
+                tok.text(),
+                path.display()
+            );
             checked += 1;
         }
         // Every open document is compiled again on each open: close each

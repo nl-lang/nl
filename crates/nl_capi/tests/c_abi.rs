@@ -5,7 +5,12 @@
 //! that does not match the `#[repr(C)]` types of src/capi_bundle.rs fails.
 //! Skipped (with a note) when no C compiler or no static library is found.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -25,7 +30,18 @@ fn compile_and_run(compiler: &str, args: &[&str], lib: &Path) {
     let mut cmd = Command::new(compiler);
     // `-x` (in `args`) names the language of the source only: `-x none`
     // before the library, or the compiler reads the archive as source.
-    cmd.args(args).arg("-Wall").arg("-Wextra").arg("-Werror").arg("-I").arg(manifest.join("include")).arg(manifest.join("tests/c/nlbundle_test.c")).arg("-x").arg("none").arg(lib).arg("-o").arg(&exe);
+    cmd.args(args)
+        .arg("-Wall")
+        .arg("-Wextra")
+        .arg("-Werror")
+        .arg("-I")
+        .arg(manifest.join("include"))
+        .arg(manifest.join("tests/c/nlbundle_test.c"))
+        .arg("-x")
+        .arg("none")
+        .arg(lib)
+        .arg("-o")
+        .arg(&exe);
     for l in ["-lpthread", "-ldl", "-lm"] {
         cmd.arg(l);
     }
@@ -36,10 +52,18 @@ fn compile_and_run(compiler: &str, args: &[&str], lib: &Path) {
             return;
         }
     };
-    assert!(out.status.success(), "{compiler} failed:\n{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{compiler} failed:\n{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let run = Command::new(&exe).output().unwrap();
     let stdout = String::from_utf8_lossy(&run.stdout);
-    assert!(run.status.success() && stdout.contains("nlbundle_test: ok"), "{compiler}: {stdout}\n{}", String::from_utf8_lossy(&run.stderr));
+    assert!(
+        run.status.success() && stdout.contains("nlbundle_test: ok"),
+        "{compiler}: {stdout}\n{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
 }
 
 #[test]

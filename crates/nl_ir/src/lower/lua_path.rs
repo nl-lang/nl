@@ -30,10 +30,19 @@ impl Lowerer<'_> {
     }
 
     /// Applies one step to the value so far.
-    fn lua_step(&mut self, prefix: Expr, step: &SyntaxNode, pre: Vec<Expr>, extra: &[Arg], block: Option<&SyntaxNode>) -> Expr {
+    fn lua_step(
+        &mut self,
+        prefix: Expr,
+        step: &SyntaxNode,
+        pre: Vec<Expr>,
+        extra: &[Arg],
+        block: Option<&SyntaxNode>,
+    ) -> Expr {
         match step.kind() {
             LUA_FIELD => {
-                let name = name_token(step).map(|t| t.text().to_string()).unwrap_or_default();
+                let name = name_token(step)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 Expr::index(prefix, Expr::str(&name))
             }
             LUA_INDEX => {
@@ -42,7 +51,10 @@ impl Lowerer<'_> {
                     self.push_operand(&mut vals, |l| l.expr1(&k));
                 }
                 let mut it = vals.into_iter();
-                let (o, k) = (it.next().unwrap_or(Expr::Nil), it.next().unwrap_or(Expr::Nil));
+                let (o, k) = (
+                    it.next().unwrap_or(Expr::Nil),
+                    it.next().unwrap_or(Expr::Nil),
+                );
                 Expr::index(o, k)
             }
             LUA_CALL => {
@@ -77,18 +89,33 @@ impl Lowerer<'_> {
     /// The value of a path's root, or of its root and first step when the
     /// file localizes them (localize.rs), and how many steps that took.
     /// `keep_last`: the last step is not taken (an assignment target).
-    fn lua_path_head(&mut self, node: &SyntaxNode, steps: &[SyntaxNode], keep_last: bool) -> (Expr, usize) {
+    fn lua_path_head(
+        &mut self,
+        node: &SyntaxNode,
+        steps: &[SyntaxNode],
+        keep_last: bool,
+    ) -> (Expr, usize) {
         if !self.localize.is_empty() {
-            let global = nl_sema::lua_path_root(node).and_then(|tok| match self.res.reference(tok.text_range()) {
-                Some(nl_sema::Ref::LuaGlobal(name)) => Some(name.clone()),
-                _ => None,
+            let global = nl_sema::lua_path_root(node).and_then(|tok| {
+                match self.res.reference(tok.text_range()) {
+                    Some(nl_sema::Ref::LuaGlobal(name)) => Some(name.clone()),
+                    _ => None,
+                }
             });
             if let Some(global) = global {
-                let available = if keep_last { steps.len().saturating_sub(1) } else { steps.len() };
+                let available = if keep_last {
+                    steps.len().saturating_sub(1)
+                } else {
+                    steps.len()
+                };
                 // A nil-safe first step (`:string?.upper`) tests the root
                 // before reading the field, so the pair is not taken as one
                 // value; the root alone may be (nilsafe.rs).
-                if let Some(name) = steps.first().filter(|s| available >= 1 && !is_safe_step(s)).and_then(field_step_name) {
+                if let Some(name) = steps
+                    .first()
+                    .filter(|s| available >= 1 && !is_safe_step(s))
+                    .and_then(field_step_name)
+                {
                     if self.localize.has_path(&global, &name) {
                         return (self.localized_path(&global, Some(&name)), 1);
                     }
@@ -143,17 +170,31 @@ impl Lowerer<'_> {
 
     /// A path on a line of its own: a call.
     pub(crate) fn lua_path_statement(&mut self, node: &SyntaxNode) -> Expr {
-        let ends_in_call = path_steps(node).last().is_some_and(|s| matches!(s.kind(), LUA_CALL | LUA_METHOD));
+        let ends_in_call = path_steps(node)
+            .last()
+            .is_some_and(|s| matches!(s.kind(), LUA_CALL | LUA_METHOD));
         let e = self.lua_path(node);
-        if ends_in_call { e } else { Expr::call(e, Vec::new()) }
+        if ends_in_call {
+            e
+        } else {
+            Expr::call(e, Vec::new())
+        }
     }
 
     /// A path as the callee of a command call or pipe: the arguments go to
     /// a final `:name` step without arguments, or to a call of the path.
-    pub(crate) fn lua_path_call(&mut self, node: &SyntaxNode, pre: Vec<Expr>, args: &[Arg], block: Option<&SyntaxNode>) -> Expr {
+    pub(crate) fn lua_path_call(
+        &mut self,
+        node: &SyntaxNode,
+        pre: Vec<Expr>,
+        args: &[Arg],
+        block: Option<&SyntaxNode>,
+    ) -> Expr {
         let (mut e, steps) = self.lua_path_start(node, false);
         let last_is_bare_method = steps.last().is_some_and(|s| {
-            s.kind() == LUA_METHOD && child(s, ARG_LIST).is_none() && child(s, TRAILING_BLOCK).is_none()
+            s.kind() == LUA_METHOD
+                && child(s, ARG_LIST).is_none()
+                && child(s, TRAILING_BLOCK).is_none()
         });
         let n = steps.len();
         for (i, s) in steps.iter().enumerate() {
@@ -179,7 +220,9 @@ impl Lowerer<'_> {
             if i + 1 == n {
                 return match s.kind() {
                     LUA_FIELD => {
-                        let name = name_token(s).map(|t| t.text().to_string()).unwrap_or_default();
+                        let name = name_token(s)
+                            .map(|t| t.text().to_string())
+                            .unwrap_or_default();
                         Place::Index(e, Expr::str(&name))
                     }
                     LUA_INDEX => {
@@ -188,7 +231,10 @@ impl Lowerer<'_> {
                             self.push_operand(&mut vals, |l| l.expr1(&k));
                         }
                         let mut it = vals.into_iter();
-                        Place::Index(it.next().unwrap_or(Expr::Nil), it.next().unwrap_or(Expr::Nil))
+                        Place::Index(
+                            it.next().unwrap_or(Expr::Nil),
+                            it.next().unwrap_or(Expr::Nil),
+                        )
                     }
                     _ => {
                         self.internal(node, "Lua path target");

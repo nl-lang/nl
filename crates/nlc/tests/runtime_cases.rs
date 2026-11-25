@@ -31,7 +31,9 @@ fn cases_dir() -> PathBuf {
 type Finished = (Option<i32>, Vec<u8>, Vec<u8>);
 
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, String> {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
     let mut child = cmd.spawn().map_err(|e| format!("cannot start nlc: {e}"))?;
     let mut so = child.stdout.take();
     let mut se = child.stderr.take();
@@ -77,7 +79,12 @@ fn first_difference(expected: &[u8], actual: &[u8]) -> String {
         let x = el.get(i).copied();
         let y = al.get(i).copied();
         if x != y {
-            return format!("line {}: expected {:?}, got {:?}", i + 1, x.unwrap_or("<end>"), y.unwrap_or("<end>"));
+            return format!(
+                "line {}: expected {:?}, got {:?}",
+                i + 1,
+                x.unwrap_or("<end>"),
+                y.unwrap_or("<end>")
+            );
         }
     }
     "output differs".to_string()
@@ -90,7 +97,12 @@ fn runtime_cases() {
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let filters: Vec<String> = std::env::var("NL_RUNTIME_CASES_FILTER")
         .ok()
-        .map(|f| f.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+        .map(|f| {
+            f.split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
         .unwrap_or_default();
     let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
         .map(|rd| rd.filter_map(Result::ok).map(|e| e.path()).collect())
@@ -99,18 +111,34 @@ fn runtime_cases() {
     let cases: Vec<(String, PathBuf)> = paths
         .into_iter()
         .filter(|p| p.extension().is_some_and(|e| e == "nl") && p.with_extension("out").exists())
-        .map(|p| (p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default(), p))
+        .map(|p| {
+            (
+                p.file_stem()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+                p,
+            )
+        })
         .filter(|(name, _)| filters.is_empty() || filters.iter().any(|f| name.contains(f.as_str())))
         .collect();
 
-    let width = cases.iter().map(|(n, _)| n.len()).max().unwrap_or(10).max(10);
+    let width = cases
+        .iter()
+        .map(|(n, _)| n.len())
+        .max()
+        .unwrap_or(10)
+        .max(10);
     println!("{:<width$}  result  detail", "case");
     println!("{:-<width$}  ------  ------", "");
     let mut failed = 0;
     for (name, path) in &cases {
         let rel = path.strip_prefix(&dir).unwrap_or(path).to_path_buf();
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").env("NLC_TEST_RT_GLOBAL", "NL_RT").arg("run").arg(&rel);
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .env("NLC_TEST_RT_GLOBAL", "NL_RT")
+            .arg("run")
+            .arg(&rel);
         let expected = std::fs::read(path.with_extension("out")).unwrap_or_default();
         let detail = match run_with_timeout(cmd, Duration::from_secs(30)) {
             Err(e) => Some(e),
@@ -118,9 +146,20 @@ fn runtime_cases() {
                 if stdout == expected && code == Some(0) {
                     None
                 } else {
-                    let why = String::from_utf8_lossy(&stderr).lines().find(|l| !l.trim().is_empty()).unwrap_or("").to_string();
-                    let diff = if stdout != expected { first_difference(&expected, &stdout) } else { String::new() };
-                    Some(format!("exit {}: {why} [{diff}]", code.map_or("signal".to_string(), |c| c.to_string())))
+                    let why = String::from_utf8_lossy(&stderr)
+                        .lines()
+                        .find(|l| !l.trim().is_empty())
+                        .unwrap_or("")
+                        .to_string();
+                    let diff = if stdout != expected {
+                        first_difference(&expected, &stdout)
+                    } else {
+                        String::new()
+                    };
+                    Some(format!(
+                        "exit {}: {why} [{diff}]",
+                        code.map_or("signal".to_string(), |c| c.to_string())
+                    ))
                 }
             }
         };
@@ -134,7 +173,10 @@ fn runtime_cases() {
     }
     println!("\n{} passed, {failed} failed", cases.len() - failed);
     assert!(!cases.is_empty(), "no case selected in {}", dir.display());
-    assert_eq!(failed, 0, "{failed} runtime case(s) failed; see the table above");
+    assert_eq!(
+        failed, 0,
+        "{failed} runtime case(s) failed; see the table above"
+    );
 }
 
 /// `nlc run` reports an uncaught error once, with one traceback that has
@@ -146,13 +188,19 @@ fn uncaught_error_report() {
     let dir = cases_dir();
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let mut cmd = Command::new(&nlc);
-    cmd.current_dir(&dir).env_remove("NL_PATH").arg("run").arg("lib/uncaught.nl");
+    cmd.current_dir(&dir)
+        .env_remove("NL_PATH")
+        .arg("run")
+        .arg("lib/uncaught.nl");
     let result = run_with_timeout(cmd, Duration::from_secs(30));
     assert!(result.is_ok(), "{result:?}");
     let (code, _, stderr) = result.unwrap_or_default();
     let stderr = String::from_utf8_lossy(&stderr);
     assert_eq!(code, Some(1), "{stderr}");
-    assert!(stderr.starts_with("nlc: lib/uncaught.nl: uncaught Exception: left uncaught\n"), "{stderr}");
+    assert!(
+        stderr.starts_with("nlc: lib/uncaught.nl: uncaught Exception: left uncaught\n"),
+        "{stderr}"
+    );
     assert_eq!(stderr.matches("stack traceback:").count(), 1, "{stderr}");
     assert!(stderr.contains("lib/uncaught.nl:4:"), "{stderr}");
 }

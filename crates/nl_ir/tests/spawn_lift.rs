@@ -6,7 +6,7 @@
 //! where the `spawn` stands.
 
 use nl_ir::ir::{Block, Expr, Function, Place, StmtKind, TableEntry};
-use nl_ir::{LowerOptions, Localize, lower};
+use nl_ir::{Localize, LowerOptions, lower};
 
 #[derive(Default)]
 struct Count {
@@ -37,7 +37,11 @@ fn walk_block(b: &Block, c: &mut Count) {
             }
             StmtKind::Expr(e) => walk(e, c),
             StmtKind::Do(b) => walk_block(b, c),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 walk(cond, c);
                 walk_block(then, c);
                 if let Some(o) = otherwise {
@@ -48,7 +52,13 @@ fn walk_block(b: &Block, c: &mut Count) {
                 walk(cond, c);
                 walk_block(body, c);
             }
-            StmtKind::NumericFor { start, limit, step, body, .. } => {
+            StmtKind::NumericFor {
+                start,
+                limit,
+                step,
+                body,
+                ..
+            } => {
                 walk(start, c);
                 walk(limit, c);
                 if let Some(s) = step {
@@ -79,7 +89,8 @@ fn walk(e: &Expr, c: &mut Count) {
         Expr::Call(f, args) => {
             if matches!(f.as_ref(), Expr::Intrinsic("spawn")) {
                 if let Some(Expr::Table(info)) = args.first() {
-                    let named = matches!(info.get(1), Some(TableEntry::Item(n)) if is_spawn_name(Some(n)));
+                    let named =
+                        matches!(info.get(1), Some(TableEntry::Item(n)) if is_spawn_name(Some(n)));
                     if named {
                         c.spawns += 1;
                         if matches!(args.get(1), Some(Expr::Function(_))) {
@@ -115,12 +126,20 @@ fn walk(e: &Expr, c: &mut Count) {
                 }
             }
         }
-        Expr::MemberCall { receiver, key, args } => {
+        Expr::MemberCall {
+            receiver,
+            key,
+            args,
+        } => {
             walk(receiver, c);
             walk(key, c);
             args.iter().for_each(|a| walk(a, c));
         }
-        Expr::MemberApply { func, receiver, args } => {
+        Expr::MemberApply {
+            func,
+            receiver,
+            args,
+        } => {
             walk(func, c);
             walk(receiver, c);
             args.iter().for_each(|a| walk(a, c));
@@ -139,7 +158,11 @@ fn lower_counts(src: &str) -> (Count, Vec<&'static str>) {
     assert!(!parse.has_errors(), "the test program parses");
     let root = parse.syntax();
     let res = nl_sema::resolve(&root, &nl_sema::NoImports);
-    assert!(!res.has_errors(), "the test program resolves: {:?}", res.diagnostics);
+    assert!(
+        !res.has_errors(),
+        "the test program resolves: {:?}",
+        res.diagnostics
+    );
     let opts = LowerOptions {
         checks: true,
         chunk_name: "@t.nl".to_string(),
@@ -185,7 +208,10 @@ fn every_spawn_do_block_is_registered_when_its_file_loads() {
         let (c, diags) = lower_counts(src);
         assert!(diags.is_empty(), "{src}: {diags:?}");
         assert!(c.spawns > 0, "{src}: no spawn do found");
-        assert_eq!(c.inline, 0, "{src}: a block is still made where its spawn stands");
+        assert_eq!(
+            c.inline, 0,
+            "{src}: a block is still made where its spawn stands"
+        );
         assert_eq!(c.registered, c.spawns, "{src}: every block is registered");
     }
 }
@@ -206,7 +232,11 @@ fn lower_messages(src: &str) -> Vec<String> {
         imported_globals: Vec::new(),
         profile: nl_sema::Profile::Full,
     };
-    lower(&root, src, &res, &opts).diagnostics.iter().map(|d| d.message.clone()).collect()
+    lower(&root, src, &res, &opts)
+        .diagnostics
+        .iter()
+        .map(|d| d.message.clone())
+        .collect()
 }
 
 #[test]
@@ -224,8 +254,14 @@ fn a_file_over_the_upvalue_budget_still_registers_its_blocks() {
         src.push_str(&format!("fn f\n  let s = {sum}\n  let t = spawn do\n    1\n  end\n  s\nend\nprint f() unless Worker.parent\n"));
         let (c, diags) = lower_counts(&src);
         assert!(diags.is_empty(), "{n} locals: {diags:?}");
-        assert_eq!(c.registered, c.spawns, "{n} locals: every block is registered");
-        assert_eq!(c.inline, 0, "{n} locals: a block is still made where its spawn stands");
+        assert_eq!(
+            c.registered, c.spawns,
+            "{n} locals: every block is registered"
+        );
+        assert_eq!(
+            c.inline, 0,
+            "{n} locals: a block is still made where its spawn stands"
+        );
     }
 }
 
@@ -244,7 +280,12 @@ fn a_declaration_in_a_top_level_branch_is_a_compile_error() {
         let (_, diags) = lower_counts(src);
         assert_eq!(diags, ["spawn-block"], "{src}");
         let messages = lower_messages(src);
-        assert!(messages.iter().any(|m| m.contains("in a branch of a top-level conditional")), "{src}: {messages:?}");
+        assert!(
+            messages
+                .iter()
+                .any(|m| m.contains("in a branch of a top-level conditional")),
+            "{src}: {messages:?}"
+        );
     }
 }
 
@@ -256,7 +297,10 @@ fn the_error_names_what_the_block_reads() {
     let src = "for i in [1]\n  module M\n    fn sib(n: Number): Number\n      n + 1\n    end\n    fn run(n: Number)\n      spawn do\n        sib(n)\n      end\n    end\n  end\nend\n";
     let messages = lower_messages(src);
     assert_eq!(messages.len(), 1, "{messages:?}");
-    assert!(messages.iter().all(|m| m.contains("reads `sib`")), "{messages:?}");
+    assert!(
+        messages.iter().all(|m| m.contains("reads `sib`")),
+        "{messages:?}"
+    );
 }
 
 #[test]

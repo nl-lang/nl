@@ -38,7 +38,9 @@ impl Side {
 /// True when an item of the wiki's realm (`shared`, `client and menu`, …)
 /// exists in `side`. An item without a realm is kept.
 fn in_realm(realm: Option<&str>, side: Option<Side>) -> bool {
-    let (Some(realm), Some(side)) = (realm, side) else { return true };
+    let (Some(realm), Some(side)) = (realm, side) else {
+        return true;
+    };
     let words: Vec<&str> = realm.split(|c: char| !c.is_ascii_alphabetic()).collect();
     let has = |w: &str| words.contains(&w);
     match side {
@@ -75,7 +77,13 @@ pub struct Generated {
 }
 
 /// The tables of hooks whose fields a structure of the wiki lists.
-const HOOK_FIELDS: &[(&str, &str)] = &[("GM", "GM"), ("ENTITY", "ENT"), ("WEAPON", "SWEP"), ("TOOL", "TOOL"), ("PLAYER", "PLAYER")];
+const HOOK_FIELDS: &[(&str, &str)] = &[
+    ("GM", "GM"),
+    ("ENTITY", "ENT"),
+    ("WEAPON", "SWEP"),
+    ("TOOL", "TOOL"),
+    ("PLAYER", "PLAYER"),
+];
 
 /// One member line, with its doc comment.
 struct Member {
@@ -116,7 +124,9 @@ fn doc(realm: Option<&str>, deprecated: bool, address: &str) -> String {
 
 impl<'a> Gen<'a> {
     fn types(&self) -> TypeNames<'_> {
-        TypeNames { classes: &self.class_names }
+        TypeNames {
+            classes: &self.class_names,
+        }
     }
 
     fn note_unknown(&mut self, ty: &str) {
@@ -135,7 +145,21 @@ impl<'a> Gen<'a> {
             if part.is_empty() || part.starts_with("Structures/") {
                 continue;
             }
-            let known = matches!(part, "number" | "string" | "boolean" | "bool" | "table" | "function" | "any" | "vararg" | "nil" | "NULL" | "thread" | "userdata") || self.class_names.contains_key(part);
+            let known = matches!(
+                part,
+                "number"
+                    | "string"
+                    | "boolean"
+                    | "bool"
+                    | "table"
+                    | "function"
+                    | "any"
+                    | "vararg"
+                    | "nil"
+                    | "NULL"
+                    | "thread"
+                    | "userdata"
+            ) || self.class_names.contains_key(part);
             if !known {
                 self.stats.unknown_types.insert(part.to_string());
             }
@@ -191,7 +215,10 @@ impl<'a> Gen<'a> {
             if names::is_keyword(&name) {
                 name.push('_');
             }
-            if at.iter().any(|a| a.ty.trim() == "vararg" || a.name == "...") {
+            if at
+                .iter()
+                .any(|a| a.ty.trim() == "vararg" || a.name == "...")
+            {
                 if name == "arg1" || name.is_empty() || name.starts_with("arg") {
                     name = "args".to_string();
                 }
@@ -262,14 +289,21 @@ impl<'a> Gen<'a> {
         if self.taken.insert(name.to_string()) {
             true
         } else {
-            self.stats.skipped.push(format!("{what}: the NL name `{name}` is taken"));
+            self.stats
+                .skipped
+                .push(format!("{what}: the NL name `{name}` is taken"));
             false
         }
     }
 
     /// The member functions of a container, as lines, sorted by Lua name
     /// and with unique NL names (the first in Lua order keeps a name).
-    fn fn_members(&mut self, funcs: &[&Func], method: bool, used: &mut BTreeSet<String>) -> Vec<Member> {
+    fn fn_members(
+        &mut self,
+        funcs: &[&Func],
+        method: bool,
+        used: &mut BTreeSet<String>,
+    ) -> Vec<Member> {
         let mut out = Vec::new();
         for f in funcs {
             if !in_realm(f.realm.as_deref(), self.side) {
@@ -279,23 +313,37 @@ impl<'a> Gen<'a> {
             let lua = f.name.rsplit('.').next().unwrap_or(&f.name).to_string();
             let nl = match self.ov.get(&f.address) {
                 Some(Override::Skip) => {
-                    self.stats.skipped.push(format!("{}: listed as left out", f.address));
+                    self.stats
+                        .skipped
+                        .push(format!("{}: listed as left out", f.address));
                     continue;
                 }
                 Some(Override::Name(n)) => n.to_string(),
                 None => names::snake(&lua),
             };
             if !names::is_lname(&nl) {
-                self.stats.skipped.push(format!("{}: `{nl}` is not a snake_case name", f.address));
+                self.stats
+                    .skipped
+                    .push(format!("{}: `{nl}` is not a snake_case name", f.address));
                 continue;
             }
             if !used.insert(nl.clone()) {
-                self.stats.skipped.push(format!("{}: the NL name `{nl}` is taken in its parent", f.address));
+                self.stats.skipped.push(format!(
+                    "{}: the NL name `{nl}` is taken in its parent",
+                    f.address
+                ));
                 continue;
             }
             let sig = self.fn_sig(f, method);
-            let key = if nl == lua { String::new() } else { format!(" as '{lua}'") };
-            out.push(Member { doc: Some(doc(f.realm.as_deref(), f.deprecated, &f.address)), line: format!("fn {nl}{sig}{key}") });
+            let key = if nl == lua {
+                String::new()
+            } else {
+                format!(" as '{lua}'")
+            };
+            out.push(Member {
+                doc: Some(doc(f.realm.as_deref(), f.deprecated, &f.address)),
+                line: format!("fn {nl}{sig}{key}"),
+            });
             match f.kind {
                 FuncKind::Library => self.stats.library_functions += 1,
                 FuncKind::Class => self.stats.class_methods += 1,
@@ -310,7 +358,10 @@ impl<'a> Gen<'a> {
 /// The top-level names already declared: the prelude's and those of the
 /// built-in declaration files.
 pub fn builtin_names() -> BTreeSet<String> {
-    let mut names: BTreeSet<String> = nl_sema::prelude::all().iter().map(|p| p.name.to_string()).collect();
+    let mut names: BTreeSet<String> = nl_sema::prelude::all()
+        .iter()
+        .map(|p| p.name.to_string())
+        .collect();
     for item in nl_sema::prelude_declarations().items {
         names.insert(item.name);
     }
@@ -324,15 +375,27 @@ pub fn builtin_library_keys() -> BTreeMap<String, BTreeSet<String>> {
     use nl_syntax::SyntaxKind::*;
     let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for item in nl_sema::prelude_declarations().items {
-        let Some(root) = item.root.as_ref().filter(|r| r.steps.is_empty()) else { continue };
+        let Some(root) = item.root.as_ref().filter(|r| r.steps.is_empty()) else {
+            continue;
+        };
         // NL's `Table` holds Lua's `table` functions, and reaches the
         // others (gmod's) through its `__index`: it describes `table`.
-        let global = if root.global == "Table" { "table".to_string() } else { root.global.clone() };
+        let global = if root.global == "Table" {
+            "table".to_string()
+        } else {
+            root.global.clone()
+        };
         let keys = out.entry(global).or_default();
         for m in item.node.children() {
-            let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else { continue };
+            let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else {
+                continue;
+            };
             let key = child(&m, LUA_KEY)
-                .and_then(|k| k.children_with_tokens().filter_map(|t| t.into_token()).find(|t| t.kind() == STRING))
+                .and_then(|k| {
+                    k.children_with_tokens()
+                        .filter_map(|t| t.into_token())
+                        .find(|t| t.kind() == STRING)
+                })
                 .map(|t| nl_sema::decode_plain_string(&t))
                 .unwrap_or(name);
             keys.insert(key);
@@ -342,7 +405,16 @@ pub fn builtin_library_keys() -> BTreeMap<String, BTreeSet<String>> {
 }
 
 pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) -> Generated {
-    let mut g = Gen { ov, side, class_names: BTreeMap::new(), taken: builtin_names(), stats: Stats { structures: api.structs.len(), ..Stats::default() } };
+    let mut g = Gen {
+        ov,
+        side,
+        class_names: BTreeMap::new(),
+        taken: builtin_names(),
+        stats: Stats {
+            structures: api.structs.len(),
+            ..Stats::default()
+        },
+    };
     let library_keys = builtin_library_keys();
 
     // Class names first: types refer to them.
@@ -350,14 +422,18 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
     for c in api.classes.values() {
         let nl = match ov.get(&c.address) {
             Some(Override::Skip) => {
-                g.stats.skipped.push(format!("{}: listed as left out", c.address));
+                g.stats
+                    .skipped
+                    .push(format!("{}: listed as left out", c.address));
                 continue;
             }
             Some(Override::Name(n)) => n.to_string(),
             None => names::pascal(&c.name),
         };
         if !names::is_cname(&nl) {
-            g.stats.skipped.push(format!("{}: `{nl}` is not a capitalized name", c.address));
+            g.stats
+                .skipped
+                .push(format!("{}: `{nl}` is not a capitalized name", c.address));
             continue;
         }
         if !g.claim(&nl, &c.address) {
@@ -365,7 +441,9 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
         }
         g.class_names.insert(c.name.clone(), nl.clone());
         if c.address != c.name {
-            g.class_names.entry(c.address.clone()).or_insert_with(|| nl.clone());
+            g.class_names
+                .entry(c.address.clone())
+                .or_insert_with(|| nl.clone());
         }
         class_order.push((c.name.as_str(), nl));
     }
@@ -374,8 +452,17 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
 
     // Classes, panels and hook tables.
     for (lua, nl) in &class_order {
-        let Some(c) = api.classes.get(*lua) else { continue };
-        let funcs: Vec<&Func> = api.funcs.iter().filter(|f| f.parent == c.name && matches!(f.kind, FuncKind::Class | FuncKind::Panel | FuncKind::Hook)).collect();
+        let Some(c) = api.classes.get(*lua) else {
+            continue;
+        };
+        let funcs: Vec<&Func> = api
+            .funcs
+            .iter()
+            .filter(|f| {
+                f.parent == c.name
+                    && matches!(f.kind, FuncKind::Class | FuncKind::Panel | FuncKind::Hook)
+            })
+            .collect();
         let parent = match (&c.parent, c.kind) {
             (Some(p), _) => g.class_names.get(p).cloned(),
             (None, ClassKind::Panel) => g.class_names.get("Panel").cloned(),
@@ -390,15 +477,26 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
         let mut members = g.fn_members(&funcs, true, &mut used);
         // A table of hooks also holds the fields its structure lists
         // (`GM.Name`, `ENT.PrintName`).
-        if let Some(fields) = HOOK_FIELDS.iter().find(|(t, _)| *t == c.name).and_then(|(_, s)| api.structs.get(*s)) {
+        if let Some(fields) = HOOK_FIELDS
+            .iter()
+            .find(|(t, _)| *t == c.name)
+            .and_then(|(_, s)| api.structs.get(*s))
+        {
             for f in fields {
                 let nl = names::snake(&f.name);
                 if !names::is_lname(&nl) || !used.insert(nl.clone()) {
                     continue;
                 }
                 let ty = g.arg_type(f);
-                let key = if nl == f.name { String::new() } else { format!(" as '{}'", f.name) };
-                members.push(Member { doc: None, line: format!("{nl}: {ty}{key}") });
+                let key = if nl == f.name {
+                    String::new()
+                } else {
+                    format!(" as '{}'", f.name)
+                };
+                members.push(Member {
+                    doc: None,
+                    line: format!("{nl}: {ty}{key}"),
+                });
             }
         }
         let (order, what) = match c.kind {
@@ -420,7 +518,15 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
             d.push_str(". Deprecated");
         }
         let _ = write!(d, ". https://wiki.facepunch.com/gmod/{}", c.address);
-        containers.push((order, nl.clone(), Container { doc: Some(d), header, members }));
+        containers.push((
+            order,
+            nl.clone(),
+            Container {
+                doc: Some(d),
+                header,
+                members,
+            },
+        ));
     }
 
     // Libraries, with the nested ones (`jit.opt`) as libraries of their own.
@@ -440,21 +546,33 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
     for (path, funcs) in &libs {
         let top = path.split('.').next().unwrap_or(path);
         let lib = api.libraries.get(path.as_str());
-        let address = lib.map(|l| l.address.clone()).unwrap_or_else(|| path.clone());
+        let address = lib
+            .map(|l| l.address.clone())
+            .unwrap_or_else(|| path.clone());
         let already = library_keys.get(path.as_str());
-        let funcs: Vec<&Func> = funcs.iter().copied().filter(|f| !already.is_some_and(|k| k.contains(f.name.as_str()))).collect();
+        let funcs: Vec<&Func> = funcs
+            .iter()
+            .copied()
+            .filter(|f| !already.is_some_and(|k| k.contains(f.name.as_str())))
+            .collect();
         if funcs.is_empty() {
             continue;
         }
         let nl = match ov.get(&address) {
             Some(Override::Skip) => {
-                g.stats.skipped.push(format!("{address}: listed as left out"));
+                g.stats
+                    .skipped
+                    .push(format!("{address}: listed as left out"));
                 continue;
             }
             Some(Override::Name(n)) => n.to_string(),
             None => {
                 let base = names::pascal(&path.replace('.', "_"));
-                if g.taken.contains(&base) { format!("{base}Lib") } else { base }
+                if g.taken.contains(&base) {
+                    format!("{base}Lib")
+                } else {
+                    base
+                }
             }
         };
         if !names::is_cname(&nl) || !g.claim(&nl, &address) {
@@ -474,8 +592,20 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
         if already.is_some() {
             d.push_str(", the functions the built-in declarations leave out");
         }
-        let _ = write!(d, ". https://wiki.facepunch.com/gmod/{}", lib.map(|l| l.address.as_str()).unwrap_or(top));
-        containers.push((3, nl.clone(), Container { doc: Some(d), header: format!("declare module {nl} = :{path}"), members }));
+        let _ = write!(
+            d,
+            ". https://wiki.facepunch.com/gmod/{}",
+            lib.map(|l| l.address.as_str()).unwrap_or(top)
+        );
+        containers.push((
+            3,
+            nl.clone(),
+            Container {
+                doc: Some(d),
+                header: format!("declare module {nl} = :{path}"),
+                members,
+            },
+        ));
     }
 
     // Extra members (fields and operators the wiki does not list, a struct
@@ -490,9 +620,18 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
                 if item.doc.is_some() {
                     c.doc = item.doc.clone();
                 }
-                let names_in: BTreeSet<String> = item.members.iter().filter_map(|m| m.name.clone()).collect();
-                c.members.retain(|m| !member_name(&m.line).is_some_and(|n| names_in.contains(&n)));
-                let mut ms: Vec<Member> = item.members.iter().map(|m| Member { doc: m.doc.clone(), line: m.line.clone() }).collect();
+                let names_in: BTreeSet<String> =
+                    item.members.iter().filter_map(|m| m.name.clone()).collect();
+                c.members
+                    .retain(|m| !member_name(&m.line).is_some_and(|n| names_in.contains(&n)));
+                let mut ms: Vec<Member> = item
+                    .members
+                    .iter()
+                    .map(|m| Member {
+                        doc: m.doc.clone(),
+                        line: m.line.clone(),
+                    })
+                    .collect();
                 ms.append(&mut c.members);
                 c.members = ms;
             }
@@ -503,12 +642,21 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
 
     let mut out = String::new();
     out.push_str(&header(api, side));
-    let sections = ["Classes", "Derma panel classes", "Tables of hooks", "Libraries"];
+    let sections = [
+        "Classes",
+        "Derma panel classes",
+        "Tables of hooks",
+        "Libraries",
+    ];
     let mut last = u8::MAX;
     for (order, _, c) in &containers {
         if *order != last {
             last = *order;
-            let _ = write!(out, "\n# ---- {} ----\n", sections.get(usize::from(*order)).unwrap_or(&""));
+            let _ = write!(
+                out,
+                "\n# ---- {} ----\n",
+                sections.get(usize::from(*order)).unwrap_or(&"")
+            );
         }
         out.push('\n');
         if let Some(d) = &c.doc {
@@ -532,22 +680,34 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
         }
         let nl = match ov.get(&f.address) {
             Some(Override::Skip) => {
-                g.stats.skipped.push(format!("{}: listed as left out", f.address));
+                g.stats
+                    .skipped
+                    .push(format!("{}: listed as left out", f.address));
                 continue;
             }
             Some(Override::Name(n)) => n.to_string(),
             None => names::snake(&f.name),
         };
         if !names::is_lname(&nl) {
-            g.stats.skipped.push(format!("{}: `{nl}` is not a snake_case name", f.address));
+            g.stats
+                .skipped
+                .push(format!("{}: `{nl}` is not a snake_case name", f.address));
             continue;
         }
         if !g.claim(&nl, &f.address) {
             continue;
         }
         let sig = g.fn_sig(f, false);
-        let root = if nl == f.name { String::new() } else { format!(" = :{}", f.name) };
-        let _ = writeln!(out, "## {}", doc(f.realm.as_deref(), f.deprecated, &f.address));
+        let root = if nl == f.name {
+            String::new()
+        } else {
+            format!(" = :{}", f.name)
+        };
+        let _ = writeln!(
+            out,
+            "## {}",
+            doc(f.realm.as_deref(), f.deprecated, &f.address)
+        );
         let _ = writeln!(out, "declare fn {nl}{sig}{root}");
         g.stats.globals += 1;
     }
@@ -575,12 +735,19 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
             continue;
         }
         g.stats.enums += 1;
-        let realm = e.realm.as_deref().map(|r| format!(", realm: {r}")).unwrap_or_default();
+        let realm = e
+            .realm
+            .as_deref()
+            .map(|r| format!(", realm: {r}"))
+            .unwrap_or_default();
         let _ = writeln!(out, "\n# Enums/{}{realm}", e.name);
         let mut tables: BTreeMap<&str, Vec<(String, &str)>> = BTreeMap::new();
         for item in &e.items {
             if let Some((table, key)) = item.key.split_once('.') {
-                tables.entry(table).or_default().push((names::screaming(key), key));
+                tables
+                    .entry(table)
+                    .or_default()
+                    .push((names::screaming(key), key));
                 continue;
             }
             let nl = match ov.get(&item.key) {
@@ -591,7 +758,11 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
             if !names::is_cname(&nl) || !g.claim(&nl, &item.key) {
                 continue;
             }
-            let root = if nl == item.key { String::new() } else { format!(" = :{}", item.key) };
+            let root = if nl == item.key {
+                String::new()
+            } else {
+                format!(" = :{}", item.key)
+            };
             let _ = writeln!(out, "declare const {nl}: Number{root}");
             g.stats.enum_constants += 1;
         }
@@ -606,7 +777,11 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
                 if !used.insert(name.clone()) {
                     continue;
                 }
-                let k = if name == key { String::new() } else { format!(" as '{key}'") };
+                let k = if name == key {
+                    String::new()
+                } else {
+                    format!(" as '{key}'")
+                };
                 let _ = writeln!(out, "  const {name}: Number{k}");
                 g.stats.enum_constants += 1;
             }
@@ -614,16 +789,23 @@ pub fn generate(api: &Api, ov: &Overrides, extra: &Extra, side: Option<Side>) ->
         }
     }
     for u in ov.unused() {
-        g.stats.skipped.push(format!("names.txt: `{u}` matches nothing in the wiki data"));
+        g.stats
+            .skipped
+            .push(format!("names.txt: `{u}` matches nothing in the wiki data"));
     }
-    Generated { text: out, stats: g.stats }
+    Generated {
+        text: out,
+        stats: g.stats,
+    }
 }
-
 
 fn header(api: &Api, side: Option<Side>) -> String {
     let date = api.last_update.as_deref().unwrap_or("unknown");
     let realm = match side {
-        Some(s) => format!("\n#\n# This file declares only what exists in the {} realm.", s.name()),
+        Some(s) => format!(
+            "\n#\n# This file declares only what exists in the {} realm.",
+            s.name()
+        ),
         None => String::new(),
     };
     format!(

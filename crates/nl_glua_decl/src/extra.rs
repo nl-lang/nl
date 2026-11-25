@@ -35,14 +35,23 @@ fn declared_name(line: &str) -> Option<String> {
     let mut words = rest.split_whitespace();
     let kind = words.next()?;
     let name = words.next()?;
-    let name = if kind == "fn" { name.split(['(', ':']).next()? } else { name.trim_end_matches(':') };
+    let name = if kind == "fn" {
+        name.split(['(', ':']).next()?
+    } else {
+        name.trim_end_matches(':')
+    };
     Some(name.to_string())
 }
 
 /// The NL name a member line declares (`fn get_pos(self)…`, `x: Number`).
 pub fn member_name(line: &str) -> Option<String> {
-    let rest = line.strip_prefix("fn ").or_else(|| line.strip_prefix("const ")).unwrap_or(line);
-    let end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).unwrap_or(rest.len());
+    let rest = line
+        .strip_prefix("fn ")
+        .or_else(|| line.strip_prefix("const "))
+        .unwrap_or(line);
+    let end = rest
+        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+        .unwrap_or(rest.len());
     let name = rest.get(..end)?;
     (!name.is_empty()).then(|| name.to_string())
 }
@@ -61,18 +70,23 @@ impl Extra {
                 doc.clear();
                 continue;
             }
-            let name = declared_name(line).ok_or_else(|| format!("extra.d.nl:{}: expected a `declare` item", n + 1))?;
+            let name = declared_name(line)
+                .ok_or_else(|| format!("extra.d.nl:{}: expected a `declare` item", n + 1))?;
             let item_doc = (!doc.is_empty()).then(|| doc.join(" "));
             let mut text: String = doc.iter().map(|d| format!("## {d}\n")).collect();
             doc.clear();
             text.push_str(line);
             text.push('\n');
-            let is_block = ["declare type ", "declare struct ", "declare module "].iter().any(|p| line.starts_with(p));
+            let is_block = ["declare type ", "declare struct ", "declare module "]
+                .iter()
+                .any(|p| line.starts_with(p));
             let mut members = Vec::new();
             if is_block {
                 let mut mdoc: Option<String> = None;
                 loop {
-                    let Some((m, l)) = lines.next() else { return Err(format!("extra.d.nl:{}: `{name}` has no `end`", n + 1)) };
+                    let Some((m, l)) = lines.next() else {
+                        return Err(format!("extra.d.nl:{}: `{name}` has no `end`", n + 1));
+                    };
                     text.push_str(l);
                     text.push('\n');
                     if l == "end" {
@@ -83,13 +97,27 @@ impl Extra {
                         mdoc = Some(d.trim().to_string());
                     } else if !t.is_empty() && !t.starts_with('#') {
                         if !l.starts_with("  ") {
-                            return Err(format!("extra.d.nl:{}: a member is indented by two spaces", m + 1));
+                            return Err(format!(
+                                "extra.d.nl:{}: a member is indented by two spaces",
+                                m + 1
+                            ));
                         }
-                        members.push(ExtraMember { doc: mdoc.take(), line: t.to_string(), name: member_name(t) });
+                        members.push(ExtraMember {
+                            doc: mdoc.take(),
+                            line: t.to_string(),
+                            name: member_name(t),
+                        });
                     }
                 }
             }
-            items.push(ExtraItem { name, is_block, doc: item_doc, header: is_block.then(|| line.to_string()), members, text });
+            items.push(ExtraItem {
+                name,
+                is_block,
+                doc: item_doc,
+                header: is_block.then(|| line.to_string()),
+                members,
+                text,
+            });
         }
         Ok(Extra { items })
     }

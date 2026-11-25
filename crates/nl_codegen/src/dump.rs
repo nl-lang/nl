@@ -50,7 +50,10 @@ pub fn write(main: &Proto, chunk_name: &[u8], strip: bool, level: u8) -> Vec<u8>
     out.extend_from_slice(&HEAD);
     out.push(VERSION);
     let bitop = if uses_bitops(main) { F_BITOP } else { 0 };
-    uleb(&mut out, F_FR2 | if strip { F_STRIP } else { 0 } | bitop | if level >= 1 { F_NL } else { 0 });
+    uleb(
+        &mut out,
+        F_FR2 | if strip { F_STRIP } else { 0 } | bitop | if level >= 1 { F_NL } else { 0 },
+    );
     if !strip {
         uleb(&mut out, len_u32(chunk_name.len()));
         out.extend_from_slice(chunk_name);
@@ -62,7 +65,9 @@ pub fn write(main: &Proto, chunk_name: &[u8], strip: bool, level: u8) -> Vec<u8>
 
 /// True when the prototype or one nested in it has a bit operator.
 fn uses_bitops(p: &Proto) -> bool {
-    p.bc.iter().any(|i| Op::from_ins(*i).is_some_and(Op::is_bitop)) || p.children.iter().any(uses_bitops)
+    p.bc.iter()
+        .any(|i| Op::from_ins(*i).is_some_and(Op::is_bitop))
+        || p.children.iter().any(uses_bitops)
 }
 
 fn len_u32(n: usize) -> u32 {
@@ -85,7 +90,11 @@ fn uleb64(out: &mut Vec<u8>, mut v: u64) {
 /// The integer a number constant is narrowed to, as `lj_num2int_check`
 /// decides: integral, in `i32` range, and not `-0`.
 fn narrow(n: f64) -> Option<i32> {
-    if n.is_finite() && n.fract() == 0.0 && n >= f64::from(i32::MIN) && n <= f64::from(i32::MAX) && !(n == 0.0 && n.is_sign_negative())
+    if n.is_finite()
+        && n.fract() == 0.0
+        && n >= f64::from(i32::MIN)
+        && n <= f64::from(i32::MAX)
+        && !(n == 0.0 && n.is_sign_negative())
     {
         Some(n as i32)
     } else {
@@ -102,7 +111,12 @@ fn proto(out: &mut Vec<u8>, p: &Proto, strip: bool) {
             }
         }
     }
-    let mut d = vec![p.flags, p.numparams, p.framesize, u8::try_from(p.uv.len()).unwrap_or(u8::MAX)];
+    let mut d = vec![
+        p.flags,
+        p.numparams,
+        p.framesize,
+        u8::try_from(p.uv.len()).unwrap_or(u8::MAX),
+    ];
     uleb(&mut d, len_u32(p.kgc.len()));
     uleb(&mut d, len_u32(p.knum.len()));
     uleb(&mut d, len_u32(p.bc.len()));
@@ -157,7 +171,11 @@ fn knum(out: &mut Vec<u8>, n: f64) {
 }
 
 fn ktab(out: &mut Vec<u8>, t: &KTable) {
-    let narray = t.array.iter().rposition(|v| *v != KTabValue::Nil).map_or(0, |i| i + 1);
+    let narray = t
+        .array
+        .iter()
+        .rposition(|v| *v != KTabValue::Nil)
+        .map_or(0, |i| i + 1);
     uleb(out, len_u32(narray));
     uleb(out, len_u32(t.hash.len()));
     for v in t.array.iter().take(narray) {
@@ -250,9 +268,15 @@ mod tests {
         assert_eq!(bytes(|o| knum(o, 64.0)), vec![0x80, 0x01]);
         assert_eq!(bytes(|o| knum(o, -1.0)), vec![0xfe, 0xff, 0xff, 0xff, 0x1f]);
         // 1.5 = 0x3ff8000000000000: lo = 0, hi = 0x3ff80000.
-        assert_eq!(bytes(|o| knum(o, 1.5)), vec![0x01, 0x80, 0x80, 0xe0, 0xff, 0x03]);
+        assert_eq!(
+            bytes(|o| knum(o, 1.5)),
+            vec![0x01, 0x80, 0x80, 0xe0, 0xff, 0x03]
+        );
         // -0 is never narrowed.
-        assert_eq!(bytes(|o| knum(o, -0.0)), vec![0x01, 0x80, 0x80, 0x80, 0x80, 0x08]);
+        assert_eq!(
+            bytes(|o| knum(o, -0.0)),
+            vec![0x01, 0x80, 0x80, 0x80, 0x80, 0x08]
+        );
     }
 
     #[test]
@@ -260,12 +284,20 @@ mod tests {
         assert_eq!(bytes(|o| uleb(o, 0)), vec![0]);
         assert_eq!(bytes(|o| uleb(o, 127)), vec![127]);
         assert_eq!(bytes(|o| uleb(o, 128)), vec![0x80, 1]);
-        assert_eq!(bytes(|o| uleb(o, u32::MAX)), vec![0xff, 0xff, 0xff, 0xff, 0x0f]);
+        assert_eq!(
+            bytes(|o| uleb(o, u32::MAX)),
+            vec![0xff, 0xff, 0xff, 0xff, 0x0f]
+        );
     }
 
     #[test]
     fn header_and_footer() {
-        let p = Proto { bc: vec![crate::bc::ad(crate::bc::Op::RET0, 0, 1)], lines: vec![1], framesize: 1, ..Proto::default() };
+        let p = Proto {
+            bc: vec![crate::bc::ad(crate::bc::Op::RET0, 0, 1)],
+            lines: vec![1],
+            framesize: 1,
+            ..Proto::default()
+        };
         let d = write(&p, b"=t", false, 0);
         assert_eq!(&d[..5], &[0x1b, b'L', b'J', 2, 0x08]);
         assert_eq!(&d[5..8], &[2, b'=', b't']);

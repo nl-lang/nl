@@ -42,7 +42,10 @@ impl MemberHint {
     /// The Lua key of the member.
     pub fn key(&self) -> &str {
         match self {
-            MemberHint::Field { key } | MemberHint::Method { key } | MemberHint::Function { key } | MemberHint::TableFn { key } => key,
+            MemberHint::Field { key }
+            | MemberHint::Method { key }
+            | MemberHint::Function { key }
+            | MemberHint::TableFn { key } => key,
         }
     }
 }
@@ -112,7 +115,10 @@ impl Hints {
     /// The hints that hold without static resolution: only the Lua keys of
     /// declared members, which generated code needs in every mode.
     pub fn without_static_resolution(&self) -> Hints {
-        Hints { members_declared: self.members_declared.clone(), ..Hints::default() }
+        Hints {
+            members_declared: self.members_declared.clone(),
+            ..Hints::default()
+        }
     }
 
     pub fn is_proven(&self, site: TextRange) -> bool {
@@ -120,7 +126,9 @@ impl Hints {
     }
 
     pub fn member(&self, field_expr: TextRange) -> Option<&MemberHint> {
-        self.members_declared.get(&field_expr).or_else(|| self.members.get(&field_expr))
+        self.members_declared
+            .get(&field_expr)
+            .or_else(|| self.members.get(&field_expr))
     }
 
     pub fn loop_form(&self, for_stmt: TextRange) -> Option<LoopHint> {

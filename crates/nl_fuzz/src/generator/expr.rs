@@ -61,7 +61,13 @@ impl Gen {
             }
             4 => Ex::new("1_000_000", Ty::Int, 1.0e6).atom(),
             5 => {
-                let v = self.rng.pick(&[0x7fff_ffff_i64, 0x8000_0000, 0xffff_ffff, 4_294_967_296, 2_147_483_647]);
+                let v = self.rng.pick(&[
+                    0x7fff_ffff_i64,
+                    0x8000_0000,
+                    0xffff_ffff,
+                    4_294_967_296,
+                    2_147_483_647,
+                ]);
                 Ex::new(format!("{v}"), Ty::Int, v as f64).atom()
             }
             _ => Ex::new("0", Ty::Int, 0.0).atom(),
@@ -88,7 +94,11 @@ impl Gen {
     fn var_ex(&mut self, ctx: &Ctx, ty: Ty) -> Option<Ex> {
         if let Some(i) = ctx.method_of {
             if self.rng.chance(40) {
-                let fields: Vec<Field> = self.all_fields(i).into_iter().filter(|f| f.ty == ty).collect();
+                let fields: Vec<Field> = self
+                    .all_fields(i)
+                    .into_iter()
+                    .filter(|f| f.ty == ty)
+                    .collect();
                 if !fields.is_empty() {
                     let f = self.rng.pick_ref(&fields)?;
                     return Some(Ex::new(format!("@{}", f.name), ty, f.bound).atom());
@@ -96,7 +106,12 @@ impl Gen {
             }
         }
         let v = self.pick_var(ty, false)?;
-        Some(Ex::new(v.name.clone(), ty, v.bound).elem(v.elem).ascii(v.ascii).atom())
+        Some(
+            Ex::new(v.name.clone(), ty, v.bound)
+                .elem(v.elem)
+                .ascii(v.ascii)
+                .atom(),
+        )
     }
 
     /// An integer within `b`: generated freely, then wrapped in `% b` if
@@ -110,44 +125,82 @@ impl Gen {
         if d == 0 || self.rng.chance(25) {
             return self.int_atom(ctx);
         }
-        let e = match self.rng.weighted(&[16, 6, 5, 6, 6, 4, 4, 3, 6, 3, 8, 6, 3, 3, 3, 3, 3, 3, 3, 3, 4]) {
+        let e = match self.rng.weighted(&[
+            16, 6, 5, 6, 6, 4, 4, 3, 6, 3, 8, 6, 3, 3, 3, 3, 3, 3, 3, 3, 4,
+        ]) {
             0 => {
                 let a = self.int(ctx, d - 1);
                 let b = self.int(ctx, d - 1);
                 let op = self.rng.pick(&["+", "-"]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Int, a.bound + b.bound)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Int,
+                    a.bound + b.bound,
+                )
             }
             1 => {
                 let a = self.int(ctx, d - 1);
                 let b = self.int(ctx, d - 1);
-                let (a, b) = if a.bound * b.bound > MUL_CAP { (fit(a, 1000.0), fit(b, 1000.0)) } else { (a, b) };
-                Ex::new(format!("{} * {}", a.operand(), b.operand()), Ty::Int, a.bound * b.bound)
+                let (a, b) = if a.bound * b.bound > MUL_CAP {
+                    (fit(a, 1000.0), fit(b, 1000.0))
+                } else {
+                    (a, b)
+                };
+                Ex::new(
+                    format!("{} * {}", a.operand(), b.operand()),
+                    Ty::Int,
+                    a.bound * b.bound,
+                )
             }
             2 => {
                 let a = self.int(ctx, d - 1);
                 let k = self.nonzero(9);
-                Ex::new(format!("{} // {}", a.operand(), lit(k)), Ty::Int, a.bound / k.unsigned_abs() as f64 + 1.0)
+                Ex::new(
+                    format!("{} // {}", a.operand(), lit(k)),
+                    Ty::Int,
+                    a.bound / k.unsigned_abs() as f64 + 1.0,
+                )
             }
             3 => {
                 let a = self.int(ctx, d - 1);
-                let k = if self.rng.chance(70) { self.nonzero(12) } else { self.rng.pick(&[100, 1000, -7, 256]) };
-                Ex::new(format!("{} % {}", a.operand(), lit(k)), Ty::Int, k.unsigned_abs() as f64)
+                let k = if self.rng.chance(70) {
+                    self.nonzero(12)
+                } else {
+                    self.rng.pick(&[100, 1000, -7, 256])
+                };
+                Ex::new(
+                    format!("{} % {}", a.operand(), lit(k)),
+                    Ty::Int,
+                    k.unsigned_abs() as f64,
+                )
             }
             4 => {
                 let a = self.int(ctx, d - 1);
                 let b = self.int(ctx, d - 1);
                 let op = self.rng.pick(&["&", "|", "^"]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Int, BIT_BOUND)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Int,
+                    BIT_BOUND,
+                )
             }
             5 => {
                 let a = self.int(ctx, d - 1);
                 let op = self.rng.pick(&["<<", ">>", ">>>"]);
-                let s = if self.rng.chance(80) { self.rng.range(0, 31).to_string() } else { format!("({} % 8)", self.int_atom(ctx).operand()) };
+                let s = if self.rng.chance(80) {
+                    self.rng.range(0, 31).to_string()
+                } else {
+                    format!("({} % 8)", self.int_atom(ctx).operand())
+                };
                 Ex::new(format!("{} {op} {s}", a.operand()), Ty::Int, BIT_BOUND)
             }
             6 => {
                 let a = self.int(ctx, d - 1);
-                if self.rng.chance(50) { Ex::new(format!("-{}", a.operand()), Ty::Int, a.bound) } else { Ex::new(format!("~{}", a.operand()), Ty::Int, BIT_BOUND) }
+                if self.rng.chance(50) {
+                    Ex::new(format!("-{}", a.operand()), Ty::Int, a.bound)
+                } else {
+                    Ex::new(format!("~{}", a.operand()), Ty::Int, BIT_BOUND)
+                }
             }
             7 => {
                 let a = self.int(ctx, d - 1);
@@ -164,16 +217,37 @@ impl Gen {
                     0 => Ex::new(format!("{}.length", s.operand()), Ty::Int, s.bound).atom(),
                     1 => Ex::new(format!("{}.len", s.operand()), Ty::Int, s.bound * 4.0).atom(),
                     2 => {
-                        let sub = self.rng.pick(&["\"a\"", "\"l\"", "\" \"", "\"é\"", "\"ab\""]);
-                        Ex::new(format!("({}.index({sub}) or 0)", s.operand()), Ty::Int, s.bound).atom()
+                        let sub = self
+                            .rng
+                            .pick(&["\"a\"", "\"l\"", "\" \"", "\"é\"", "\"ab\""]);
+                        Ex::new(
+                            format!("({}.index({sub}) or 0)", s.operand()),
+                            Ty::Int,
+                            s.bound,
+                        )
+                        .atom()
                     }
-                    3 => Ex::new(format!("({} <> \"x\").ord", s.operand()), Ty::Int, 1_114_111.0).atom(),
-                    4 => Ex::new(format!("{}.split(\",\").len", s.operand()), Ty::Int, s.bound + 1.0).atom(),
+                    3 => Ex::new(
+                        format!("({} <> \"x\").ord", s.operand()),
+                        Ty::Int,
+                        1_114_111.0,
+                    )
+                    .atom(),
+                    4 => Ex::new(
+                        format!("{}.split(\",\").len", s.operand()),
+                        Ty::Int,
+                        s.bound + 1.0,
+                    )
+                    .atom(),
                     _ => Ex::new(format!("{}.chars.len", s.operand()), Ty::Int, s.bound).atom(),
                 }
             }
             9 => {
-                let l = if self.rng.chance(60) { self.int_list(ctx, d - 1) } else { self.str_list(ctx, d - 1) };
+                let l = if self.rng.chance(60) {
+                    self.int_list(ctx, d - 1)
+                } else {
+                    self.str_list(ctx, d - 1)
+                };
                 Ex::new(format!("{}.len", l.operand()), Ty::Int, l.bound).atom()
             }
             10 => match self.call_returning(ctx, Ty::Int) {
@@ -191,17 +265,36 @@ impl Gen {
                 let bound = a.bound.max(b.bound);
                 // `c and a or b` would be `Bool | Number` to the analyzer.
                 if self.rng.chance(75) {
-                    Ex::new(format!("(if {}; {} else {} end)", c.code, a.code, b.code), Ty::Int, bound).atom()
+                    Ex::new(
+                        format!("(if {}; {} else {} end)", c.code, a.code, b.code),
+                        Ty::Int,
+                        bound,
+                    )
+                    .atom()
                 } else {
-                    Ex::new(format!("{} or {}", a.operand(), b.operand()), Ty::Int, bound)
+                    Ex::new(
+                        format!("{} or {}", a.operand(), b.operand()),
+                        Ty::Int,
+                        bound,
+                    )
                 }
             }
             13 => {
                 let a = self.int(ctx, d - 1);
                 let b = self.int(ctx, d - 1);
                 match self.rng.below(4) {
-                    0 => Ex::new(format!("Number.max({}, {})", a.code, b.code), Ty::Int, a.bound.max(b.bound)).atom(),
-                    1 => Ex::new(format!("Number.min({}, {})", a.code, b.code), Ty::Int, a.bound.max(b.bound)).atom(),
+                    0 => Ex::new(
+                        format!("Number.max({}, {})", a.code, b.code),
+                        Ty::Int,
+                        a.bound.max(b.bound),
+                    )
+                    .atom(),
+                    1 => Ex::new(
+                        format!("Number.min({}, {})", a.code, b.code),
+                        Ty::Int,
+                        a.bound.max(b.bound),
+                    )
+                    .atom(),
                     2 => Ex::new(format!("Number.abs({})", a.code), Ty::Int, a.bound).atom(),
                     _ => Ex::new(format!("{}.abs", a.operand()), Ty::Int, a.bound).atom(),
                 }
@@ -209,7 +302,9 @@ impl Gen {
             14 => {
                 let f = self.num(ctx, d - 1);
                 match self.rng.below(3) {
-                    0 => Ex::new(format!("Number.floor({})", f.code), Ty::Int, f.bound + 1.0).atom(),
+                    0 => {
+                        Ex::new(format!("Number.floor({})", f.code), Ty::Int, f.bound + 1.0).atom()
+                    }
                     1 => Ex::new(format!("{}.floor", f.operand()), Ty::Int, f.bound + 1.0).atom(),
                     _ => Ex::new(format!("Number.ceil({})", f.code), Ty::Int, f.bound + 1.0).atom(),
                 }
@@ -217,9 +312,15 @@ impl Gen {
             15 => {
                 let a = self.int(ctx, d - 1);
                 if self.rng.chance(70) {
-                    Ex::new(format!("({} as String) as Number", a.operand()), Ty::Int, a.bound)
+                    Ex::new(
+                        format!("({} as String) as Number", a.operand()),
+                        Ty::Int,
+                        a.bound,
+                    )
                 } else {
-                    let s = self.rng.pick(&["\"12\"", "\"0x10\"", "\" 7 \"", "\"-3\"", "\"1e2\""]);
+                    let s = self
+                        .rng
+                        .pick(&["\"12\"", "\"0x10\"", "\" 7 \"", "\"-3\"", "\"1e2\""]);
                     Ex::new(format!("({s} as Number)"), Ty::Int, 100.0).atom()
                 }
             }
@@ -246,9 +347,19 @@ impl Gen {
                 // As above: `?.[i] ??` when the index's text has an odd
                 // length, without a draw of its own.
                 if i.code.len() % 2 == 1 {
-                    Ex::new(format!("({}?.[{}] ?? 0)", l.operand(), i.code), Ty::Int, l.elem).atom()
+                    Ex::new(
+                        format!("({}?.[{}] ?? 0)", l.operand(), i.code),
+                        Ty::Int,
+                        l.elem,
+                    )
+                    .atom()
                 } else {
-                    Ex::new(format!("({}[{}] or 0)", l.operand(), i.code), Ty::Int, l.elem).atom()
+                    Ex::new(
+                        format!("({}[{}] or 0)", l.operand(), i.code),
+                        Ty::Int,
+                        l.elem,
+                    )
+                    .atom()
                 }
             }
             18 => match self.pipe_call(ctx) {
@@ -275,7 +386,13 @@ impl Gen {
         }
         if self.rng.chance(8) {
             // A numeric enum value, or the number of variants.
-            let numeric: Vec<usize> = (0..self.enums.len()).filter(|&i| self.enums.get(i).is_some_and(|e| e.variants.iter().all(|v| matches!(v.1, EnumVal::Num(_))))).collect();
+            let numeric: Vec<usize> = (0..self.enums.len())
+                .filter(|&i| {
+                    self.enums
+                        .get(i)
+                        .is_some_and(|e| e.variants.iter().all(|v| matches!(v.1, EnumVal::Num(_))))
+                })
+                .collect();
             if let Some(&i) = numeric.get(self.rng.below(numeric.len())) {
                 if let Some(e) = self.enums.get(i) {
                     let v = self.rng.below(e.variants.len());
@@ -303,49 +420,98 @@ impl Gen {
                     return v;
                 }
             }
-            return if self.rng.chance(60) { self.num_lit() } else { self.int_atom(ctx) };
+            return if self.rng.chance(60) {
+                self.num_lit()
+            } else {
+                self.int_atom(ctx)
+            };
         }
         let e = match self.rng.weighted(&[20, 10, 15, 10, 10, 6, 6, 10]) {
             0 => {
                 let a = self.num(ctx, d - 1);
                 let b = self.num(ctx, d - 1);
                 let op = self.rng.pick(&["+", "-"]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Num, a.bound + b.bound)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Num,
+                    a.bound + b.bound,
+                )
             }
             1 => {
                 let a = self.num(ctx, d - 1);
                 let b = self.num(ctx, d - 1);
-                let (a, b) = if a.bound * b.bound > MUL_CAP { (fit(a, 1000.0), fit(b, 1000.0)) } else { (a, b) };
-                Ex::new(format!("{} * {}", a.operand(), b.operand()), Ty::Num, a.bound * b.bound)
+                let (a, b) = if a.bound * b.bound > MUL_CAP {
+                    (fit(a, 1000.0), fit(b, 1000.0))
+                } else {
+                    (a, b)
+                };
+                Ex::new(
+                    format!("{} * {}", a.operand(), b.operand()),
+                    Ty::Num,
+                    a.bound * b.bound,
+                )
             }
             2 => {
                 let a = self.num(ctx, d - 1);
-                let (k, kb) = self.rng.pick(&[("3", 3.0), ("2", 2.0), ("-4", 4.0), ("0.5", 0.5), ("7", 7.0), ("1.5", 1.5), ("-0.25", 0.25)]);
-                let k = if k.starts_with('-') { format!("({k})") } else { k.to_string() };
+                let (k, kb) = self.rng.pick(&[
+                    ("3", 3.0),
+                    ("2", 2.0),
+                    ("-4", 4.0),
+                    ("0.5", 0.5),
+                    ("7", 7.0),
+                    ("1.5", 1.5),
+                    ("-0.25", 0.25),
+                ]);
+                let k = if k.starts_with('-') {
+                    format!("({k})")
+                } else {
+                    k.to_string()
+                };
                 Ex::new(format!("{} / {k}", a.operand()), Ty::Num, a.bound / kb)
             }
             3 => {
                 let a = self.num(ctx, d - 1);
-                let (k, kb) = self.rng.pick(&[("2.5", 2.5), ("1", 1.0), ("0.75", 0.75), ("-3", 3.0), ("10", 10.0)]);
-                let k = if k.starts_with('-') { format!("({k})") } else { k.to_string() };
+                let (k, kb) = self.rng.pick(&[
+                    ("2.5", 2.5),
+                    ("1", 1.0),
+                    ("0.75", 0.75),
+                    ("-3", 3.0),
+                    ("10", 10.0),
+                ]);
+                let k = if k.starts_with('-') {
+                    format!("({k})")
+                } else {
+                    k.to_string()
+                };
                 let op = self.rng.pick(&["%", "//"]);
                 let bound = if op == "%" { kb } else { a.bound / kb + 1.0 };
                 Ex::new(format!("{} {op} {k}", a.operand()), Ty::Num, bound)
             }
             4 => {
                 let a = self.num(ctx, d - 1);
-                Ex::new(format!("Number.sqrt(Number.abs({}))", a.code), Ty::Num, a.bound.sqrt() + 1.0).atom()
+                Ex::new(
+                    format!("Number.sqrt(Number.abs({}))", a.code),
+                    Ty::Num,
+                    a.bound.sqrt() + 1.0,
+                )
+                .atom()
             }
             5 => {
                 let a = self.num(ctx, d - 1);
                 if a.bound <= 1.0e5 {
                     Ex::new(format!("{} ** 2", a.operand()), Ty::Num, a.bound * a.bound)
                 } else {
-                    Ex::new(format!("{} ** 0.5", fit(a, 1000.0).operand()), Ty::Num, 32.0)
+                    Ex::new(
+                        format!("{} ** 0.5", fit(a, 1000.0).operand()),
+                        Ty::Num,
+                        32.0,
+                    )
                 }
             }
             6 => {
-                let s = self.rng.pick(&["\"2.5\"", "\"1e-2\"", "\" 3.25\"", "\"0x1p4\""]);
+                let s = self
+                    .rng
+                    .pick(&["\"2.5\"", "\"1e-2\"", "\" 3.25\"", "\"0x1p4\""]);
                 Ex::new(format!("({s} as Number)"), Ty::Num, 16.0).atom()
             }
             _ => self.int(ctx, d - 1),
@@ -360,12 +526,20 @@ impl Gen {
     fn str_lit(&mut self) -> Ex {
         let (code, ascii) = self.rng.pick(STRINGS);
         // The length bound counts escapes as characters: an overestimate.
-        Ex::new(code, Ty::Str, code.chars().count() as f64).ascii(ascii).atom()
+        Ex::new(code, Ty::Str, code.chars().count() as f64)
+            .ascii(ascii)
+            .atom()
     }
 
     pub(super) fn str_(&mut self, ctx: &Ctx, d: u32) -> Ex {
         let e = self.str_raw(ctx, d);
-        if e.bound > STR_CAP { Ex::new(format!("{}[1..20]", e.operand()), Ty::Str, 20.0).ascii(e.ascii).atom() } else { e }
+        if e.bound > STR_CAP {
+            Ex::new(format!("{}[1..20]", e.operand()), Ty::Str, 20.0)
+                .ascii(e.ascii)
+                .atom()
+        } else {
+            e
+        }
     }
 
     fn str_raw(&mut self, ctx: &Ctx, d: u32) -> Ex {
@@ -377,7 +551,10 @@ impl Gen {
             }
             return self.str_lit();
         }
-        match self.rng.weighted(&[14, 10, 8, 14, 8, 6, 5, 4, 4, 6, 5, 4, 4]) {
+        match self
+            .rng
+            .weighted(&[14, 10, 8, 14, 8, 6, 5, 4, 4, 6, 5, 4, 4])
+        {
             0 => {
                 // Interpolation of any scalar (`tostring`).
                 let pre = self.rng.pick(&["", "v=", "<", "n "]);
@@ -404,12 +581,19 @@ impl Gen {
                         (e.code, e.bound, e.ascii)
                     }
                 };
-                Ex::new(format!("\"{pre}#{{{inner}}}{post}\""), Ty::Str, b + 6.0).ascii(ascii).atom()
+                Ex::new(format!("\"{pre}#{{{inner}}}{post}\""), Ty::Str, b + 6.0)
+                    .ascii(ascii)
+                    .atom()
             }
             1 => {
                 let a = self.str_(ctx, d - 1);
                 let b = self.str_(ctx, d - 1);
-                Ex::new(format!("{} <> {}", a.operand(), b.operand()), Ty::Str, a.bound + b.bound).ascii(a.ascii && b.ascii)
+                Ex::new(
+                    format!("{} <> {}", a.operand(), b.operand()),
+                    Ty::Str,
+                    a.bound + b.bound,
+                )
+                .ascii(a.ascii && b.ascii)
             }
             2 => {
                 let (code, b) = match self.rng.below(4) {
@@ -434,44 +618,88 @@ impl Gen {
             }
             3 => {
                 let s = self.str_(ctx, d - 1);
-                let m = self.rng.pick(&["upcase", "downcase", "capitalize", "swapcase", "reverse", "strip", "lstrip", "rstrip"]);
-                Ex::new(format!("{}.{m}", s.operand()), Ty::Str, s.bound).ascii(s.ascii).atom()
+                let m = self.rng.pick(&[
+                    "upcase",
+                    "downcase",
+                    "capitalize",
+                    "swapcase",
+                    "reverse",
+                    "strip",
+                    "lstrip",
+                    "rstrip",
+                ]);
+                Ex::new(format!("{}.{m}", s.operand()), Ty::Str, s.bound)
+                    .ascii(s.ascii)
+                    .atom()
             }
             4 => {
                 let s = self.str_(ctx, d - 1);
                 let n = self.rng.range(0, 16);
                 let m = self.rng.pick(&["center", "ljust", "rjust"]);
-                let pad = if self.rng.chance(40) { format!(", \"{}\"", self.rng.pick(&["*", "-=", "ab"])) } else { String::new() };
-                Ex::new(format!("{}.{m}({n}{pad})", s.operand()), Ty::Str, s.bound.max(n as f64)).ascii(s.ascii).atom()
+                let pad = if self.rng.chance(40) {
+                    format!(", \"{}\"", self.rng.pick(&["*", "-=", "ab"]))
+                } else {
+                    String::new()
+                };
+                Ex::new(
+                    format!("{}.{m}({n}{pad})", s.operand()),
+                    Ty::Str,
+                    s.bound.max(n as f64),
+                )
+                .ascii(s.ascii)
+                .atom()
             }
             5 => {
                 let s = self.str_(ctx, d - 1);
-                let pat = self.rng.pick(&["\"a\"", "\"l\"", "\" \"", "\"o\"", "\"é\"", "\"ab\""]);
+                let pat = self
+                    .rng
+                    .pick(&["\"a\"", "\"l\"", "\" \"", "\"o\"", "\"é\"", "\"ab\""]);
                 let rep = self.rng.pick(&["\"_\"", "\"XY\"", "\"\""]);
                 let m = self.rng.pick(&["sub", "gsub"]);
-                Ex::new(format!("{}.{m}({pat}, {rep})", s.operand()), Ty::Str, s.bound * 2.0).ascii(s.ascii).atom()
+                Ex::new(
+                    format!("{}.{m}({pat}, {rep})", s.operand()),
+                    Ty::Str,
+                    s.bound * 2.0,
+                )
+                .ascii(s.ascii)
+                .atom()
             }
             6 => {
                 let s = self.str_(ctx, d - 1);
                 let a = self.rng.range(-4, 4);
                 let b = self.rng.range(-3, 6);
                 let op = self.rng.pick(&["..", "..."]);
-                Ex::new(format!("{}[{a}{op}{b}]", s.operand()), Ty::Str, s.bound).ascii(s.ascii).atom()
+                Ex::new(format!("{}[{a}{op}{b}]", s.operand()), Ty::Str, s.bound)
+                    .ascii(s.ascii)
+                    .atom()
             }
             7 => {
                 let s = self.str_(ctx, d - 1);
                 let i = self.rng.range(-3, 5);
-                Ex::new(format!("({}[{i}] or \"-\")", s.operand()), Ty::Str, 1.0).ascii(s.ascii).atom()
+                Ex::new(format!("({}[{i}] or \"-\")", s.operand()), Ty::Str, 1.0)
+                    .ascii(s.ascii)
+                    .atom()
             }
             8 => {
                 let s = self.str_(ctx, d - 1);
                 if s.ascii {
                     let a = self.rng.range(1, 4);
                     let b = self.rng.range(0, 6);
-                    Ex::new(format!("{}.byteslice({a}, {b})", s.operand()), Ty::Str, s.bound).atom()
+                    Ex::new(
+                        format!("{}.byteslice({a}, {b})", s.operand()),
+                        Ty::Str,
+                        s.bound,
+                    )
+                    .atom()
                 } else {
                     let k = self.rng.range(0, 2);
-                    Ex::new(format!("{}.rep({k})", s.operand()), Ty::Str, s.bound * k as f64).ascii(s.ascii).atom()
+                    Ex::new(
+                        format!("{}.rep({k})", s.operand()),
+                        Ty::Str,
+                        s.bound * k as f64,
+                    )
+                    .ascii(s.ascii)
+                    .atom()
                 }
             }
             9 => {
@@ -483,12 +711,20 @@ impl Gen {
                     1 => ("%5.2f", unsigned_zero(&f)),
                     _ => ("[%3d] %-4s", format!("{}, {}", fit(i, 1000.0).code, s.code)),
                 };
-                Ex::new(format!("\"{fmt}\".format({args})"), Ty::Str, s.bound + 40.0).ascii(s.ascii).atom()
+                Ex::new(format!("\"{fmt}\".format({args})"), Ty::Str, s.bound + 40.0)
+                    .ascii(s.ascii)
+                    .atom()
             }
             10 => {
                 let l = self.str_list(ctx, d - 1);
                 let sep = self.rng.pick(&["\",\"", "\"\"", "\" | \""]);
-                Ex::new(format!("Table.concat({}, {sep})", l.code), Ty::Str, l.bound * (l.elem + 3.0)).ascii(false).atom()
+                Ex::new(
+                    format!("Table.concat({}, {sep})", l.code),
+                    Ty::Str,
+                    l.bound * (l.elem + 3.0),
+                )
+                .ascii(false)
+                .atom()
             }
             11 => {
                 let i = self.int(ctx, d - 1);
@@ -505,7 +741,11 @@ impl Gen {
                 },
                 1 => match self.enum_val(ctx) {
                     Some((e, i)) => {
-                        let ename = self.enums.get(i).map(|x| x.name.clone()).unwrap_or_default();
+                        let ename = self
+                            .enums
+                            .get(i)
+                            .map(|x| x.name.clone())
+                            .unwrap_or_default();
                         Ex::new(format!("{ename}.name({})", e.code), Ty::Str, 12.0).atom()
                     }
                     None => self.str_lit(),
@@ -539,26 +779,42 @@ impl Gen {
             let a = self.int_atom(ctx);
             let b = self.int_atom(ctx);
             let op = self.rng.pick(&["<", "<=", ">", ">=", "==", "!="]);
-            return Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0);
+            return Ex::new(
+                format!("{} {op} {}", a.operand(), b.operand()),
+                Ty::Bool,
+                1.0,
+            );
         }
         match self.rng.weighted(&[25, 8, 8, 10, 10, 6, 6, 5, 4, 4, 4]) {
             0 => {
                 let a = self.int(ctx, d - 1);
                 let b = self.int(ctx, d - 1);
                 let op = self.rng.pick(&["<", "<=", ">", ">=", "==", "!="]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Bool,
+                    1.0,
+                )
             }
             1 => {
                 let a = self.num(ctx, d - 1);
                 let b = self.num(ctx, d - 1);
                 let op = self.rng.pick(&["<", "<=", ">", ">=", "==", "!="]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Bool,
+                    1.0,
+                )
             }
             2 => {
                 let a = self.str_(ctx, d - 1);
                 let b = self.str_(ctx, d - 1);
                 let op = self.rng.pick(&["==", "!=", "<", ">="]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Bool,
+                    1.0,
+                )
             }
             3 => {
                 let a = self.bool_(ctx, d - 1);
@@ -569,12 +825,18 @@ impl Gen {
                 let a = self.bool_(ctx, d - 1);
                 let b = self.bool_(ctx, d - 1);
                 let op = self.rng.pick(&["and", "or", "&&", "||"]);
-                Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0)
+                Ex::new(
+                    format!("{} {op} {}", a.operand(), b.operand()),
+                    Ty::Bool,
+                    1.0,
+                )
             }
             5 => {
                 let s = self.str_(ctx, d - 1);
                 let m = self.rng.pick(&["start_with", "end_with"]);
-                let p = self.rng.pick(&["\"a\"", "\"h\"", "\"\"", "\"o\"", "\"Fox\""]);
+                let p = self
+                    .rng
+                    .pick(&["\"a\"", "\"h\"", "\"\"", "\"o\"", "\"Fox\""]);
                 if self.rng.chance(15) {
                     Ex::new(format!("{}.valid_encoding", s.operand()), Ty::Bool, 1.0).atom()
                 } else {
@@ -588,11 +850,17 @@ impl Gen {
                 // variable is only tested against its own type (an untyped
                 // one would become a union); anything else may be tested
                 // freely.
-                let is_name = code.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '@');
+                let is_name = code
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '@');
                 // A string variable may be `String?` to the analyzer (it
                 // types `s[a..b]` so), and the `else` of `is String` would
                 // then make it `nil`: test a copy instead.
-                let code = if is_name && ty == Ty::Str { format!("({code} <> \"\")") } else { code };
+                let code = if is_name && ty == Ty::Str {
+                    format!("({code} <> \"\")")
+                } else {
+                    code
+                };
                 let is_name = is_name && ty != Ty::Str;
                 let t = if is_name {
                     match ty {
@@ -601,7 +869,15 @@ impl Gen {
                         _ => "Number",
                     }
                 } else {
-                    self.rng.pick(&["Number", "String", "Bool", "Table", "nil", "Number | String", "~String"])
+                    self.rng.pick(&[
+                        "Number",
+                        "String",
+                        "Bool",
+                        "Table",
+                        "nil",
+                        "Number | String",
+                        "~String",
+                    ])
                 };
                 Ex::new(format!("{code} is {t}"), Ty::Bool, 1.0)
             }
@@ -612,9 +888,15 @@ impl Gen {
                         Some(en) if self.rng.chance(50) => {
                             let v = self.rng.below(en.variants.len());
                             let vn = en.variants.get(v).map(|x| x.0.clone()).unwrap_or_default();
-                            Ex::new(format!("{} == {}.{vn}", e.operand(), en.name), Ty::Bool, 1.0)
+                            Ex::new(
+                                format!("{} == {}.{vn}", e.operand(), en.name),
+                                Ty::Bool,
+                                1.0,
+                            )
                         }
-                        Some(en) => Ex::new(format!("{} is {}", e.operand(), en.name), Ty::Bool, 1.0),
+                        Some(en) => {
+                            Ex::new(format!("{} is {}", e.operand(), en.name), Ty::Bool, 1.0)
+                        }
                         None => Ex::new("true", Ty::Bool, 1.0).atom(),
                     }
                 }
@@ -631,8 +913,16 @@ impl Gen {
             _ => match self.struct_val(ctx, d - 1) {
                 Some((e, i)) => {
                     // Any struct in the program, the value's own or not.
-                    let j = if self.rng.chance(50) { i } else { self.rng.below(self.structs.len()) };
-                    let name = self.structs.get(j).map(|s| s.name.clone()).unwrap_or_default();
+                    let j = if self.rng.chance(50) {
+                        i
+                    } else {
+                        self.rng.below(self.structs.len())
+                    };
+                    let name = self
+                        .structs
+                        .get(j)
+                        .map(|s| s.name.clone())
+                        .unwrap_or_default();
                     Ex::new(format!("{} is {name}", e.operand()), Ty::Bool, 1.0)
                 }
                 None => Ex::new("true", Ty::Bool, 1.0).atom(),
@@ -667,12 +957,20 @@ impl Gen {
                 if l.bound + 1.0 > LIST_CAP {
                     return self.int_list_lit(ctx, 0);
                 }
-                Ex::new(format!("[*{}, {}]", l.code, e.code), Ty::IntList, l.bound + 1.0).elem(l.elem.max(e.bound)).atom()
+                Ex::new(
+                    format!("[*{}, {}]", l.code, e.code),
+                    Ty::IntList,
+                    l.bound + 1.0,
+                )
+                .elem(l.elem.max(e.bound))
+                .atom()
             }
             2 => {
                 let s = self.str_(ctx, d.saturating_sub(1));
                 let m = self.rng.pick(&["codepoints", "as_bytes"]);
-                Ex::new(format!("{}.{m}", s.operand()), Ty::IntList, s.bound * 4.0).elem(1_114_111.0).atom()
+                Ex::new(format!("{}.{m}", s.operand()), Ty::IntList, s.bound * 4.0)
+                    .elem(1_114_111.0)
+                    .atom()
             }
             _ => self.int_list_lit(ctx, d.saturating_sub(1)),
         }
@@ -687,8 +985,18 @@ impl Gen {
             eb = eb.max(e.bound);
             items.push(e.code);
         }
-        let trailing = if n > 0 && self.rng.chance(15) { "," } else { "" };
-        let mut e = Ex::new(format!("[{}{trailing}]", items.join(", ")), Ty::IntList, n as f64).elem(eb).atom();
+        let trailing = if n > 0 && self.rng.chance(15) {
+            ","
+        } else {
+            ""
+        };
+        let mut e = Ex::new(
+            format!("[{}{trailing}]", items.join(", ")),
+            Ty::IntList,
+            n as f64,
+        )
+        .elem(eb)
+        .atom();
         e.min_len = n;
         e
     }
@@ -703,16 +1011,26 @@ impl Gen {
         match self.rng.below(5) {
             0 => {
                 let s = self.str_(ctx, dd);
-                Ex::new(format!("{}.chars", s.operand()), Ty::StrList, s.bound).elem(1.0).atom()
+                Ex::new(format!("{}.chars", s.operand()), Ty::StrList, s.bound)
+                    .elem(1.0)
+                    .atom()
             }
             1 => {
                 let s = self.str_(ctx, dd);
                 let sep = self.rng.pick(&["\",\"", "\" \"", "\"l\""]);
-                Ex::new(format!("{}.split({sep})", s.operand()), Ty::StrList, s.bound + 1.0).elem(s.bound).atom()
+                Ex::new(
+                    format!("{}.split({sep})", s.operand()),
+                    Ty::StrList,
+                    s.bound + 1.0,
+                )
+                .elem(s.bound)
+                .atom()
             }
             2 => {
                 let s = self.str_(ctx, dd);
-                Ex::new(format!("{}.split", s.operand()), Ty::StrList, s.bound + 1.0).elem(s.bound).atom()
+                Ex::new(format!("{}.split", s.operand()), Ty::StrList, s.bound + 1.0)
+                    .elem(s.bound)
+                    .atom()
             }
             _ => self.str_list_lit(ctx, dd),
         }
@@ -727,7 +1045,9 @@ impl Gen {
             eb = eb.max(e.bound);
             items.push(e.code);
         }
-        let mut e = Ex::new(format!("[{}]", items.join(", ")), Ty::StrList, n as f64).elem(eb).atom();
+        let mut e = Ex::new(format!("[{}]", items.join(", ")), Ty::StrList, n as f64)
+            .elem(eb)
+            .atom();
         e.min_len = n;
         e
     }
@@ -755,10 +1075,20 @@ impl Gen {
             let e = self.int_within(ctx, d, 1000.0);
             eb = eb.max(e.bound);
             // A key is a word, or a plain string.
-            let key = if self.rng.chance(20) { format!("\"{k}\"") } else { k.to_string() };
+            let key = if self.rng.chance(20) {
+                format!("\"{k}\"")
+            } else {
+                k.to_string()
+            };
             items.push(format!("{key}: {}", e.code));
         }
-        Ex::new(format!("{{{}}}", items.join(", ")), Ty::Map, keys.len() as f64).elem(eb.max(1000.0)).atom()
+        Ex::new(
+            format!("{{{}}}", items.join(", ")),
+            Ty::Map,
+            keys.len() as f64,
+        )
+        .elem(eb.max(1000.0))
+        .atom()
     }
 
     // ---- structs and enums ----
@@ -782,7 +1112,14 @@ impl Gen {
         if self.structs.get(i).is_some_and(|s| s.plus) && d > 0 && self.rng.chance(20) {
             let (a, _) = self.struct_lit(ctx, i, d - 1)?;
             let (b, _) = self.struct_lit(ctx, i, d - 1)?;
-            return Some((Ex::new(format!("{} + {}", a.operand(), b.operand()), Ty::Struct(i), 0.0), i));
+            return Some((
+                Ex::new(
+                    format!("{} + {}", a.operand(), b.operand()),
+                    Ty::Struct(i),
+                    0.0,
+                ),
+                i,
+            ));
         }
         self.struct_lit(ctx, i, d.saturating_sub(1))
     }
@@ -804,15 +1141,30 @@ impl Gen {
             };
             inits.push(format!("{}: {v}", f.name));
         }
-        let body = if inits.is_empty() { "{}".to_string() } else { format!("{{ {} }}", inits.join(", ")) };
-        Some((Ex::new(format!("{name} {body}"), Ty::Struct(i), 0.0).atom(), i))
+        let body = if inits.is_empty() {
+            "{}".to_string()
+        } else {
+            format!("{{ {} }}", inits.join(", "))
+        };
+        Some((
+            Ex::new(format!("{name} {body}"), Ty::Struct(i), 0.0).atom(),
+            i,
+        ))
     }
 
     /// An integer read from a struct: a field, a method call, `len`.
     fn struct_int(&mut self, ctx: &Ctx, d: u32) -> Option<Ex> {
         let (s, i) = self.struct_val(ctx, d.saturating_sub(1))?;
-        let fields: Vec<Field> = self.all_fields(i).into_iter().filter(|f| f.ty == Ty::Int).collect();
-        let methods: Vec<Method> = self.all_methods(i).into_iter().filter(|m| m.ret.is_some()).collect();
+        let fields: Vec<Field> = self
+            .all_fields(i)
+            .into_iter()
+            .filter(|f| f.ty == Ty::Int)
+            .collect();
+        let methods: Vec<Method> = self
+            .all_methods(i)
+            .into_iter()
+            .filter(|m| m.ret.is_some())
+            .collect();
         let len = self.structs.get(i).and_then(|st| st.len);
         let choice = self.rng.below(3);
         if choice == 1 && !methods.is_empty() {
@@ -821,9 +1173,17 @@ impl Gen {
                 return None;
             }
             self.add_cost(m.cost * ctx.mult);
-            let args: Vec<String> = m.params.iter().map(|&b| self.int_within(ctx, d.saturating_sub(1), b).code).collect();
+            let args: Vec<String> = m
+                .params
+                .iter()
+                .map(|&b| self.int_within(ctx, d.saturating_sub(1), b).code)
+                .collect();
             // A method without arguments may be auto-called.
-            let code = if args.is_empty() && self.rng.chance(40) { format!("{}.{}", s.operand(), m.name) } else { format!("{}.{}({})", s.operand(), m.name, args.join(", ")) };
+            let code = if args.is_empty() && self.rng.chance(40) {
+                format!("{}.{}", s.operand(), m.name)
+            } else {
+                format!("{}.{}({})", s.operand(), m.name, args.join(", "))
+            };
             return Some(Ex::new(code, Ty::Int, m.ret.unwrap_or(1000.0)).atom());
         }
         if choice == 2 {
@@ -836,7 +1196,9 @@ impl Gen {
     }
 
     fn struct_with_to_string(&mut self, ctx: &Ctx) -> Option<Ex> {
-        let cands: Vec<usize> = (0..self.structs.len()).filter(|&i| self.inherits_to_string(i)).collect();
+        let cands: Vec<usize> = (0..self.structs.len())
+            .filter(|&i| self.inherits_to_string(i))
+            .collect();
         let &i = cands.get(self.rng.below(cands.len()))?;
         if self.rng.chance(50) {
             if let Some(v) = self.pick_var(Ty::Struct(i), false) {
@@ -850,7 +1212,9 @@ impl Gen {
         let mut cur = Some(i);
         let mut n = 0;
         while let Some(c) = cur {
-            let Some(s) = self.structs.get(c) else { return false };
+            let Some(s) = self.structs.get(c) else {
+                return false;
+            };
             if s.to_string {
                 return true;
             }
@@ -876,7 +1240,10 @@ impl Gen {
         }
         let e = self.enums.get(i)?;
         let (vn, _) = e.variants.get(self.rng.below(e.variants.len()))?;
-        Some((Ex::new(format!("{}.{vn}", e.name), Ty::Enum(i), 0.0).atom(), i))
+        Some((
+            Ex::new(format!("{}.{vn}", e.name), Ty::Enum(i), 0.0).atom(),
+            i,
+        ))
     }
 
     /// An expression of any type the generator tracks.
@@ -894,7 +1261,11 @@ impl Gen {
                 None => Ex::new("nil", ty, 0.0),
             },
             Ty::Enum(i) => {
-                let e = self.enums.get(i).and_then(|e| e.variants.first().map(|v| format!("{}.{}", e.name, v.0))).unwrap_or_default();
+                let e = self
+                    .enums
+                    .get(i)
+                    .and_then(|e| e.variants.first().map(|v| format!("{}.{}", e.name, v.0)))
+                    .unwrap_or_default();
                 Ex::new(e, ty, 0.0).atom()
             }
         }
@@ -904,7 +1275,9 @@ impl Gen {
 
     /// A call of a visible function that returns one value of the type.
     fn call_returning(&mut self, ctx: &Ctx, ty: Ty) -> Option<Ex> {
-        let fs = self.callable(ctx, |f| matches!(f.ret, Ret::One(t, _) if t == ty) && f.block.is_none());
+        let fs = self.callable(ctx, |f| {
+            matches!(f.ret, Ret::One(t, _) if t == ty) && f.block.is_none()
+        });
         let f = self.rng.pick_ref(&fs)?;
         let e = self.call_text(ctx, &f)?;
         self.note_call(&f, ctx);
@@ -944,7 +1317,15 @@ impl Gen {
         // Without arguments a function-kind name may be written bare: its
         // value is used, so it is called.
         let all: Vec<String> = args.into_iter().chain(keyed).collect();
-        let code = if all.is_empty() && f.kind != FnKind::Value && self.rng.chance(25) && omit_from == f.params.len() { f.name.clone() } else { format!("{}({})", f.name, all.join(", ")) };
+        let code = if all.is_empty()
+            && f.kind != FnKind::Value
+            && self.rng.chance(25)
+            && omit_from == f.params.len()
+        {
+            f.name.clone()
+        } else {
+            format!("{}({})", f.name, all.join(", "))
+        };
         Some(match f.ret {
             Ret::One(ty, b) => Ex::new(code, ty, b).atom(),
             Ret::Pair(b) => Ex::new(code, Ty::Int, b).atom(),
@@ -963,7 +1344,12 @@ impl Gen {
 
     /// `(x |> f)` or `(x |> f(y))`.
     fn pipe_call(&mut self, ctx: &Ctx) -> Option<Ex> {
-        let fs = self.callable(ctx, |f| matches!(f.ret, Ret::One(Ty::Int, _)) && f.block.is_none() && f.kind != FnKind::Value && f.params.first().is_some_and(|p| p.ty == Ty::Int));
+        let fs = self.callable(ctx, |f| {
+            matches!(f.ret, Ret::One(Ty::Int, _))
+                && f.block.is_none()
+                && f.kind != FnKind::Value
+                && f.params.first().is_some_and(|p| p.ty == Ty::Int)
+        });
         let f = self.rng.pick_ref(&fs)?;
         let first = f.params.first()?.clone();
         let x = self.int_within(ctx, 1, first.bound);
@@ -980,7 +1366,11 @@ impl Gen {
             Ret::One(_, b) => b,
             _ => 1000.0,
         };
-        let code = if rest.is_empty() && self.rng.chance(50) { format!("({} |> {})", x.code, f.name) } else { format!("({} |> {}({}))", x.code, f.name, rest.join(", ")) };
+        let code = if rest.is_empty() && self.rng.chance(50) {
+            format!("({} |> {})", x.code, f.name)
+        } else {
+            format!("({} |> {}({}))", x.code, f.name, rest.join(", "))
+        };
         Some(Ex::new(code, Ty::Int, b).atom())
     }
 
@@ -991,10 +1381,26 @@ impl Gen {
         let f = self.rng.pick_ref(&fs)?;
         let (pb, qb) = f.block?;
         let x = self.int_within(ctx, 1, f.params.first().map_or(pb, |p| p.bound));
-        let cands = self.callable(ctx, |g| g.kind == FnKind::Decl && g.block.is_none() && g.params.len() == 1 && g.params.first().is_some_and(|p| p.ty == Ty::Int && p.bound >= pb) && !g.rest && g.opts.is_empty() && matches!(g.ret, Ret::One(Ty::Int, b) if b <= qb));
+        let cands = self.callable(ctx, |g| {
+            g.kind == FnKind::Decl
+                && g.block.is_none()
+                && g.params.len() == 1
+                && g.params
+                    .first()
+                    .is_some_and(|p| p.ty == Ty::Int && p.bound >= pb)
+                && !g.rest
+                && g.opts.is_empty()
+                && matches!(g.ret, Ret::One(Ty::Int, b) if b <= qb)
+        });
         let cb = match self.rng.pick_ref(&cands) {
             Some(g) if self.rng.chance(50) => {
-                self.note_call(&g, &Ctx { mult: ctx.mult * 4.0, ..ctx.clone() });
+                self.note_call(
+                    &g,
+                    &Ctx {
+                        mult: ctx.mult * 4.0,
+                        ..ctx.clone()
+                    },
+                );
                 format!("{}!", g.name)
             }
             _ => {
@@ -1061,9 +1467,20 @@ impl Gen {
                 let c = self.bool_(ctx, 2);
                 let (b1, e1) = self.block(&inner, 1, Some(ty));
                 let (b2, e2) = self.block(&inner, 1, Some(ty));
-                let bound = e1.as_ref().map_or(0.0, |e| e.bound).max(e2.as_ref().map_or(0.0, |e| e.bound));
+                let bound = e1
+                    .as_ref()
+                    .map_or(0.0, |e| e.bound)
+                    .max(e2.as_ref().map_or(0.0, |e| e.bound));
                 let ascii = e1.is_none_or(|e| e.ascii) && e2.is_none_or(|e| e.ascii);
-                Some(Ex::new(format!("unless {}\n{b1}\nelse\n{b2}\nend", c.code), ty, bound).ascii(ascii).atom())
+                Some(
+                    Ex::new(
+                        format!("unless {}\n{b1}\nelse\n{b2}\nend", c.code),
+                        ty,
+                        bound,
+                    )
+                    .ascii(ascii)
+                    .atom(),
+                )
             }
             2 => self.case_expr(ctx, ty),
             3 => {
@@ -1084,7 +1501,9 @@ impl Gen {
                 text.push_str(&format!("else\n{b}\nend"));
                 Some(Ex::new(text, ty, bound).ascii(ascii).atom())
             }
-            4 => self.try_expr(ctx, Some(ty)).map(|(t, b, a)| Ex::new(t, ty, b).ascii(a).atom()),
+            4 => self
+                .try_expr(ctx, Some(ty))
+                .map(|(t, b, a)| Ex::new(t, ty, b).ascii(a).atom()),
             _ => {
                 if ty != Ty::Int {
                     return None;
@@ -1149,8 +1568,14 @@ impl Gen {
             2 => {
                 let s = self.str_(ctx, 2);
                 for _ in 0..n {
-                    let a = self.rng.pick(&["\"a\"", "\"hello\"", "\"\"", "\"Fox\"", "\"x y z\""]);
-                    arms.push(if self.rng.chance(30) { format!("{a}, \"ab\"") } else { a.to_string() });
+                    let a = self
+                        .rng
+                        .pick(&["\"a\"", "\"hello\"", "\"\"", "\"Fox\"", "\"x y z\""]);
+                    arms.push(if self.rng.chance(30) {
+                        format!("{a}, \"ab\"")
+                    } else {
+                        a.to_string()
+                    });
                 }
                 Some((s.code, arms))
             }
@@ -1158,9 +1583,21 @@ impl Gen {
                 let (e, i) = self.enum_val(ctx)?;
                 let en = self.enums.get(i)?.clone();
                 for _ in 0..n {
-                    let v = en.variants.get(self.rng.below(en.variants.len()))?.0.clone();
-                    let w = en.variants.get(self.rng.below(en.variants.len()))?.0.clone();
-                    arms.push(if self.rng.chance(30) && v != w { format!("{}.{v}, {}.{w}", en.name, en.name) } else { format!("{}.{v}", en.name) });
+                    let v = en
+                        .variants
+                        .get(self.rng.below(en.variants.len()))?
+                        .0
+                        .clone();
+                    let w = en
+                        .variants
+                        .get(self.rng.below(en.variants.len()))?
+                        .0
+                        .clone();
+                    arms.push(if self.rng.chance(30) && v != w {
+                        format!("{}.{v}, {}.{w}", en.name, en.name)
+                    } else {
+                        format!("{}.{v}", en.name)
+                    });
                 }
                 Some((e.code, arms))
             }
@@ -1175,20 +1612,42 @@ impl Gen {
         let (pb, qb) = f.block?;
         let x = self.int_within(ctx, 1, f.params.first().map_or(pb, |p| p.bound));
         let n = self.fresh("n");
-        let params = vec![Param { name: n.clone(), ty: Ty::Int, bound: pb, default: None }];
+        let params = vec![Param {
+            name: n.clone(),
+            ty: Ty::Int,
+            bound: pb,
+            default: None,
+        }];
         // The block's result must stay within what the function expects.
         let may_raise = ctx.raise_ok && self.rng.chance(30);
-        let (body, frame) = self.fn_body(ctx, &params, &[], Ret::One(Ty::Int, 0.0), 2, qb, may_raise);
+        let (body, frame) =
+            self.fn_body(ctx, &params, &[], Ret::One(Ty::Int, 0.0), 2, qb, may_raise);
         self.block_raises(ctx, &frame);
-        let body = if body.is_empty() { "  0".to_string() } else { body };
+        let body = if body.is_empty() {
+            "  0".to_string()
+        } else {
+            body
+        };
         self.add_cost((frame.cost + 1.0) * 4.0 * ctx.mult);
         self.note_call(&f, ctx);
         let fb = match f.ret {
             Ret::One(_, b) => b,
             _ => 1000.0,
         };
-        let head = if self.rng.chance(50) && !x.code.starts_with('(') && !x.code.starts_with('-') && !x.code.starts_with('[') { format!("{} {}", f.name, x.code) } else { format!("{}({})", f.name, x.code) };
-        Some(Ex::new(format!("{head} do |{n}|\n{body}\nend"), Ty::Int, fb))
+        let head = if self.rng.chance(50)
+            && !x.code.starts_with('(')
+            && !x.code.starts_with('-')
+            && !x.code.starts_with('[')
+        {
+            format!("{} {}", f.name, x.code)
+        } else {
+            format!("{}({})", f.name, x.code)
+        };
+        Some(Ex::new(
+            format!("{head} do |{n}|\n{body}\nend"),
+            Ty::Int,
+            fb,
+        ))
     }
 }
 
@@ -1201,5 +1660,9 @@ fn unsigned_zero(e: &Ex) -> String {
 
 /// A literal operand: negative numbers in parentheses.
 fn lit(k: i64) -> String {
-    if k < 0 { format!("({k})") } else { k.to_string() }
+    if k < 0 {
+        format!("({k})")
+    } else {
+        k.to_string()
+    }
 }

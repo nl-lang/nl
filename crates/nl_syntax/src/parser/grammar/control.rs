@@ -88,7 +88,9 @@ impl Parser<'_> {
         c.complete(self, ELSE_CLAUSE);
         while self.takes_closer(ELSEIF_KW) || self.takes_closer(ELSE_KW) {
             let text = self.nth_text(0).to_string();
-            self.error(format!("`{text}` cannot follow the `else` of `{keyword}`: `else` comes last"));
+            self.error(format!(
+                "`{text}` cannot follow the `else` of `{keyword}`: `else` comes last"
+            ));
             let e = self.start();
             let is_elseif = self.at(ELSEIF_KW);
             self.bump();
@@ -168,7 +170,9 @@ impl Parser<'_> {
         c.complete(self, ELSE_CLAUSE);
         while self.takes_closer(WHEN_KW) || self.takes_closer(ELSE_KW) {
             let text = self.nth_text(0).to_string();
-            self.error(format!("`{text}` cannot follow the `else` of `{keyword}`: `else` comes last"));
+            self.error(format!(
+                "`{text}` cannot follow the `else` of `{keyword}`: `else` comes last"
+            ));
             let e = self.start();
             if self.at(WHEN_KW) {
                 if keyword == "case" {
@@ -226,8 +230,14 @@ impl Parser<'_> {
         // After a `,`, the next item may be on the next line.
         let first = after == "`when`";
         if (first && self.nl()) || !can_start_expr(self.cur()) {
-            let found = if first { self.describe_cur() } else { self.describe_nth(0) };
-            self.error(format!("expected a value or a pattern after {after}, found {found}"));
+            let found = if first {
+                self.describe_cur()
+            } else {
+                self.describe_nth(0)
+            };
+            self.error(format!(
+                "expected a value or a pattern after {after}, found {found}"
+            ));
             return false;
         }
         self.with_flags(|c| c.header = true, |p| p.expr()).is_some()
@@ -411,7 +421,9 @@ impl Parser<'_> {
         }
         if !self.eat(IN_KW) {
             let found = self.describe_cur();
-            self.error(format!("expected `in` after the loop variables, found {found}"));
+            self.error(format!(
+                "expected `in` after the loop variables, found {found}"
+            ));
         }
         let iter = self.with_flags(
             |c| {

@@ -156,8 +156,8 @@ impl Parser<'_> {
         }
         let m = self.start();
         match k {
-            PLUS | MINUS | STAR | SLASH | PERCENT | STAR2 | SLASH2 | CONCAT | PIPE | AMP | CARET
-            | SHL | SHR | USHR | EQ2 | LT | LT_EQ | GT | GT_EQ | TILDE => self.bump(),
+            PLUS | MINUS | STAR | SLASH | PERCENT | STAR2 | SLASH2 | CONCAT | PIPE | AMP
+            | CARET | SHL | SHR | USHR | EQ2 | LT | LT_EQ | GT | GT_EQ | TILDE => self.bump(),
             L_BRACK if self.nth_pair(0, L_BRACK, R_BRACK) => {
                 self.bump();
                 self.bump();
@@ -225,7 +225,9 @@ impl Parser<'_> {
             }
             if !p.bump_split_gt() {
                 let found = p.describe_cur();
-                p.error(format!("expected `>` to close the type parameters, found {found}"));
+                p.error(format!(
+                    "expected `>` to close the type parameters, found {found}"
+                ));
             }
         });
         m.complete(self, TYPE_PARAMS);
@@ -367,10 +369,15 @@ impl Parser<'_> {
         } else if self.nl() || self.at(EOF) {
             // At the bindings, not at whatever follows on the next line.
             let range = self.range_from(first);
-            self.error_at(range, "a `const` needs a value: write `= value` after the name");
+            self.error_at(
+                range,
+                "a `const` needs a value: write `= value` after the name",
+            );
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected `=` and a value: a `const` needs a value, found {found}"));
+            self.error(format!(
+                "expected `=` and a value: a `const` needs a value, found {found}"
+            ));
         }
         m.complete(self, CONST_DECL);
     }
@@ -380,7 +387,11 @@ impl Parser<'_> {
     /// that is exported, as with `pub`, and also stored in the Lua global
     /// of its name when the file runs. It stands where `pub` may.
     fn global_decl(&mut self, m: Marker) {
-        if self.nth_at(1, FN_KW) || self.nth_at(1, ASYNC_KW) || self.nth_at(1, MODULE_KW) || self.nth_at(1, STRUCT_KW) {
+        if self.nth_at(1, FN_KW)
+            || self.nth_at(1, ASYNC_KW)
+            || self.nth_at(1, MODULE_KW)
+            || self.nth_at(1, STRUCT_KW)
+        {
             let global_range = self.cur_range();
             if !self.at_file_level() && !self.in_file_level_branch() {
                 self.error("`global fn`, `global module` and `global struct` are only allowed at the top level of a file, or directly in a branch of an `if` or `unless` there");
@@ -439,13 +450,23 @@ impl Parser<'_> {
     /// of `field_after` is a field name, even a closer: `end = 0` on its
     /// own line in a struct declares the field `end`. On the header's line
     /// `end` always closes (`struct Foo end`).
-    pub(crate) fn member_block(&mut self, keyword: &str, field_after: &[SyntaxKind], mut member: impl FnMut(&mut Self)) {
+    pub(crate) fn member_block(
+        &mut self,
+        keyword: &str,
+        field_after: &[SyntaxKind],
+        mut member: impl FnMut(&mut Self),
+    ) {
         if !self.at(END_KW) {
             self.header_end(keyword);
         }
         loop {
             while self.eat(SEMI) {}
-            let after_sep = self.nl() || self.pos.checked_sub(1).and_then(|i| self.toks.get(i)).is_some_and(|t| t.kind == SEMI);
+            let after_sep = self.nl()
+                || self
+                    .pos
+                    .checked_sub(1)
+                    .and_then(|i| self.toks.get(i))
+                    .is_some_and(|t| t.kind == SEMI);
             let keyword_field = after_sep
                 && self.cur().is_keyword()
                 && field_after.contains(&self.nth(1))
@@ -502,7 +523,9 @@ impl Parser<'_> {
     fn field_decl(&mut self) {
         let k = self.cur();
         let typed_or_default = matches!(self.nth(1), COLON | EQ) && !self.nth_raw_nl(1);
-        if (is_lower_word(k) || matches!(k, CNAME | ONAME)) && typed_or_default || matches!(k, LNAME | ONAME) {
+        if (is_lower_word(k) || matches!(k, CNAME | ONAME)) && typed_or_default
+            || matches!(k, LNAME | ONAME)
+        {
             let m = self.start();
             if k == CNAME {
                 self.name(NameClass::Lower, "a field name");
@@ -582,7 +605,9 @@ impl Parser<'_> {
     pub(crate) fn interface_is_impl(&self) -> bool {
         let mut depth: i32 = 0;
         for i in 1..400 {
-            let Some(t) = self.toks.get(self.pos + i) else { return false };
+            let Some(t) = self.toks.get(self.pos + i) else {
+                return false;
+            };
             if t.kind == EOF || (depth <= 0 && i > 1 && (t.nl || t.kind == SEMI)) {
                 return false;
             }
@@ -601,7 +626,8 @@ impl Parser<'_> {
     /// `iface_member`: a signature or a field requirement.
     fn iface_member(&mut self) {
         let k = self.cur();
-        let is_method = (k == FN_KW && !self.nth_at(1, COLON)) || (k == ASYNC_KW && self.nth_at(1, FN_KW));
+        let is_method =
+            (k == FN_KW && !self.nth_at(1, COLON)) || (k == ASYNC_KW && self.nth_at(1, FN_KW));
         if is_method {
             let opener = self.pos();
             let m = self.start();
@@ -726,7 +752,9 @@ impl Parser<'_> {
         let k = self.cur();
         if !matches!(k, CNAME | LNAME | ONAME) {
             if can_start_statement(k) {
-                self.error("an enum body holds variants only, one `Name` or `Name = value` per line");
+                self.error(
+                    "an enum body holds variants only, one `Name` or `Name = value` per line",
+                );
                 let e = self.start();
                 self.statement();
                 e.complete(self, ERROR_NODE);
@@ -756,7 +784,9 @@ impl Parser<'_> {
                 }
                 _ => {
                     let found = self.describe_cur();
-                    self.error(format!("expected a number or a string as the variant's value, found {found}"));
+                    self.error(format!(
+                        "expected a number or a string as the variant's value, found {found}"
+                    ));
                 }
             }
         }
@@ -870,7 +900,9 @@ impl Parser<'_> {
             self.import_path();
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected `from` and the path of the file, found {found}"));
+            self.error(format!(
+                "expected `from` and the path of the file, found {found}"
+            ));
         }
     }
 
@@ -883,7 +915,9 @@ impl Parser<'_> {
             }
             _ => {
                 let found = self.describe_cur();
-                self.error(format!("expected the path of the file to import, as a string, found {found}"));
+                self.error(format!(
+                    "expected the path of the file to import, as a string, found {found}"
+                ));
             }
         }
     }

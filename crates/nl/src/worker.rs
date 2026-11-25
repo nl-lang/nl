@@ -11,7 +11,9 @@
 use std::marker::PhantomData;
 use std::path::Path;
 
-use mlua::{FromLuaMulti, IntoLua, IntoLuaMulti, Lua, MaybeSend, MaybeSync, Result, UserData, Value};
+use mlua::{
+    FromLuaMulti, IntoLua, IntoLuaMulti, Lua, MaybeSend, MaybeSync, Result, UserData, Value,
+};
 
 use crate::NlExt;
 use crate::types::Transfer;
@@ -28,7 +30,10 @@ pub struct WorkerInit<'a> {
 
 impl<'a> WorkerInit<'a> {
     pub(crate) fn new(lua: &'a Lua) -> WorkerInit<'a> {
-        WorkerInit { lua, _not_send: PhantomData }
+        WorkerInit {
+            lua,
+            _not_send: PhantomData,
+        }
     }
 
     /// [`NlExt::register_type`] in the worker's state.

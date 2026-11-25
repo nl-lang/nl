@@ -10,14 +10,24 @@ use crate::proto::{self, Proto, VarName};
 /// Compiles a chunk to the prototype of its loader `P` (see the module
 /// documentation of [`super`]).
 pub(crate) fn compile_chunk(chunk: &Chunk, level: u8) -> R<Proto> {
-    let mut g = Gen { chunk, funcs: Vec::new(), assigned: assigned_locals(chunk), line: 0, level, want_multi: false };
+    let mut g = Gen {
+        chunk,
+        funcs: Vec::new(),
+        assigned: assigned_locals(chunk),
+        line: 0,
+        level,
+        want_multi: false,
+    };
     g.func_begin("the chunk loader".to_owned(), 0, true, false, &[])?;
     g.fs().has_closures = true;
     // local rt = ...
     g.local_stmt(&[VarId::Rt], &[Expr::Vararg])?;
     if let Some(owner) = chunk.owner {
         // local owner = rt.owner("@name")
-        g.local_stmt(&[VarId::Local(owner)], &[Expr::intrinsic_call("owner", vec![Expr::str(&chunk.name)])])?;
+        g.local_stmt(
+            &[VarId::Local(owner)],
+            &[Expr::intrinsic_call("owner", vec![Expr::str(&chunk.name)])],
+        )?;
     }
     // return function(...) <main> end
     let mut main = g.closure(&chunk.main)?;
@@ -59,9 +69,19 @@ impl Gen<'_> {
                 }
             }
             StmtKind::Do(b) => self.block(b)?,
-            StmtKind::If { cond, then, otherwise } => self.if_stmt(cond, then, otherwise.as_ref())?,
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => self.if_stmt(cond, then, otherwise.as_ref())?,
             StmtKind::While { cond, body } => self.while_stmt(cond, body)?,
-            StmtKind::NumericFor { var, start, limit, step, body } => self.numeric_for(*var, start, limit, step.as_ref(), body)?,
+            StmtKind::NumericFor {
+                var,
+                start,
+                limit,
+                step,
+                body,
+            } => self.numeric_for(*var, start, limit, step.as_ref(), body)?,
             StmtKind::GenericFor { vars, iter, body } => self.generic_for(vars, iter, body)?,
             StmtKind::Return(vals) => self.return_stmt(vals)?,
             StmtKind::Break => {
@@ -80,7 +100,10 @@ impl Gen<'_> {
         }
         // Free the temporaries of the statement.
         let fs = self.fs();
-        debug_assert!(fs.framesize >= fs.freereg && fs.freereg >= fs.nactvar, "bad register state after a statement");
+        debug_assert!(
+            fs.framesize >= fs.freereg && fs.freereg >= fs.nactvar,
+            "bad register state after a statement"
+        );
         fs.freereg = fs.nactvar;
         Ok(())
     }
@@ -89,7 +112,11 @@ impl Gen<'_> {
     pub(crate) fn local_stmt(&mut self, ids: &[VarId], values: &[Expr]) -> R<()> {
         let nvars = u32::try_from(ids.len()).unwrap_or(u32::MAX);
         // The last value expands only when the targets outnumber the values.
-        let (nexps, mut e) = if values.is_empty() { (0, Exp::new(Kind::Void)) } else { self.expr_list(values, ids.len() > values.len())? };
+        let (nexps, mut e) = if values.is_empty() {
+            (0, Exp::new(Kind::Void))
+        } else {
+            self.expr_list(values, ids.len() > values.len())?
+        };
         self.assign_adjust(nvars, nexps, &mut e)?;
         for id in ids {
             self.var_add_id(*id)?;
@@ -212,8 +239,27 @@ impl Gen<'_> {
         loop {
             match otherwise {
                 // `else if` with nothing else in the block is `elseif`.
-                Some(o) if matches!(o.stmts.as_slice(), [Stmt { kind: StmtKind::If { .. }, .. }]) => {
-                    let Some(Stmt { line, kind: StmtKind::If { cond, then, otherwise: next } }) = o.stmts.first() else { break };
+                Some(o)
+                    if matches!(
+                        o.stmts.as_slice(),
+                        [Stmt {
+                            kind: StmtKind::If { .. },
+                            ..
+                        }]
+                    ) =>
+                {
+                    let Some(Stmt {
+                        line,
+                        kind:
+                            StmtKind::If {
+                                cond,
+                                then,
+                                otherwise: next,
+                            },
+                    }) = o.stmts.first()
+                    else {
+                        break;
+                    };
                     let j = self.emit_jmp()?;
                     self.jmp_append(&mut escapelist, j)?;
                     self.jmp_tohere(flist)?;
@@ -256,7 +302,14 @@ impl Gen<'_> {
 
     /// `for var = start, limit, step` (`parse_for_num`): three hidden
     /// control slots, then the visible copy of the index.
-    fn numeric_for(&mut self, var: LocalId, start: &Expr, limit: &Expr, step: Option<&Expr>, body: &Block) -> R<()> {
+    fn numeric_for(
+        &mut self,
+        var: LocalId,
+        start: &Expr,
+        limit: &Expr,
+        step: Option<&Expr>,
+        body: &Block,
+    ) -> R<()> {
         let line = self.line;
         self.scope_begin(true);
         let base = self.fs().freereg;
@@ -318,7 +371,12 @@ impl Gen<'_> {
         self.scope_end()?;
         let pc = self.fs().pc();
         self.jmp_patchins(loop_pc, pc)?;
-        let call = self.emit_abc(if isnext { Op::ITERN } else { Op::ITERC }, base, nvars - 3 + 1, 2 + 1)?;
+        let call = self.emit_abc(
+            if isnext { Op::ITERN } else { Op::ITERC },
+            base,
+            nvars - 3 + 1,
+            2 + 1,
+        )?;
         self.set_line(call, line);
         let loopend = self.emit_aj(Op::ITERL, base, NO_JMP)?;
         self.set_line(loopend, line);
@@ -341,7 +399,11 @@ impl Gen<'_> {
                     None => return false,
                 }
             }
-            Some(Op::UGET) => match self.fs_ref().and_then(|f| f.upval_name(bc::d_of(ins))).map(|id| self.var_name(id)) {
+            Some(Op::UGET) => match self
+                .fs_ref()
+                .and_then(|f| f.upval_name(bc::d_of(ins)))
+                .map(|id| self.var_name(id))
+            {
                 Some(n) => n,
                 None => return false,
             },
@@ -384,7 +446,11 @@ impl Gen<'_> {
                             // The call is the last instruction: replace it.
                             self.fs().bc.pop();
                             self.fs().lines.pop();
-                            let op = if Op::from_ins(ip) == Some(Op::CALLM) { Op::CALLMT } else { Op::CALLT };
+                            let op = if Op::from_ins(ip) == Some(Op::CALLM) {
+                                Op::CALLMT
+                            } else {
+                                Op::CALLT
+                            };
                             bc::ad(op, bc::a_of(ip), bc::c_of(ip))
                         }
                     }

@@ -48,9 +48,15 @@ pub struct Files {
 
 impl Files {
     pub fn new() -> Files {
-        let search = std::env::var_os("NL_PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
+        let search = std::env::var_os("NL_PATH")
+            .map(|p| std::env::split_paths(&p).collect())
+            .unwrap_or_default();
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
-        Files { search, cwd, ..Files::default() }
+        Files {
+            search,
+            cwd,
+            ..Files::default()
+        }
     }
 
     /// The workspace roots of the client.
@@ -76,7 +82,11 @@ impl Files {
 
     /// The canonical name of a path: absolute and normalized.
     pub fn canonical(&self, p: &Path) -> PathBuf {
-        if p.is_absolute() { normalize(p) } else { normalize(&self.cwd.join(p)) }
+        if p.is_absolute() {
+            normalize(p)
+        } else {
+            normalize(&self.cwd.join(p))
+        }
     }
 
     pub fn open(&mut self, uri: &str, path: Option<PathBuf>, text: String) {
@@ -117,7 +127,10 @@ impl Files {
 
     /// The open buffer of a file, if the file is open.
     fn overlay(&self, path: &Path) -> Option<&String> {
-        self.by_path.get(path).and_then(|uri| self.open.get(uri)).map(|d| &d.text)
+        self.by_path
+            .get(path)
+            .and_then(|uri| self.open.get(uri))
+            .map(|d| &d.text)
     }
 
     /// The text of a file: the open buffer, else the disk.
@@ -137,7 +150,11 @@ impl Files {
     /// the search path.
     pub fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
         let candidates = search::candidates(from, path, &self.cwd, &self.search);
-        candidates.into_iter().map(|c| self.canonical(&c)).find(|c| self.exists(c)).map(|c| c.to_string_lossy().into_owned())
+        candidates
+            .into_iter()
+            .map(|c| self.canonical(&c))
+            .find(|c| self.exists(c))
+            .map(|c| c.to_string_lossy().into_owned())
     }
 
     pub fn read(&self, name: &str) -> Option<Vec<u8>> {
@@ -164,12 +181,20 @@ impl Files {
         let entries = |dir: &Path| {
             let mut found = search::dir_files(dir);
             // Open buffers in the directory that are not on disk yet.
-            found.extend(self.by_path.keys().filter(|p| p.parent() == Some(dir)).cloned());
+            found.extend(
+                self.by_path
+                    .keys()
+                    .filter(|p| p.parent() == Some(dir))
+                    .cloned(),
+            );
             found
         };
         let canonical = |p: &Path| self.canonical(p).to_string_lossy().into_owned();
         let names = search::decl_files(&dirs, &files, &entries, &canonical);
-        names.into_iter().filter_map(|name| self.read(&name).map(|bytes| (name, bytes))).collect()
+        names
+            .into_iter()
+            .filter_map(|name| self.read(&name).map(|bytes| (name, bytes)))
+            .collect()
     }
 }
 

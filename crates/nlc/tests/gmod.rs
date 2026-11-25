@@ -6,7 +6,12 @@
 //! and passes; the script itself builds the VMs, in Docker where the
 //! machine cannot run them.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::Path;
 use std::process::Command;
@@ -17,9 +22,10 @@ fn portable_bundles_on_stock_luajit() {
     let built: Vec<&str> = ["2.0.4", "2.1.0-beta3"]
         .into_iter()
         .filter(|v| {
-            ["native", "native-x86"]
-                .iter()
-                .any(|n| root.join(format!("target/stock-luajit/build-{v}-{n}/src/luajit")).is_file())
+            ["native", "native-x86"].iter().any(|n| {
+                root.join(format!("target/stock-luajit/build-{v}-{n}/src/luajit"))
+                    .is_file()
+            })
         })
         .collect();
     if built.is_empty() {
@@ -33,5 +39,9 @@ fn portable_bundles_on_stock_luajit() {
         .output()
         .expect("tests/gmod/run.sh runs");
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(out.status.success(), "tests/gmod/run.sh failed ({built:?}):\n{text}\n{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "tests/gmod/run.sh failed ({built:?}):\n{text}\n{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 }

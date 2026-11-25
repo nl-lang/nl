@@ -28,7 +28,9 @@
 use std::io::Write as _;
 use std::process::ExitCode;
 
-use nl_syntax::{FormatOptions, LineIndex, Severity, TextSize, format, format_decl, source_from_bytes};
+use nl_syntax::{
+    FormatOptions, LineIndex, Severity, TextSize, format, format_decl, source_from_bytes,
+};
 
 struct Args {
     files: Vec<String>,
@@ -38,7 +40,12 @@ struct Args {
 }
 
 fn parse_args(args: &[String], usage: &str) -> Result<Args, ExitCode> {
-    let mut a = Args { check: false, stdout: false, fix: false, files: Vec::new() };
+    let mut a = Args {
+        check: false,
+        stdout: false,
+        fix: false,
+        files: Vec::new(),
+    };
     for arg in args {
         match arg.as_str() {
             "--check" => a.check = true,
@@ -86,13 +93,23 @@ pub fn cmd_fmt(args: &[String], usage: &str) -> ExitCode {
                 // The valid prefix locates the bad byte (as `nlc parse`).
                 let start = usize::from(d.range.start());
                 let prefix = String::from_utf8_lossy(bytes.get(..start).unwrap_or(&[]));
-                report(path, &prefix, TextSize::of(&*prefix), Severity::Error, &d.message);
+                report(
+                    path,
+                    &prefix,
+                    TextSize::of(&*prefix),
+                    Severity::Error,
+                    &d.message,
+                );
                 failed = true;
                 continue;
             }
         };
         let options = FormatOptions { fix: a.fix };
-        let result = if path.ends_with(".d.nl") { format_decl(source, options) } else { format(source, options) };
+        let result = if path.ends_with(".d.nl") {
+            format_decl(source, options)
+        } else {
+            format(source, options)
+        };
         let formatted = match result {
             Ok(f) => f,
             Err(diagnostics) => {
@@ -132,7 +149,11 @@ pub fn cmd_fmt(args: &[String], usage: &str) -> ExitCode {
         }
     }
     let _ = out.flush();
-    if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if failed {
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }
 
 /// Prints `path:line:col: severity: message`, as `nlc parse` does.

@@ -17,7 +17,12 @@
 //! saved under `$CARGO_TARGET_TMPDIR/differential/findings/<seed>/`, and
 //! `nl-fuzz --seed <seed> --count 1` reproduces it (crates/nl_fuzz/README.md).
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -50,5 +55,11 @@ fn generated_programs_agree() {
     assert_eq!(summary.programs, 40);
     assert_eq!(summary.mutants, 40);
     let lines: Vec<String> = summary.records.iter().map(|r| r.line()).collect();
-    assert!(lines.is_empty(), "{} finding(s), saved under {}:\n{}", lines.len(), out.join("findings").display(), lines.join("\n"));
+    assert!(
+        lines.is_empty(),
+        "{} finding(s), saved under {}:\n{}",
+        lines.len(),
+        out.join("findings").display(),
+        lines.join("\n")
+    );
 }

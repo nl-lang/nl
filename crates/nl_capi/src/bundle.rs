@@ -247,7 +247,9 @@ pub struct Bundle {
 
 impl Bundle {
     pub fn has_errors(&self) -> bool {
-        self.diagnostics.iter().any(|d| d.severity == Severity::Error)
+        self.diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error)
     }
 }
 
@@ -261,7 +263,9 @@ struct Recording<'a> {
 impl Loader for Recording<'_> {
     fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
         let name = self.inner.resolve(from, path)?;
-        self.resolved.borrow_mut().push((from.map(str::to_owned), path.to_owned(), name.clone()));
+        self.resolved
+            .borrow_mut()
+            .push((from.map(str::to_owned), path.to_owned(), name.clone()));
         Some(name)
     }
     fn read(&self, name: &str) -> Option<Vec<u8>> {
@@ -280,18 +284,38 @@ struct Compiled {
 }
 
 fn diagnostic(file: &str, line: u32, code: &'static str, message: String) -> Diagnostic {
-    Diagnostic { severity: Severity::Error, code, message, file: file.to_owned(), line, column: 1, end_line: line, end_column: 1 }
+    Diagnostic {
+        severity: Severity::Error,
+        code,
+        message,
+        file: file.to_owned(),
+        line,
+        column: 1,
+        end_line: line,
+        end_column: 1,
+    }
 }
 
 /// Bundles `entries`, each a path the loader resolves as a path of no file
 /// (`loader.resolve(None, path)`), with everything they import (module
 /// docs).
 pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader) -> Bundle {
-    let profile = if options.profile == Profile::GmodClient { Profile::GmodClient } else { Profile::Portable };
+    let profile = if options.profile == Profile::GmodClient {
+        Profile::GmodClient
+    } else {
+        Profile::Portable
+    };
     let gmod = profile.is_gmod();
-    let compile = CompileOptions { profile, emit: Emit::Lua, ..options.compile };
+    let compile = CompileOptions {
+        profile,
+        emit: Emit::Lua,
+        ..options.compile
+    };
     let minify_all = options.minify || gmod;
-    let recording = Recording { inner: loader, resolved: RefCell::new(Vec::new()) };
+    let recording = Recording {
+        inner: loader,
+        resolved: RefCell::new(Vec::new()),
+    };
     let mut out = Bundle::default();
     if !valid_name(options.name) {
         out.diagnostics.push(name_diagnostic(options.name));
@@ -304,11 +328,17 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
         match loader.resolve(None, path) {
             Some(name) if !names.contains(&name) => names.push(name),
             Some(_) => {}
-            None => out.diagnostics.push(diagnostic(path, 1, "cannot-read", "cannot find the file".to_owned())),
+            None => out.diagnostics.push(diagnostic(
+                path,
+                1,
+                "cannot-read",
+                "cannot find the file".to_owned(),
+            )),
         }
     }
     if names.is_empty() && out.diagnostics.is_empty() {
-        out.diagnostics.push(diagnostic("", 1, "no-entry", "no entry file".to_owned()));
+        out.diagnostics
+            .push(diagnostic("", 1, "no-entry", "no entry file".to_owned()));
     }
     let mut queue: VecDeque<String> = names.iter().cloned().collect();
     let mut chunks: BTreeMap<String, Compiled> = BTreeMap::new();
@@ -318,8 +348,19 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
             continue;
         }
         let Some(source) = loader.read(&name) else {
-            out.diagnostics.push(diagnostic(&name, 1, "cannot-read", "cannot read the file".to_owned()));
-            chunks.insert(name, Compiled { text: String::new(), moved: Vec::new() });
+            out.diagnostics.push(diagnostic(
+                &name,
+                1,
+                "cannot-read",
+                "cannot read the file".to_owned(),
+            ));
+            chunks.insert(
+                name,
+                Compiled {
+                    text: String::new(),
+                    moved: Vec::new(),
+                },
+            );
             continue;
         };
         recording.resolved.borrow_mut().clear();
@@ -327,17 +368,34 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
         let ok = compiled.chunk.is_some();
         out.diagnostics.extend(compiled.diagnostics);
         let source_text = String::from_utf8_lossy(&source).into_owned();
-        let text = compiled.chunk.map(|c| String::from_utf8_lossy(&c).into_owned()).unwrap_or_default();
+        let text = compiled
+            .chunk
+            .map(|c| String::from_utf8_lossy(&c).into_owned())
+            .unwrap_or_default();
         let c = if ok {
-            match finish_chunk(&name, &source_text, text, options.sourcemap, minify_all, gmod, options.check) {
+            match finish_chunk(
+                &name,
+                &source_text,
+                text,
+                options.sourcemap,
+                minify_all,
+                gmod,
+                options.check,
+            ) {
                 Ok(c) => c,
                 Err(d) => {
                     out.diagnostics.extend(d);
-                    Compiled { text: String::new(), moved: Vec::new() }
+                    Compiled {
+                        text: String::new(),
+                        moved: Vec::new(),
+                    }
                 }
             }
         } else {
-            Compiled { text: String::new(), moved: Vec::new() }
+            Compiled {
+                text: String::new(),
+                moved: Vec::new(),
+            }
         };
         chunks.insert(name, c);
         for path in literal_includes(&source_text) {
@@ -348,7 +406,10 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
             }
         }
         for (from, path, target) in recording.resolved.borrow_mut().drain(..) {
-            imports.insert(format!("{}\0{path}", from.unwrap_or_default()), target.clone());
+            imports.insert(
+                format!("{}\0{path}", from.unwrap_or_default()),
+                target.clone(),
+            );
             if !chunks.contains_key(&target) {
                 queue.push_back(target);
             }
@@ -370,9 +431,20 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
             }
         },
     };
-    let texts: BTreeMap<String, String> = chunks.iter().map(|(n, c)| (n.clone(), c.text.clone())).collect();
+    let texts: BTreeMap<String, String> = chunks
+        .iter()
+        .map(|(n, c)| (n.clone(), c.text.clone()))
+        .collect();
     let types = host_types(loader, profile);
-    let payload = bundle_text(&names, &texts, &imports, &types, options.case_tables, &runtime, profile);
+    let payload = bundle_text(
+        &names,
+        &texts,
+        &imports,
+        &types,
+        options.case_tables,
+        &runtime,
+        profile,
+    );
     finish(&mut out, options, gmod, payload);
     if options.sourcemap && !out.parts.is_empty() {
         let parts = out.parts.iter().map(|p| p.name.clone()).collect();
@@ -380,7 +452,13 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
             Runtime::Carried(r, h) => Some((r.as_str(), h.as_str())),
             Runtime::Included(_) => None,
         };
-        out.sourcemap = Some(source_map(options.name, &out.build, parts, &chunks, carried));
+        out.sourcemap = Some(source_map(
+            options.name,
+            &out.build,
+            parts,
+            &chunks,
+            carried,
+        ));
     }
     out
 }
@@ -409,14 +487,24 @@ pub fn runtime(options: &BundleOptions<'_>) -> Bundle {
     if gmod {
         payload.push_str("-- The NL runtime and its Garry's Mod host, for gmod's client realm: bundles include it.\n");
     } else {
-        let _ = writeln!(payload, "{MARK}, {} profile: the NL runtime and its Garry's Mod host, for stock LuaJIT 2.0 and 2.1.", options.profile.name());
+        let _ = writeln!(
+            payload,
+            "{MARK}, {} profile: the NL runtime and its Garry's Mod host, for stock LuaJIT 2.0 and 2.1.",
+            options.profile.name()
+        );
     }
     let _ = writeln!(payload, "local rt = rawget(_G, {})", quoted(RUNTIME_KEY));
     payload.push_str(&install_text(options.case_tables, &runtime, &host));
     finish(&mut out, options, gmod, payload);
     if options.sourcemap && !out.parts.is_empty() {
         let parts = out.parts.iter().map(|p| p.name.clone()).collect();
-        out.sourcemap = Some(source_map(options.name, &out.build, parts, &BTreeMap::new(), Some((&runtime, &host))));
+        out.sourcemap = Some(source_map(
+            options.name,
+            &out.build,
+            parts,
+            &BTreeMap::new(),
+            Some((&runtime, &host)),
+        ));
     }
     out
 }
@@ -434,9 +522,17 @@ fn runtime_texts(minify_them: bool) -> Result<(String, String), Diagnostic> {
     if !minify_them {
         return Ok((RUNTIME.to_owned(), GMOD_HOST.to_owned()));
     }
-    match (minify(RUNTIME, MinifyOptions::COMPILED), minify(GMOD_HOST, MinifyOptions::COMPILED)) {
+    match (
+        minify(RUNTIME, MinifyOptions::COMPILED),
+        minify(GMOD_HOST, MinifyOptions::COMPILED),
+    ) {
         (Ok(r), Ok(h)) => Ok((r, h)),
-        (Err(e), _) | (_, Err(e)) => Err(diagnostic("nl runtime", 1, "internal-error", format!("internal error: the runtime does not minify: {e}"))),
+        (Err(e), _) | (_, Err(e)) => Err(diagnostic(
+            "nl runtime",
+            1,
+            "internal-error",
+            format!("internal error: the runtime does not minify: {e}"),
+        )),
     }
 }
 
@@ -450,10 +546,17 @@ fn finish(out: &mut Bundle, options: &BundleOptions<'_>, gmod: bool, payload: St
         if lzma_size(single.as_bytes()) <= limit {
             vec![single]
         } else {
-            match split(&payload, options.name, &out.build, limit, options.include_parts) {
+            match split(
+                &payload,
+                options.name,
+                &out.build,
+                limit,
+                options.include_parts,
+            ) {
                 Ok(parts) => parts,
                 Err(e) => {
-                    out.diagnostics.push(diagnostic(options.name, 1, "bundle-too-large", e));
+                    out.diagnostics
+                        .push(diagnostic(options.name, 1, "bundle-too-large", e));
                     return;
                 }
             }
@@ -461,13 +564,23 @@ fn finish(out: &mut Bundle, options: &BundleOptions<'_>, gmod: bool, payload: St
     } else {
         vec![payload]
     };
-    out.parts = texts.into_iter().enumerate().map(|(i, text)| Part { name: part_name(options.name, i + 1), text }).collect();
+    out.parts = texts
+        .into_iter()
+        .enumerate()
+        .map(|(i, text)| Part {
+            name: part_name(options.name, i + 1),
+            text,
+        })
+        .collect();
 }
 
 /// Whether `name` can name a bundle: it goes in file names and in a
 /// comment of every part.
 fn valid_name(name: &str) -> bool {
-    !name.is_empty() && !name.chars().any(|c| c.is_control() || matches!(c, '/' | '\\' | '`'))
+    !name.is_empty()
+        && !name
+            .chars()
+            .any(|c| c.is_control() || matches!(c, '/' | '\\' | '`'))
 }
 
 fn name_diagnostic(name: &str) -> Diagnostic {
@@ -476,34 +589,58 @@ fn name_diagnostic(name: &str) -> Diagnostic {
 
 /// The name of the `i`th file of the bundle `name` (from 1).
 pub fn part_name(name: &str, i: usize) -> String {
-    if i == 1 { format!("{name}.lua") } else { format!("{name}_{i}.lua") }
+    if i == 1 {
+        format!("{name}.lua")
+    } else {
+        format!("{name}_{i}.lua")
+    }
 }
 
 /// The Lua path of the `i`th file of a bundle whose first file is `first`
 /// (BundleOptions::include_parts): `x.lua`, `x_2.lua`, ...
 pub fn part_path(first: &str, i: usize) -> String {
     let stem = first.strip_suffix(".lua").unwrap_or(first);
-    if i == 1 { format!("{stem}.lua") } else { format!("{stem}_{i}.lua") }
+    if i == 1 {
+        format!("{stem}.lua")
+    } else {
+        format!("{stem}_{i}.lua")
+    }
 }
 
 /// The errors of the Lua text of the file `name` (its canonical name;
 /// `source` is its NL source) for a stock LuaJIT in gmod: `check`'s, and
 /// the text gmod replaces in scripts. `nlc check --profile=gmod-client`
 /// asks this of each file it compiles.
-pub fn check_output(name: &str, source: &str, chunk: &str, check: Option<Check<'_>>) -> Vec<Diagnostic> {
+pub fn check_output(
+    name: &str,
+    source: &str,
+    chunk: &str,
+    check: Option<Check<'_>>,
+) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     if let Some(check) = check {
         if let Err(message) = check(&format!("@{name}"), chunk) {
             // `name:12: function at line 3 has more than 200 local variables`
-            let (line, text) = match message.strip_prefix(&format!("{name}:")).and_then(|rest| rest.split_once(": ")) {
+            let (line, text) = match message
+                .strip_prefix(&format!("{name}:"))
+                .and_then(|rest| rest.split_once(": "))
+            {
                 Some((l, text)) => (l.parse().unwrap_or(1), text.to_owned()),
                 None => (1, message.clone()),
             };
-            out.push(diagnostic(name, line, "lua-limit", format!("the Lua this file compiles to does not load on LuaJIT: {text}")));
+            out.push(diagnostic(
+                name,
+                line,
+                "lua-limit",
+                format!("the Lua this file compiles to does not load on LuaJIT: {text}"),
+            ));
         }
     }
     if chunk.contains(GMOD_MACRO) {
-        let line = source.lines().position(|l| l.contains(GMOD_MACRO)).map_or(1, |i| u32::try_from(i + 1).unwrap_or(1));
+        let line = source
+            .lines()
+            .position(|l| l.contains(GMOD_MACRO))
+            .map_or(1, |i| u32::try_from(i + 1).unwrap_or(1));
         out.push(diagnostic(
             name,
             line,
@@ -517,10 +654,29 @@ pub fn check_output(name: &str, source: &str, chunk: &str, check: Option<Check<'
 /// The text of a compiled file as the bundle carries it: without its line
 /// map when the sourcemap takes it, minified when asked, and checked. The
 /// diagnostics when it does not do for the bundle.
-fn finish_chunk(name: &str, source: &str, text: String, sourcemap: bool, minify_it: bool, gmod: bool, check: Option<Check<'_>>) -> Result<Compiled, Vec<Diagnostic>> {
-    let (text, moved) = if sourcemap { nl_luagen::take_line_map(&text) } else { (text, Vec::new()) };
+fn finish_chunk(
+    name: &str,
+    source: &str,
+    text: String,
+    sourcemap: bool,
+    minify_it: bool,
+    gmod: bool,
+    check: Option<Check<'_>>,
+) -> Result<Compiled, Vec<Diagnostic>> {
+    let (text, moved) = if sourcemap {
+        nl_luagen::take_line_map(&text)
+    } else {
+        (text, Vec::new())
+    };
     let text = if minify_it {
-        minify(&text, MinifyOptions::COMPILED).map_err(|e| vec![diagnostic(name, 1, "internal-error", format!("internal error: the Lua of this file does not minify: {e}"))])?
+        minify(&text, MinifyOptions::COMPILED).map_err(|e| {
+            vec![diagnostic(
+                name,
+                1,
+                "internal-error",
+                format!("internal error: the Lua of this file does not minify: {e}"),
+            )]
+        })?
     } else {
         text
     };
@@ -528,7 +684,10 @@ fn finish_chunk(name: &str, source: &str, text: String, sourcemap: bool, minify_
         check_output(name, source, &text, check)
     } else {
         // Every bundle runs on LuaJIT; the macro is gmod's alone.
-        check_output(name, source, &text, check).into_iter().filter(|d| d.code != "not-in-gmod").collect()
+        check_output(name, source, &text, check)
+            .into_iter()
+            .filter(|d| d.code != "not-in-gmod")
+            .collect()
     };
     if !diags.is_empty() {
         return Err(diags);
@@ -537,15 +696,29 @@ fn finish_chunk(name: &str, source: &str, text: String, sourcemap: bool, minify_
 }
 
 /// The sourcemap of a bundle (sourcemap.rs).
-fn source_map(name: &str, build: &str, parts: Vec<String>, chunks: &BTreeMap<String, Compiled>, runtime: Option<(&str, &str)>) -> SourceMap {
+fn source_map(
+    name: &str,
+    build: &str,
+    parts: Vec<String>,
+    chunks: &BTreeMap<String, Compiled>,
+    runtime: Option<(&str, &str)>,
+) -> SourceMap {
     let lines = |t: &str| u32::try_from(t.lines().count()).unwrap_or(u32::MAX);
-    let mut map = SourceMap { bundle: name.to_owned(), build: build.to_owned(), parts, ..SourceMap::default() };
+    let mut map = SourceMap {
+        bundle: name.to_owned(),
+        build: build.to_owned(),
+        parts,
+        ..SourceMap::default()
+    };
     for (file, c) in chunks {
         map.add_file_chunk(file, file, lines(&c.text), &c.moved);
     }
     if let Some((runtime, host)) = runtime {
         // The minifier keeps every line, so the runtime's lines are its files'.
-        debug_assert_eq!(lines(runtime), RUNTIME_FILES.iter().map(|(_, n)| n).sum::<u32>());
+        debug_assert_eq!(
+            lines(runtime),
+            RUNTIME_FILES.iter().map(|(_, n)| n).sum::<u32>()
+        );
         map.add_concatenation("nl runtime", RUNTIME_FILES);
         map.add_concatenation("nl host", &[(GMOD_HOST_FILE, lines(host))]);
     }
@@ -560,7 +733,8 @@ pub fn lzma_size(bytes: &[u8]) -> usize {
     let mut out = Vec::with_capacity(bytes.len() / 3);
     let compressed = (|| -> std::io::Result<usize> {
         let options = LzmaOptions::with_preset(6);
-        let mut w = LzmaWriter::new_use_header(&mut out, &options, Some(bytes.len() as u64)).map_err(std::io::Error::other)?;
+        let mut w = LzmaWriter::new_use_header(&mut out, &options, Some(bytes.len() as u64))
+            .map_err(std::io::Error::other)?;
         w.write_all(bytes)?;
         w.finish().map_err(std::io::Error::other)?;
         Ok(out.len())
@@ -575,7 +749,13 @@ const GUARD: &str = "if SERVER then AddCSLuaFile() return end\n";
 
 /// The parts of a bundle whose text is `payload` (module docs, Parts),
 /// each at most `limit` bytes compressed.
-fn split(payload: &str, name: &str, build: &str, limit: usize, include_parts: Option<&str>) -> Result<Vec<String>, String> {
+fn split(
+    payload: &str,
+    name: &str,
+    build: &str,
+    limit: usize,
+    include_parts: Option<&str>,
+) -> Result<Vec<String>, String> {
     let total = lzma_size(payload.as_bytes()).max(1);
     // Bytes of text per compressed byte, from the whole; each part is
     // then measured, and the pieces made smaller until every part fits.
@@ -584,13 +764,19 @@ fn split(payload: &str, name: &str, build: &str, limit: usize, include_parts: Op
     for _ in 0..16 {
         let pieces = cut(payload, piece.max(1024));
         let n = pieces.len();
-        let parts: Vec<String> = pieces.iter().enumerate().map(|(i, p)| part_text(name, build, i + 1, n, p, include_parts)).collect();
+        let parts: Vec<String> = pieces
+            .iter()
+            .enumerate()
+            .map(|(i, p)| part_text(name, build, i + 1, n, p, include_parts))
+            .collect();
         if parts.iter().all(|p| lzma_size(p.as_bytes()) <= limit) {
             return Ok(parts);
         }
         piece = piece * 85 / 100;
     }
-    Err(format!("cannot split the bundle into files of at most {limit} bytes compressed"))
+    Err(format!(
+        "cannot split the bundle into files of at most {limit} bytes compressed"
+    ))
 }
 
 /// `text` in pieces of about `size` bytes, cut at character boundaries.
@@ -609,10 +795,20 @@ fn cut(text: &str, size: usize) -> Vec<&str> {
     out
 }
 
-fn part_text(name: &str, build: &str, i: usize, n: usize, piece: &str, include_parts: Option<&str>) -> String {
+fn part_text(
+    name: &str,
+    build: &str,
+    i: usize,
+    n: usize,
+    piece: &str,
+    include_parts: Option<&str>,
+) -> String {
     let key = quoted(name);
     let mut out = String::new();
-    let _ = writeln!(out, "{MARK} (gmod-client): part {i} of {n} of `{name}`, build {build}");
+    let _ = writeln!(
+        out,
+        "{MARK} (gmod-client): part {i} of {n} of `{name}`, build {build}"
+    );
     match include_parts {
         Some(_) if i == 1 => out.push_str("-- This part includes the others; running it runs the bundle.\n"),
         Some(_) => out.push_str("-- The first part includes this one.\n"),
@@ -627,12 +823,19 @@ fn part_text(name: &str, build: &str, i: usize, n: usize, piece: &str, include_p
     out.push_str("local all = rawget(_G, \"__nl_bundle_parts\")\n");
     out.push_str("if all == nil then all = {} rawset(_G, \"__nl_bundle_parts\", all) end\n");
     let _ = writeln!(out, "local b = all[{key}]");
-    let _ = writeln!(out, "if b == nil or b.build ~= \"{build}\" then b = {{ build = \"{build}\", n = 0 }} all[{key}] = b end");
+    let _ = writeln!(
+        out,
+        "if b == nil or b.build ~= \"{build}\" then b = {{ build = \"{build}\", n = 0 }} all[{key}] = b end"
+    );
     let _ = writeln!(out, "if b[{i}] == nil then b.n = b.n + 1 end");
     let _ = writeln!(out, "b[{i}] = {}", long_string(piece));
     let _ = writeln!(out, "if b.n < {n} then return end");
     let _ = writeln!(out, "all[{key}] = nil");
-    let _ = writeln!(out, "local f = CompileString(table.concat(b, \"\", 1, {n}), {}, false)", quoted(&format!("nl bundle {name}")));
+    let _ = writeln!(
+        out,
+        "local f = CompileString(table.concat(b, \"\", 1, {n}), {}, false)",
+        quoted(&format!("nl bundle {name}"))
+    );
     out.push_str("if type(f) ~= \"function\" then error(f, 0) end\n");
     out.push_str("return f()\n");
     out
@@ -650,15 +853,34 @@ pub fn literal_includes(source: &str) -> Vec<String> {
     use nl_syntax::SyntaxKind::*;
     let parse = nl_syntax::parse(source);
     let mut out = Vec::new();
-    for call in parse.syntax().descendants().filter(|n| matches!(n.kind(), CALL_EXPR | COMMAND_CALL)) {
-        let Some(callee) = call.children().next() else { continue };
+    for call in parse
+        .syntax()
+        .descendants()
+        .filter(|n| matches!(n.kind(), CALL_EXPR | COMMAND_CALL))
+    {
+        let Some(callee) = call.children().next() else {
+            continue;
+        };
         if callee.kind() != NAME_REF || callee.text().to_string().trim() != "include" {
             continue;
         }
-        let Some(args) = call.children().find(|c| matches!(c.kind(), ARG_LIST | COMMAND_ARGS)) else { continue };
-        let Some(arg) = args.children().next().filter(|a| a.kind() == LITERAL) else { continue };
-        let Some(tok) = arg.first_token().filter(|t| t.kind() == STRING) else { continue };
-        let path = nl_syntax::decode_string(&[tok.text()]).into_iter().next().map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
+        let Some(args) = call
+            .children()
+            .find(|c| matches!(c.kind(), ARG_LIST | COMMAND_ARGS))
+        else {
+            continue;
+        };
+        let Some(arg) = args.children().next().filter(|a| a.kind() == LITERAL) else {
+            continue;
+        };
+        let Some(tok) = arg.first_token().filter(|t| t.kind() == STRING) else {
+            continue;
+        };
+        let path = nl_syntax::decode_string(&[tok.text()])
+            .into_iter()
+            .next()
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+            .unwrap_or_default();
         if path.ends_with(".nl") && !out.contains(&path) {
             out.push(path);
         }
@@ -721,7 +943,11 @@ fn bundle_text(
     let mut out = String::new();
     // The first line is the caller's for gmod (MARK, then the guard).
     if !profile.is_gmod() {
-        let _ = writeln!(out, "{MARK}, {} profile: the NL runtime, its Garry's Mod", profile.name());
+        let _ = writeln!(
+            out,
+            "{MARK}, {} profile: the NL runtime, its Garry's Mod",
+            profile.name()
+        );
         out.push_str("-- host, and the files below, for stock LuaJIT 2.0 and 2.1.\n");
     } else {
         out.push_str("-- The NL runtime, its Garry's Mod host, and the files below, for gmod's client realm.\n");
@@ -739,7 +965,9 @@ fn bundle_text(
             let _ = writeln!(
                 out,
                 "  if rt == nil then error({}, 0) end",
-                s(&format!("this bundle needs the NL runtime, which include(\"{path}\") did not install"))
+                s(&format!(
+                    "this bundle needs the NL runtime, which include(\"{path}\") did not install"
+                ))
             );
             out.push_str("end\n");
             let _ = writeln!(out, "if rt.bundle_interface ~= {INTERFACE} then");
@@ -786,16 +1014,30 @@ fn install_text(case_tables: bool, runtime: &str, host: &str) -> String {
     out.push_str(
         "local function chunk(source, name)\n  local f, err\n  if loadstring ~= nil then\n    f, err = loadstring(source, \"=\" .. name)\n  else\n    f = CompileString(source, name, false)\n    if type(f) ~= \"function\" then f, err = nil, f end\n  end\n  if f == nil then error(err, 0) end\n  return f\nend\n",
     );
-    let _ = writeln!(out, "local host, start = chunk({}, \"nl host\")()", long_string(host));
+    let _ = writeln!(
+        out,
+        "local host, start = chunk({}, \"nl host\")()",
+        long_string(host)
+    );
     if case_tables {
         let t = nl_text::case_tables::case_tables();
         out.push_str("host.case_tables = {\n");
-        for (k, v) in [("up", &t.up), ("upx", &t.upx), ("down", &t.down), ("downx", &t.downx), ("swapx", &t.swapx)] {
+        for (k, v) in [
+            ("up", &t.up),
+            ("upx", &t.upx),
+            ("down", &t.down),
+            ("downx", &t.downx),
+            ("swapx", &t.swapx),
+        ] {
             let _ = writeln!(out, "  {k} = {},", s(v));
         }
         out.push_str("}\n");
     }
-    let _ = writeln!(out, "rt = chunk({}, \"nl runtime\")(host)", long_string(runtime));
+    let _ = writeln!(
+        out,
+        "rt = chunk({}, \"nl runtime\")(host)",
+        long_string(runtime)
+    );
     out.push_str("start(rt)\n");
     let _ = writeln!(out, "rt.bundle_interface = {INTERFACE}");
     let _ = writeln!(out, "rawset(_G, {}, rt)", s(RUNTIME_KEY));
@@ -809,7 +1051,12 @@ fn install_text(case_tables: bool, runtime: &str, host: &str) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -835,8 +1082,17 @@ mod tests {
 
     #[test]
     fn part_names() {
-        assert_eq!([part_name("client", 1), part_name("client", 2)], ["client.lua", "client_2.lua"]);
-        assert_eq!([part_path("autorun/client/x.lua", 1), part_path("autorun/client/x.lua", 3)], ["autorun/client/x.lua", "autorun/client/x_3.lua"]);
+        assert_eq!(
+            [part_name("client", 1), part_name("client", 2)],
+            ["client.lua", "client_2.lua"]
+        );
+        assert_eq!(
+            [
+                part_path("autorun/client/x.lua", 1),
+                part_path("autorun/client/x.lua", 3)
+            ],
+            ["autorun/client/x.lua", "autorun/client/x_3.lua"]
+        );
     }
 
     #[test]
@@ -848,11 +1104,18 @@ mod tests {
 
     #[test]
     fn output_checks() {
-        let fail = |_: &str, _: &str| Err("a.nl:7: function at line 3 has more than 200 local variables".to_owned());
+        let fail = |_: &str, _: &str| {
+            Err("a.nl:7: function at line 3 has more than 200 local variables".to_owned())
+        };
         let d = check_output("a.nl", "", "x = 1", Some(&fail));
         assert_eq!((d.len(), d[0].line, d[0].code), (1, 7, "lua-limit"));
         assert!(check_output("a.nl", "", "local x = 'DEFINE_\\066ASECLASS'", None).is_empty());
-        let d = check_output("a.nl", "x\nDEFINE_BASECLASS(\"b\")\n", "DEFINE_BASECLASS('b')", None);
+        let d = check_output(
+            "a.nl",
+            "x\nDEFINE_BASECLASS(\"b\")\n",
+            "DEFINE_BASECLASS('b')",
+            None,
+        );
         assert_eq!((d.len(), d[0].line, d[0].code), (1, 2, "not-in-gmod"));
     }
 
@@ -865,7 +1128,9 @@ mod tests {
         let mut payload = String::from("local t = {}\n");
         let mut x: u64 = 1;
         for i in 1..=6000 {
-            x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            x = x
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let _ = writeln!(payload, "t[{i}] = \"{:016x}é]]\"", x);
         }
         let parts = split(&payload, "test", "abc", 20_000, None).unwrap();

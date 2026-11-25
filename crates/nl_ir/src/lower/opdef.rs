@@ -40,7 +40,12 @@ struct OpKind {
 }
 
 const fn op(symbol: &'static str, event: &'static str, arity: Arity, on_primitive: bool) -> OpKind {
-    OpKind { symbol, event, arity, on_primitive }
+    OpKind {
+        symbol,
+        event,
+        arity,
+        on_primitive,
+    }
 }
 
 /// The operator a definition names: the tokens of its `OP_NAME`, or the
@@ -95,11 +100,15 @@ fn op_kind(tokens: &[SyntaxKind], word: Option<&str>, params: usize) -> Option<O
 impl Lowerer<'_> {
     /// `fn Owner.<op> … end`.
     pub(crate) fn lower_operator_def(&mut self, node: &SyntaxNode) {
-        let tokens: Vec<SyntaxKind> = child(node, OP_NAME).map(|o| tokens(&o).map(|t| t.kind()).collect()).unwrap_or_default();
+        let tokens: Vec<SyntaxKind> = child(node, OP_NAME)
+            .map(|o| tokens(&o).map(|t| t.kind()).collect())
+            .unwrap_or_default();
         let word = child(node, NAME).and_then(|n| name_text(&n));
         let list = child(node, PARAM_LIST);
         let plain = list.as_ref().map_or(0, |l| children(l, PARAM).count());
-        let rest = list.as_ref().is_some_and(|l| child(l, REST_PARAM).is_some() || child(l, KEYED_PARAM).is_some());
+        let rest = list
+            .as_ref()
+            .is_some_and(|l| child(l, REST_PARAM).is_some() || child(l, KEYED_PARAM).is_some());
         let Some(kind) = op_kind(&tokens, word.as_deref(), plain + usize::from(rest)) else {
             self.internal(node, "operator name");
             return;
@@ -111,8 +120,16 @@ impl Lowerer<'_> {
                     1 => "one parameter".to_string(),
                     n => format!("{n} parameters"),
                 };
-                let also = if kind.symbol == "-" { " (`-` takes one for subtraction, none for negation)" } else { "" };
-                self.error(node, "operator-arity", format!("the operator `{}` takes {wanted}{also}", kind.symbol));
+                let also = if kind.symbol == "-" {
+                    " (`-` takes one for subtraction, none for negation)"
+                } else {
+                    ""
+                };
+                self.error(
+                    node,
+                    "operator-arity",
+                    format!("the operator `{}` takes {wanted}{also}", kind.symbol),
+                );
                 return;
             }
         }
@@ -120,9 +137,16 @@ impl Lowerer<'_> {
             self.internal(node, "operator owner");
             return;
         };
-        let owner_text = child(node, QUAL_NAME).map(|q| qual_text(&q)).unwrap_or_default();
+        let owner_text = child(node, QUAL_NAME)
+            .map(|q| qual_text(&q))
+            .unwrap_or_default();
         if let MethodOwner::Binding { id, path } = &owner {
-            if path.is_empty() && self.res.binding(*id).is_some_and(|b| b.decl == DeclKind::Module) {
+            if path.is_empty()
+                && self
+                    .res
+                    .binding(*id)
+                    .is_some_and(|b| b.decl == DeclKind::Module)
+            {
                 self.error(node, "operator-owner", format!("`{owner_text}` is a module; operators are defined on structs, `Number`, `String` and `Bool`"));
                 return;
             }
@@ -133,11 +157,22 @@ impl Lowerer<'_> {
             return;
         }
         if matches!(owner, MethodOwner::Primitive(_)) && !kind.on_primitive {
-            self.error(node, "operator-owner", format!("the operator `{}` cannot be defined on `{owner_text}`; only structs define it", kind.symbol));
+            self.error(
+                node,
+                "operator-owner",
+                format!(
+                    "the operator `{}` cannot be defined on `{owner_text}`; only structs define it",
+                    kind.symbol
+                ),
+            );
             return;
         }
         let self_binding = self.res.method_self(node.text_range());
-        let spec = FnSpec { name: format!("{owner_text}.{}", kind.symbol), self_binding, discard_tail: false };
+        let spec = FnSpec {
+            name: format!("{owner_text}.{}", kind.symbol),
+            self_binding,
+            discard_tail: false,
+        };
         let f = self.function_value(node, spec);
         let call = match owner {
             MethodOwner::Binding { id, path } => {
@@ -149,7 +184,10 @@ impl Lowerer<'_> {
             }
             MethodOwner::Primitive(p) => {
                 let owner = self.owner_value();
-                Expr::intrinsic_call("primop", vec![Expr::str(p.name), Expr::str(kind.event), f, owner])
+                Expr::intrinsic_call(
+                    "primop",
+                    vec![Expr::str(p.name), Expr::str(kind.event), f, owner],
+                )
             }
             MethodOwner::Declared(_) => return,
         };

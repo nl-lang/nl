@@ -100,9 +100,14 @@ pub struct nl_Loader {
         ) -> c_int,
     >,
     pub read: Option<
-        unsafe extern "C" fn(data: *mut c_void, name: *const c_char, size: *mut usize) -> *const c_char,
+        unsafe extern "C" fn(
+            data: *mut c_void,
+            name: *const c_char,
+            size: *mut usize,
+        ) -> *const c_char,
     >,
-    pub release: Option<unsafe extern "C" fn(data: *mut c_void, name: *const c_char, buf: *const c_char)>,
+    pub release:
+        Option<unsafe extern "C" fn(data: *mut c_void, name: *const c_char, buf: *const c_char)>,
     pub data: *mut c_void,
 }
 
@@ -156,7 +161,12 @@ unsafe extern "C-unwind" {
     pub fn nl_sethostinit(L: *mut lua_State, f: Option<lua_CFunction>);
 
     // Loading.
-    pub fn nl_loadbuffer(L: *mut lua_State, buf: *const c_char, size: usize, name: *const c_char) -> c_int;
+    pub fn nl_loadbuffer(
+        L: *mut lua_State,
+        buf: *const c_char,
+        size: usize,
+        name: *const c_char,
+    ) -> c_int;
     pub fn nl_loadfile(L: *mut lua_State, filename: *const c_char) -> c_int;
     pub fn nl_import(L: *mut lua_State, path: *const c_char);
     pub fn nl_addpath(L: *mut lua_State, dir: *const c_char);
@@ -204,7 +214,12 @@ unsafe extern "C-unwind" {
     // Events.
     pub fn luaopen_event(L: *mut lua_State) -> c_int;
     pub fn nl_runevent(L: *mut lua_State, name: *const c_char, nargs: c_int, nresults: c_int);
-    pub fn nl_prunevent(L: *mut lua_State, name: *const c_char, nargs: c_int, nresults: c_int) -> c_int;
+    pub fn nl_prunevent(
+        L: *mut lua_State,
+        name: *const c_char,
+        nargs: c_int,
+        nresults: c_int,
+    ) -> c_int;
     pub fn nl_onevent(L: *mut lua_State, name: *const c_char, handler: *const c_char);
     pub fn nl_offevent(L: *mut lua_State, name: *const c_char, handler: *const c_char);
 
@@ -268,7 +283,9 @@ pub unsafe fn nlL_dostring(L: *mut lua_State, s: *const c_char) -> c_int {
 #[allow(unsafe_code)] // The macro of nl.h, over foreign functions.
 pub unsafe fn nlL_dofile(L: *mut lua_State, filename: *const c_char) -> c_int {
     // SAFETY: the caller's guarantees; both functions raise nothing.
-    unsafe { (nl_loadfile(L, filename) != 0 || nl_pcall(L, 0, mlua_sys::LUA_MULTRET) != 0) as c_int }
+    unsafe {
+        (nl_loadfile(L, filename) != 0 || nl_pcall(L, 0, mlua_sys::LUA_MULTRET) != 0) as c_int
+    }
 }
 
 /// Holds the symbols that must be linked: the version symbol, so that a
@@ -301,7 +318,10 @@ struct LinkRefs {
     ) -> *mut nl_capi::capi::NlcResult,
     chunk: unsafe extern "C" fn(*const nl_capi::capi::NlcResult, *mut usize) -> *const c_char,
     ndiagnostics: unsafe extern "C" fn(*const nl_capi::capi::NlcResult) -> usize,
-    diagnostic: unsafe extern "C" fn(*const nl_capi::capi::NlcResult, usize) -> *const nl_capi::capi::NlcDiagnostic,
+    diagnostic: unsafe extern "C" fn(
+        *const nl_capi::capi::NlcResult,
+        usize,
+    ) -> *const nl_capi::capi::NlcDiagnostic,
     free: unsafe extern "C" fn(*mut nl_capi::capi::NlcResult),
 }
 
@@ -357,7 +377,12 @@ pub fn link() {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
     use std::mem::{align_of, offset_of, size_of};
@@ -366,12 +391,30 @@ mod tests {
     // match nlc.h, which libnlc implements (crates/nl_capi/src/capi.rs).
     #[test]
     fn layouts_match_nlc_h() {
-        assert_eq!(size_of::<nl_Loader>(), size_of::<nl_capi::capi::NlcLoader>());
-        assert_eq!(align_of::<nl_Loader>(), align_of::<nl_capi::capi::NlcLoader>());
-        assert_eq!(offset_of!(nl_Loader, data), offset_of!(nl_capi::capi::NlcLoader, data));
-        assert_eq!(size_of::<nl_Diagnostic>(), size_of::<nl_capi::capi::NlcDiagnostic>());
-        assert_eq!(offset_of!(nl_Diagnostic, line), offset_of!(nl_capi::capi::NlcDiagnostic, line));
-        assert_eq!(offset_of!(nl_Diagnostic, endcolumn), offset_of!(nl_capi::capi::NlcDiagnostic, endcolumn));
+        assert_eq!(
+            size_of::<nl_Loader>(),
+            size_of::<nl_capi::capi::NlcLoader>()
+        );
+        assert_eq!(
+            align_of::<nl_Loader>(),
+            align_of::<nl_capi::capi::NlcLoader>()
+        );
+        assert_eq!(
+            offset_of!(nl_Loader, data),
+            offset_of!(nl_capi::capi::NlcLoader, data)
+        );
+        assert_eq!(
+            size_of::<nl_Diagnostic>(),
+            size_of::<nl_capi::capi::NlcDiagnostic>()
+        );
+        assert_eq!(
+            offset_of!(nl_Diagnostic, line),
+            offset_of!(nl_capi::capi::NlcDiagnostic, line)
+        );
+        assert_eq!(
+            offset_of!(nl_Diagnostic, endcolumn),
+            offset_of!(nl_capi::capi::NlcDiagnostic, endcolumn)
+        );
     }
 
     // The declarations against nl.h: every `LUA_API` and `LUALIB_API`
@@ -436,9 +479,13 @@ mod tests {
 
     /// (name, arity) of every function nl.h declares, and its numeric
     /// `#define NL_*` constants.
-    fn header() -> (std::collections::BTreeMap<String, usize>, std::collections::BTreeMap<String, i64>) {
+    fn header() -> (
+        std::collections::BTreeMap<String, usize>,
+        std::collections::BTreeMap<String, i64>,
+    ) {
         let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../LuaJIT/src/nl.h");
-        let src = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
+        let src =
+            std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
         let src = strip_c_comments(&src);
         let mut defines = std::collections::BTreeMap::new();
         let mut aliases = std::collections::BTreeMap::new();
@@ -447,7 +494,9 @@ mod tests {
             if w.next() != Some("#define") {
                 continue;
             }
-            let (Some(name), Some(value)) = (w.next(), w.next()) else { continue };
+            let (Some(name), Some(value)) = (w.next(), w.next()) else {
+                continue;
+            };
             if let Ok(v) = value.parse::<i64>() {
                 defines.insert(name.to_string(), v);
             } else if !name.contains('(') {
@@ -462,15 +511,26 @@ mod tests {
         let mut funcs = std::collections::BTreeMap::new();
         for decl in flat.split(';') {
             let decl = decl.trim();
-            let Some(start) = ["LUA_API", "LUALIB_API"].iter().filter_map(|k| decl.find(k)).min() else {
+            let Some(start) = ["LUA_API", "LUALIB_API"]
+                .iter()
+                .filter_map(|k| decl.find(k))
+                .min()
+            else {
                 continue;
             };
             let decl = decl.get(start..).unwrap_or_default();
             let Some(open) = decl.find('(') else { continue };
             let head = decl.get(..open).unwrap_or_default();
-            let name = head.rsplit(|c: char| c.is_whitespace() || c == '*').next().unwrap_or_default();
-            let name = aliases.get(name).cloned().unwrap_or_else(|| name.to_string());
-            let (params, _) = parenthesized(decl, open).unwrap_or_else(|| panic!("unbalanced: {decl}"));
+            let name = head
+                .rsplit(|c: char| c.is_whitespace() || c == '*')
+                .next()
+                .unwrap_or_default();
+            let name = aliases
+                .get(name)
+                .cloned()
+                .unwrap_or_else(|| name.to_string());
+            let (params, _) =
+                parenthesized(decl, open).unwrap_or_else(|| panic!("unbalanced: {decl}"));
             funcs.insert(name, arity(params));
         }
         (funcs, defines)
@@ -478,9 +538,14 @@ mod tests {
 
     /// (name, arity) of every function declared in the extern blocks of
     /// this file, and its `pub const NAME: c_int = N` constants.
-    fn declared() -> (std::collections::BTreeMap<String, usize>, std::collections::BTreeMap<String, i64>) {
+    fn declared() -> (
+        std::collections::BTreeMap<String, usize>,
+        std::collections::BTreeMap<String, i64>,
+    ) {
         let src = include_str!("lib.rs");
-        let src = src.get(..src.find("\nmod tests {").unwrap_or(src.len())).unwrap_or_default();
+        let src = src
+            .get(..src.find("\nmod tests {").unwrap_or(src.len()))
+            .unwrap_or_default();
         let mut funcs = std::collections::BTreeMap::new();
         let mut rest = src;
         while let Some(i) = rest.find("unsafe extern \"C") {
@@ -492,9 +557,12 @@ mod tests {
             let mut at = 0;
             while let Some(j) = body.get(at..).and_then(|r| r.find("pub fn ")) {
                 let s = at + j + "pub fn ".len();
-                let Some(open) = body.get(s..).and_then(|r| r.find('(')) else { break };
+                let Some(open) = body.get(s..).and_then(|r| r.find('(')) else {
+                    break;
+                };
                 let name = body.get(s..s + open).unwrap_or_default().trim().to_string();
-                let (params, close) = parenthesized(body, s + open).unwrap_or_else(|| panic!("unbalanced: {name}"));
+                let (params, close) =
+                    parenthesized(body, s + open).unwrap_or_else(|| panic!("unbalanced: {name}"));
                 funcs.insert(name, arity(params));
                 at = close;
             }
@@ -502,8 +570,12 @@ mod tests {
         }
         let mut consts = std::collections::BTreeMap::new();
         for line in src.lines() {
-            let Some(rest) = line.trim().strip_prefix("pub const ") else { continue };
-            let Some((name, rest)) = rest.split_once(": c_int = ") else { continue };
+            let Some(rest) = line.trim().strip_prefix("pub const ") else {
+                continue;
+            };
+            let Some((name, rest)) = rest.split_once(": c_int = ") else {
+                continue;
+            };
             if let Ok(v) = rest.trim_end_matches(';').trim().parse::<i64>() {
                 consts.insert(name.to_string(), v);
             }
@@ -515,23 +587,49 @@ mod tests {
     fn declarations_match_nl_h() {
         let (want, defines) = header();
         let (have, consts) = declared();
-        assert!(want.len() > 40, "nl.h parsed to only {} functions: {want:?}", want.len());
+        assert!(
+            want.len() > 40,
+            "nl.h parsed to only {} functions: {want:?}",
+            want.len()
+        );
         let missing: Vec<_> = want.keys().filter(|k| !have.contains_key(*k)).collect();
         let extra: Vec<_> = have.keys().filter(|k| !want.contains_key(*k)).collect();
-        assert!(missing.is_empty(), "declared in nl.h, not in nl_sys: {missing:?}");
-        assert!(extra.is_empty(), "declared in nl_sys, not in nl.h: {extra:?}");
+        assert!(
+            missing.is_empty(),
+            "declared in nl.h, not in nl_sys: {missing:?}"
+        );
+        assert!(
+            extra.is_empty(),
+            "declared in nl_sys, not in nl.h: {extra:?}"
+        );
         for (name, n) in &want {
             assert_eq!(have.get(name), Some(n), "{name}: {n} parameters in nl.h");
         }
-        let nl_defines: Vec<_> = defines.iter().filter(|(k, _)| k.starts_with("NL_")).collect();
-        assert!(nl_defines.len() > 30, "nl.h has only {} numeric NL_ defines", nl_defines.len());
+        let nl_defines: Vec<_> = defines
+            .iter()
+            .filter(|(k, _)| k.starts_with("NL_"))
+            .collect();
+        assert!(
+            nl_defines.len() > 30,
+            "nl.h has only {} numeric NL_ defines",
+            nl_defines.len()
+        );
         for (name, v) in nl_defines {
             assert_eq!(consts.get(name), Some(v), "{name} is {v} in nl.h");
         }
-        let text = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../LuaJIT/src/nl.h"))
-            .unwrap_or_default();
-        assert!(text.contains(&format!("#define NL_VERSION\t\"{NL_VERSION}\"")), "NL_VERSION");
-        assert!(text.contains(&format!("#define NL_EVENTLIBNAME\t\"{NL_EVENTLIBNAME}\"")), "NL_EVENTLIBNAME");
+        let text = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../LuaJIT/src/nl.h"
+        ))
+        .unwrap_or_default();
+        assert!(
+            text.contains(&format!("#define NL_VERSION\t\"{NL_VERSION}\"")),
+            "NL_VERSION"
+        );
+        assert!(
+            text.contains(&format!("#define NL_EVENTLIBNAME\t\"{NL_EVENTLIBNAME}\"")),
+            "NL_EVENTLIBNAME"
+        );
     }
 
     // ABI_REFS names every `#[no_mangle]` function of the text and regex
@@ -539,10 +637,16 @@ mod tests {
     #[test]
     fn abi_refs_are_complete() {
         let own = include_str!("lib.rs");
-        let own = own.get(..own.find("\nmod tests {").unwrap_or(own.len())).unwrap_or_default();
-        for (krate, file) in [("nl_text", "nl_text/src/abi.rs"), ("nl_regex", "nl_regex/src/abi.rs")] {
+        let own = own
+            .get(..own.find("\nmod tests {").unwrap_or(own.len()))
+            .unwrap_or_default();
+        for (krate, file) in [
+            ("nl_text", "nl_text/src/abi.rs"),
+            ("nl_regex", "nl_regex/src/abi.rs"),
+        ] {
             let path = format!("{}/../{file}", env!("CARGO_MANIFEST_DIR"));
-            let src = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
+            let src = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("cannot read {path}: {e}"));
             let mut n = 0;
             let mut lines = src.lines();
             while let Some(line) = lines.next() {
@@ -550,8 +654,15 @@ mod tests {
                     continue;
                 }
                 let next = lines.next().unwrap_or_default();
-                let name = next.split("fn ").nth(1).and_then(|r| r.split('(').next()).unwrap_or_default();
-                assert!(!name.is_empty(), "no function after no_mangle in {file}: {next}");
+                let name = next
+                    .split("fn ")
+                    .nth(1)
+                    .and_then(|r| r.split('(').next())
+                    .unwrap_or_default();
+                assert!(
+                    !name.is_empty(),
+                    "no function after no_mangle in {file}: {next}"
+                );
                 let reference = format!("nl_capi::{krate}::abi::{name} as *const ()");
                 assert!(own.contains(&reference), "ABI_REFS lacks {name} ({file})");
                 n += 1;
@@ -590,6 +701,9 @@ mod tests {
         assert_eq!(arity(""), 0);
         assert_eq!(arity("a: i32,\n b: i32,\n"), 2);
         assert_eq!(arity("lua_State *L, const char *fmt, ..."), 3);
-        assert_eq!(arity("L: *mut lua_State, f: Option<unsafe extern \"C\" fn(a: i32, b: i32)>"), 2);
+        assert_eq!(
+            arity("L: *mut lua_State, f: Option<unsafe extern \"C\" fn(a: i32, b: i32)>"),
+            2
+        );
     }
 }

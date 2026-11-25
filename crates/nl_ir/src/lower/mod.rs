@@ -99,7 +99,12 @@ pub struct LowerOutput {
 /// lowered again with every `try` in the packed form, which keeps its
 /// outcome in one local instead of two or more (error.rs), and that
 /// lowering is the result.
-pub fn lower(root: &SyntaxNode, source: &str, res: &Resolution, opts: &LowerOptions) -> LowerOutput {
+pub fn lower(
+    root: &SyntaxNode,
+    source: &str,
+    res: &Resolution,
+    opts: &LowerOptions,
+) -> LowerOutput {
     let out = lower_once(root, source, res, opts, false);
     if out.diagnostics.iter().any(|d| d.code == "vm-limit") {
         return lower_once(root, source, res, opts, true);
@@ -107,32 +112,64 @@ pub fn lower(root: &SyntaxNode, source: &str, res: &Resolution, opts: &LowerOpti
     out
 }
 
-fn lower_once(root: &SyntaxNode, source: &str, res: &Resolution, opts: &LowerOptions, packed_try: bool) -> LowerOutput {
+fn lower_once(
+    root: &SyntaxNode,
+    source: &str,
+    res: &Resolution,
+    opts: &LowerOptions,
+    packed_try: bool,
+) -> LowerOutput {
     let mut l = Lowerer::new(source, res, opts);
     l.packed_try = packed_try;
     // A file's `#!localize` directive overrides the option.
     let mode = match localize::directive(root) {
         Ok(found) => found.unwrap_or(opts.localize),
         Err(range) => {
-            l.diags.push(LowerDiagnostic { range, code: "localize-directive", message: "a `#!localize` directive names `none`, `std` or `all`".to_string() });
+            l.diags.push(LowerDiagnostic {
+                range,
+                code: "localize-directive",
+                message: "a `#!localize` directive names `none`, `std` or `all`".to_string(),
+            });
             opts.localize
         }
     };
-    l.localize = localize::plan(root, res, mode, &opts.imported_globals, &opts.library_fields);
+    l.localize = localize::plan(
+        root,
+        res,
+        mode,
+        &opts.imported_globals,
+        &opts.library_fields,
+    );
     l.collect_decl_names(root);
     l.collect_aliases(root);
     l.collect_registry_names(root);
     let main = l.lower_main(root);
-    let mut chunk = Chunk { locals: std::mem::take(&mut l.locals), main, name: opts.chunk_name.clone(), owner: l.owner };
+    let mut chunk = Chunk {
+        locals: std::mem::take(&mut l.locals),
+        main,
+        name: opts.chunk_name.clone(),
+        owner: l.owner,
+    };
     for (line, message) in lift::lift(&mut chunk) {
         let range = line_range(source, line);
-        l.diags.push(LowerDiagnostic { range, code: "spawn-block", message });
+        l.diags.push(LowerDiagnostic {
+            range,
+            code: "spawn-block",
+            message,
+        });
     }
     for o in limits::fit(&mut chunk, &l.rt_cache, &l.localized) {
         let range = line_range(source, o.line);
-        l.diags.push(LowerDiagnostic { range, code: "vm-limit", message: o.message });
+        l.diags.push(LowerDiagnostic {
+            range,
+            code: "vm-limit",
+            message: o.message,
+        });
     }
-    LowerOutput { chunk, diagnostics: l.diags }
+    LowerOutput {
+        chunk,
+        diagnostics: l.diags,
+    }
 }
 
 /// The range of a line's text, without its indentation (1-based `line`).
@@ -313,7 +350,9 @@ impl<'a> Lowerer<'a> {
         for q in root.descendants().filter(|n| n.kind() == QUAL_NAME) {
             if let Some(nl_sema::Ref::Declared(id)) = self.res.type_ref(q.text_range()) {
                 if let Some(first) = qual_segments(&q).first() {
-                    self.decl_names.entry(*id).or_insert_with(|| first.text().to_string());
+                    self.decl_names
+                        .entry(*id)
+                        .or_insert_with(|| first.text().to_string());
                 }
             }
         }
@@ -339,8 +378,17 @@ impl<'a> Lowerer<'a> {
 
     // ---- diagnostics -----------------------------------------------------
 
-    pub(crate) fn error(&mut self, node: &SyntaxNode, code: &'static str, message: impl Into<String>) {
-        self.diags.push(LowerDiagnostic { range: trimmed_range(node), code, message: message.into() });
+    pub(crate) fn error(
+        &mut self,
+        node: &SyntaxNode,
+        code: &'static str,
+        message: impl Into<String>,
+    ) {
+        self.diags.push(LowerDiagnostic {
+            range: trimmed_range(node),
+            code,
+            message: message.into(),
+        });
     }
 
     /// A tree shape the lowering did not expect (after the parser and the
@@ -349,7 +397,10 @@ impl<'a> Lowerer<'a> {
         self.diags.push(LowerDiagnostic {
             range: trimmed_range(node),
             code: "internal",
-            message: format!("internal compiler error: unexpected {what} ({:?})", node.kind()),
+            message: format!(
+                "internal compiler error: unexpected {what} ({:?})",
+                node.kind()
+            ),
         });
         Expr::Nil
     }
@@ -358,7 +409,9 @@ impl<'a> Lowerer<'a> {
 
     /// The 1-based line of a node's first token.
     pub(crate) fn line_of(&self, node: &SyntaxNode) -> u32 {
-        self.lines.line_col(self.source, trimmed_range(node).start()).line
+        self.lines
+            .line_col(self.source, trimmed_range(node).start())
+            .line
     }
 
     pub(crate) fn new_local(&mut self, hint: &str) -> LocalId {
@@ -370,7 +423,10 @@ impl<'a> Lowerer<'a> {
         if let Some(l) = self.bindings.get(&id) {
             return *l;
         }
-        let hint = self.res.binding(id).map_or_else(|| "v".to_string(), |b| b.name.clone());
+        let hint = self
+            .res
+            .binding(id)
+            .map_or_else(|| "v".to_string(), |b| b.name.clone());
         let l = self.new_local(&hint);
         self.bindings.insert(id, l);
         if self.res.assigned_in_closure(id) {
@@ -388,7 +444,9 @@ impl<'a> Lowerer<'a> {
     /// to a temporary at its turn. `later` is what is evaluated after it.
     pub(crate) fn pin(&mut self, e: Expr, later: &Expr) -> Expr {
         match e {
-            Expr::Local(l) if self.volatile.contains(&l) && may_run_code(later) => Expr::Local(self.fresh_temp(e, "v")),
+            Expr::Local(l) if self.volatile.contains(&l) && may_run_code(later) => {
+                Expr::Local(self.fresh_temp(e, "v"))
+            }
             e => e,
         }
     }
@@ -407,19 +465,29 @@ impl<'a> Lowerer<'a> {
     // ---- statements --------------------------------------------------------
 
     pub(crate) fn emit(&mut self, kind: StmtKind) {
-        self.stmts.push(Stmt { line: self.line, kind });
+        self.stmts.push(Stmt {
+            line: self.line,
+            kind,
+        });
     }
 
     /// Emits an expression evaluated for its effect. Lua accepts only calls
     /// as statements; anything else is assigned to a throwaway local.
     pub(crate) fn emit_effect(&mut self, e: Expr) {
         match e {
-            Expr::Call(..) | Expr::MethodCall(..) | Expr::MemberCall { .. } | Expr::MemberApply { .. } | Expr::AutoGet { .. } => self.emit(StmtKind::Expr(e)),
+            Expr::Call(..)
+            | Expr::MethodCall(..)
+            | Expr::MemberCall { .. }
+            | Expr::MemberApply { .. }
+            | Expr::AutoGet { .. } => self.emit(StmtKind::Expr(e)),
             e if e.is_constant() => {}
             Expr::Local(_) => {}
             e => {
                 let t = self.new_local("_");
-                self.emit(StmtKind::Local { locals: vec![t], values: vec![e] });
+                self.emit(StmtKind::Local {
+                    locals: vec![t],
+                    values: vec![e],
+                });
             }
         }
     }
@@ -446,7 +514,10 @@ impl<'a> Lowerer<'a> {
             return e;
         }
         let t = self.new_local(hint);
-        self.emit(StmtKind::Local { locals: vec![t], values: vec![e] });
+        self.emit(StmtKind::Local {
+            locals: vec![t],
+            values: vec![e],
+        });
         Expr::Local(t)
     }
 
@@ -454,7 +525,10 @@ impl<'a> Lowerer<'a> {
     /// later code might change).
     pub(crate) fn fresh_temp(&mut self, e: Expr, hint: &str) -> LocalId {
         let t = self.new_local(hint);
-        self.emit(StmtKind::Local { locals: vec![t], values: vec![e] });
+        self.emit(StmtKind::Local {
+            locals: vec![t],
+            values: vec![e],
+        });
         t
     }
 
@@ -475,7 +549,12 @@ impl<'a> Lowerer<'a> {
     /// alone). Many values go to one table rather than to as many locals
     /// (LuaJIT allows 200 locals per function).
     fn spill(&mut self, out: &mut [Expr]) {
-        let todo: Vec<usize> = out.iter().enumerate().filter(|(_, v)| !self.is_spilled(v)).map(|(i, _)| i).collect();
+        let todo: Vec<usize> = out
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| !self.is_spilled(v))
+            .map(|(i, _)| i)
+            .collect();
         if todo.len() <= SPILL_LOCALS {
             for i in todo {
                 if let Some(v) = out.get_mut(i) {
@@ -487,7 +566,11 @@ impl<'a> Lowerer<'a> {
             }
             return;
         }
-        let items = todo.iter().filter_map(|i| out.get(*i)).map(|v| TableEntry::Item(expr::single(v.clone()))).collect();
+        let items = todo
+            .iter()
+            .filter_map(|i| out.get(*i))
+            .map(|v| TableEntry::Item(expr::single(v.clone())))
+            .collect();
         let table = self.fresh_temp(Expr::Table(items), "spill");
         self.spilled.insert(table);
         for (j, i) in todo.into_iter().enumerate() {
@@ -502,7 +585,9 @@ impl<'a> Lowerer<'a> {
     fn is_spilled(&self, e: &Expr) -> bool {
         match e {
             Expr::Local(l) => self.spilled.contains(l),
-            Expr::Index(o, k) => matches!((&**o, &**k), (Expr::Local(t), Expr::Number(_)) if self.spilled.contains(t)),
+            Expr::Index(o, k) => {
+                matches!((&**o, &**k), (Expr::Local(t), Expr::Number(_)) if self.spilled.contains(t))
+            }
             e => e.is_constant(),
         }
     }
@@ -522,7 +607,10 @@ impl<'a> Lowerer<'a> {
     pub(crate) fn value_list(&mut self, nodes: &[SyntaxNode]) -> Vec<Expr> {
         let vals = self.operands(nodes);
         let n = vals.len();
-        vals.into_iter().enumerate().map(|(i, v)| if i + 1 < n { expr::single(v) } else { v }).collect()
+        vals.into_iter()
+            .enumerate()
+            .map(|(i, v)| if i + 1 < n { expr::single(v) } else { v })
+            .collect()
     }
 
     /// Declares a binding's local with an initial value, or assigns it when
@@ -530,9 +618,15 @@ impl<'a> Lowerer<'a> {
     pub(crate) fn define(&mut self, id: BindingId, value: Option<Expr>) -> LocalId {
         let l = self.local_of(id);
         if self.predeclared.contains(&id) {
-            self.emit(StmtKind::Assign { targets: vec![Place::Local(l)], values: vec![value.unwrap_or(Expr::Nil)] });
+            self.emit(StmtKind::Assign {
+                targets: vec![Place::Local(l)],
+                values: vec![value.unwrap_or(Expr::Nil)],
+            });
         } else {
-            self.emit(StmtKind::Local { locals: vec![l], values: value.into_iter().collect() });
+            self.emit(StmtKind::Local {
+                locals: vec![l],
+                values: value.into_iter().collect(),
+            });
         }
         l
     }
@@ -549,9 +643,14 @@ impl<'a> Lowerer<'a> {
             _ => child(node, NAME).and_then(|n| self.res.declaration(n.text_range())),
         };
         let Some(id) = id else { return };
-        let Some(name) = self.res.binding(id).map(|b| b.name.clone()) else { return };
+        let Some(name) = self.res.binding(id).map(|b| b.name.clone()) else {
+            return;
+        };
         let l = self.local_of(id);
-        self.emit(StmtKind::Assign { targets: vec![Place::Global(name)], values: vec![Expr::Local(l)] });
+        self.emit(StmtKind::Assign {
+            targets: vec![Place::Global(name)],
+            values: vec![Expr::Local(l)],
+        });
     }
 
     /// True when the binding's `local` was emitted ahead.
@@ -586,7 +685,11 @@ impl<'a> Lowerer<'a> {
     }
 
     fn lower_main(&mut self, root: &SyntaxNode) -> Function {
-        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new() });
+        self.fns.push(FnState {
+            ret_check: None,
+            loops: Vec::new(),
+            regions: Vec::new(),
+        });
         if let Some(b) = block(root) {
             self.lower_block_with(&b, Tail::Discard, true);
         }
@@ -594,16 +697,41 @@ impl<'a> Lowerer<'a> {
         if !self.localized.is_empty() {
             let (at, line) = self.prologue_at.unwrap_or((0, 1));
             let locals = self.localized.iter().map(|(l, _, _)| *l).collect();
-            let values = self.localized.iter().map(|(_, r, n)| localize::initial_value(r, n.as_deref())).collect();
-            self.stmts.insert(at.min(self.stmts.len()), Stmt { line, kind: StmtKind::Local { locals, values } });
+            let values = self
+                .localized
+                .iter()
+                .map(|(_, r, n)| localize::initial_value(r, n.as_deref()))
+                .collect();
+            self.stmts.insert(
+                at.min(self.stmts.len()),
+                Stmt {
+                    line,
+                    kind: StmtKind::Local { locals, values },
+                },
+            );
         }
         if !self.rt_cache.is_empty() {
-            let (names, locals): (Vec<&'static str>, Vec<LocalId>) = self.rt_cache.iter().copied().unzip();
+            let (names, locals): (Vec<&'static str>, Vec<LocalId>) =
+                self.rt_cache.iter().copied().unzip();
             let values = names.into_iter().map(Expr::Intrinsic).collect();
-            self.stmts.insert(0, Stmt { line: 1, kind: StmtKind::Local { locals, values } });
+            self.stmts.insert(
+                0,
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Local { locals, values },
+                },
+            );
         }
         let body = Block::new(std::mem::take(&mut self.stmts));
-        Function { params: Vec::new(), vararg: true, body, line: 1, name: Some("main chunk".to_string()), method: false, transient: false }
+        Function {
+            params: Vec::new(),
+            vararg: true,
+            body,
+            line: 1,
+            name: Some("main chunk".to_string()),
+            method: false,
+            transient: false,
+        }
     }
 
     /// Lowers a `BLOCK` into a new IR block.
@@ -648,11 +776,21 @@ impl<'a> Lowerer<'a> {
         // (localize.rs), which are then lowered on their own, before the
         // rest.
         let prologue = main && !self.localize.is_empty();
-        let (imports, imports_done) = if prologue { self.capture(|l| l.lower_imports(&stmts)) } else { (Vec::new(), HashSet::new()) };
+        let (imports, imports_done) = if prologue {
+            self.capture(|l| l.lower_imports(&stmts))
+        } else {
+            (Vec::new(), HashSet::new())
+        };
         let imports_line = imports.last().map_or(1, |s| s.line);
         let (early, mut done) = self.capture(|l| l.lower_early(&stmts, hoisting, !prologue));
         done.extend(imports_done);
-        let (fns, fns_done) = self.capture(|l| if hoisting { l.lower_hoisted_fns(&stmts) } else { HashSet::new() });
+        let (fns, fns_done) = self.capture(|l| {
+            if hoisting {
+                l.lower_hoisted_fns(&stmts)
+            } else {
+                HashSet::new()
+            }
+        });
         done.extend(fns_done);
         let n = stmts.len();
         let (rest, ()) = self.capture(|l| {
@@ -667,7 +805,11 @@ impl<'a> Lowerer<'a> {
                 l.emit_exports();
             }
         });
-        let (pool_decl, pool_defs) = if pooled { self.pop_pool() } else { (None, Vec::new()) };
+        let (pool_decl, pool_defs) = if pooled {
+            self.pop_pool()
+        } else {
+            (None, Vec::new())
+        };
         if !hoisting {
             self.stmts.extend(decls);
             self.stmts.extend(imports);
@@ -682,8 +824,12 @@ impl<'a> Lowerer<'a> {
         }
         // The `local` declarations come first; the definitions and the
         // other statements form one `Hoist`.
-        let (early_locals, early): (Vec<Stmt>, Vec<Stmt>) = early.into_iter().partition(|s| matches!(s.kind, StmtKind::Local { .. }));
-        let (fn_locals, fns): (Vec<Stmt>, Vec<Stmt>) = fns.into_iter().partition(|s| matches!(s.kind, StmtKind::Local { .. }));
+        let (early_locals, early): (Vec<Stmt>, Vec<Stmt>) = early
+            .into_iter()
+            .partition(|s| matches!(s.kind, StmtKind::Local { .. }));
+        let (fn_locals, fns): (Vec<Stmt>, Vec<Stmt>) = fns
+            .into_iter()
+            .partition(|s| matches!(s.kind, StmtKind::Local { .. }));
         self.stmts.extend(decls);
         // The imports assign locals `decls` declared; they come first among
         // the definitions anyway (imports are the first
@@ -698,7 +844,10 @@ impl<'a> Lowerer<'a> {
         let mut defs = early;
         defs.extend(pool_defs);
         defs.extend(fns);
-        self.emit(StmtKind::Hoist { defs: Block::new(defs), rest: Block::new(rest) });
+        self.emit(StmtKind::Hoist {
+            defs: Block::new(defs),
+            rest: Block::new(rest),
+        });
     }
 
     /// The bindings whose types a block's pool can hold: the structs,
@@ -707,7 +856,9 @@ impl<'a> Lowerer<'a> {
         let mut out = Vec::new();
         for s in stmts {
             match s.kind() {
-                STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | IMPORT_DECL => self.declared_bindings(s, &mut out),
+                STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | IMPORT_DECL => {
+                    self.declared_bindings(s, &mut out)
+                }
                 _ => {}
             }
         }
@@ -729,12 +880,18 @@ impl<'a> Lowerer<'a> {
         for s in stmts {
             self.declared_bindings(s, &mut ids);
         }
-        let ids: Vec<BindingId> = ids.into_iter().filter(|id| !self.predeclared.contains(id)).collect();
+        let ids: Vec<BindingId> = ids
+            .into_iter()
+            .filter(|id| !self.predeclared.contains(id))
+            .collect();
         // Lua allows 200 locals per function; one statement declares at
         // most a few dozen at a time.
         for chunk in ids.chunks(50) {
             let locals: Vec<LocalId> = chunk.iter().map(|id| self.local_of(*id)).collect();
-            self.emit(StmtKind::Local { locals, values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals,
+                values: Vec::new(),
+            });
         }
         for id in &ids {
             self.predeclared.insert(*id);
@@ -749,12 +906,18 @@ impl<'a> Lowerer<'a> {
         for s in stmts.iter().filter(|s| s.kind() == CONST_DECL) {
             self.declared_bindings(s, &mut ids);
         }
-        let ids: Vec<BindingId> = ids.into_iter().filter(|id| self.res.forward_const(*id) && !self.predeclared.contains(id)).collect();
+        let ids: Vec<BindingId> = ids
+            .into_iter()
+            .filter(|id| self.res.forward_const(*id) && !self.predeclared.contains(id))
+            .collect();
         if ids.is_empty() {
             return;
         }
         let locals: Vec<LocalId> = ids.iter().map(|id| self.local_of(*id)).collect();
-        self.emit(StmtKind::Local { locals, values: Vec::new() });
+        self.emit(StmtKind::Local {
+            locals,
+            values: Vec::new(),
+        });
         self.predeclared.extend(ids);
     }
 
@@ -762,26 +925,46 @@ impl<'a> Lowerer<'a> {
     /// the main function: the branch assigns them, and the export table
     /// reads them (`nil` when no branch that declares one ran).
     fn predeclare_conditional_exports(&mut self) {
-        let mut ids: Vec<BindingId> = self.res.conditional_export_bindings().filter(|id| !self.predeclared.contains(id)).collect();
+        let mut ids: Vec<BindingId> = self
+            .res
+            .conditional_export_bindings()
+            .filter(|id| !self.predeclared.contains(id))
+            .collect();
         if ids.is_empty() {
             return;
         }
         ids.sort_by_key(|id| id.0);
         for chunk in ids.chunks(50) {
             let locals: Vec<LocalId> = chunk.iter().map(|id| self.local_of(*id)).collect();
-            self.emit(StmtKind::Local { locals, values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals,
+                values: Vec::new(),
+            });
         }
         self.predeclared.extend(ids);
     }
 
     /// The imports, and when the block hoists, its type declarations (see
     /// [`Self::predeclare`]). Returns the ranges of the statements lowered.
-    fn lower_early(&mut self, stmts: &[SyntaxNode], hoisting: bool, with_imports: bool) -> HashSet<TextRange> {
+    fn lower_early(
+        &mut self,
+        stmts: &[SyntaxNode],
+        hoisting: bool,
+        with_imports: bool,
+    ) -> HashSet<TextRange> {
         let mut done = HashSet::new();
-        let imports = stmts.iter().filter(|s| with_imports && s.kind() == IMPORT_DECL).cloned();
+        let imports = stmts
+            .iter()
+            .filter(|s| with_imports && s.kind() == IMPORT_DECL)
+            .cloned();
         let mut todo: Vec<SyntaxNode> = imports.collect();
         if hoisting {
-            todo.extend(stmts.iter().filter(|s| matches!(s.kind(), ENUM_DECL | INTERFACE_DECL)).cloned());
+            todo.extend(
+                stmts
+                    .iter()
+                    .filter(|s| matches!(s.kind(), ENUM_DECL | INTERFACE_DECL))
+                    .cloned(),
+            );
             todo.extend(self.struct_order(stmts));
         }
         for s in todo {
@@ -806,7 +989,10 @@ impl<'a> Lowerer<'a> {
     /// The `fn name` declarations of a hoisting block, in source order.
     fn lower_hoisted_fns(&mut self, stmts: &[SyntaxNode]) -> HashSet<TextRange> {
         let mut done = HashSet::new();
-        for s in stmts.iter().filter(|s| s.kind() == FN_DECL && child(s, QUAL_NAME).is_none()) {
+        for s in stmts
+            .iter()
+            .filter(|s| s.kind() == FN_DECL && child(s, QUAL_NAME).is_none())
+        {
             self.line = self.line_of(s);
             self.lower_fn_decl(s);
             done.insert(s.text_range());
@@ -820,10 +1006,21 @@ impl<'a> Lowerer<'a> {
         let decls: Vec<(BindingId, SyntaxNode)> = stmts
             .iter()
             .filter(|s| s.kind() == STRUCT_DECL)
-            .filter_map(|s| child(s, NAME).and_then(|n| self.res.declaration(n.text_range())).map(|id| (id, s.clone())))
+            .filter_map(|s| {
+                child(s, NAME)
+                    .and_then(|n| self.res.declaration(n.text_range()))
+                    .map(|id| (id, s.clone()))
+            })
             .collect();
-        let index: HashMap<BindingId, usize> = decls.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
-        let parents: Vec<Option<usize>> = decls.iter().map(|(_, s)| self.struct_parent(s).and_then(|p| index.get(&p).copied())).collect();
+        let index: HashMap<BindingId, usize> = decls
+            .iter()
+            .enumerate()
+            .map(|(i, (id, _))| (*id, i))
+            .collect();
+        let parents: Vec<Option<usize>> = decls
+            .iter()
+            .map(|(_, s)| self.struct_parent(s).and_then(|p| index.get(&p).copied()))
+            .collect();
         // 0: not placed, 1: being placed, 2: placed.
         let mut state = vec![0u8; decls.len()];
         let mut order = Vec::new();
@@ -842,8 +1039,14 @@ impl<'a> Lowerer<'a> {
                     Some(1) => {
                         if let Some((_, s)) = decls.get(i) {
                             let at_node = child(s, STRUCT_PARENT).unwrap_or_else(|| s.clone());
-                            let name = child(s, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
-                            self.error(&at_node, "inheritance-cycle", format!("struct `{name}` inherits from itself"));
+                            let name = child(s, NAME)
+                                .and_then(|n| name_text(&n))
+                                .unwrap_or_default();
+                            self.error(
+                                &at_node,
+                                "inheritance-cycle",
+                                format!("struct `{name}` inherits from itself"),
+                            );
                         }
                         break;
                     }
@@ -873,7 +1076,9 @@ impl<'a> Lowerer<'a> {
             if qual_segments(&q).len() != 1 {
                 return None;
             }
-            let Some(nl_sema::Ref::Binding(id)) = self.res.type_ref(q.text_range()).cloned() else { return None };
+            let Some(nl_sema::Ref::Binding(id)) = self.res.type_ref(q.text_range()).cloned() else {
+                return None;
+            };
             match self.aliases.get(&id) {
                 Some(alias) => ty = alias.clone(),
                 None => return Some(id),
@@ -907,7 +1112,10 @@ impl<'a> Lowerer<'a> {
                 }
             }
             IMPORT_DECL => {
-                let names = child(stmt, IMPORT_LIST).map_or_else(|| children(stmt, NAME).collect::<Vec<_>>(), |l| children(&l, NAME).collect());
+                let names = child(stmt, IMPORT_LIST).map_or_else(
+                    || children(stmt, NAME).collect::<Vec<_>>(),
+                    |l| children(&l, NAME).collect(),
+                );
                 for n in names {
                     if let Some(id) = self.res.declaration(n.text_range()) {
                         out.push(id);
@@ -923,7 +1131,11 @@ impl<'a> Lowerer<'a> {
         for el in pat.descendants_with_tokens() {
             let range = match &el {
                 rowan::NodeOrToken::Node(n) if n.kind() == NAME => n.text_range(),
-                rowan::NodeOrToken::Token(t) if t.parent().is_some_and(|p| p.kind() == PAT_FIELD) => t.text_range(),
+                rowan::NodeOrToken::Token(t)
+                    if t.parent().is_some_and(|p| p.kind() == PAT_FIELD) =>
+                {
+                    t.text_range()
+                }
                 _ => continue,
             };
             if let Some(id) = self.res.declaration(range) {
@@ -943,7 +1155,15 @@ impl<'a> Lowerer<'a> {
         }
         let declares = matches!(
             node.kind(),
-            LET_DECL | CONST_DECL | FN_DECL | STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | INTERFACE_IMPL | MODULE_DECL | IMPORT_DECL
+            LET_DECL
+                | CONST_DECL
+                | FN_DECL
+                | STRUCT_DECL
+                | ENUM_DECL
+                | INTERFACE_DECL
+                | INTERFACE_IMPL
+                | MODULE_DECL
+                | IMPORT_DECL
         );
         if declares {
             self.simple_stmt(node, tail);
@@ -951,7 +1171,9 @@ impl<'a> Lowerer<'a> {
         }
         // Temporaries of other statements are scoped to the statement.
         let (stmts, ()) = self.capture(|l| l.simple_stmt(node, tail));
-        let has_locals = stmts.iter().any(|s| matches!(s.kind, StmtKind::Local { .. }));
+        let has_locals = stmts
+            .iter()
+            .any(|s| matches!(s.kind, StmtKind::Local { .. }));
         if has_locals {
             self.emit(StmtKind::Do(Block::new(stmts)));
         } else {
@@ -994,7 +1216,11 @@ impl<'a> Lowerer<'a> {
             let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));
             l.stmts.extend(stmts);
         });
-        let body = if is_loop { self.finish_loop_body(body) } else { body };
+        let body = if is_loop {
+            self.finish_loop_body(body)
+        } else {
+            body
+        };
         let (cond_stmts, cond) = self.capture(|l| l.expr(&cond_node));
         let cond = match word {
             Some(UNLESS_KW | UNTIL_KW) => Expr::lnot(cond),
@@ -1005,13 +1231,33 @@ impl<'a> Lowerer<'a> {
                 self.emit(StmtKind::While { cond, body });
             } else {
                 let mut stmts = cond_stmts;
-                stmts.push(Stmt { line: self.line, kind: StmtKind::If { cond: Expr::lnot(cond), then: Block::new(vec![Stmt { line: self.line, kind: StmtKind::Break }]), otherwise: None } });
+                stmts.push(Stmt {
+                    line: self.line,
+                    kind: StmtKind::If {
+                        cond: Expr::lnot(cond),
+                        then: Block::new(vec![Stmt {
+                            line: self.line,
+                            kind: StmtKind::Break,
+                        }]),
+                        otherwise: None,
+                    },
+                });
                 stmts.extend(body.stmts);
-                self.emit(StmtKind::While { cond: Expr::Bool(true), body: Block::new(stmts) });
+                self.emit(StmtKind::While {
+                    cond: Expr::Bool(true),
+                    body: Block::new(stmts),
+                });
             }
         } else {
             let mut stmts = cond_stmts;
-            stmts.push(Stmt { line: self.line, kind: StmtKind::If { cond, then: body, otherwise: None } });
+            stmts.push(Stmt {
+                line: self.line,
+                kind: StmtKind::If {
+                    cond,
+                    then: body,
+                    otherwise: None,
+                },
+            });
             self.emit(StmtKind::Do(Block::new(stmts)));
         }
     }
@@ -1019,11 +1265,24 @@ impl<'a> Lowerer<'a> {
     /// Closes the loop opened for a body: adds the `continue` label if a
     /// `continue` used it.
     pub(crate) fn finish_loop_body(&mut self, body: Block) -> Block {
-        let state = self.fns.last_mut().and_then(|f| f.loops.pop()).unwrap_or_default();
+        let state = self
+            .fns
+            .last_mut()
+            .and_then(|f| f.loops.pop())
+            .unwrap_or_default();
         match state.continue_label {
             Some(label) => {
                 let line = self.line;
-                Block::new(vec![Stmt { line, kind: StmtKind::Do(body) }, Stmt { line, kind: StmtKind::Label(label) }])
+                Block::new(vec![
+                    Stmt {
+                        line,
+                        kind: StmtKind::Do(body),
+                    },
+                    Stmt {
+                        line,
+                        kind: StmtKind::Label(label),
+                    },
+                ])
             }
             None => body,
         }
@@ -1101,7 +1360,10 @@ impl<'a> Lowerer<'a> {
             }
             Tail::Assign(t) => {
                 let first = vals.into_iter().next().map_or(Expr::Nil, expr::single);
-                self.emit(StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![first] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Local(t)],
+                    values: vec![first],
+                });
             }
             Tail::Yield => {
                 let first = vals.into_iter().next().map_or(Expr::Nil, expr::single);
@@ -1131,7 +1393,10 @@ impl<'a> Lowerer<'a> {
             }
             Tail::Assign(t) => {
                 let v = self.expr(e);
-                self.emit(StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![v] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Local(t)],
+                    values: vec![v],
+                });
             }
             Tail::Yield => {
                 let v = self.expr(e);
@@ -1177,18 +1442,28 @@ impl<'a> Lowerer<'a> {
     pub(crate) fn emit_return(&mut self, values: Vec<Expr>) {
         let check = self.fns.last().and_then(|f| f.ret_check.clone());
         match check {
-            Some((ty, ctx)) if ty.kind() == TUPLE_TYPE && values.len() < ty.children().filter(|c| is_type(c.kind())).count() && !values.last().is_some_and(Expr::is_multi) => {
+            Some((ty, ctx))
+                if ty.kind() == TUPLE_TYPE
+                    && values.len() < ty.children().filter(|c| is_type(c.kind())).count()
+                    && !values.last().is_some_and(Expr::is_multi) =>
+            {
                 // Fewer values than the tuple, all written: each written
                 // one in a local, checked, then the missing ones as `nil`.
                 let parts: Vec<SyntaxNode> = ty.children().filter(|c| is_type(c.kind())).collect();
                 let rs: Vec<LocalId> = (0..values.len()).map(|_| self.new_local("r")).collect();
                 if !rs.is_empty() {
-                    self.emit(StmtKind::Local { locals: rs.clone(), values });
+                    self.emit(StmtKind::Local {
+                        locals: rs.clone(),
+                        values,
+                    });
                 }
                 for (i, part) in parts.iter().enumerate() {
-                    let Some(t) = self.type_value(part) else { continue };
+                    let Some(t) = self.type_value(part) else {
+                        continue;
+                    };
                     let test = self.inline_test(part);
-                    let what = ctx.replacen("return value of", &format!("return value {} of", i + 1), 1);
+                    let what =
+                        ctx.replacen("return value of", &format!("return value {} of", i + 1), 1);
                     let value = rs.get(i).map_or(Expr::Nil, |r| Expr::Local(*r));
                     self.emit_check_value(value, t, test, &what);
                 }
@@ -1197,16 +1472,25 @@ impl<'a> Lowerer<'a> {
             Some((ty, ctx)) if ty.kind() == TUPLE_TYPE => {
                 let parts: Vec<SyntaxNode> = ty.children().filter(|c| is_type(c.kind())).collect();
                 let types: Option<Vec<Expr>> = parts.iter().map(|t| self.type_value(t)).collect();
-                let tests: Vec<Option<types::Inline>> = parts.iter().map(|t| self.inline_test(t)).collect();
+                let tests: Vec<Option<types::Inline>> =
+                    parts.iter().map(|t| self.inline_test(t)).collect();
                 match types {
                     Some(types) if tests.iter().any(Option::is_some) => {
                         // Checked inline: `local r1, r2 = values` takes
                         // exactly two values as `rt.retn` does, then each is
                         // tested and `rt.check` called when one fails.
-                        let rs: Vec<LocalId> = (0..types.len()).map(|_| self.new_local("r")).collect();
-                        self.emit(StmtKind::Local { locals: rs.clone(), values });
+                        let rs: Vec<LocalId> =
+                            (0..types.len()).map(|_| self.new_local("r")).collect();
+                        self.emit(StmtKind::Local {
+                            locals: rs.clone(),
+                            values,
+                        });
                         for (i, ((r, t), test)) in rs.iter().zip(types).zip(tests).enumerate() {
-                            let what = ctx.replacen("return value of", &format!("return value {} of", i + 1), 1);
+                            let what = ctx.replacen(
+                                "return value of",
+                                &format!("return value {} of", i + 1),
+                                1,
+                            );
                             self.emit_check_value(Expr::Local(*r), t, test, &what);
                         }
                         self.emit(StmtKind::Return(rs.into_iter().map(Expr::Local).collect()));
@@ -1215,7 +1499,11 @@ impl<'a> Lowerer<'a> {
                         let n = types.len();
                         // "return value of f" becomes "return value 2 of f".
                         let what = ctx.replacen("return value of", "return value %d of", 1);
-                        let mut args = vec![Expr::Table(types.into_iter().map(TableEntry::Item).collect()), Expr::Number(n as f64), Expr::str(&what)];
+                        let mut args = vec![
+                            Expr::Table(types.into_iter().map(TableEntry::Item).collect()),
+                            Expr::Number(n as f64),
+                            Expr::str(&what),
+                        ];
                         args.extend(values);
                         self.emit(StmtKind::Return(vec![Expr::intrinsic_call("retn", args)]));
                     }
@@ -1223,7 +1511,9 @@ impl<'a> Lowerer<'a> {
                 }
             }
             Some((ty, ctx)) => match (self.type_value(&ty), self.inline_test(&ty)) {
-                (Some(t), Some(test)) if values.len() == 1 && !values.iter().any(Expr::is_multi) => {
+                (Some(t), Some(test))
+                    if values.len() == 1 && !values.iter().any(Expr::is_multi) =>
+                {
                     // One value: tested inline, `rt.check` when it fails.
                     let v = values.into_iter().next().unwrap_or(Expr::Nil);
                     if self.accepts_statically(&test, &v) {
@@ -1252,7 +1542,10 @@ impl<'a> Lowerer<'a> {
 /// True when a block declares something the resolver hoists and that has a
 /// runtime value: `fn name`, `struct`, `enum`, `interface`.
 fn needs_hoisting(stmts: &[SyntaxNode]) -> bool {
-    stmts.iter().any(|s| matches!(s.kind(), STRUCT_DECL | ENUM_DECL | INTERFACE_DECL) || (s.kind() == FN_DECL && child(s, QUAL_NAME).is_none()))
+    stmts.iter().any(|s| {
+        matches!(s.kind(), STRUCT_DECL | ENUM_DECL | INTERFACE_DECL)
+            || (s.kind() == FN_DECL && child(s, QUAL_NAME).is_none())
+    })
 }
 
 /// True when evaluating `e` may run code (a call, a metamethod) that could
@@ -1264,5 +1557,8 @@ pub(crate) fn may_run_code(e: &Expr) -> bool {
 /// `if`, `unless`, `case`, `cond` and `try`: expressions that are lowered as
 /// statements with a tail.
 pub(crate) fn is_block_construct(kind: SyntaxKind) -> bool {
-    matches!(kind, IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR)
+    matches!(
+        kind,
+        IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR
+    )
 }

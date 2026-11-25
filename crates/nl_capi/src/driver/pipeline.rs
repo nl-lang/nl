@@ -32,7 +32,11 @@ use super::{CompileOptions, CompileOutput, Diagnostic, Emit, Loader, Severity};
 
 /// The file name diagnostics use: the chunk name without its `@` or `=`.
 pub(crate) fn file_label(chunk_name: &str) -> String {
-    chunk_name.strip_prefix('@').or_else(|| chunk_name.strip_prefix('=')).unwrap_or(chunk_name).to_owned()
+    chunk_name
+        .strip_prefix('@')
+        .or_else(|| chunk_name.strip_prefix('='))
+        .unwrap_or(chunk_name)
+        .to_owned()
 }
 
 /// Turns byte ranges into the line and column positions of [`Diagnostic`].
@@ -44,10 +48,20 @@ pub(crate) struct Positions<'a> {
 
 impl<'a> Positions<'a> {
     pub(crate) fn new(text: &'a str, file: String) -> Self {
-        Positions { text, index: LineIndex::new(text), file }
+        Positions {
+            text,
+            index: LineIndex::new(text),
+            file,
+        }
     }
 
-    pub(crate) fn diagnostic(&self, severity: Severity, code: &'static str, message: String, range: TextRange) -> Diagnostic {
+    pub(crate) fn diagnostic(
+        &self,
+        severity: Severity,
+        code: &'static str,
+        message: String,
+        range: TextRange,
+    ) -> Diagnostic {
         let start = self.index.line_col(self.text, range.start());
         let end = self.index.line_col(self.text, range.end());
         Diagnostic {
@@ -70,7 +84,10 @@ fn sorted(mut diags: Vec<Diagnostic>) -> Vec<Diagnostic> {
 }
 
 fn failed(diags: Vec<Diagnostic>) -> CompileOutput {
-    CompileOutput { chunk: None, diagnostics: sorted(diags) }
+    CompileOutput {
+        chunk: None,
+        diagnostics: sorted(diags),
+    }
 }
 
 /// Which file a run of [`stages`] compiles.
@@ -84,7 +101,10 @@ pub(crate) enum Mode<'a> {
     /// are only parsed. `decls` are the declaration files the main file
     /// loaded, which the import shares: its problems are the main
     /// compile's to report, once.
-    Imported { root: Option<&'a str>, decls: &'a Declarations },
+    Imported {
+        root: Option<&'a str>,
+        decls: &'a Declarations,
+    },
 }
 
 /// The stack of the compiler thread.
@@ -92,9 +112,18 @@ pub(crate) const STACK_SIZE: usize = 256 << 20;
 
 /// A request from the compiler thread to the loader.
 enum Request {
-    Resolve { from: Option<String>, path: String, reply: mpsc::Sender<Option<String>> },
-    Read { name: String, reply: mpsc::Sender<Option<Vec<u8>>> },
-    Declarations { reply: mpsc::Sender<Vec<(String, Vec<u8>)>> },
+    Resolve {
+        from: Option<String>,
+        path: String,
+        reply: mpsc::Sender<Option<String>>,
+    },
+    Read {
+        name: String,
+        reply: mpsc::Sender<Option<Vec<u8>>>,
+    },
+    Declarations {
+        reply: mpsc::Sender<Vec<(String, Vec<u8>)>>,
+    },
 }
 
 /// The loader as the compiler thread sees it.
@@ -105,14 +134,23 @@ struct LoaderProxy {
 impl Loader for LoaderProxy {
     fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
         let (reply, answer) = mpsc::channel();
-        let req = Request::Resolve { from: from.map(str::to_owned), path: path.to_owned(), reply };
+        let req = Request::Resolve {
+            from: from.map(str::to_owned),
+            path: path.to_owned(),
+            reply,
+        };
         self.requests.send(req).ok()?;
         answer.recv().ok().flatten()
     }
 
     fn read(&self, name: &str) -> Option<Vec<u8>> {
         let (reply, answer) = mpsc::channel();
-        self.requests.send(Request::Read { name: name.to_owned(), reply }).ok()?;
+        self.requests
+            .send(Request::Read {
+                name: name.to_owned(),
+                reply,
+            })
+            .ok()?;
         answer.recv().ok().flatten()
     }
 
@@ -125,16 +163,29 @@ impl Loader for LoaderProxy {
     }
 }
 
-pub(crate) fn compile(source: &[u8], chunk_name: &str, options: &CompileOptions, loader: &dyn Loader) -> CompileOutput {
+pub(crate) fn compile(
+    source: &[u8],
+    chunk_name: &str,
+    options: &CompileOptions,
+    loader: &dyn Loader,
+) -> CompileOutput {
     let (requests, incoming) = mpsc::channel::<Request>();
     std::thread::scope(|scope| {
-        let worker = std::thread::Builder::new().name("nl compiler".to_owned()).stack_size(STACK_SIZE).spawn_scoped(scope, move || {
-            let proxy = LoaderProxy { requests };
-            catch_unwind(AssertUnwindSafe(|| stages(source, chunk_name, options, &proxy, Mode::Main).output))
-        });
+        let worker = std::thread::Builder::new()
+            .name("nl compiler".to_owned())
+            .stack_size(STACK_SIZE)
+            .spawn_scoped(scope, move || {
+                let proxy = LoaderProxy { requests };
+                catch_unwind(AssertUnwindSafe(|| {
+                    stages(source, chunk_name, options, &proxy, Mode::Main).output
+                }))
+            });
         let Ok(worker) = worker else {
             // No thread: run here, with the stack there is.
-            return catch_unwind(AssertUnwindSafe(|| stages(source, chunk_name, options, loader, Mode::Main).output)).unwrap_or_else(|_| internal_error(chunk_name));
+            return catch_unwind(AssertUnwindSafe(|| {
+                stages(source, chunk_name, options, loader, Mode::Main).output
+            }))
+            .unwrap_or_else(|_| internal_error(chunk_name));
         };
         // Serve the loader until the compiler thread drops its proxy.
         for req in incoming {
@@ -193,11 +244,23 @@ pub(crate) struct Staged {
 
 impl From<CompileOutput> for Staged {
     fn from(output: CompileOutput) -> Self {
-        Staged { output, exports: None, globals: Vec::new(), extensions: Vec::new(), scan: None }
+        Staged {
+            output,
+            exports: None,
+            globals: Vec::new(),
+            extensions: Vec::new(),
+            scan: None,
+        }
     }
 }
 
-pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, loader: &dyn Loader, mode: Mode<'_>) -> Staged {
+pub(crate) fn stages(
+    source: &[u8],
+    chunk_name: &str,
+    options: &CompileOptions,
+    loader: &dyn Loader,
+    mode: Mode<'_>,
+) -> Staged {
     let file = file_label(chunk_name);
     let text = match nl_syntax::source_from_bytes(source) {
         Ok(t) => t,
@@ -207,7 +270,13 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
             let prefix = String::from_utf8_lossy(source.get(..start).unwrap_or(&[])).into_owned();
             let pos = Positions::new(&prefix, file);
             let at = TextRange::empty(TextSize::of(prefix.as_str()));
-            return failed(vec![pos.diagnostic(Severity::Error, "invalid-utf8", d.message, at)]).into();
+            return failed(vec![pos.diagnostic(
+                Severity::Error,
+                "invalid-utf8",
+                d.message,
+                at,
+            )])
+            .into();
         }
     };
     let pos = Positions::new(text, file.clone());
@@ -218,7 +287,11 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
         .diagnostics()
         .iter()
         .map(|d| {
-            let sev = if d.is_error() { Severity::Error } else { Severity::Warning };
+            let sev = if d.is_error() {
+                Severity::Error
+            } else {
+                Severity::Warning
+            };
             pos.diagnostic(sev, "syntax", d.message.clone(), d.range)
         })
         .collect();
@@ -245,8 +318,20 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let from = chunk_name.strip_prefix('@');
     let imports = DriverImports::new(loader, from, options, mode, decls);
     let res = nl_sema::resolve_with(&root, &imports, decls);
-    let sema_severity = |d: &nl_sema::SemaDiagnostic| if d.error { Severity::Error } else if d.lint { Severity::Lint } else { Severity::Warning };
-    diags.extend(res.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+    let sema_severity = |d: &nl_sema::SemaDiagnostic| {
+        if d.error {
+            Severity::Error
+        } else if d.lint {
+            Severity::Lint
+        } else {
+            Severity::Warning
+        }
+    };
+    diags.extend(
+        res.diagnostics
+            .iter()
+            .map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)),
+    );
     // What the profile leaves out, at its uses. These errors stop the
     // compile after the analyzer, which still runs on the resolved tree,
     // so that one compile reports them all (the realm of members is
@@ -254,7 +339,11 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     let earlier_errors = res.has_errors() || diags.iter().any(|d| d.severity == Severity::Error);
     let found = nl_sema::profile::check(&root, &res, decls, options.profile);
     let profile_errors = found.iter().any(|d| d.error);
-    diags.extend(found.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+    diags.extend(
+        found
+            .iter()
+            .map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)),
+    );
     if earlier_errors {
         let mut out = failed(diags);
         out.diagnostics.extend(imports.into_diagnostics());
@@ -266,44 +355,92 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     // `Localize::All` leaves alone.
     let imported_globals = imports.globals();
     let mut globals = nl_ir::declared_globals(&root);
-    globals.extend(imported_globals.iter().filter(|g| !globals.contains(g)).cloned().collect::<Vec<_>>());
+    globals.extend(
+        imported_globals
+            .iter()
+            .filter(|g| !globals.contains(g))
+            .cloned()
+            .collect::<Vec<_>>(),
+    );
 
     // Analyze. Without `options.analyze` the pass still runs for the
     // member keys of declared names, and reports nothing. A gmod profile
     // has it record the members the file reads, for the realm check.
     let record = options.profile.is_gmod();
-    let aopts = nl_sema::AnalyzeOptions { static_resolution: options.static_resolution, decls: Some(decls), lints: options.analyze, imports: Some(&imports), record };
+    let aopts = nl_sema::AnalyzeOptions {
+        static_resolution: options.static_resolution,
+        decls: Some(decls),
+        lints: options.analyze,
+        imports: Some(&imports),
+        record,
+    };
     let analysis = nl_sema::analyze(&root, &res, &aopts);
     // The members of declared types and modules that the realm lacks
     // (`ply.kick` on the client): profile errors, reported whether or not
     // the analyzer's own diagnostics are wanted.
-    let realm = analysis.info.as_ref().map(|info| nl_sema::profile::check_members(&root, &res, info, decls, options.profile)).unwrap_or_default();
-    diags.extend(realm.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+    let realm = analysis
+        .info
+        .as_ref()
+        .map(|info| nl_sema::profile::check_members(&root, &res, info, decls, options.profile))
+        .unwrap_or_default();
+    diags.extend(
+        realm
+            .iter()
+            .map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)),
+    );
     // The errors of imported files follow this file's diagnostics.
     let imported = imports.into_diagnostics();
     if options.analyze {
-        diags.extend(analysis.diagnostics.iter().map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)));
+        diags.extend(
+            analysis
+                .diagnostics
+                .iter()
+                .map(|d| pos.diagnostic(sema_severity(d), d.code, d.message.clone(), d.range)),
+        );
     }
-    if profile_errors || realm.iter().any(|d| d.error) || (options.analyze && analysis.has_errors()) {
+    if profile_errors || realm.iter().any(|d| d.error) || (options.analyze && analysis.has_errors())
+    {
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, extensions, scan };
+        return Staged {
+            output: out,
+            exports,
+            globals,
+            extensions,
+            scan,
+        };
     }
-    let hints = if options.static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
+    let hints = if options.static_resolution {
+        analysis.hints
+    } else {
+        analysis.hints.without_static_resolution()
+    };
 
     // Literal patterns of Regex.new (regex_literal.rs).
     let bad_patterns = super::regex_literal::check(&root, &res);
     if !bad_patterns.is_empty() {
-        diags.extend(bad_patterns.into_iter().map(|(range, msg)| pos.diagnostic(Severity::Error, super::regex_literal::CODE, msg, range)));
+        diags.extend(bad_patterns.into_iter().map(|(range, msg)| {
+            pos.diagnostic(Severity::Error, super::regex_literal::CODE, msg, range)
+        }));
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, extensions, scan };
+        return Staged {
+            output: out,
+            exports,
+            globals,
+            extensions,
+            scan,
+        };
     }
 
     // Lower.
     // The Lua backend is level 0 whatever the option says: it runs on
     // stock LuaJIT.
-    let level = if options.emit == Emit::Bytecode { options.level } else { 0 };
+    let level = if options.emit == Emit::Bytecode {
+        options.level
+    } else {
+        0
+    };
     let lopts = nl_ir::LowerOptions {
         checks: options.checks,
         chunk_name: chunk_name.to_owned(),
@@ -317,26 +454,55 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
     };
     let out = nl_ir::lower(&root, text, &res, &lopts);
     if !out.diagnostics.is_empty() {
-        diags.extend(out.diagnostics.iter().map(|d| pos.diagnostic(Severity::Error, d.code, d.message.clone(), d.range)));
+        diags.extend(
+            out.diagnostics
+                .iter()
+                .map(|d| pos.diagnostic(Severity::Error, d.code, d.message.clone(), d.range)),
+        );
         let mut out = failed(diags);
         out.diagnostics.extend(imported);
-        return Staged { output: out, exports, globals, extensions, scan };
+        return Staged {
+            output: out,
+            exports,
+            globals,
+            extensions,
+            scan,
+        };
     }
     diags.extend(imported);
 
     // Print or emit.
     if let Mode::Imported { .. } = mode {
-        return Staged { output: CompileOutput { chunk: None, diagnostics: sorted(diags) }, exports, globals, extensions, scan };
+        return Staged {
+            output: CompileOutput {
+                chunk: None,
+                diagnostics: sorted(diags),
+            },
+            exports,
+            globals,
+            extensions,
+            scan,
+        };
     }
     let chunk = match options.emit {
         Emit::Lua => nl_luagen::print_chunk(&out.chunk).into_bytes(),
-        Emit::Bytecode => match nl_codegen::emit(&out.chunk, &nl_codegen::Options { strip: options.strip, level }) {
+        Emit::Bytecode => match nl_codegen::emit(
+            &out.chunk,
+            &nl_codegen::Options {
+                strip: options.strip,
+                level,
+            },
+        ) {
             Ok(dump) => dump,
             Err(e) => {
                 // A function over LuaJIT's limits that the
                 // lowering's budget did not catch (`vm-limit`, as there),
                 // at the line of its definition.
-                let code = if e.message.starts_with("internal error") { "internal-error" } else { "vm-limit" };
+                let code = if e.message.starts_with("internal error") {
+                    "internal-error"
+                } else {
+                    "vm-limit"
+                };
                 diags.push(Diagnostic {
                     severity: Severity::Error,
                     code,
@@ -347,11 +513,26 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
                     end_line: e.line.max(1),
                     end_column: 1,
                 });
-                return Staged { output: failed(diags), exports, globals, extensions, scan };
+                return Staged {
+                    output: failed(diags),
+                    exports,
+                    globals,
+                    extensions,
+                    scan,
+                };
             }
         },
     };
-    Staged { output: CompileOutput { chunk: Some(chunk), diagnostics: sorted(diags) }, exports, globals, extensions, scan }
+    Staged {
+        output: CompileOutput {
+            chunk: Some(chunk),
+            diagnostics: sorted(diags),
+        },
+        exports,
+        globals,
+        extensions,
+        scan,
+    }
 }
 
 /// The declaration files in scope: the built-in prelude declarations of
@@ -359,26 +540,46 @@ pub(crate) fn stages(source: &[u8], chunk_name: &str, options: &CompileOptions, 
 /// the loader's. A loader's file with the bytes of gmod's is that file,
 /// and is left out. Syntax errors in a loader's file, and a name declared
 /// twice, are diagnostics of that file.
-pub(crate) fn load_declarations(loader: &dyn Loader, profile: nl_sema::Profile) -> (Declarations, Vec<Diagnostic>) {
+pub(crate) fn load_declarations(
+    loader: &dyn Loader,
+    profile: nl_sema::Profile,
+) -> (Declarations, Vec<Diagnostic>) {
     let mut diags = Vec::new();
     let mut files = nl_sema::decl::prelude_files();
     let gmod = profile.is_gmod();
     if gmod {
         files.push(nl_sema::decl::gmod_file());
     }
-    let loaded: Vec<(String, Vec<u8>)> = loader.declarations().into_iter().filter(|(_, bytes)| !(gmod && bytes.as_slice() == nl_sema::decl::GMOD_SOURCE.1.as_bytes())).collect();
+    let loaded: Vec<(String, Vec<u8>)> = loader
+        .declarations()
+        .into_iter()
+        .filter(|(_, bytes)| !(gmod && bytes.as_slice() == nl_sema::decl::GMOD_SOURCE.1.as_bytes()))
+        .collect();
     for (name, bytes) in &loaded {
         let text = match nl_syntax::source_from_bytes(bytes) {
             Ok(t) => t.to_owned(),
             Err(d) => {
-                diags.push(Diagnostic { severity: Severity::Error, code: "invalid-utf8", message: d.message, file: name.clone(), line: 1, column: 1, end_line: 1, end_column: 1 });
+                diags.push(Diagnostic {
+                    severity: Severity::Error,
+                    code: "invalid-utf8",
+                    message: d.message,
+                    file: name.clone(),
+                    line: 1,
+                    column: 1,
+                    end_line: 1,
+                    end_column: 1,
+                });
                 continue;
             }
         };
         let parse = nl_syntax::parse_decl_file(&text);
         let pos = Positions::new(&text, name.clone());
         for d in parse.diagnostics() {
-            let sev = if d.is_error() { Severity::Error } else { Severity::Warning };
+            let sev = if d.is_error() {
+                Severity::Error
+            } else {
+                Severity::Warning
+            };
             diags.push(pos.diagnostic(sev, "syntax", d.message.clone(), d.range));
         }
         if parse.has_errors() {
@@ -391,7 +592,11 @@ pub(crate) fn load_declarations(loader: &dyn Loader, profile: nl_sema::Profile) 
         let text = if file == nl_sema::decl::GMOD_SOURCE.0 && gmod {
             nl_sema::decl::GMOD_SOURCE.1.to_owned()
         } else {
-            loaded.iter().find(|(n, _)| *n == file).and_then(|(_, b)| String::from_utf8(b.clone()).ok()).unwrap_or_default()
+            loaded
+                .iter()
+                .find(|(n, _)| *n == file)
+                .and_then(|(_, b)| String::from_utf8(b.clone()).ok())
+                .unwrap_or_default()
         };
         let pos = Positions::new(&text, file.clone());
         diags.push(pos.diagnostic(Severity::Error, d.code, d.message, d.range));

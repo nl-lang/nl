@@ -19,7 +19,10 @@ use lsp_types::Uri;
 use nl_sema::analyzer::TypeInfo;
 use nl_sema::types::{NamedId, NamedKind, Type};
 use nl_sema::util::{expr_child, field_name, method_name_of};
-use nl_sema::{BindingId, DeclId, DeclKind, Declarations, ExportInfo, ImportProvider, Prelude, Ref, Resolution, SelfTarget};
+use nl_sema::{
+    BindingId, DeclId, DeclKind, Declarations, ExportInfo, ImportProvider, Prelude, Ref,
+    Resolution, SelfTarget,
+};
 use nl_syntax::{SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize};
 use rowan::{NodeOrToken, TokenAtOffset};
 
@@ -58,7 +61,17 @@ pub fn analyze(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> Doc
     let path = path.map(Path::to_path_buf);
     if is_decl_file(uri) {
         let root = nl_syntax::parse_decl_file(text).syntax();
-        return Doc { uri: uri.to_string(), path, text: text.to_owned(), lines: LineMap::new(text), root, decls: Declarations::default(), decl_texts: HashMap::new(), res: Resolution::default(), info: None };
+        return Doc {
+            uri: uri.to_string(),
+            path,
+            text: text.to_owned(),
+            lines: LineMap::new(text),
+            root,
+            decls: Declarations::default(),
+            decl_texts: HashMap::new(),
+            res: Resolution::default(),
+            info: None,
+        };
     }
     let parse = nl_syntax::parse(text);
     let root = parse.syntax();
@@ -67,18 +80,41 @@ pub fn analyze(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> Doc
     let from = path.as_ref().map(|p| p.to_string_lossy().into_owned());
     let imports = Exports { files, from };
     let res = nl_sema::resolve_with(&root, &imports, &decls);
-    let opts = nl_sema::AnalyzeOptions { decls: Some(&decls), imports: Some(&imports), record: true, ..nl_sema::AnalyzeOptions::default() };
+    let opts = nl_sema::AnalyzeOptions {
+        decls: Some(&decls),
+        imports: Some(&imports),
+        record: true,
+        ..nl_sema::AnalyzeOptions::default()
+    };
     let info = nl_sema::analyze(&root, &res, &opts).info;
-    Doc { uri: uri.to_string(), path, text: text.to_owned(), lines: LineMap::new(text), root, decls, decl_texts, res, info }
+    Doc {
+        uri: uri.to_string(),
+        path,
+        text: text.to_owned(),
+        lines: LineMap::new(text),
+        root,
+        decls,
+        decl_texts,
+        res,
+        info,
+    }
 }
 
 /// The declaration files in scope: the built-in prelude and the loader's
 /// (`load_declarations` of the pipeline, without its diagnostics).
-pub fn load_declarations(files: &Files, doc_dir: Option<&Path>) -> (Declarations, HashMap<String, String>) {
-    let mut texts: HashMap<String, String> = nl_sema::decl::PRELUDE_SOURCES.iter().map(|(n, s)| (n.to_string(), s.to_string())).collect();
+pub fn load_declarations(
+    files: &Files,
+    doc_dir: Option<&Path>,
+) -> (Declarations, HashMap<String, String>) {
+    let mut texts: HashMap<String, String> = nl_sema::decl::PRELUDE_SOURCES
+        .iter()
+        .map(|(n, s)| (n.to_string(), s.to_string()))
+        .collect();
     let mut trees = nl_sema::decl::prelude_files();
     for (name, bytes) in files.declarations(doc_dir) {
-        let Ok(text) = nl_syntax::source_from_bytes(&bytes) else { continue };
+        let Ok(text) = nl_syntax::source_from_bytes(&bytes) else {
+            continue;
+        };
         let parse = nl_syntax::parse_decl_file(text);
         if parse.has_errors() {
             continue;
@@ -99,7 +135,8 @@ struct Exports<'a> {
 
 impl ImportProvider for Exports<'_> {
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
-        let (_, _, res) = resolve_import(self.files, self.from.as_deref(), path).ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
+        let (_, _, res) = resolve_import(self.files, self.from.as_deref(), path)
+            .ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
         Ok(res.exports())
     }
 
@@ -109,13 +146,22 @@ impl ImportProvider for Exports<'_> {
             let parse = nl_syntax::parse(&text);
             (!parse.has_errors()).then(|| nl_sema::scan_file(&parse.syntax()))
         };
-        nl_sema::primitive_methods_through(self.from.as_deref(), path, &|from, p| self.files.resolve(from, p), &scan)
+        nl_sema::primitive_methods_through(
+            self.from.as_deref(),
+            path,
+            &|from, p| self.files.resolve(from, p),
+            &scan,
+        )
     }
 }
 
 /// Finds, reads and resolves the file an `import` of `from` names: its
 /// canonical path, its text and its resolution.
-pub fn resolve_import(files: &Files, from: Option<&str>, path: &str) -> Option<(PathBuf, String, Resolution)> {
+pub fn resolve_import(
+    files: &Files,
+    from: Option<&str>,
+    path: &str,
+) -> Option<(PathBuf, String, Resolution)> {
     let name = files.resolve(from, path)?;
     if Some(name.as_str()) == from {
         return None;
@@ -141,7 +187,12 @@ pub fn imported_doc(files: &Files, doc: &Doc, import: BindingId) -> Option<Doc> 
 /// The export `name` of the file that `import` (an `import from … as`
 /// binding of `doc`) names: that file's analysis and the binding holding
 /// the export.
-pub fn export_target(files: &Files, doc: &Doc, import: BindingId, name: &str) -> Option<(Doc, BindingId)> {
+pub fn export_target(
+    files: &Files,
+    doc: &Doc,
+    import: BindingId,
+    name: &str,
+) -> Option<(Doc, BindingId)> {
     let other = imported_doc(files, doc, import)?;
     let (id, _) = other.res.export_bindings().find(|(_, e)| e.name == name)?;
     Some((other, id))
@@ -200,19 +251,25 @@ impl Doc {
         let sym = match parent.kind() {
             NAME_REF => self.ref_symbol(self.res.reference(parent.text_range())?),
             NAME => self.name_symbol(&parent),
-            SELF_EXPR if tok.kind() == SELF_TYPE_KW => match self.res.self_target(parent.text_range())? {
-                SelfTarget::Binding(id) => Some(Symbol::Binding(*id)),
-                SelfTarget::Member { id, .. } => Some(Symbol::Binding(*id)),
-                SelfTarget::Prelude(p) => Some(Symbol::Prelude(p)),
-            },
+            SELF_EXPR if tok.kind() == SELF_TYPE_KW => {
+                match self.res.self_target(parent.text_range())? {
+                    SelfTarget::Binding(id) => Some(Symbol::Binding(*id)),
+                    SelfTarget::Member { id, .. } => Some(Symbol::Binding(*id)),
+                    SelfTarget::Prelude(p) => Some(Symbol::Prelude(p)),
+                }
+            }
             SELF_EXPR => self.ref_symbol(self.res.reference(parent.text_range())?),
             AT_EXPR => {
                 // `@name` is a field of `self`.
-                let Some(Ref::Binding(id)) = self.res.reference(parent.text_range()) else { return None };
+                let Some(Ref::Binding(id)) = self.res.reference(parent.text_range()) else {
+                    return None;
+                };
                 let info = self.info.as_ref()?;
                 let name = tok.text().trim_start_matches('@').to_string();
                 match info.types.expand(info.binding_types.get(id)?) {
-                    Type::Named(owner) | Type::Static(owner) => Some(Symbol::Member { owner, name }),
+                    Type::Named(owner) | Type::Static(owner) => {
+                        Some(Symbol::Member { owner, name })
+                    }
                     _ => Some(Symbol::Binding(*id)),
                 }
             }
@@ -260,7 +317,13 @@ impl Doc {
         }
         let info = self.info.as_ref()?;
         let range = name.text_range();
-        info.member_decls.iter().find(|(_, r)| **r == range).map(|((owner, n), _)| Symbol::Member { owner: *owner, name: n.clone() })
+        info.member_decls
+            .iter()
+            .find(|(_, r)| **r == range)
+            .map(|((owner, n), _)| Symbol::Member {
+                owner: *owner,
+                name: n.clone(),
+            })
     }
 
     /// A segment of a dotted type name, struct literal path or pattern
@@ -269,7 +332,10 @@ impl Doc {
     fn qual_symbol(&self, qual: &SyntaxNode, tok: &SyntaxToken) -> Option<Symbol> {
         let segments = nl_sema::util::qual_segments(qual);
         let first = segments.first()?;
-        let r = self.res.type_ref(qual.text_range()).or_else(|| self.res.reference(qual.text_range()))?;
+        let r = self
+            .res
+            .type_ref(qual.text_range())
+            .or_else(|| self.res.reference(qual.text_range()))?;
         if first.text_range() == tok.text_range() {
             return self.ref_symbol(r);
         }
@@ -310,7 +376,8 @@ impl Doc {
         if recv.kind() != NAME_REF {
             return None;
         }
-        self.ref_nid(self.res.reference(recv.text_range())?).map(Type::Static)
+        self.ref_nid(self.res.reference(recv.text_range())?)
+            .map(Type::Static)
     }
 
     /// The type of a receiver expression: what the analyzer recorded for
@@ -342,7 +409,9 @@ impl Doc {
         if recv.kind() != NAME_REF {
             return None;
         }
-        let Ref::Binding(id) = self.res.reference(recv.text_range())? else { return None };
+        let Ref::Binding(id) = self.res.reference(recv.text_range())? else {
+            return None;
+        };
         (self.res.declared_as(*id) == Some(DeclKind::Import)).then_some(*id)
     }
 
@@ -351,7 +420,10 @@ impl Doc {
         let info = self.info.as_ref()?;
         let item = self.decls.get(id)?;
         let range = item.node.text_range();
-        info.decl_nodes.iter().find(|(_, (d, r))| *d == id && *r == range).map(|(nid, _)| *nid)
+        info.decl_nodes
+            .iter()
+            .find(|(_, (d, r))| *d == id && *r == range)
+            .map(|(nid, _)| *nid)
     }
 
     /// The `DECL_*` node of a nominal type that comes from a declaration
@@ -363,7 +435,10 @@ impl Doc {
         if item.node.text_range() == *range {
             return Some((*id, item.node.clone()));
         }
-        item.node.descendants().find(|n| n.text_range() == *range).map(|n| (*id, n))
+        item.node
+            .descendants()
+            .find(|n| n.text_range() == *range)
+            .map(|n| (*id, n))
     }
 
     /// The member node (`DECL_FN`, `DECL_FIELD`, `DECL_VALUE`, a nested
@@ -375,7 +450,12 @@ impl Doc {
         for _ in 0..64 {
             let c = cur?;
             if let Some((id, node)) = self.decl_node(c) {
-                let found = node.children().find(|m| matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE) && member_name(m).as_deref() == Some(name));
+                let found = node.children().find(|m| {
+                    matches!(
+                        m.kind(),
+                        DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE
+                    ) && member_name(m).as_deref() == Some(name)
+                });
                 if let Some(m) = found {
                     return Some((id, m));
                 }
@@ -411,7 +491,26 @@ impl Doc {
         node.ancestors().find(|a| {
             matches!(
                 a.kind(),
-                FN_DECL | LET_DECL | CONST_DECL | GLOBAL_DECL | STRUCT_DECL | FIELD_DECL | INTERFACE_DECL | INTERFACE_IMPL | IFACE_METHOD | IFACE_FIELD | ENUM_DECL | VARIANT | TYPE_DECL | MODULE_DECL | IMPORT_DECL | PARAM | REST_PARAM | KEYED_PARAM | TYPE_PARAM | ON_EXPR
+                FN_DECL
+                    | LET_DECL
+                    | CONST_DECL
+                    | GLOBAL_DECL
+                    | STRUCT_DECL
+                    | FIELD_DECL
+                    | INTERFACE_DECL
+                    | INTERFACE_IMPL
+                    | IFACE_METHOD
+                    | IFACE_FIELD
+                    | ENUM_DECL
+                    | VARIANT
+                    | TYPE_DECL
+                    | MODULE_DECL
+                    | IMPORT_DECL
+                    | PARAM
+                    | REST_PARAM
+                    | KEYED_PARAM
+                    | TYPE_PARAM
+                    | ON_EXPR
             )
         })
     }
@@ -436,7 +535,8 @@ impl Doc {
 pub fn member_name(m: &SyntaxNode) -> Option<String> {
     match nl_sema::util::child(m, NAME) {
         Some(n) => nl_sema::util::name_text(&n),
-        None => nl_sema::util::child(m, OP_NAME).map(|o| o.text().to_string().split_whitespace().collect()),
+        None => nl_sema::util::child(m, OP_NAME)
+            .map(|o| o.text().to_string().split_whitespace().collect()),
     }
 }
 
@@ -449,15 +549,26 @@ pub fn member_name(m: &SyntaxNode) -> Option<String> {
 /// half-written file) so that go-to-definition has a file to open.
 /// Without `write`, `None` when no current copy exists.
 pub fn decl_file_path(files: &Files, name: &str, write: bool) -> Option<PathBuf> {
-    let embedded = nl_sema::decl::PRELUDE_SOURCES.iter().find(|(n, _)| *n == name);
-    let Some((_, source)) = embedded else { return Some(PathBuf::from(name)) };
-    for root in files.roots().iter().chain(std::iter::once(&files.cwd().to_path_buf())) {
+    let embedded = nl_sema::decl::PRELUDE_SOURCES
+        .iter()
+        .find(|(n, _)| *n == name);
+    let Some((_, source)) = embedded else {
+        return Some(PathBuf::from(name));
+    };
+    for root in files
+        .roots()
+        .iter()
+        .chain(std::iter::once(&files.cwd().to_path_buf()))
+    {
         let p = root.join(name);
         if p.is_file() {
             return Some(p);
         }
     }
-    let p = cache_dir().join("nl-lsp").join(env!("CARGO_PKG_VERSION")).join(name);
+    let p = cache_dir()
+        .join("nl-lsp")
+        .join(env!("CARGO_PKG_VERSION"))
+        .join(name);
     // A copy is used only while it is this server's text: builds of one
     // version can differ in their declarations.
     if std::fs::read_to_string(&p).is_ok_and(|text| text == *source) {
@@ -488,15 +599,27 @@ fn cache_dir() -> PathBuf {
     }
     if let Some(home) = std::env::var_os("HOME").filter(|d| !d.is_empty()) {
         let home = PathBuf::from(home);
-        return if cfg!(target_os = "macos") { home.join("Library/Caches") } else { home.join(".cache") };
+        return if cfg!(target_os = "macos") {
+            home.join("Library/Caches")
+        } else {
+            home.join(".cache")
+        };
     }
     std::env::temp_dir()
 }
 
 fn write_atomically(path: &Path, content: &str) -> std::io::Result<()> {
-    let dir = path.parent().ok_or_else(|| std::io::Error::other("no parent directory"))?;
+    let dir = path
+        .parent()
+        .ok_or_else(|| std::io::Error::other("no parent directory"))?;
     std::fs::create_dir_all(dir)?;
-    let tmp = dir.join(format!("{}.tmp-{}", path.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default(), std::process::id()));
+    let tmp = dir.join(format!(
+        "{}.tmp-{}",
+        path.file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        std::process::id()
+    ));
     std::fs::write(&tmp, content)?;
     std::fs::rename(&tmp, path).inspect_err(|_| {
         let _ = std::fs::remove_file(&tmp);

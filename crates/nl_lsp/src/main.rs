@@ -10,9 +10,14 @@ fn main() -> ExitCode {
     let (connection, io_threads) = Connection::stdio();
     // The compiler needs a deep stack (lib docs); the protocol threads of
     // `lsp-server` keep their own.
-    let server = std::thread::Builder::new().name("nl-lsp".to_string()).stack_size(nl_lsp::STACK_SIZE).spawn(move || nl_lsp::run(connection));
+    let server = std::thread::Builder::new()
+        .name("nl-lsp".to_string())
+        .stack_size(nl_lsp::STACK_SIZE)
+        .spawn(move || nl_lsp::run(connection));
     let result = match server {
-        Ok(handle) => handle.join().unwrap_or_else(|_| Err("the server thread panicked".into())),
+        Ok(handle) => handle
+            .join()
+            .unwrap_or_else(|_| Err("the server thread panicked".into())),
         Err(e) => Err(format!("cannot start the server thread: {e}").into()),
     };
     let io = io_threads.join();

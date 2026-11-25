@@ -1,7 +1,12 @@
 //! The lexer over real and hostile input: the conformance programs of
 //! `tests/run/`, every prefix of some of them, and pseudo-random text.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -15,18 +20,33 @@ fn check(src: &str) -> Lexed<'_> {
     let mut open: Vec<Vec<&str>> = Vec::new();
     let n = lexed.tokens.len();
     for (i, t) in lexed.tokens.iter().enumerate() {
-        assert_eq!(u32::from(t.range.start()), pos, "gap before token {i} in {src:?}");
+        assert_eq!(
+            u32::from(t.range.start()),
+            pos,
+            "gap before token {i} in {src:?}"
+        );
         pos = t.range.end().into();
         let text = t.text(src);
         joined.push_str(text);
-        assert_eq!(t.kind == SyntaxKind::EOF, i + 1 == n, "EOF placement in {src:?}");
+        assert_eq!(
+            t.kind == SyntaxKind::EOF,
+            i + 1 == n,
+            "EOF placement in {src:?}"
+        );
         if t.range.is_empty() {
-            assert!(matches!(t.kind, SyntaxKind::EOF | SyntaxKind::STR_END), "empty {:?} in {src:?}", t.kind);
+            assert!(
+                matches!(t.kind, SyntaxKind::EOF | SyntaxKind::STR_END),
+                "empty {:?} in {src:?}",
+                t.kind
+            );
         }
         match t.kind {
             SyntaxKind::STRING => assert_eq!(decode_string(&[text]).len(), 1),
             SyntaxKind::STR_BEGIN => open.push(vec![text]),
-            SyntaxKind::STR_MID => open.last_mut().expect("STR_MID outside a string").push(text),
+            SyntaxKind::STR_MID => open
+                .last_mut()
+                .expect("STR_MID outside a string")
+                .push(text),
             SyntaxKind::STR_END => {
                 let mut parts = open.pop().expect("unbalanced STR_END");
                 parts.push(text);
@@ -39,7 +59,10 @@ fn check(src: &str) -> Lexed<'_> {
     assert_eq!(joined, src);
     for d in &lexed.diagnostics {
         let r = std::ops::Range::<usize>::from(d.range);
-        assert!(src.get(r).is_some(), "diagnostic range off a char boundary in {src:?}");
+        assert!(
+            src.get(r).is_some(),
+            "diagnostic range off a char boundary in {src:?}"
+        );
     }
     lexed
 }
@@ -49,7 +72,10 @@ fn corpus_dir() -> PathBuf {
 }
 
 fn nl_files(dir: &Path, out: &mut Vec<PathBuf>) {
-    let mut entries: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).collect();
+    let mut entries: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
     entries.sort();
     for path in entries {
         if path.is_dir() {
@@ -76,22 +102,41 @@ fn corpus() -> Vec<(PathBuf, String)> {
 #[test]
 fn conformance_programs_lex_cleanly() {
     let files = corpus();
-    assert!(files.len() >= 158, "expected the conformance corpus, found {} files", files.len());
+    assert!(
+        files.len() >= 158,
+        "expected the conformance corpus, found {} files",
+        files.len()
+    );
     let mut failures = Vec::new();
     for (path, src) in &files {
         let lexed = check(src);
         for d in &lexed.diagnostics {
             let r = std::ops::Range::<usize>::from(d.range);
-            failures.push(format!("{}: {:?} {:?}: {}", path.display(), r.clone(), &src[r], d.message));
+            failures.push(format!(
+                "{}: {:?} {:?}: {}",
+                path.display(),
+                r.clone(),
+                &src[r],
+                d.message
+            ));
         }
     }
-    assert!(failures.is_empty(), "lexical diagnostics in the corpus:\n{}", failures.join("\n"));
+    assert!(
+        failures.is_empty(),
+        "lexical diagnostics in the corpus:\n{}",
+        failures.join("\n")
+    );
 }
 
 #[test]
 fn every_prefix_of_some_programs() {
     let files = corpus();
-    let wanted = ["lex_heredoc.nl", "lex_string_interp.nl", "lex_numbers.nl", "call_block.nl"];
+    let wanted = [
+        "lex_heredoc.nl",
+        "lex_string_interp.nl",
+        "lex_numbers.nl",
+        "call_block.nl",
+    ];
     let mut done = 0;
     for (path, src) in &files {
         let name = path.file_name().unwrap().to_str().unwrap();
@@ -150,16 +195,18 @@ fn random_bytes() {
 #[test]
 fn random_token_soup() {
     const PIECES: &[&str] = &[
-        "\"", "'", "\"\"\"", "\"\"\"-", "\"\"\"=", "\"\"\"-=", "\"\"\"=-", "#{", "}", "{", "\\", "\\#", "\\u{",
-        "\\x4", "\\256", "#", "##", "\n", "\r\n", "\r", " ", "\t", "a", "Foo", "getX", "end", "@", "@x",
-        "!", "!=", "=", ":", ".", "..", "...", "..<", "1", "0x", "0b1", "1_", "1e", "2.5", "e5", "_",
-        ">>>=", "<>", "|>", "||=", "(", ")", "[", "]", ",", ";", "é", "😀", "$", "\u{FEFF}", "“",
-        "-", "+", "*", "**=", "?", "~", "->",
+        "\"", "'", "\"\"\"", "\"\"\"-", "\"\"\"=", "\"\"\"-=", "\"\"\"=-", "#{", "}", "{", "\\",
+        "\\#", "\\u{", "\\x4", "\\256", "#", "##", "\n", "\r\n", "\r", " ", "\t", "a", "Foo",
+        "getX", "end", "@", "@x", "!", "!=", "=", ":", ".", "..", "...", "..<", "1", "0x", "0b1",
+        "1_", "1e", "2.5", "e5", "_", ">>>=", "<>", "|>", "||=", "(", ")", "[", "]", ",", ";", "é",
+        "😀", "$", "\u{FEFF}", "“", "-", "+", "*", "**=", "?", "~", "->",
     ];
     let mut rng = Rng(42);
     for _ in 0..4000 {
         let count = rng.below(40);
-        let text: String = (0..count).map(|_| PIECES[rng.below(PIECES.len())]).collect();
+        let text: String = (0..count)
+            .map(|_| PIECES[rng.below(PIECES.len())])
+            .collect();
         check(&text);
     }
 }

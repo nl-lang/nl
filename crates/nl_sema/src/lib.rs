@@ -45,7 +45,15 @@
 //!   gmod's realm constants leave dead (`if SERVER` on the client) is
 //!   neither checked nor compiled.
 
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing
+    )
+)]
 
 pub mod analyzer;
 mod binding;
@@ -143,7 +151,9 @@ pub struct NoImports;
 
 impl ImportProvider for NoImports {
     fn exports(&self, path: &str) -> Result<Vec<ExportInfo>, String> {
-        Err(format!("cannot import '{path}': imports are not available here"))
+        Err(format!(
+            "cannot import '{path}': imports are not available here"
+        ))
     }
 }
 
@@ -155,7 +165,11 @@ pub fn resolve(root: &SyntaxNode, imports: &dyn ImportProvider) -> Resolution {
 
 /// Resolves the names of a parsed file with the declaration files in
 /// scope after the prelude.
-pub fn resolve_with(root: &SyntaxNode, imports: &dyn ImportProvider, decls: &Declarations) -> Resolution {
+pub fn resolve_with(
+    root: &SyntaxNode,
+    imports: &dyn ImportProvider,
+    decls: &Declarations,
+) -> Resolution {
     let mut r = resolver::Resolver::new(imports, decls);
     r.walk(root);
     r.mark_call_only(root);

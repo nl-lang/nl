@@ -19,7 +19,11 @@ impl Gen {
                 _ => format!("if self > {k}\n    self - {k}\n  else\n    {k} - self\n  end"),
             };
             self.prim_num.push(name.clone());
-            if typed { format!("fn Number.{name}({k}: Number): Number\n  {body}\nend") } else { format!("fn Number.{name}({k})\n  {body}\nend") }
+            if typed {
+                format!("fn Number.{name}({k}: Number): Number\n  {body}\nend")
+            } else {
+                format!("fn Number.{name}({k})\n  {body}\nend")
+            }
         } else {
             let name = self.fresh("ps");
             let body = match self.rng.below(3) {
@@ -48,7 +52,12 @@ impl Gen {
         for f in [f1, f2] {
             self.declare_fn(Func {
                 name: format!("{name}.{f}"),
-                params: vec![Param { name: x.clone(), ty: Ty::Int, bound: 1000.0, default: None }],
+                params: vec![Param {
+                    name: x.clone(),
+                    ty: Ty::Int,
+                    bound: 1000.0,
+                    default: None,
+                }],
                 rest: false,
                 opts: Vec::new(),
                 ret: Ret::One(Ty::Int, 1000.0),
@@ -74,21 +83,34 @@ impl Gen {
             if !self.rng.chance(50) {
                 continue;
             }
-            let sname = self.structs.get(i).map(|s| s.name.clone()).unwrap_or_default();
+            let sname = self
+                .structs
+                .get(i)
+                .map(|s| s.name.clone())
+                .unwrap_or_default();
             let fields = self.all_fields(i);
             let body = match fields.first() {
                 Some(f) if f.ty == Ty::Int => format!("\"{sname}:#{{@{} + 0}}\"", f.name),
                 Some(f) => format!("\"{sname}:#{{@{}}}\"", f.name),
                 None => format!("\"{sname}\""),
             };
-            out.push(format!("interface {name} for {sname}\n  fn {m}: String\n    {body}\n  end\nend"));
+            out.push(format!(
+                "interface {name} for {sname}\n  fn {m}: String\n    {body}\n  end\nend"
+            ));
             impls.push(i);
         }
         let number = self.rng.chance(30);
         if number {
-            out.push(format!("interface {name} for Number\n  fn {m}: String\n    \"n#{{self + 0}}\"\n  end\nend"));
+            out.push(format!(
+                "interface {name} for Number\n  fn {m}: String\n    \"n#{{self + 0}}\"\n  end\nend"
+            ));
         }
-        self.ifaces.push(Iface { name, method: m, impls, number });
+        self.ifaces.push(Iface {
+            name,
+            method: m,
+            impls,
+            number,
+        });
         out
     }
 
@@ -100,7 +122,9 @@ impl Gen {
         let text = if self.rng.chance(50) {
             format!("fn {name}<T>({a}: T, {b}: T): T\n  {a}\nend")
         } else {
-            format!("fn {name}<T>({a}: T, {b}: T): T\n  if {a} == {b}\n    return {b}\n  end\n  {a}\nend")
+            format!(
+                "fn {name}<T>({a}: T, {b}: T): T\n  if {a} == {b}\n    return {b}\n  end\n  {a}\nend"
+            )
         };
         self.generics.push(name);
         text
@@ -109,27 +133,41 @@ impl Gen {
     /// Operators and a constructor for struct `i`: `<`, `==`, `()` and
     /// `make` returning `Self`.
     pub(super) fn struct_extras(&mut self, i: usize) -> Vec<String> {
-        let Some(s) = self.structs.get(i).cloned() else { return Vec::new() };
+        let Some(s) = self.structs.get(i).cloned() else {
+            return Vec::new();
+        };
         let fields = self.all_fields(i);
         let ints: Vec<Field> = fields.iter().filter(|f| f.ty == Ty::Int).cloned().collect();
         let mut out = Vec::new();
         if let Some(f) = ints.first() {
             if self.rng.chance(30) {
-                out.push(format!("fn {}.<(other)\n  @{} < other.{}\nend", s.name, f.name, f.name));
-                out.push(format!("fn {}.<=(other)\n  @{} <= other.{}\nend", s.name, f.name, f.name));
+                out.push(format!(
+                    "fn {}.<(other)\n  @{} < other.{}\nend",
+                    s.name, f.name, f.name
+                ));
+                out.push(format!(
+                    "fn {}.<=(other)\n  @{} <= other.{}\nend",
+                    s.name, f.name, f.name
+                ));
                 if let Some(d) = self.structs.get_mut(i) {
                     d.lt = true;
                 }
             }
             if self.rng.chance(25) {
-                out.push(format!("fn {}.==(other)\n  @{} == other.{}\nend", s.name, f.name, f.name));
+                out.push(format!(
+                    "fn {}.==(other)\n  @{} == other.{}\nend",
+                    s.name, f.name, f.name
+                ));
                 if let Some(d) = self.structs.get_mut(i) {
                     d.eq = true;
                 }
             }
             if self.rng.chance(25) {
                 let k = self.fresh("k");
-                out.push(format!("fn {}.()({k})\n  (@{} + {k}) % 1000\nend", s.name, f.name));
+                out.push(format!(
+                    "fn {}.()({k})\n  (@{} + {k}) % 1000\nend",
+                    s.name, f.name
+                ));
                 if let Some(d) = self.structs.get_mut(i) {
                     d.call_op = true;
                 }
@@ -145,7 +183,11 @@ impl Gen {
                     _ => format!("{}: {k} % {}", f.name, bound_lit(f.bound)),
                 })
                 .collect();
-            out.push(format!("fn {}.{m}({k}): Self\n  Self {{ {} }}\nend", s.name, inits.join(", ")));
+            out.push(format!(
+                "fn {}.{m}({k}): Self\n  Self {{ {} }}\nend",
+                s.name,
+                inits.join(", ")
+            ));
             if let Some(d) = self.structs.get_mut(i) {
                 d.make = Some(m);
             }
@@ -181,19 +223,30 @@ impl Gen {
                 Some(Ex::new(format!("{g}({}, {})", a.code, b.code), Ty::Int, bound).atom())
             }
             3 => {
-                let cands: Vec<usize> = (0..self.structs.len()).filter(|&i| self.structs.get(i).is_some_and(|s| s.call_op)).collect();
+                let cands: Vec<usize> = (0..self.structs.len())
+                    .filter(|&i| self.structs.get(i).is_some_and(|s| s.call_op))
+                    .collect();
                 let i = self.rng.pick_ref(&cands)?;
                 let v = self.pick_var(Ty::Struct(i), false)?;
                 let k = self.int_within(ctx, d.saturating_sub(1), 1000.0);
                 Some(Ex::new(format!("{}({})", v.name, k.code), Ty::Int, 1000.0).atom())
             }
             _ => {
-                let cands: Vec<usize> = (0..self.structs.len()).filter(|&i| self.structs.get(i).is_some_and(|s| s.make.is_some())).collect();
+                let cands: Vec<usize> = (0..self.structs.len())
+                    .filter(|&i| self.structs.get(i).is_some_and(|s| s.make.is_some()))
+                    .collect();
                 let i = self.rng.pick_ref(&cands)?;
                 let s = self.structs.get(i)?.clone();
                 let f = self.all_fields(i).into_iter().find(|f| f.ty == Ty::Int)?;
                 let k = self.int_within(ctx, d.saturating_sub(1), 1000.0);
-                Some(Ex::new(format!("{}.{}({}).{}", s.name, s.make?, k.code, f.name), Ty::Int, f.bound).atom())
+                Some(
+                    Ex::new(
+                        format!("{}.{}({}).{}", s.name, s.make?, k.code, f.name),
+                        Ty::Int,
+                        f.bound,
+                    )
+                    .atom(),
+                )
             }
         }
     }
@@ -215,7 +268,9 @@ impl Gen {
                 let ifc = self.rng.pick_ref(&self.ifaces.clone())?;
                 if ifc.number && self.rng.chance(40) {
                     let n = self.int_within(ctx, d.saturating_sub(1), 1000.0);
-                    return Some(Ex::new(format!("{}.{}", n.operand(), ifc.method), Ty::Str, 12.0).atom());
+                    return Some(
+                        Ex::new(format!("{}.{}", n.operand(), ifc.method), Ty::Str, 12.0).atom(),
+                    );
                 }
                 let i = self.rng.pick_ref(&ifc.impls)?;
                 // A child of an implementing struct has the method too.
@@ -226,7 +281,15 @@ impl Gen {
                 let g = self.rng.pick_ref(&self.generics.clone())?;
                 let a = self.str_(ctx, d.saturating_sub(1));
                 let b = self.str_(ctx, d.saturating_sub(1));
-                Some(Ex::new(format!("{g}({}, {})", a.code, b.code), Ty::Str, a.bound.max(b.bound)).ascii(a.ascii && b.ascii).atom())
+                Some(
+                    Ex::new(
+                        format!("{g}({}, {})", a.code, b.code),
+                        Ty::Str,
+                        a.bound.max(b.bound),
+                    )
+                    .ascii(a.ascii && b.ascii)
+                    .atom(),
+                )
             }
         }
     }
@@ -244,7 +307,9 @@ impl Gen {
             };
             return Some(Ex::new(format!("{code} is {}", ifc.name), Ty::Bool, 1.0));
         }
-        let cands: Vec<usize> = (0..self.structs.len()).filter(|&i| self.structs.get(i).is_some_and(|s| s.lt || s.eq)).collect();
+        let cands: Vec<usize> = (0..self.structs.len())
+            .filter(|&i| self.structs.get(i).is_some_and(|s| s.lt || s.eq))
+            .collect();
         let i = self.rng.pick_ref(&cands)?;
         let s = self.structs.get(i)?.clone();
         let (a, _) = self.struct_lit_or_var(ctx, i)?;
@@ -257,7 +322,11 @@ impl Gen {
             ops.extend(["==", "!="]);
         }
         let op = self.rng.pick(&ops);
-        Some(Ex::new(format!("{} {op} {}", a.operand(), b.operand()), Ty::Bool, 1.0))
+        Some(Ex::new(
+            format!("{} {op} {}", a.operand(), b.operand()),
+            Ty::Bool,
+            1.0,
+        ))
     }
 
     fn struct_lit_or_var(&mut self, ctx: &Ctx, i: usize) -> Option<(Ex, usize)> {
@@ -271,11 +340,21 @@ impl Gen {
 
     /// A struct value from `S.make(k)`.
     pub(super) fn made_struct(&mut self, ctx: &Ctx) -> Option<(Ex, usize)> {
-        let cands: Vec<usize> = (0..self.structs.len()).filter(|&i| self.structs.get(i).is_some_and(|s| s.make.is_some())).collect();
+        let cands: Vec<usize> = (0..self.structs.len())
+            .filter(|&i| self.structs.get(i).is_some_and(|s| s.make.is_some()))
+            .collect();
         let i = self.rng.pick_ref(&cands)?;
         let s = self.structs.get(i)?.clone();
         let k = self.int_within(ctx, 1, 1000.0);
-        Some((Ex::new(format!("{}.{}({})", s.name, s.make?, k.code), Ty::Struct(i), 0.0).atom(), i))
+        Some((
+            Ex::new(
+                format!("{}.{}({})", s.name, s.make?, k.code),
+                Ty::Struct(i),
+                0.0,
+            )
+            .atom(),
+            i,
+        ))
     }
 
     /// A dedented heredoc (`"""-`) with an interpolation: its
@@ -285,7 +364,9 @@ impl Gen {
         let n = 1 + self.rng.below(2);
         let mut lines = Vec::new();
         for _ in 0..n {
-            let word = self.rng.pick(&["alpha", "two words", "x = 1", "tail", "#not a comment"]);
+            let word = self
+                .rng
+                .pick(&["alpha", "two words", "x = 1", "tail", "#not a comment"]);
             if self.rng.chance(50) {
                 let e = self.int(ctx, 1);
                 lines.push(format!("  {word} #{{{} + 0}}", e.operand()));
@@ -293,7 +374,16 @@ impl Gen {
                 lines.push(format!("  {word}"));
             }
         }
-        let extra = if self.rng.chance(30) { "    deeper\n" } else { "" };
-        Ex::new(format!("\"\"\"-\n{}\n{extra}  \"\"\"", lines.join("\n")), Ty::Str, 40.0 * n as f64).atom()
+        let extra = if self.rng.chance(30) {
+            "    deeper\n"
+        } else {
+            ""
+        };
+        Ex::new(
+            format!("\"\"\"-\n{}\n{extra}  \"\"\"", lines.join("\n")),
+            Ty::Str,
+            40.0 * n as f64,
+        )
+        .atom()
     }
 }

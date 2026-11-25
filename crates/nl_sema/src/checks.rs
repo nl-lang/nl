@@ -18,10 +18,16 @@ pub(crate) fn check_param_list(r: &mut Resolver<'_>, list: &SyntaxNode) {
             PARAM => {
                 let has_default = expr_child(&p).is_some();
                 if seen_default && !has_default {
-                    r.error(trimmed_range(&p), "default-before-required", "parameters with defaults come after those without");
+                    r.error(
+                        trimmed_range(&p),
+                        "default-before-required",
+                        "parameters with defaults come after those without",
+                    );
                 }
                 seen_default |= has_default;
-                let typed = pattern_children(&p).next().is_some_and(|pat| pat.kind() == TYPED_PAT);
+                let typed = pattern_children(&p)
+                    .next()
+                    .is_some_and(|pat| pat.kind() == TYPED_PAT);
                 annotated.push((typed, trimmed_range(&p)));
             }
             REST_PARAM | KEYED_PARAM => {
@@ -35,7 +41,11 @@ pub(crate) fn check_param_list(r: &mut Resolver<'_>, list: &SyntaxNode) {
     let any = annotated.iter().any(|(t, _)| *t);
     if any {
         if let Some((_, range)) = annotated.iter().find(|(t, _)| !*t) {
-            r.error(*range, "partial-annotations", "if any parameter is annotated, all must be");
+            r.error(
+                *range,
+                "partial-annotations",
+                "if any parameter is annotated, all must be",
+            );
         }
     }
 }
@@ -71,7 +81,9 @@ fn check_block(r: &mut Resolver<'_>, block: &SyntaxNode, tail_used: bool) {
     for (i, s) in stmts.iter().enumerate() {
         let last = i + 1 == n;
         if s.kind() == EXPR_STMT {
-            let loop_modifier = modifier(s).is_some_and(|m| first_token(&m).is_some_and(|t| matches!(t.kind(), WHILE_KW | UNTIL_KW)));
+            let loop_modifier = modifier(s).is_some_and(|m| {
+                first_token(&m).is_some_and(|t| matches!(t.kind(), WHILE_KW | UNTIL_KW))
+            });
             let discarded = !(last && tail_used) || loop_modifier;
             if let Some(list) = child(s, EXPR_LIST) {
                 // `a, b` as a statement returns several values from a
@@ -105,8 +117,8 @@ fn check_block(r: &mut Resolver<'_>, block: &SyntaxNode, tail_used: bool) {
 fn check_discarded_expr(r: &mut Resolver<'_>, e: &SyntaxNode) {
     match e.kind() {
         // Calls, and what counts as a call in statement position.
-        CALL_EXPR | COMMAND_CALL | METHOD_CALL | NAME_REF | FIELD_EXPR | AT_EXPR | LUA_PATH | PIPE_EXPR | SPAWN_EXPR
-        | ON_EXPR => visit(r, e, true),
+        CALL_EXPR | COMMAND_CALL | METHOD_CALL | NAME_REF | FIELD_EXPR | AT_EXPR | LUA_PATH
+        | PIPE_EXPR | SPAWN_EXPR | ON_EXPR => visit(r, e, true),
         PAREN_EXPR => {
             if let Some(inner) = expr_child(e) {
                 check_discarded_expr(r, &inner);
@@ -156,7 +168,9 @@ fn visit_construct(r: &mut Resolver<'_>, e: &SyntaxNode, tail_used: bool) {
 /// Visits any node, finding the blocks inside it.
 fn visit(r: &mut Resolver<'_>, node: &SyntaxNode, tail_used: bool) {
     match node.kind() {
-        IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR => visit_construct(r, node, tail_used),
+        IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR => {
+            visit_construct(r, node, tail_used)
+        }
         BLOCK => check_block(r, node, true),
         _ => {
             for c in node.children() {

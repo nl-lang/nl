@@ -27,15 +27,32 @@ use crate::position::{LineMap, path_to_uri};
 /// clean, so that stale diagnostics are cleared. A file that is open is
 /// named by the URI the editor opened it under, whatever its spelling,
 /// so that the server sees it as the open document it is.
-pub fn compile(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> HashMap<String, Vec<Diagnostic>> {
+pub fn compile(
+    files: &Files,
+    uri: &str,
+    path: Option<&Path>,
+    text: &str,
+) -> HashMap<String, Vec<Diagnostic>> {
     if is_decl_file(uri) {
         return HashMap::from([(uri.to_string(), dedup(decl_file(uri, text)))]);
     }
-    let dir = path.and_then(Path::parent).map(Path::to_path_buf).unwrap_or_else(|| files.cwd().to_path_buf());
-    let loader = DocLoader { files, dir: Some(dir) };
-    let options = CompileOptions { analyze: true, emit: Emit::Lua, ..CompileOptions::default() };
+    let dir = path
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| files.cwd().to_path_buf());
+    let loader = DocLoader {
+        files,
+        dir: Some(dir),
+    };
+    let options = CompileOptions {
+        analyze: true,
+        emit: Emit::Lua,
+        ..CompileOptions::default()
+    };
     // The name the compiler reports the document's diagnostics under.
-    let doc_name = path.map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| uri.to_string());
+    let doc_name = path
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|| uri.to_string());
     let out = nl_capi::compile(text.as_bytes(), &format!("@{doc_name}"), &options, &loader);
     let mut by_file: HashMap<String, Vec<Diagnostic>> = HashMap::new();
     by_file.insert(uri.to_string(), Vec::new());
@@ -45,14 +62,23 @@ pub fn compile(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> Has
             uri.to_string()
         } else {
             let p = decl_file_path(files, &d.file, false).unwrap_or_else(|| PathBuf::from(&d.file));
-            match files.uri_of(&p).map(str::to_string).or_else(|| path_to_uri(&p).map(|u| u.as_str().to_string())) {
+            match files
+                .uri_of(&p)
+                .map(str::to_string)
+                .or_else(|| path_to_uri(&p).map(|u| u.as_str().to_string()))
+            {
                 Some(u) => u,
                 None => continue,
             }
         };
-        let entry = texts.entry(d.file.clone()).or_insert_with(|| text_of(files, &d.file, &doc_name, text));
+        let entry = texts
+            .entry(d.file.clone())
+            .or_insert_with(|| text_of(files, &d.file, &doc_name, text));
         let range = match entry {
-            Some((t, lines)) => Range { start: lines.from_line_col(t, d.line, d.column), end: lines.from_line_col(t, d.end_line, d.end_column) },
+            Some((t, lines)) => Range {
+                start: lines.from_line_col(t, d.line, d.column),
+                end: lines.from_line_col(t, d.end_line, d.end_column),
+            },
             None => Range {
                 start: Position::new(d.line.saturating_sub(1), d.column.saturating_sub(1)),
                 end: Position::new(d.end_line.saturating_sub(1), d.end_column.saturating_sub(1)),
@@ -71,7 +97,10 @@ pub fn compile(files: &Files, uri: &str, path: Option<&Path>, text: &str) -> Has
             ..Diagnostic::default()
         });
     }
-    by_file.into_iter().map(|(f, diags)| (f, dedup(diags))).collect()
+    by_file
+        .into_iter()
+        .map(|(f, diags)| (f, dedup(diags)))
+        .collect()
 }
 
 /// Keeps the first of the diagnostics with one range, code and message
@@ -86,7 +115,14 @@ pub fn dedup(diags: Vec<Diagnostic>) -> Vec<Diagnostic> {
                 Some(NumberOrString::Number(n)) => n.to_string(),
                 None => String::new(),
             };
-            seen.insert((d.range.start.line, d.range.start.character, d.range.end.line, d.range.end.character, code, d.message.clone()))
+            seen.insert((
+                d.range.start.line,
+                d.range.start.character,
+                d.range.end.line,
+                d.range.end.character,
+                code,
+                d.message.clone(),
+            ))
         })
         .collect()
 }
@@ -101,7 +137,11 @@ fn decl_file(name: &str, text: &str) -> Vec<Diagnostic> {
         .iter()
         .map(|d| Diagnostic {
             range: lines.range(text, d.range),
-            severity: Some(if d.is_error() { DiagnosticSeverity::ERROR } else { DiagnosticSeverity::WARNING }),
+            severity: Some(if d.is_error() {
+                DiagnosticSeverity::ERROR
+            } else {
+                DiagnosticSeverity::WARNING
+            }),
             code: Some(NumberOrString::String("syntax".to_string())),
             source: Some("nl".to_string()),
             message: d.message.clone(),
@@ -128,7 +168,10 @@ fn decl_file(name: &str, text: &str) -> Vec<Diagnostic> {
 fn text_of(files: &Files, name: &str, doc_name: &str, doc_text: &str) -> Option<(String, LineMap)> {
     let text = if name == doc_name {
         doc_text.to_owned()
-    } else if let Some((_, src)) = nl_sema::decl::PRELUDE_SOURCES.iter().find(|(n, _)| *n == name) {
+    } else if let Some((_, src)) = nl_sema::decl::PRELUDE_SOURCES
+        .iter()
+        .find(|(n, _)| *n == name)
+    {
         (*src).to_owned()
     } else {
         files.read_text(Path::new(name))?

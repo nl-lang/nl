@@ -8,7 +8,12 @@
 //! chosen for, so that a stack overflow fails them as it would fail a
 //! user's thread, whatever `RUST_MIN_STACK` says.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::Path;
 
@@ -27,16 +32,31 @@ fn check_decl(src: &str) -> Parse {
 fn verify(src: &str, p: Parse) -> Parse {
     let root = p.syntax();
     let text = root.to_string();
-    assert!(text == src, "tree text differs from the source for {:?}", short(src));
+    assert!(
+        text == src,
+        "tree text differs from the source for {:?}",
+        short(src)
+    );
     let mut last = 0u32;
     for d in p.diagnostics() {
         let start = u32::from(d.range.start());
-        assert!(start >= last, "diagnostics out of order for {:?}", short(src));
+        assert!(
+            start >= last,
+            "diagnostics out of order for {:?}",
+            short(src)
+        );
         last = start;
-        assert!(src.get(std::ops::Range::<usize>::from(d.range)).is_some(), "diagnostic off a char boundary");
+        assert!(
+            src.get(std::ops::Range::<usize>::from(d.range)).is_some(),
+            "diagnostic off a char boundary"
+        );
         assert!(!d.message.is_empty());
         // The fuel backstop must never fire: it means a loop made no progress.
-        assert!(!d.message.starts_with("internal parser error"), "parser got stuck on {:?}", short(src));
+        assert!(
+            !d.message.starts_with("internal parser error"),
+            "parser got stuck on {:?}",
+            short(src)
+        );
     }
     p
 }
@@ -46,7 +66,9 @@ fn short(src: &str) -> String {
 }
 
 fn program(name: &str) -> String {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/run").join(name);
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/run")
+        .join(name);
     std::fs::read_to_string(path).unwrap()
 }
 
@@ -129,7 +151,10 @@ fn hostile_shapes() {
     let errs = errors_2mib(&format!("spawn a{}()", ".b".repeat(20000)));
     assert!(!errs.is_empty() && errs.len() <= 2, "{errs:?}");
     assert!(errs.iter().any(|e| e.contains("too long")), "{errs:?}");
-    assert!(errs.iter().all(|e| e.len() < 400), "messages quote at most a short piece of source");
+    assert!(
+        errs.iter().all(|e| e.len() < 400),
+        "messages quote at most a short piece of source"
+    );
     let errs = errors_2mib(&format!("x |> a{}", ".b".repeat(20000)));
     assert!(!errs.is_empty() && errs.len() <= 2, "{errs:?}");
     // Junk and prefix operators.
@@ -190,7 +215,10 @@ fn limits_cost_one_statement() {
         let errs: Vec<_> = p.diagnostics().iter().map(|d| d.message.clone()).collect();
         assert_eq!(errs.len(), 1, "{}: {errs:?}", short(&src));
         let tree = nl_syntax::dump_tree(&p.syntax(), nl_syntax::DumpOptions { skip_trivia: true });
-        assert!(tree.contains("LET_DECL") && tree.contains("FN_DECL"), "the statements after it parse");
+        assert!(
+            tree.contains("LET_DECL") && tree.contains("FN_DECL"),
+            "the statements after it parse"
+        );
     }
 }
 
@@ -238,7 +266,9 @@ fn deep_parentheses() {
 
 #[test]
 fn deep_brackets_of_every_kind() {
-    for open in ["[", "{", "f(", "{a: ", "x[", "-", "!", "not ", "~", "fn() ", "-(", "@a ** ", "a <> "] {
+    for open in [
+        "[", "{", "f(", "{a: ", "x[", "-", "!", "not ", "~", "fn() ", "-(", "@a ** ", "a <> ",
+    ] {
         assert_errors(&format!("x = {}", open.repeat(10_000)));
     }
     assert_errors("let x: ");
@@ -287,18 +317,32 @@ fn deep_blocks() {
 /// one level of recursion each.
 #[test]
 fn deep_declaration_files() {
-    let src = format!("declare module A\n{}{}", "module B\n".repeat(5_000), "end\n".repeat(5_001));
+    let src = format!(
+        "declare module A\n{}{}",
+        "module B\n".repeat(5_000),
+        "end\n".repeat(5_001)
+    );
     let errs = on_2mib(&src, |s| messages(&check_decl(s)));
     assert_eq!(errs.len(), 1, "{errs:?}");
     assert!(errs[0].contains("nested too deeply"), "{errs:?}");
-    let src = format!("declare struct Foo\n  {}fn f(): Number\n  x: Number\nend\n", "declare ".repeat(20_000));
+    let src = format!(
+        "declare struct Foo\n  {}fn f(): Number\n  x: Number\nend\n",
+        "declare ".repeat(20_000)
+    );
     let errs = on_2mib(&src, |s| messages(&check_decl(s)));
     assert_eq!(errs.len(), 1, "{errs:?}");
-    let src = format!("declare struct Foo\n  {}\n  x: Number\nend\n", "declare ".repeat(20_000));
+    let src = format!(
+        "declare struct Foo\n  {}\n  x: Number\nend\n",
+        "declare ".repeat(20_000)
+    );
     let errs = on_2mib(&src, |s| messages(&check_decl(s)));
     assert_eq!(errs.len(), 1, "{errs:?}");
     // Realistic nesting is fine.
-    let ok = format!("declare module A\n{}{}", "module B\n".repeat(30), "end\n".repeat(31));
+    let ok = format!(
+        "declare module A\n{}{}",
+        "module B\n".repeat(30),
+        "end\n".repeat(31)
+    );
     assert!(!check_decl(&ok).has_errors());
 }
 
@@ -312,7 +356,16 @@ fn deep_interpolations() {
 
 #[test]
 fn long_chains() {
-    for op in [" + ", " or ", " <> ", " ** ", " |> f |> ", ".", " .. ", " < "] {
+    for op in [
+        " + ",
+        " or ",
+        " <> ",
+        " ** ",
+        " |> f |> ",
+        ".",
+        " .. ",
+        " < ",
+    ] {
         let src = format!("x = a{}", format!("{op}a").repeat(20_000));
         check(&src);
     }
@@ -372,18 +425,99 @@ fn token_soup_long() {
 
 fn soup(rounds: usize, max_len: usize, seed: u64) {
     const PIECES: &[&str] = &[
-        "if ", "unless ", "case ", "cond", "when ", "else", "elseif ", "end", "fn ", "do", "|", "||",
-        "while ", "for ", " in ", "step ", "let ", "const ", "struct ", "interface ", "enum ", "type ",
-        "module ", "import ", "from ", "pub ", "on ", "spawn ", "try", "catch ", "finally", "return ",
-        "async ", "as ", "is ", "not ", "and ", "or ", "then ", "(", ")", "[", "]", "{", "}", ",", ";",
-        "\n", " ", ":", ".", "..", "...", "=", "+=", "<", ">", ">>", "<>", "|>", "!", "-", "*", "**",
-        "?", "~", "x", "Foo", "getX", "@a", "1", "'s'", "\"a#{", "}\"", "\"\"\"\n", "\n\"\"\"", "#c\n",
-        "## doc\n", "$", "self", "Self", "nil", "true", "->", "x ->", "|a| ->",
+        "if ",
+        "unless ",
+        "case ",
+        "cond",
+        "when ",
+        "else",
+        "elseif ",
+        "end",
+        "fn ",
+        "do",
+        "|",
+        "||",
+        "while ",
+        "for ",
+        " in ",
+        "step ",
+        "let ",
+        "const ",
+        "struct ",
+        "interface ",
+        "enum ",
+        "type ",
+        "module ",
+        "import ",
+        "from ",
+        "pub ",
+        "on ",
+        "spawn ",
+        "try",
+        "catch ",
+        "finally",
+        "return ",
+        "async ",
+        "as ",
+        "is ",
+        "not ",
+        "and ",
+        "or ",
+        "then ",
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+        ",",
+        ";",
+        "\n",
+        " ",
+        ":",
+        ".",
+        "..",
+        "...",
+        "=",
+        "+=",
+        "<",
+        ">",
+        ">>",
+        "<>",
+        "|>",
+        "!",
+        "-",
+        "*",
+        "**",
+        "?",
+        "~",
+        "x",
+        "Foo",
+        "getX",
+        "@a",
+        "1",
+        "'s'",
+        "\"a#{",
+        "}\"",
+        "\"\"\"\n",
+        "\n\"\"\"",
+        "#c\n",
+        "## doc\n",
+        "$",
+        "self",
+        "Self",
+        "nil",
+        "true",
+        "->",
+        "x ->",
+        "|a| ->",
     ];
     let mut rng = Rng(seed);
     for _ in 0..rounds {
         let count = rng.below(max_len);
-        let text: String = (0..count).map(|_| PIECES[rng.below(PIECES.len())]).collect();
+        let text: String = (0..count)
+            .map(|_| PIECES[rng.below(PIECES.len())])
+            .collect();
         check(&text);
     }
 }

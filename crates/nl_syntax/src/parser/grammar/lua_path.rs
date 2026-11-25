@@ -63,7 +63,9 @@ impl Parser<'_> {
                             self.lua_call(true);
                             last = LuaLast::Call;
                         }
-                        COLON if self.nth_touches(2) && is_lua_name(self.nth(2)) => last = self.lua_method(true),
+                        COLON if self.nth_touches(2) && is_lua_name(self.nth(2)) => {
+                            last = self.lua_method(true)
+                        }
                         _ => {
                             self.lua_field();
                             last = LuaLast::Field;
@@ -160,7 +162,9 @@ impl Parser<'_> {
             self.bump_word();
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected a name after `.` in a Lua path, found {found}"));
+            self.error(format!(
+                "expected a name after `.` in a Lua path, found {found}"
+            ));
         }
         s.complete(self, LUA_FIELD);
     }

@@ -10,13 +10,25 @@ pub(crate) fn checked(src: &str) -> Lexed<'_> {
     let mut pos = 0u32;
     let mut stack = 0usize;
     for (i, t) in lexed.tokens.iter().enumerate() {
-        assert_eq!(u32::from(t.range.start()), pos, "gap or overlap before token {i} in {src:?}");
+        assert_eq!(
+            u32::from(t.range.start()),
+            pos,
+            "gap or overlap before token {i} in {src:?}"
+        );
         pos = t.range.end().into();
         joined.push_str(t.text(src));
-        assert_eq!(t.kind == EOF, i + 1 == lexed.tokens.len(), "EOF must be last in {src:?}");
+        assert_eq!(
+            t.kind == EOF,
+            i + 1 == lexed.tokens.len(),
+            "EOF must be last in {src:?}"
+        );
         assert!(t.kind.is_token());
         if t.range.is_empty() {
-            assert!(matches!(t.kind, EOF | STR_END), "empty {:?} in {src:?}", t.kind);
+            assert!(
+                matches!(t.kind, EOF | STR_END),
+                "empty {:?} in {src:?}",
+                t.kind
+            );
         }
         if t.kind.is_trivia() {
             assert!(!t.nl_before && !t.sp_before);
@@ -40,7 +52,10 @@ pub(crate) fn checked(src: &str) -> Lexed<'_> {
     assert!(last.nl_before && last.sp_before);
     for d in &lexed.diagnostics {
         let r = std::ops::Range::<usize>::from(d.range);
-        assert!(src.get(r.clone()).is_some(), "diagnostic range {r:?} off char boundary in {src:?}");
+        assert!(
+            src.get(r.clone()).is_some(),
+            "diagnostic range {r:?} off char boundary in {src:?}"
+        );
         assert!(!d.message.is_empty());
     }
     // Every string literal decodes without panicking, one piece per part.
@@ -77,12 +92,19 @@ fn kinds(src: &str) -> Vec<SyntaxKind> {
 
 /// The diagnostics' messages.
 fn errors(src: &str) -> Vec<String> {
-    checked(src).diagnostics.into_iter().map(|d| d.message).collect()
+    checked(src)
+        .diagnostics
+        .into_iter()
+        .map(|d| d.message)
+        .collect()
 }
 
 fn clean(src: &str) -> Vec<(SyntaxKind, &str)> {
     let errs = errors(src);
-    assert!(errs.is_empty(), "unexpected diagnostics for {src:?}: {errs:?}");
+    assert!(
+        errs.is_empty(),
+        "unexpected diagnostics for {src:?}: {errs:?}"
+    );
     toks(src)
 }
 
@@ -100,9 +122,15 @@ fn layout(src: &str) -> Vec<(SyntaxKind, bool, bool)> {
 
 fn decoded(src: &str) -> Vec<String> {
     let lexed = checked(src);
-    let parts: Vec<&str> =
-        lexed.significant().filter(|&i| lexed.kind(i).is_string_part()).map(|i| lexed.text(i)).collect();
-    decode_string(&parts).iter().map(|p| String::from_utf8_lossy(p).into_owned()).collect()
+    let parts: Vec<&str> = lexed
+        .significant()
+        .filter(|&i| lexed.kind(i).is_string_part())
+        .map(|i| lexed.text(i))
+        .collect();
+    decode_string(&parts)
+        .iter()
+        .map(|p| String::from_utf8_lossy(p).into_owned())
+        .collect()
 }
 
 // ---- Basic structure --------------------------------------------------------
@@ -134,7 +162,11 @@ fn byte_order_mark() {
 #[test]
 fn trivia_kinds() {
     let lexed = checked("a \t# c\n## doc\r\n### rule\n\rb");
-    let all: Vec<_> = lexed.tokens.iter().map(|t| (t.kind, t.text(lexed.source))).collect();
+    let all: Vec<_> = lexed
+        .tokens
+        .iter()
+        .map(|t| (t.kind, t.text(lexed.source)))
+        .collect();
     assert_eq!(
         all,
         vec![
@@ -155,7 +187,10 @@ fn trivia_kinds() {
 
 #[test]
 fn shebang_is_a_comment() {
-    assert_eq!(clean("#!/usr/bin/env nl\nprint 1"), vec![(LNAME, "print"), (NUMBER, "1")]);
+    assert_eq!(
+        clean("#!/usr/bin/env nl\nprint 1"),
+        vec![(LNAME, "print"), (NUMBER, "1")]
+    );
 }
 
 #[test]
@@ -214,20 +249,40 @@ fn names_and_classes() {
 fn keywords() {
     assert_eq!(
         kinds("fn end self Self not and or then from step"),
-        vec![FN_KW, END_KW, SELF_KW, SELF_TYPE_KW, NOT_KW, AND_KW, OR_KW, LNAME, LNAME, LNAME]
+        vec![
+            FN_KW,
+            END_KW,
+            SELF_KW,
+            SELF_TYPE_KW,
+            NOT_KW,
+            AND_KW,
+            OR_KW,
+            LNAME,
+            LNAME,
+            LNAME
+        ]
     );
     // Keywords are lexed as keywords after `.`, `:` and as keys; the parser
     // accepts them as names there.
     assert_eq!(kinds("obj.end"), vec![LNAME, DOT, END_KW]);
-    assert_eq!(kinds("{type: 1}"), vec![L_CURLY, TYPE_KW, COLON, NUMBER, R_CURLY]);
-    assert_eq!(kinds("x:end()"), vec![LNAME, COLON, END_KW, L_PAREN, R_PAREN]);
+    assert_eq!(
+        kinds("{type: 1}"),
+        vec![L_CURLY, TYPE_KW, COLON, NUMBER, R_CURLY]
+    );
+    assert_eq!(
+        kinds("x:end()"),
+        vec![LNAME, COLON, END_KW, L_PAREN, R_PAREN]
+    );
     // Words are maximal: `endx` and `if_` are names.
     assert_eq!(kinds("endx if_ ifx"), vec![LNAME, LNAME, LNAME]);
 }
 
 #[test]
 fn at_names() {
-    assert_eq!(clean("@health @type @Foo"), vec![(AT_NAME, "@health"), (AT_NAME, "@type"), (AT_NAME, "@Foo")]);
+    assert_eq!(
+        clean("@health @type @Foo"),
+        vec![(AT_NAME, "@health"), (AT_NAME, "@type"), (AT_NAME, "@Foo")]
+    );
     let errs = errors("@ x");
     assert_eq!(errs.len(), 1);
     assert!(errs[0].contains("@health"));
@@ -239,8 +294,22 @@ fn at_names() {
 #[test]
 fn number_forms() {
     for n in [
-        "1", "1.1", "0xabcdef", "0XAB", "0b1010", "0B1", "1_000_000", "5e+20", "0.3e12", "4.57e-3",
-        "1e5", "1E-5", "0xff_ff", "0b1_0", "1_0.2_5e1_0", "007",
+        "1",
+        "1.1",
+        "0xabcdef",
+        "0XAB",
+        "0b1010",
+        "0B1",
+        "1_000_000",
+        "5e+20",
+        "0.3e12",
+        "4.57e-3",
+        "1e5",
+        "1E-5",
+        "0xff_ff",
+        "0b1_0",
+        "1_0.2_5e1_0",
+        "007",
     ] {
         assert_eq!(clean(n), vec![(NUMBER, n)], "{n}");
     }
@@ -248,17 +317,38 @@ fn number_forms() {
 
 #[test]
 fn number_then_dot() {
-    assert_eq!(clean("6.is_cool"), vec![(NUMBER, "6"), (DOT, "."), (LNAME, "is_cool")]);
-    assert_eq!(clean("1..10"), vec![(NUMBER, "1"), (DOT2, ".."), (NUMBER, "10")]);
-    assert_eq!(clean("1..<10"), vec![(NUMBER, "1"), (DOT2_LT, "..<"), (NUMBER, "10")]);
-    assert_eq!(clean("2.5.floor"), vec![(NUMBER, "2.5"), (DOT, "."), (LNAME, "floor")]);
-    assert_eq!(clean("1.e5"), vec![(NUMBER, "1"), (DOT, "."), (LNAME, "e5")]);
+    assert_eq!(
+        clean("6.is_cool"),
+        vec![(NUMBER, "6"), (DOT, "."), (LNAME, "is_cool")]
+    );
+    assert_eq!(
+        clean("1..10"),
+        vec![(NUMBER, "1"), (DOT2, ".."), (NUMBER, "10")]
+    );
+    assert_eq!(
+        clean("1..<10"),
+        vec![(NUMBER, "1"), (DOT2_LT, "..<"), (NUMBER, "10")]
+    );
+    assert_eq!(
+        clean("2.5.floor"),
+        vec![(NUMBER, "2.5"), (DOT, "."), (LNAME, "floor")]
+    );
+    assert_eq!(
+        clean("1.e5"),
+        vec![(NUMBER, "1"), (DOT, "."), (LNAME, "e5")]
+    );
     assert_eq!(clean("1..."), vec![(NUMBER, "1"), (DOT3, "...")]);
-    assert_eq!(clean("100.divisible_by(10)")[..3], [(NUMBER, "100"), (DOT, "."), (LNAME, "divisible_by")]);
+    assert_eq!(
+        clean("100.divisible_by(10)")[..3],
+        [(NUMBER, "100"), (DOT, "."), (LNAME, "divisible_by")]
+    );
     assert_eq!(clean("1."), vec![(NUMBER, "1"), (DOT, ".")]);
     // `.5` is `.` then `5`; the parser reports it.
     assert_eq!(clean(".5"), vec![(DOT, "."), (NUMBER, "5")]);
-    assert_eq!(clean("-5.abs"), vec![(MINUS, "-"), (NUMBER, "5"), (DOT, "."), (LNAME, "abs")]);
+    assert_eq!(
+        clean("-5.abs"),
+        vec![(MINUS, "-"), (NUMBER, "5"), (DOT, "."), (LNAME, "abs")]
+    );
 }
 
 #[test]
@@ -290,7 +380,10 @@ fn malformed_numbers() {
     assert!(errors("0x")[0].contains("hexadecimal digits"));
     // `_1` is a name; `1._x` is a member access.
     assert_eq!(clean("_1"), vec![(LNAME, "_1")]);
-    assert_eq!(clean("1._x"), vec![(NUMBER, "1"), (DOT, "."), (LNAME, "_x")]);
+    assert_eq!(
+        clean("1._x"),
+        vec![(NUMBER, "1"), (DOT, "."), (LNAME, "_x")]
+    );
     // `1e+` without digits: `1e` is malformed, `+` stays an operator.
     assert_eq!(kinds("1e+x"), vec![NUMBER, PLUS, LNAME]);
 }
@@ -315,18 +408,45 @@ fn longest_match() {
     assert_eq!(kinds("=~"), vec![EQ, TILDE]);
     // The nil-safe tokens: `??=` before `??` before `?.`
     // before `?`; with a space inside they are separate tokens.
-    assert_eq!(kinds("a?.b a??b x??=1"), vec![LNAME, QUESTION_DOT, LNAME, LNAME, QUESTION2, LNAME, LNAME, QUESTION2_EQ, NUMBER]);
-    assert_eq!(kinds("? . ? ? T?? T?"), vec![QUESTION, DOT, QUESTION, QUESTION, CNAME, QUESTION2, CNAME, QUESTION]);
+    assert_eq!(
+        kinds("a?.b a??b x??=1"),
+        vec![
+            LNAME,
+            QUESTION_DOT,
+            LNAME,
+            LNAME,
+            QUESTION2,
+            LNAME,
+            LNAME,
+            QUESTION2_EQ,
+            NUMBER
+        ]
+    );
+    assert_eq!(
+        kinds("? . ? ? T?? T?"),
+        vec![
+            QUESTION, DOT, QUESTION, QUESTION, CNAME, QUESTION2, CNAME, QUESTION
+        ]
+    );
     assert_eq!(kinds("a???.b"), vec![LNAME, QUESTION2, QUESTION_DOT, LNAME]);
-    assert_eq!(kinds("x?.end!"), vec![LNAME, QUESTION_DOT, END_KW, BANG_POSTFIX]);
+    assert_eq!(
+        kinds("x?.end!"),
+        vec![LNAME, QUESTION_DOT, END_KW, BANG_POSTFIX]
+    );
     // `->` is the arrow of a short function; `- >` and `-->` are not.
     assert_eq!(kinds("a->b"), vec![LNAME, ARROW, LNAME]);
     assert_eq!(kinds("a - >b"), vec![LNAME, MINUS, GT, LNAME]);
     assert_eq!(kinds("a-->b"), vec![LNAME, MINUS, ARROW, LNAME]);
-    assert_eq!(kinds("||->|a|->"), vec![PIPE2, ARROW, PIPE, LNAME, PIPE, ARROW]);
+    assert_eq!(
+        kinds("||->|a|->"),
+        vec![PIPE2, ARROW, PIPE, LNAME, PIPE, ARROW]
+    );
     assert_eq!(kinds("Box<Box<T>>"), vec![CNAME, LT, CNAME, LT, CNAME, SHR]);
     assert_eq!(kinds("x>>>=1"), vec![LNAME, USHR_EQ, NUMBER]);
-    assert_eq!(kinds("x||=y&&=z"), vec![LNAME, PIPE2_EQ, LNAME, AMP2_EQ, LNAME]);
+    assert_eq!(
+        kinds("x||=y&&=z"),
+        vec![LNAME, PIPE2_EQ, LNAME, AMP2_EQ, LNAME]
+    );
     assert_eq!(kinds("a|>f"), vec![LNAME, PIPE_GT, LNAME]);
     assert_eq!(kinds("do ||"), vec![DO_KW, PIPE2]);
 }
@@ -345,7 +465,10 @@ fn bang_forms() {
     assert_eq!(kinds("x.end!"), vec![LNAME, DOT, END_KW, BANG_POSTFIX]);
     assert_eq!(kinds("x.\n  end!"), vec![LNAME, DOT, END_KW, BANG_POSTFIX]);
     assert_eq!(kinds("f()!"), vec![LNAME, L_PAREN, R_PAREN, BANG_POSTFIX]);
-    assert_eq!(kinds("t[1]!"), vec![LNAME, L_BRACK, NUMBER, R_BRACK, BANG_POSTFIX]);
+    assert_eq!(
+        kinds("t[1]!"),
+        vec![LNAME, L_BRACK, NUMBER, R_BRACK, BANG_POSTFIX]
+    );
     assert_eq!(kinds("!a"), vec![BANG, LNAME]);
     assert_eq!(kinds("f(!a)"), vec![LNAME, L_PAREN, BANG, LNAME, R_PAREN]);
     assert_eq!(kinds("x && !y"), vec![LNAME, AMP2, BANG, LNAME]);
@@ -357,7 +480,10 @@ fn bang_forms() {
     assert_eq!(kinds("1!"), vec![NUMBER, BANG]);
     assert_eq!(kinds("x#c\n!y"), vec![LNAME, BANG, LNAME]);
     assert_eq!(kinds("!!x"), vec![BANG, BANG, LNAME]);
-    assert_eq!(kinds("\"#{f!}\""), vec![STR_BEGIN, LNAME, BANG_POSTFIX, STR_END]);
+    assert_eq!(
+        kinds("\"#{f!}\""),
+        vec![STR_BEGIN, LNAME, BANG_POSTFIX, STR_END]
+    );
     assert_eq!(kinds("\"#{!f}\""), vec![STR_BEGIN, BANG, LNAME, STR_END]);
 }
 
@@ -431,7 +557,10 @@ fn raw_strings() {
 fn quoted_strings() {
     assert_eq!(clean("\"hello\""), vec![(STRING, "\"hello\"")]);
     assert_eq!(clean("\"\""), vec![(STRING, "\"\"")]);
-    assert_eq!(decoded(r#""quote \" and backslash \\""#), vec![r#"quote " and backslash \"#]);
+    assert_eq!(
+        decoded(r#""quote \" and backslash \\""#),
+        vec![r#"quote " and backslash \"#]
+    );
     assert_eq!(decoded(r#""line1\nline2""#), vec!["line1\nline2"]);
     assert_eq!(decoded(r#""a # b""#), vec!["a # b"]);
     assert_eq!(decoded(r#""\x41\u{263A}\065""#), vec!["A☺A"]);
@@ -439,7 +568,10 @@ fn quoted_strings() {
 
 #[test]
 fn escaped_interpolation() {
-    assert_eq!(clean(r#""literal \#{name}""#), vec![(STRING, r#""literal \#{name}""#)]);
+    assert_eq!(
+        clean(r#""literal \#{name}""#),
+        vec![(STRING, r#""literal \#{name}""#)]
+    );
     assert_eq!(decoded(r#""literal \#{name}""#), vec!["literal #{name}"]);
     assert_eq!(kinds(r#""\\#{x}""#), vec![STR_BEGIN, LNAME, STR_END]);
 }
@@ -467,7 +599,10 @@ fn bad_escapes() {
 fn backslash_line_break() {
     // In a `"…"` string a backslash before a line break continues the string
     // on the next line and writes one `\n`, whatever the line break.
-    assert_eq!(clean("\"aaa \\\nbbb \\\nccc\""), vec![(STRING, "\"aaa \\\nbbb \\\nccc\"")]);
+    assert_eq!(
+        clean("\"aaa \\\nbbb \\\nccc\""),
+        vec![(STRING, "\"aaa \\\nbbb \\\nccc\"")]
+    );
     assert_eq!(decoded("\"aaa \\\nbbb \\\nccc\""), vec!["aaa \nbbb \nccc"]);
     assert_eq!(decoded("\"a\\\r\nb\""), vec!["a\nb"]);
     assert_eq!(kinds("\"a\\\nb\"\ny"), vec![STRING, LNAME]);
@@ -490,7 +625,10 @@ fn unterminated_quoted() {
     let errs = errors("print \"abc\nprint 1");
     assert_eq!(errs.len(), 1);
     assert!(errs[0].contains("unterminated") && errs[0].contains("\"\"\""));
-    assert_eq!(kinds("print \"abc\nprint 1"), vec![LNAME, STRING, LNAME, NUMBER]);
+    assert_eq!(
+        kinds("print \"abc\nprint 1"),
+        vec![LNAME, STRING, LNAME, NUMBER]
+    );
     assert_eq!(kinds("\"abc"), vec![STRING]);
     assert_eq!(kinds("\"a#{x}b\nc"), vec![STR_BEGIN, LNAME, STR_END, LNAME]);
 }
@@ -499,7 +637,11 @@ fn unterminated_quoted() {
 fn interpolation() {
     assert_eq!(
         clean("\"hello, #{name}!\""),
-        vec![(STR_BEGIN, "\"hello, #{"), (LNAME, "name"), (STR_END, "}!\"")]
+        vec![
+            (STR_BEGIN, "\"hello, #{"),
+            (LNAME, "name"),
+            (STR_END, "}!\"")
+        ]
     );
     assert_eq!(
         clean("\"#{n} + 1 = #{n + 1}\""),
@@ -517,7 +659,9 @@ fn interpolation() {
     // Braces nest inside an interpolation.
     assert_eq!(
         kinds("\"#{ {a: 1}.a }\""),
-        vec![STR_BEGIN, L_CURLY, LNAME, COLON, NUMBER, R_CURLY, DOT, LNAME, STR_END]
+        vec![
+            STR_BEGIN, L_CURLY, LNAME, COLON, NUMBER, R_CURLY, DOT, LNAME, STR_END
+        ]
     );
     // Strings inside interpolations inside strings.
     assert_eq!(
@@ -530,20 +674,33 @@ fn interpolation() {
             (STR_END, "}d\""),
         ]
     );
-    assert_eq!(kinds("\"#{f(\"x\")}\""), vec![STR_BEGIN, LNAME, L_PAREN, STRING, R_PAREN, STR_END]);
+    assert_eq!(
+        kinds("\"#{f(\"x\")}\""),
+        vec![STR_BEGIN, LNAME, L_PAREN, STRING, R_PAREN, STR_END]
+    );
     assert_eq!(kinds("\"#{ '}' }\""), vec![STR_BEGIN, STRING, STR_END]);
-    assert_eq!(kinds("\"#{@name} died\""), vec![STR_BEGIN, AT_NAME, STR_END]);
+    assert_eq!(
+        kinds("\"#{@name} died\""),
+        vec![STR_BEGIN, AT_NAME, STR_END]
+    );
     // Three levels.
     assert_eq!(
         kinds("\"#{\"#{\"#{x}\"}\"}\""),
-        vec![STR_BEGIN, STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END, STR_END]
+        vec![
+            STR_BEGIN, STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END, STR_END
+        ]
     );
     // A `}` outside any interpolation is an ordinary token.
     assert_eq!(kinds("}"), vec![R_CURLY]);
     // The layout flags of embedded tokens are ordinary.
     assert_eq!(
         layout("\"#{ a}\""),
-        vec![(STR_BEGIN, false, false), (LNAME, false, true), (STR_END, false, false), (EOF, true, true)]
+        vec![
+            (STR_BEGIN, false, false),
+            (LNAME, false, true),
+            (STR_END, false, false),
+            (EOF, true, true)
+        ]
     );
 }
 
@@ -563,10 +720,16 @@ fn line_break_in_interpolation_of_one_line_string() {
     let errs = errors(src);
     assert_eq!(errs.len(), 1, "{errs:?}");
     assert!(errs[0].contains("must close on the line"));
-    assert_eq!(kinds(src), vec![LNAME, STR_BEGIN, LNAME, STR_END, LNAME, LNAME]);
+    assert_eq!(
+        kinds(src),
+        vec![LNAME, STR_BEGIN, LNAME, STR_END, LNAME, LNAME]
+    );
     // Nested one-line strings are all closed.
     let src = "\"a#{ \"b#{ c\nd";
-    assert_eq!(kinds(src), vec![STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END, LNAME]);
+    assert_eq!(
+        kinds(src),
+        vec![STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END, LNAME]
+    );
     // A comment inside the interpolation runs to the end of the line.
     let src = "\"#{ x # c }\"\ny";
     assert_eq!(kinds(src), vec![STR_BEGIN, LNAME, STR_END, LNAME]);
@@ -575,7 +738,12 @@ fn line_break_in_interpolation_of_one_line_string() {
     // expression goes on there: one error.
     let src = "a = \"x #{ 1 +\n2 }\"\ny = 1";
     assert_eq!(errors(src).len(), 1, "{:?}", errors(src));
-    assert_eq!(kinds(src), vec![LNAME, EQ, STR_BEGIN, NUMBER, PLUS, NUMBER, STR_END, LNAME, EQ, NUMBER]);
+    assert_eq!(
+        kinds(src),
+        vec![
+            LNAME, EQ, STR_BEGIN, NUMBER, PLUS, NUMBER, STR_END, LNAME, EQ, NUMBER
+        ]
+    );
     // Only the next line counts: there the string is cut off as before.
     let src = "\"#{ f(\n1,\n2) }\"";
     assert_eq!(kinds(src)[..3], [STR_BEGIN, LNAME, L_PAREN]);
@@ -603,11 +771,17 @@ fn heredoc_plain() {
     // Empty heredoc.
     assert_eq!(decoded("\"\"\"\n\"\"\""), vec![""]);
     // `"` needs no escape; `"""` not at the start of a line is text.
-    assert_eq!(decoded("\"\"\"\nsay \"hi\" and \"\"\" ok\n\"\"\""), vec!["say \"hi\" and \"\"\" ok"]);
+    assert_eq!(
+        decoded("\"\"\"\nsay \"hi\" and \"\"\" ok\n\"\"\""),
+        vec!["say \"hi\" and \"\"\" ok"]
+    );
     // A line starting with `\"""` is content.
     assert_eq!(decoded("\"\"\"\n\\\"\"\"\n\"\"\""), vec!["\"\"\""]);
     // Code may follow the closer.
-    assert_eq!(kinds("f(\"\"\"\nx\n  \"\"\".strip, y)"), vec![LNAME, L_PAREN, STRING, DOT, LNAME, COMMA, LNAME, R_PAREN]);
+    assert_eq!(
+        kinds("f(\"\"\"\nx\n  \"\"\".strip, y)"),
+        vec![LNAME, L_PAREN, STRING, DOT, LNAME, COMMA, LNAME, R_PAREN]
+    );
 }
 
 #[test]
@@ -648,7 +822,11 @@ fn heredoc_interpolation() {
     let src = "\"\"\"\nmulti\nline #{a}\n\"\"\"";
     assert_eq!(
         clean(src),
-        vec![(STR_BEGIN, "\"\"\"\nmulti\nline #{"), (LNAME, "a"), (STR_END, "}\n\"\"\"")]
+        vec![
+            (STR_BEGIN, "\"\"\"\nmulti\nline #{"),
+            (LNAME, "a"),
+            (STR_END, "}\n\"\"\"")
+        ]
     );
     assert_eq!(decoded(src), vec!["multi\nline ", ""]);
     let src = "\"\"\"-\n  first\n    indented\n  last #{a}\n\"\"\"";
@@ -665,7 +843,10 @@ fn heredoc_interpolation() {
     // A one-line string inside a heredoc interpolation.
     let src = "\"\"\"\n#{ \"a#{b}c\" }\n\"\"\"";
     assert!(errors(src).is_empty());
-    assert_eq!(kinds(src), vec![STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END]);
+    assert_eq!(
+        kinds(src),
+        vec![STR_BEGIN, STR_BEGIN, LNAME, STR_END, STR_END]
+    );
     // `\#{` in a heredoc.
     assert_eq!(decoded("\"\"\"\n\\#{x}\n\"\"\""), vec!["#{x}"]);
 }
@@ -736,7 +917,9 @@ fn lexer_and_decoder_agree_on_string_parts() {
     use crate::literal::content_ends;
     use crate::{StringForm, string_form};
     fn files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return;
+        };
         let mut entries: Vec<_> = rd.map(|e| e.unwrap().path()).collect();
         entries.sort();
         for p in entries {
@@ -787,7 +970,12 @@ fn lexer_and_decoder_agree_on_string_parts() {
                     }
                     _ => Some(text.len() - 1),
                 };
-                assert_eq!(*end, expected, "{}: part {text:?} of {texts:?}", path.display());
+                assert_eq!(
+                    *end,
+                    expected,
+                    "{}: part {text:?} of {texts:?}",
+                    path.display()
+                );
             }
         }
     }

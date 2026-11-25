@@ -85,7 +85,11 @@ impl SourceMap {
         for line in 1..=lines {
             let src = moved.get(&line).copied().unwrap_or(line);
             match ranges.last_mut() {
-                Some([start, file, from, count]) if *file == f && *start + *count == line && *from + *count == src => *count += 1,
+                Some([start, file, from, count])
+                    if *file == f && *start + *count == line && *from + *count == src =>
+                {
+                    *count += 1
+                }
                 _ => ranges.push([line, f, src, 1]),
             }
         }
@@ -110,7 +114,9 @@ impl SourceMap {
     /// The source file and line of a line of a chunk.
     pub fn lookup(&self, chunk: &str, line: u32) -> Option<(&str, u32)> {
         let ranges = self.chunks.get(chunk)?;
-        let r = ranges.iter().find(|[start, _, _, count]| line >= *start && line < start.saturating_add(*count))?;
+        let r = ranges
+            .iter()
+            .find(|[start, _, _, count]| line >= *start && line < start.saturating_add(*count))?;
         let file = self.files.get(r[1] as usize)?;
         Some((file, r[2].saturating_add(line - r[0])))
     }
@@ -123,7 +129,10 @@ impl SourceMap {
             return self.lookup(short_src, line);
         }
         let tail = short_src.strip_prefix("...").filter(|t| !t.is_empty())?;
-        let mut hits = self.chunks.keys().filter(|c| c.len() > tail.len() && c.ends_with(tail));
+        let mut hits = self
+            .chunks
+            .keys()
+            .filter(|c| c.len() > tail.len() && c.ends_with(tail));
         match (hits.next(), hits.next()) {
             (Some(chunk), None) => self.lookup(chunk, line),
             _ => None,
@@ -131,7 +140,11 @@ impl SourceMap {
     }
 
     pub fn to_json(&self) -> String {
-        let chunks: serde_json::Map<String, serde_json::Value> = self.chunks.iter().map(|(k, v)| (k.clone(), serde_json::json!(v))).collect();
+        let chunks: serde_json::Map<String, serde_json::Value> = self
+            .chunks
+            .iter()
+            .map(|(k, v)| (k.clone(), serde_json::json!(v)))
+            .collect();
         let value = serde_json::json!({
             "version": VERSION,
             "bundle": self.bundle,
@@ -146,26 +159,63 @@ impl SourceMap {
     }
 
     pub fn from_json(text: &str) -> Result<SourceMap, String> {
-        let v: serde_json::Value = serde_json::from_str(text).map_err(|e| format!("not JSON: {e}"))?;
+        let v: serde_json::Value =
+            serde_json::from_str(text).map_err(|e| format!("not JSON: {e}"))?;
         let version = v.get("version").and_then(serde_json::Value::as_u64);
         if version != Some(VERSION) {
-            return Err(format!("not a sourcemap of version {VERSION} (`nlc bundle --map`)"));
+            return Err(format!(
+                "not a sourcemap of version {VERSION} (`nlc bundle --map`)"
+            ));
         }
-        let string = |key: &str| v.get(key).and_then(serde_json::Value::as_str).unwrap_or_default().to_owned();
+        let string = |key: &str| {
+            v.get(key)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned()
+        };
         let strings = |key: &str| -> Vec<String> {
-            v.get(key).and_then(serde_json::Value::as_array).map(|a| a.iter().filter_map(|s| s.as_str().map(str::to_owned)).collect()).unwrap_or_default()
+            v.get(key)
+                .and_then(serde_json::Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|s| s.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default()
         };
         let mut chunks = BTreeMap::new();
-        for (name, ranges) in v.get("chunks").and_then(serde_json::Value::as_object).ok_or("no `chunks`")? {
+        for (name, ranges) in v
+            .get("chunks")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("no `chunks`")?
+        {
             let mut out = Vec::new();
-            for r in ranges.as_array().ok_or_else(|| format!("chunk `{name}`: not a list of ranges"))? {
-                let nums: Vec<u32> = r.as_array().map(|a| a.iter().filter_map(|n| n.as_u64().and_then(|n| u32::try_from(n).ok())).collect()).unwrap_or_default();
-                let range: [u32; 4] = nums.try_into().map_err(|_| format!("chunk `{name}`: a range is four numbers"))?;
+            for r in ranges
+                .as_array()
+                .ok_or_else(|| format!("chunk `{name}`: not a list of ranges"))?
+            {
+                let nums: Vec<u32> = r
+                    .as_array()
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|n| n.as_u64().and_then(|n| u32::try_from(n).ok()))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let range: [u32; 4] = nums
+                    .try_into()
+                    .map_err(|_| format!("chunk `{name}`: a range is four numbers"))?;
                 out.push(range);
             }
             chunks.insert(name.clone(), out);
         }
-        Ok(SourceMap { bundle: string("bundle"), build: string("build"), parts: strings("parts"), files: strings("files"), chunks })
+        Ok(SourceMap {
+            bundle: string("bundle"),
+            build: string("build"),
+            parts: strings("parts"),
+            files: strings("files"),
+            chunks,
+        })
     }
 }
 
@@ -183,14 +233,22 @@ pub fn remap_text(maps: &[&SourceMap], text: &str) -> String {
         let line = rest.get(..digits)?.parse().ok()?;
         Some((line, at + 1 + digits))
     };
-    let boundary = |at: usize| at == 0 || text[..at].chars().next_back().is_some_and(|c| !(c.is_alphanumeric() || matches!(c, '_' | '/' | '.' | '-')));
+    let boundary = |at: usize| {
+        at == 0
+            || text[..at]
+                .chars()
+                .next_back()
+                .is_some_and(|c| !(c.is_alphanumeric() || matches!(c, '_' | '/' | '.' | '-')))
+    };
     for map in maps {
         for chunk in map.chunks.keys() {
             for (at, _) in text.match_indices(chunk.as_str()) {
                 if !boundary(at) {
                     continue;
                 }
-                let Some((line, end)) = line_after(at + chunk.len()) else { continue };
+                let Some((line, end)) = line_after(at + chunk.len()) else {
+                    continue;
+                };
                 if let Some((file, l)) = map.lookup(chunk, line) {
                     found.push((at, end, format!("{file}:{l}")));
                 }
@@ -200,19 +258,32 @@ pub fn remap_text(maps: &[&SourceMap], text: &str) -> String {
     // `...tail:12`: a name LuaJIT shortened.
     for (at, _) in text.match_indices("...") {
         let tail_start = at + 3;
-        let Some(colon) = text[tail_start..].find(':').map(|k| tail_start + k) else { continue };
+        let Some(colon) = text[tail_start..].find(':').map(|k| tail_start + k) else {
+            continue;
+        };
         let tail = &text[tail_start..colon];
         if tail.is_empty() || tail.contains(char::is_whitespace) {
             continue;
         }
-        let Some((line, end)) = line_after(colon) else { continue };
+        let Some((line, end)) = line_after(colon) else {
+            continue;
+        };
         // One chunk name must end that way; the first map that has it
         // answers, as for a whole name.
-        let mut names: Vec<&String> = maps.iter().flat_map(|m| m.chunks.keys().filter(|c| c.len() > tail.len() && c.ends_with(tail))).collect();
+        let mut names: Vec<&String> = maps
+            .iter()
+            .flat_map(|m| {
+                m.chunks
+                    .keys()
+                    .filter(|c| c.len() > tail.len() && c.ends_with(tail))
+            })
+            .collect();
         names.sort();
         names.dedup();
         let [chunk] = names.as_slice() else { continue };
-        let Some(map) = maps.iter().find(|m| m.chunks.contains_key(*chunk)) else { continue };
+        let Some(map) = maps.iter().find(|m| m.chunks.contains_key(*chunk)) else {
+            continue;
+        };
         if let Some((file, l)) = map.lookup(chunk, line) {
             found.push((at, end, format!("{file}:{l}")));
         }
@@ -249,23 +320,49 @@ mod tests {
     use super::*;
 
     fn sample() -> SourceMap {
-        let mut m = SourceMap { bundle: "b".into(), build: "00".into(), parts: vec!["b.lua".into()], ..SourceMap::default() };
+        let mut m = SourceMap {
+            bundle: "b".into(),
+            build: "00".into(),
+            parts: vec!["b.lua".into()],
+            ..SourceMap::default()
+        };
         m.add_file_chunk("addon/main.nl", "addon/main.nl", 50, &[(41, 33), (42, 33)]);
-        m.add_concatenation("nl runtime", &[("runtime/a.lua", 10), ("runtime/b.lua", 0), ("runtime/c.lua", 5)]);
+        m.add_concatenation(
+            "nl runtime",
+            &[
+                ("runtime/a.lua", 10),
+                ("runtime/b.lua", 0),
+                ("runtime/c.lua", 5),
+            ],
+        );
         m
     }
 
     #[test]
     fn ranges_and_lookup() {
         let m = sample();
-        assert_eq!(m.chunks["addon/main.nl"], [[1, 0, 1, 40], [41, 0, 33, 1], [42, 0, 33, 1], [43, 0, 43, 8]]);
+        assert_eq!(
+            m.chunks["addon/main.nl"],
+            [
+                [1, 0, 1, 40],
+                [41, 0, 33, 1],
+                [42, 0, 33, 1],
+                [43, 0, 43, 8]
+            ]
+        );
         assert_eq!(m.lookup("addon/main.nl", 12), Some(("addon/main.nl", 12)));
         assert_eq!(m.lookup("addon/main.nl", 42), Some(("addon/main.nl", 33)));
         assert_eq!(m.lookup("addon/main.nl", 51), None);
         assert_eq!(m.lookup("nl runtime", 12), Some(("runtime/c.lua", 2)));
         assert_eq!(m.lookup("nl runtime", 16), None);
-        assert_eq!(m.lookup_short_src("...on/main.nl", 42), Some(("addon/main.nl", 33)));
-        assert_eq!(m.lookup_short_src("nl runtime", 12), Some(("runtime/c.lua", 2)));
+        assert_eq!(
+            m.lookup_short_src("...on/main.nl", 42),
+            Some(("addon/main.nl", 33))
+        );
+        assert_eq!(
+            m.lookup_short_src("nl runtime", 12),
+            Some(("runtime/c.lua", 2))
+        );
         assert_eq!(m.lookup_short_src("...", 12), None);
         assert_eq!(m.lookup_short_src("other.nl", 1), None);
     }
@@ -275,8 +372,14 @@ mod tests {
         let m = sample();
         assert_eq!(SourceMap::from_json(&m.to_json()).unwrap(), m);
         assert!(SourceMap::from_json("{\"version\": 7}").is_err());
-        assert!(SourceMap::from_json("{\"version\": 1}").is_err(), "no chunks");
-        assert!(SourceMap::from_json("{\"version\": 1, \"chunks\": {\"a\": [[1, 2]]}}").is_err(), "a range is four numbers");
+        assert!(
+            SourceMap::from_json("{\"version\": 1}").is_err(),
+            "no chunks"
+        );
+        assert!(
+            SourceMap::from_json("{\"version\": 1, \"chunks\": {\"a\": [[1, 2]]}}").is_err(),
+            "a range is four numbers"
+        );
         // A map that was not made by `nlc bundle` cannot make a lookup
         // overflow: the source line saturates.
         let m = SourceMap::from_json("{\"version\": 1, \"files\": [\"f\"], \"chunks\": {\"a\": [[1, 0, 4294967295, 4294967295]]}}").unwrap();

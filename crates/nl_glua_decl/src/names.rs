@@ -10,8 +10,50 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// NL's reserved words; a snake_case name that is one gets a trailing `_`.
 const KEYWORDS: &[&str] = &[
-    "and", "as", "async", "break", "case", "catch", "cond", "const", "continue", "declare", "do", "else", "elseif", "end", "enum", "false", "finally", "fn", "for", "global", "if", "import",
-    "in", "interface", "is", "let", "loop", "module", "nil", "not", "on", "or", "pub", "return", "self", "spawn", "struct", "true", "try", "type", "unless", "until", "when", "while",
+    "and",
+    "as",
+    "async",
+    "break",
+    "case",
+    "catch",
+    "cond",
+    "const",
+    "continue",
+    "declare",
+    "do",
+    "else",
+    "elseif",
+    "end",
+    "enum",
+    "false",
+    "finally",
+    "fn",
+    "for",
+    "global",
+    "if",
+    "import",
+    "in",
+    "interface",
+    "is",
+    "let",
+    "loop",
+    "module",
+    "nil",
+    "not",
+    "on",
+    "or",
+    "pub",
+    "return",
+    "self",
+    "spawn",
+    "struct",
+    "true",
+    "try",
+    "type",
+    "unless",
+    "until",
+    "when",
+    "while",
 ];
 
 pub fn is_keyword(word: &str) -> bool {
@@ -20,7 +62,9 @@ pub fn is_keyword(word: &str) -> bool {
 
 /// Words kept whole when a name is split: `ReadUInt` is `read_uint`, not
 /// `read_u_int`.
-const WORDS: &[&str] = &["UInt", "UShort", "ULong", "GMod", "CVar", "EFlags", "EFlag", "DnD", "BBox", "PData", "BSpline"];
+const WORDS: &[&str] = &[
+    "UInt", "UShort", "ULong", "GMod", "CVar", "EFlags", "EFlag", "DnD", "BBox", "PData", "BSpline",
+];
 
 /// The words of a Lua name: a run of capitals before a capitalized word is
 /// an acronym (`HTTPRequest`: `HTTP`, `Request`), digits stay with the word
@@ -42,7 +86,14 @@ pub fn words(name: &str) -> Vec<String> {
         }
         // A whole word from the list.
         if c.is_ascii_uppercase() {
-            if let Some(w) = WORDS.iter().find(|w| name.get(byte_index(&chars, i)..).is_some_and(|rest| rest.starts_with(**w) && !rest.get(w.len()..).is_some_and(|r| r.starts_with(|c: char| c.is_ascii_lowercase())))) {
+            if let Some(w) = WORDS.iter().find(|w| {
+                name.get(byte_index(&chars, i)..).is_some_and(|rest| {
+                    rest.starts_with(**w)
+                        && !rest
+                            .get(w.len()..)
+                            .is_some_and(|r| r.starts_with(|c: char| c.is_ascii_lowercase()))
+                })
+            }) {
                 if !cur.is_empty() {
                     out.push(std::mem::take(&mut cur));
                 }
@@ -51,7 +102,11 @@ pub fn words(name: &str) -> Vec<String> {
                 continue;
             }
         }
-        let prev = if i > 0 { chars.get(i - 1).copied() } else { None };
+        let prev = if i > 0 {
+            chars.get(i - 1).copied()
+        } else {
+            None
+        };
         let next = chars.get(i + 1).copied();
         let boundary = match prev {
             None => false,
@@ -83,8 +138,16 @@ fn byte_index(chars: &[char], i: usize) -> usize {
 /// `GetPos` → `get_pos`; a keyword gets a trailing `_` (`Spawn` →
 /// `spawn_`); an empty name stays empty.
 pub fn snake(name: &str) -> String {
-    let s = words(name).iter().map(|w| w.to_ascii_lowercase()).collect::<Vec<_>>().join("_");
-    let s = if s.starts_with(|c: char| c.is_ascii_digit()) { format!("n{s}") } else { s };
+    let s = words(name)
+        .iter()
+        .map(|w| w.to_ascii_lowercase())
+        .collect::<Vec<_>>()
+        .join("_");
+    let s = if s.starts_with(|c: char| c.is_ascii_digit()) {
+        format!("n{s}")
+    } else {
+        s
+    };
     if is_keyword(&s) { format!("{s}_") } else { s }
 }
 
@@ -115,12 +178,18 @@ pub fn screaming(name: &str) -> String {
     if name.contains('_') {
         return name.to_ascii_uppercase();
     }
-    words(name).iter().map(|w| w.to_ascii_uppercase()).collect::<Vec<_>>().join("_")
+    words(name)
+        .iter()
+        .map(|w| w.to_ascii_uppercase())
+        .collect::<Vec<_>>()
+        .join("_")
 }
 
 /// A capitalized NL name: PascalCase, all capitals or SCREAMING_SNAKE_CASE.
 pub fn is_cname(name: &str) -> bool {
-    let Some(first) = name.chars().next() else { return false };
+    let Some(first) = name.chars().next() else {
+        return false;
+    };
     if !first.is_ascii_uppercase() || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return false;
     }
@@ -135,7 +204,11 @@ fn is_screaming(name: &str) -> bool {
 
 /// A snake_case NL name that is not a keyword.
 pub fn is_lname(name: &str) -> bool {
-    name.starts_with(|c: char| c.is_ascii_lowercase() || c == '_') && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') && !is_keyword(name)
+    name.starts_with(|c: char| c.is_ascii_lowercase() || c == '_')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        && !is_keyword(name)
 }
 
 /// The override list: a wiki address (`Entity:SetPos`, `net.ReadUInt`,
@@ -161,27 +234,45 @@ impl Overrides {
                 continue;
             }
             let mut parts = line.split_whitespace();
-            let (Some(address), Some(name), None) = (parts.next(), parts.next(), parts.next()) else {
-                return Err(format!("names.txt:{}: expected `<wiki address> <NL name>` or `<wiki address> -`", n + 1));
+            let (Some(address), Some(name), None) = (parts.next(), parts.next(), parts.next())
+            else {
+                return Err(format!(
+                    "names.txt:{}: expected `<wiki address> <NL name>` or `<wiki address> -`",
+                    n + 1
+                ));
             };
-            if names.insert(address.to_string(), name.to_string()).is_some() {
+            if names
+                .insert(address.to_string(), name.to_string())
+                .is_some()
+            {
                 return Err(format!("names.txt:{}: `{address}` is listed twice", n + 1));
             }
         }
-        Ok(Overrides { names, used: Default::default() })
+        Ok(Overrides {
+            names,
+            used: Default::default(),
+        })
     }
 
     pub fn get(&self, address: &str) -> Option<Override<'_>> {
         let name = self.names.get(address)?;
         self.used.borrow_mut().insert(address.to_string());
-        Some(if name == "-" { Override::Skip } else { Override::Name(name) })
+        Some(if name == "-" {
+            Override::Skip
+        } else {
+            Override::Name(name)
+        })
     }
 
     /// The entries that matched nothing, to report: the wiki renamed or
     /// removed what they name.
     pub fn unused(&self) -> Vec<String> {
         let used = self.used.borrow();
-        self.names.keys().filter(|k| !used.contains(*k)).cloned().collect()
+        self.names
+            .keys()
+            .filter(|k| !used.contains(*k))
+            .cloned()
+            .collect()
     }
 }
 
@@ -226,7 +317,13 @@ mod tests {
         assert_eq!(screaming("DMG_BURN"), "DMG_BURN");
         assert_eq!(screaming("kRenderFxNone"), "K_RENDER_FX_NONE");
         assert_eq!(screaming("SNDLVL_100dB"), "SNDLVL_100DB");
-        assert!(is_cname("NPC") && is_cname("Entity") && is_cname("MAX_HP") && !is_cname("DTree_Node") && !is_cname("bf_read"));
+        assert!(
+            is_cname("NPC")
+                && is_cname("Entity")
+                && is_cname("MAX_HP")
+                && !is_cname("DTree_Node")
+                && !is_cname("bf_read")
+        );
         assert!(is_lname("get_pos") && !is_lname("end") && !is_lname("GetPos"));
     }
 }

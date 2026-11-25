@@ -55,7 +55,13 @@ pub fn dump_tree(node: &SyntaxNode, options: DumpOptions) -> String {
             WalkEvent::Enter(element) => {
                 match &element {
                     rowan::NodeOrToken::Node(n) => {
-                        let _ = writeln!(out, "{}{:?}@{:?}", "  ".repeat(depth), n.kind(), n.text_range());
+                        let _ = writeln!(
+                            out,
+                            "{}{:?}@{:?}",
+                            "  ".repeat(depth),
+                            n.kind(),
+                            n.text_range()
+                        );
                     }
                     rowan::NodeOrToken::Token(t) => {
                         let skip = options.skip_trivia
@@ -97,7 +103,11 @@ pub fn dump_diagnostics(source: &str, diagnostics: &[Diagnostic]) -> String {
             Severity::Error => "error",
             Severity::Warning => "warning",
         };
-        let _ = writeln!(out, "{severity}@{:?} {}:{}: {}", d.range, lc.line, lc.col, d.message);
+        let _ = writeln!(
+            out,
+            "{severity}@{:?} {}:{}: {}",
+            d.range, lc.line, lc.col, d.message
+        );
     }
     out
 }

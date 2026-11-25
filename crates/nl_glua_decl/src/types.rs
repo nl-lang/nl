@@ -23,7 +23,11 @@ pub struct TypeNames<'a> {
 #[derive(Debug, PartialEq)]
 enum Wiki {
     /// `name`, `name{Tag}`, `name<A, B>`.
-    Named { name: String, tag: Option<String>, args: Vec<Wiki> },
+    Named {
+        name: String,
+        tag: Option<String>,
+        args: Vec<Wiki>,
+    },
     Union(Vec<Wiki>),
 }
 
@@ -54,16 +58,24 @@ impl Parser<'_> {
                 break;
             }
         }
-        if parts.len() == 1 { parts.pop().unwrap_or(Wiki::Union(Vec::new())) } else { Wiki::Union(parts) }
+        if parts.len() == 1 {
+            parts.pop().unwrap_or(Wiki::Union(Vec::new()))
+        } else {
+            Wiki::Union(parts)
+        }
     }
 
     fn atom(&mut self) -> Wiki {
         self.skip_ws();
         let start = self.i;
-        while self.peek().is_some_and(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.') {
+        while self
+            .peek()
+            .is_some_and(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.')
+        {
             self.i += 1;
         }
-        let name = String::from_utf8_lossy(self.s.get(start..self.i).unwrap_or_default()).to_string();
+        let name =
+            String::from_utf8_lossy(self.s.get(start..self.i).unwrap_or_default()).to_string();
         let mut tag = None;
         let mut args = Vec::new();
         self.skip_ws();
@@ -74,7 +86,11 @@ impl Parser<'_> {
                 while self.peek().is_some_and(|c| c != b'}') {
                     self.i += 1;
                 }
-                tag = Some(String::from_utf8_lossy(self.s.get(t0..self.i).unwrap_or_default()).trim().to_string());
+                tag = Some(
+                    String::from_utf8_lossy(self.s.get(t0..self.i).unwrap_or_default())
+                        .trim()
+                        .to_string(),
+                );
                 self.i += 1;
             }
             Some(b'<') => {
@@ -99,7 +115,11 @@ impl Parser<'_> {
 }
 
 fn parse(s: &str) -> Wiki {
-    Parser { s: s.trim().as_bytes(), i: 0 }.union()
+    Parser {
+        s: s.trim().as_bytes(),
+        i: 0,
+    }
+    .union()
 }
 
 impl TypeNames<'_> {
@@ -143,13 +163,30 @@ impl TypeNames<'_> {
                 "userdata" => "Userdata".to_string(),
                 "table" => match args.as_slice() {
                     [v] => format!("[{}]", self.wiki(v).unwrap_or_else(|| "any".to_string())),
-                    [k, v] => format!("{{[{}]: {}}}", self.wiki(k).unwrap_or_else(|| "any".to_string()), self.wiki(v).unwrap_or_else(|| "any".to_string())),
+                    [k, v] => format!(
+                        "{{[{}]: {}}}",
+                        self.wiki(k).unwrap_or_else(|| "any".to_string()),
+                        self.wiki(v).unwrap_or_else(|| "any".to_string())
+                    ),
                     _ => "Table".to_string(),
                 },
                 // A panel of a derma class.
-                "Panel" => tag.as_ref().and_then(|t| self.classes.get(t)).cloned().unwrap_or_else(|| self.classes.get("Panel").cloned().unwrap_or_else(|| "any".to_string())),
+                "Panel" => tag
+                    .as_ref()
+                    .and_then(|t| self.classes.get(t))
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        self.classes
+                            .get("Panel")
+                            .cloned()
+                            .unwrap_or_else(|| "any".to_string())
+                    }),
                 n if n.starts_with("Structures/") => "Table".to_string(),
-                n => self.classes.get(n).cloned().unwrap_or_else(|| "any".to_string()),
+                n => self
+                    .classes
+                    .get(n)
+                    .cloned()
+                    .unwrap_or_else(|| "any".to_string()),
             }),
         }
     }
@@ -161,7 +198,11 @@ pub fn optional(t: &str) -> String {
         return t.to_string();
     }
     // A union, and a signature whose `?` would apply to its result.
-    if t.contains(" | ") || t.starts_with("Function(") { format!("({t})?") } else { format!("{t}?") }
+    if t.contains(" | ") || t.starts_with("Function(") {
+        format!("({t})?")
+    } else {
+        format!("{t}?")
+    }
 }
 
 #[cfg(test)]
@@ -172,14 +213,25 @@ mod tests {
     fn optional_types() {
         assert_eq!(optional("Number"), "Number?");
         assert_eq!(optional("Number | String"), "(Number | String)?");
-        assert_eq!(optional("Function(a: Number): Table"), "(Function(a: Number): Table)?");
+        assert_eq!(
+            optional("Function(a: Number): Table"),
+            "(Function(a: Number): Table)?"
+        );
         assert_eq!(optional("any"), "any");
     }
 
     #[test]
     fn wiki_types() {
-        let classes: BTreeMap<String, String> =
-            [("Entity", "Entity"), ("Player", "Player"), ("Panel", "Panel"), ("DFrame", "DFrame"), ("File", "FileHandle")].iter().map(|(a, b)| (a.to_string(), b.to_string())).collect();
+        let classes: BTreeMap<String, String> = [
+            ("Entity", "Entity"),
+            ("Player", "Player"),
+            ("Panel", "Panel"),
+            ("DFrame", "DFrame"),
+            ("File", "FileHandle"),
+        ]
+        .iter()
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .collect();
         let t = TypeNames { classes: &classes };
         for (wiki, nl) in [
             ("number", "Number"),

@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use crate::*;
 #[allow(unused_imports)]
 use crate::decl::prelude_files;
+use crate::*;
 
 /// Accepts every import, with every name a variable.
 struct AnyImports;
@@ -21,11 +21,18 @@ fn run_dir() -> PathBuf {
 /// (`tests/run/decl/`), which its programs are compiled with.
 fn suite_declarations() -> Declarations {
     let mut files = prelude_files();
-    let mut paths: Vec<PathBuf> = std::fs::read_dir(run_dir().join("decl")).unwrap().map(|e| e.unwrap().path()).filter(|p| p.to_string_lossy().ends_with(".d.nl")).collect();
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(run_dir().join("decl"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.to_string_lossy().ends_with(".d.nl"))
+        .collect();
     paths.sort();
     for p in paths {
         let src = std::fs::read_to_string(&p).unwrap();
-        files.push((p.display().to_string(), nl_syntax::parse_decl_file(&src).syntax()));
+        files.push((
+            p.display().to_string(),
+            nl_syntax::parse_decl_file(&src).syntax(),
+        ));
     }
     Declarations::load(&files).0
 }
@@ -34,11 +41,19 @@ fn suite_declarations() -> Declarations {
 /// declarations.
 fn suite_errors(src: &str) -> Vec<(u32, String)> {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let decls = suite_declarations();
     let res = resolve_with(&parse.syntax(), &AnyImports, &decls);
     let index = nl_syntax::LineIndex::new(src);
-    res.diagnostics.iter().filter(|d| d.error && d.code != "not-exported").map(|d| (index.line_col(src, d.range.start()).line, d.message.clone())).collect()
+    res.diagnostics
+        .iter()
+        .filter(|d| d.error && d.code != "not-exported")
+        .map(|d| (index.line_col(src, d.range.start()).line, d.message.clone()))
+        .collect()
 }
 
 /// The files of tests/run, for the analyzer: an import path is found
@@ -51,8 +66,14 @@ struct RunImports;
 impl RunImports {
     fn find(from: Option<&str>, path: &str) -> Option<String> {
         let near = from.and_then(|f| Path::new(f).parent().map(|d| d.join(format!("{path}.nl"))));
-        let top = [run_dir().join(format!("{path}.nl")), run_dir().join("reject").join(format!("{path}.nl"))];
-        near.into_iter().chain(top).find(|c| c.is_file()).map(|c| c.to_string_lossy().into_owned())
+        let top = [
+            run_dir().join(format!("{path}.nl")),
+            run_dir().join("reject").join(format!("{path}.nl")),
+        ];
+        near.into_iter()
+            .chain(top)
+            .find(|c| c.is_file())
+            .map(|c| c.to_string_lossy().into_owned())
     }
 }
 
@@ -64,14 +85,22 @@ impl ImportProvider for RunImports {
     }
 
     fn primitive_methods(&self, path: &str) -> Vec<PrimMethod> {
-        let scan = |name: &str| Some(scan_file(&nl_syntax::parse(&std::fs::read_to_string(name).ok()?).syntax()));
+        let scan = |name: &str| {
+            Some(scan_file(
+                &nl_syntax::parse(&std::fs::read_to_string(name).ok()?).syntax(),
+            ))
+        };
         primitive_methods_through(None, path, &Self::find, &scan)
     }
 }
 
 fn errors(src: &str) -> Vec<(u32, String)> {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let res = resolve(&parse.syntax(), &AnyImports);
     let index = nl_syntax::LineIndex::new(src);
     res.diagnostics
@@ -88,18 +117,41 @@ fn analyzer_diagnostics(src: &str) -> Vec<(u32, &'static str, String, bool)> {
     analyzer_diagnostics_with(src, &prelude_declarations())
 }
 
-fn analyzer_diagnostics_with(src: &str, decls: &Declarations) -> Vec<(u32, &'static str, String, bool)> {
+fn analyzer_diagnostics_with(
+    src: &str,
+    decls: &Declarations,
+) -> Vec<(u32, &'static str, String, bool)> {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let root = parse.syntax();
     let res = resolve_with(&root, &RunImports, decls);
     let index = nl_syntax::LineIndex::new(src);
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
-    let mut out: Vec<(u32, &'static str, String, bool)> = res.diagnostics.iter().filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code, d.message.clone(), d.error)).collect();
+    let mut out: Vec<(u32, &'static str, String, bool)> = res
+        .diagnostics
+        .iter()
+        .filter(|d| d.code != "not-exported")
+        .map(|d| (line(d.range), d.code, d.message.clone(), d.error))
+        .collect();
     if !res.has_errors() {
-        let opts = AnalyzeOptions { static_resolution: true, decls: Some(decls), lints: true, imports: Some(&RunImports), record: false };
+        let opts = AnalyzeOptions {
+            static_resolution: true,
+            decls: Some(decls),
+            lints: true,
+            imports: Some(&RunImports),
+            record: false,
+        };
         let analysis = analyze(&root, &res, &opts);
-        out.extend(analysis.diagnostics.iter().map(|d| (line(d.range), d.code, d.message.clone(), d.error)));
+        out.extend(
+            analysis
+                .diagnostics
+                .iter()
+                .map(|d| (line(d.range), d.code, d.message.clone(), d.error)),
+        );
     }
     out
 }
@@ -107,15 +159,26 @@ fn analyzer_diagnostics_with(src: &str, decls: &Declarations) -> Vec<(u32, &'sta
 /// The analyzer's errors on a program of the conformance suite, with its
 /// declarations.
 fn suite_analyzer_errors(src: &str) -> Vec<(u32, String)> {
-    analyzer_diagnostics_with(src, &suite_declarations()).into_iter().filter(|d| d.3).map(|d| (d.0, d.2)).collect()
+    analyzer_diagnostics_with(src, &suite_declarations())
+        .into_iter()
+        .filter(|d| d.3)
+        .map(|d| (d.0, d.2))
+        .collect()
 }
 
 fn analyzer_errors(src: &str) -> Vec<(u32, String)> {
-    analyzer_diagnostics(src).into_iter().filter(|d| d.3).map(|d| (d.0, d.2)).collect()
+    analyzer_diagnostics(src)
+        .into_iter()
+        .filter(|d| d.3)
+        .map(|d| (d.0, d.2))
+        .collect()
 }
 
 fn analyzer_codes(src: &str) -> Vec<(u32, &'static str)> {
-    analyzer_diagnostics(src).into_iter().map(|d| (d.0, d.1)).collect()
+    analyzer_diagnostics(src)
+        .into_iter()
+        .map(|d| (d.0, d.1))
+        .collect()
 }
 
 #[test]
@@ -143,7 +206,10 @@ fn const_hoisting() {
     assert_eq!(errors("if true\n  print X\nend\nconst X = 1\n").len(), 1);
     assert_eq!(errors("const X = X\n").len(), 1);
     // Redeclared in its block: not hoisted, so the read sees nothing.
-    assert_eq!(errors("fn f\n  X\nend\nconst X = 1\nconst X = 2\n").len(), 1);
+    assert_eq!(
+        errors("fn f\n  X\nend\nconst X = 1\nconst X = 2\n").len(),
+        1
+    );
     // `let` is not hoisted.
     assert_eq!(errors("fn f\n  x\nend\nlet x = 1\n").len(), 1);
 }
@@ -179,10 +245,16 @@ fn reject_programs() {
             continue;
         }
         let src = std::fs::read_to_string(&path).unwrap();
-        let expect = src.lines().position(|l| l.trim_start().starts_with("# expect-error:")).unwrap() as u32 + 2;
+        let expect = src
+            .lines()
+            .position(|l| l.trim_start().starts_with("# expect-error:"))
+            .unwrap() as u32
+            + 2;
         let errs = suite_analyzer_errors(&src);
         if !errs.iter().any(|(line, _)| *line == expect) {
-            failures.push(format!("{name}: expected an error on line {expect}, got {errs:?}"));
+            failures.push(format!(
+                "{name}: expected an error on line {expect}, got {errs:?}"
+            ));
         }
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
@@ -214,7 +286,10 @@ fn prelude_declarations_are_clean() {
     assert!(errs.is_empty(), "{}", errs.join("\n"));
     let (decls, diags) = Declarations::load(&crate::decl::prelude_files());
     assert!(diags.is_empty(), "{diags:?}");
-    for name in ["Number", "String", "Table", "IO", "OS", "Event", "Worker", "Task", "Regex", "Time", "Duration", "print", "raise", "File"] {
+    for name in [
+        "Number", "String", "Table", "IO", "OS", "Event", "Worker", "Task", "Regex", "Time",
+        "Duration", "print", "raise", "File",
+    ] {
         assert!(decls.lookup(name).is_some(), "{name} is not declared");
     }
 }
@@ -222,20 +297,50 @@ fn prelude_declarations_are_clean() {
 // ---- the analyzer ----------------------------------------------------------
 
 fn has_code(src: &str, line: u32, code: &str) -> bool {
-    analyzer_codes(src).iter().any(|(l, c)| *l == line && *c == code)
+    analyzer_codes(src)
+        .iter()
+        .any(|(l, c)| *l == line && *c == code)
 }
 
 #[test]
 fn literal_mismatches_are_errors() {
     assert!(has_code("let n: Number = \"text\"\n", 1, "type-mismatch"));
-    assert!(has_code("let n: Number = 1\nn = \"s\"\n", 2, "type-mismatch"));
+    assert!(has_code(
+        "let n: Number = 1\nn = \"s\"\n",
+        2,
+        "type-mismatch"
+    ));
     assert!(has_code("let f = fn 1 end\nf = 5\n", 2, "type-mismatch"));
-    assert!(has_code("fn half(n: Number)\n  n / 2\nend\nhalf(\"x\")\n", 4, "type-mismatch"));
-    assert!(has_code("fn half(n: Number)\n  n / 2\nend\nhalf()\n", 4, "missing-argument"));
-    assert!(has_code("struct P\n  x: Number\nend\nlet p = P { y: 1 }\n", 4, "unknown-field"));
-    assert!(has_code("struct P\n  x: Number\nend\nlet p = P { x: \"s\" }\n", 4, "type-mismatch"));
-    assert!(has_code("fn f(a, b)\n  a\nend\nf(1, k: 2)\n", 4, "keyed-args-rejected"));
-    assert!(has_code("fn f(a)\n  a\nend\nf(1, k: 2)\n", 4, "keyed-args-dropped"));
+    assert!(has_code(
+        "fn half(n: Number)\n  n / 2\nend\nhalf(\"x\")\n",
+        4,
+        "type-mismatch"
+    ));
+    assert!(has_code(
+        "fn half(n: Number)\n  n / 2\nend\nhalf()\n",
+        4,
+        "missing-argument"
+    ));
+    assert!(has_code(
+        "struct P\n  x: Number\nend\nlet p = P { y: 1 }\n",
+        4,
+        "unknown-field"
+    ));
+    assert!(has_code(
+        "struct P\n  x: Number\nend\nlet p = P { x: \"s\" }\n",
+        4,
+        "type-mismatch"
+    ));
+    assert!(has_code(
+        "fn f(a, b)\n  a\nend\nf(1, k: 2)\n",
+        4,
+        "keyed-args-rejected"
+    ));
+    assert!(has_code(
+        "fn f(a)\n  a\nend\nf(1, k: 2)\n",
+        4,
+        "keyed-args-dropped"
+    ));
     // `any` opts out, in both directions.
     assert!(analyzer_errors("let v: any = \"text\"\nlet n: Number = v\n").is_empty());
     assert!(analyzer_errors("let n = 5\nn = \"s\"\nprint n\n").is_empty());
@@ -252,17 +357,37 @@ fn members_of_certain_nil() {
 fn narrowing_and_inference() {
     // `is` narrows; the else branch excludes.
     let src = "fn f(v: Number | String)\n  if v is Number\n    v + 1\n  else\n    v <> \"!\"\n  end\nend\n";
-    assert!(analyzer_errors(src).is_empty(), "{:?}", analyzer_errors(src));
+    assert!(
+        analyzer_errors(src).is_empty(),
+        "{:?}",
+        analyzer_errors(src)
+    );
     // A `let` without annotation that is never assigned has its initializer's type.
-    assert!(has_code("let s = \"x\"\nlet n: Number = s\n", 2, "type-mismatch"));
+    assert!(has_code(
+        "let s = \"x\"\nlet n: Number = s\n",
+        2,
+        "type-mismatch"
+    ));
     // Inferred return types reach calls written before the declaration (hoisting).
-    assert!(has_code("let n: Number = name()\nfn name\n  \"x\"\nend\n", 1, "type-mismatch"));
+    assert!(has_code(
+        "let n: Number = name()\nfn name\n  \"x\"\nend\n",
+        1,
+        "type-mismatch"
+    ));
     // `unknown` must be narrowed before use.
-    assert!(has_code("let u: unknown = 5\nlet n: Number = u\n", 2, "unknown-not-narrowed"));
+    assert!(has_code(
+        "let u: unknown = 5\nlet n: Number = u\n",
+        2,
+        "unknown-not-narrowed"
+    ));
     assert!(analyzer_errors("let u: unknown = 5\nif u is Number\n  print u + 1\nend\n").is_empty());
     // A record literal is a `{…}` type, a list a `[T]`.
     assert!(analyzer_errors("type P = {x: Number, y: Number}\nlet p: P = {x: 1, y: 2}\nlet l: [Number] = [1, 2]\nprint p, l\n").is_empty());
-    assert!(has_code("type P = {x: Number, y: Number}\nlet p: P = {x: 1}\n", 2, "type-mismatch"));
+    assert!(has_code(
+        "type P = {x: Number, y: Number}\nlet p: P = {x: 1}\n",
+        2,
+        "type-mismatch"
+    ));
 }
 
 /// A narrowing of an enclosing function's binding holds inside a closure
@@ -270,10 +395,18 @@ fn narrowing_and_inference() {
 #[test]
 fn closures_drop_stale_narrowing() {
     let src = "let x: Number? = nil\nif x == nil\n  let g = fn\n    case x\n    when is Number\n      print \"number\"\n    else\n      print \"none\"\n    end\n  end\n  x = 5\n  g()\nend\n";
-    assert!(!has_code(src, 5, "unreachable-when"), "{:?}", analyzer_codes(src));
+    assert!(
+        !has_code(src, 5, "unreachable-when"),
+        "{:?}",
+        analyzer_codes(src)
+    );
     // Never assigned: the narrowing holds, and the clause is unreachable.
     let src = "let x: Number? = nil\nif x == nil\n  let g = fn\n    case x\n    when is Number\n      print \"number\"\n    else\n      print \"none\"\n    end\n  end\n  g()\nend\n";
-    assert!(has_code(src, 5, "unreachable-when"), "{:?}", analyzer_codes(src));
+    assert!(
+        has_code(src, 5, "unreachable-when"),
+        "{:?}",
+        analyzer_codes(src)
+    );
 }
 
 /// A struct's parent may be named through an alias, as the lowering and
@@ -282,24 +415,53 @@ fn closures_drop_stale_narrowing() {
 #[test]
 fn alias_parents() {
     let src = "struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\nend\nlet c = C { x: 1 }\nlet s: String = c.x\n";
-    assert!(!has_code(src, 7, "unknown-field"), "{:?}", analyzer_codes(src));
+    assert!(
+        !has_code(src, 7, "unknown-field"),
+        "{:?}",
+        analyzer_codes(src)
+    );
     assert!(has_code(src, 8, "type-mismatch"));
     // The alias below the struct.
     let src = "struct C : Q\nend\nstruct P\n  x: Number\nend\ntype Q = P\nprint C { x: 1 }\n";
-    assert!(!has_code(src, 7, "unknown-field"), "{:?}", analyzer_codes(src));
-    assert_eq!(errors("struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n").len(), 1);
-    assert!(has_code("struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n", 6, "redeclared-field"));
+    assert!(
+        !has_code(src, 7, "unknown-field"),
+        "{:?}",
+        analyzer_codes(src)
+    );
+    assert_eq!(
+        errors("struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n").len(),
+        1
+    );
+    assert!(has_code(
+        "struct P\n  x: Number\nend\ntype Q = P\nstruct C : Q\n  x: String\nend\n",
+        6,
+        "redeclared-field"
+    ));
 }
 
 /// An alias that refers to itself is an error of the lowering; the
 /// analyzer neither loops on it nor reports a type it cannot decide.
 #[test]
 fn cyclic_aliases_are_any() {
-    for src in ["type A = ~A\nlet x: A = 1\nprint x\n", "type A = B\ntype B = A\nfn f(x: A): B\n  x\nend\nprint f(1)\n", "type A = [A] | Number\nlet x: A = \"s\"\nprint x\n"] {
-        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != "type-mismatch" && *c != "return-type"), "{src}: {:?}", analyzer_codes(src));
+    for src in [
+        "type A = ~A\nlet x: A = 1\nprint x\n",
+        "type A = B\ntype B = A\nfn f(x: A): B\n  x\nend\nprint f(1)\n",
+        "type A = [A] | Number\nlet x: A = \"s\"\nprint x\n",
+    ] {
+        assert!(
+            analyzer_codes(src)
+                .iter()
+                .all(|(_, c)| *c != "type-mismatch" && *c != "return-type"),
+            "{src}: {:?}",
+            analyzer_codes(src)
+        );
     }
     // A record in between is a sound recursive type.
-    assert!(has_code("type Node = {next: Node?, v: Number}\nlet n: Node = {next: nil, v: \"s\"}\n", 2, "type-mismatch"));
+    assert!(has_code(
+        "type Node = {next: Node?, v: Number}\nlet n: Node = {next: nil, v: \"s\"}\n",
+        2,
+        "type-mismatch"
+    ));
 }
 
 #[test]
@@ -307,7 +469,13 @@ fn exhaustiveness_and_unreachable_clauses() {
     let src = "enum D\n  A\n  B\nend\nfn f(d: D)\n  case d\n  when D.A\n    1\n  end\nend\n";
     assert!(has_code(src, 6, "non-exhaustive"));
     let src = "struct C\n  r: Number\nend\nstruct R\n  w: Number\nend\ntype S = C | R\nfn f(s: S)\n  case s\n  when C {r}\n    r\n  when R {w}\n    w\n  end\nend\n";
-    assert!(analyzer_codes(src).iter().all(|(_, c)| *c != "non-exhaustive"), "{:?}", analyzer_codes(src));
+    assert!(
+        analyzer_codes(src)
+            .iter()
+            .all(|(_, c)| *c != "non-exhaustive"),
+        "{:?}",
+        analyzer_codes(src)
+    );
     let src = "fn f(v: Number | String)\n  case v\n  when is Number\n    1\n  when is String\n    2\n  when is String\n    3\n  end\nend\n";
     assert!(has_code(src, 7, "unreachable-when"));
     let src = "try\n  print 1\ncatch e: Exception\n  print 2\ncatch\n  print 3\nend\n";
@@ -316,12 +484,24 @@ fn exhaustiveness_and_unreachable_clauses() {
 
 #[test]
 fn lints() {
-    assert!(has_code("let a = 1\ndo\n  let a = 2\n  print a\nend\nprint a\n", 3, "shadowing"));
+    assert!(has_code(
+        "let a = 1\ndo\n  let a = 2\n  print a\nend\nprint a\n",
+        3,
+        "shadowing"
+    ));
     assert!(has_code("let unused = 1\n", 1, "unused-binding"));
     assert!(has_code("global Score = 1\nprint Score\n", 2, "global-use"));
     assert!(has_code("let v = 1\nprint v!\n", 2, "redundant-bang"));
-    assert!(has_code("fn reg(cb: Function)\n  cb\nend\nfn cb\n  1\nend\nreg cb\n", 7, "fn-kind-argument"));
-    assert!(has_code("struct S\n  x: Number\nend\nfn S.m\n  1\nend\ninterface I\n  fn m: Number\nend\ninterface I for S\n  fn m: Number\n    2\n  end\nend\n", 11, "method-replaced"));
+    assert!(has_code(
+        "fn reg(cb: Function)\n  cb\nend\nfn cb\n  1\nend\nreg cb\n",
+        7,
+        "fn-kind-argument"
+    ));
+    assert!(has_code(
+        "struct S\n  x: Number\nend\nfn S.m\n  1\nend\ninterface I\n  fn m: Number\nend\ninterface I for S\n  fn m: Number\n    2\n  end\nend\n",
+        11,
+        "method-replaced"
+    ));
 }
 
 #[test]
@@ -331,17 +511,39 @@ fn lua_path_to_own_function() {
     // function, a function assigned to a variable, and a path on a line of
     // its own.
     assert!(has_code("pub fn f(x)\n  :f(x)\nend\n", 2, code));
-    assert!(has_code("fn f(x)\n  if x\n    print :f(x).y\n  end\nend\n", 3, code));
-    assert!(has_code("fn f\n  let g = fn(y) :f(y) end\n  g\nend\n", 2, code));
-    assert!(has_code("module M\n  fn f(x)\n    :f(x)\n  end\nend\n", 3, code));
+    assert!(has_code(
+        "fn f(x)\n  if x\n    print :f(x).y\n  end\nend\n",
+        3,
+        code
+    ));
+    assert!(has_code(
+        "fn f\n  let g = fn(y) :f(y) end\n  g\nend\n",
+        2,
+        code
+    ));
+    assert!(has_code(
+        "module M\n  fn f(x)\n    :f(x)\n  end\nend\n",
+        3,
+        code
+    ));
     assert!(has_code("let f = nil\nf = fn(x)\n  :f(x)\nend\n", 3, code));
     assert!(has_code("fn f\n  :f\n  1\nend\n", 2, code));
     // The global through `_G`; the function's own value; a `let` whose
     // initializer cannot see the name, so `:g` is the global; another
     // function's name.
-    let quiet = ["fn f(x)\n  :_G.f(x)\nend\n", "fn f\n  let me = :f\n  me\nend\n", "fn f\n  :f\nend\n", "let g = fn(x)\n  :g(x)\nend\nprint g\n", "fn f(x)\n  x\nend\nfn h(x)\n  :f(x)\nend\n"];
+    let quiet = [
+        "fn f(x)\n  :_G.f(x)\nend\n",
+        "fn f\n  let me = :f\n  me\nend\n",
+        "fn f\n  :f\nend\n",
+        "let g = fn(x)\n  :g(x)\nend\nprint g\n",
+        "fn f(x)\n  x\nend\nfn h(x)\n  :f(x)\nend\n",
+    ];
     for src in quiet {
-        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != code), "{src}: {:?}", analyzer_codes(src));
+        assert!(
+            analyzer_codes(src).iter().all(|(_, c)| *c != code),
+            "{src}: {:?}",
+            analyzer_codes(src)
+        );
     }
 }
 
@@ -364,7 +566,15 @@ fn postfix_if_tail_is_a_value() {
 #[test]
 fn raw_string_escapes() {
     let code = "raw-escape";
-    for src in ["print 'a\\nb'\n", "print 'tab\\t'\n", "print 'nul\\0'\n", "print '\\x41'\n", "print '\\u{48}'\n", "print 'say \\\"hi\\\"'\n", "print 'it\\'s\\n'\n"] {
+    for src in [
+        "print 'a\\nb'\n",
+        "print 'tab\\t'\n",
+        "print 'nul\\0'\n",
+        "print '\\x41'\n",
+        "print '\\u{48}'\n",
+        "print 'say \\\"hi\\\"'\n",
+        "print 'it\\'s\\n'\n",
+    ] {
         assert!(has_code(src, 1, code), "{src}: {:?}", analyzer_codes(src));
     }
     // The raw escapes themselves, `\\n` (a backslash and an n, spelled out),
@@ -382,32 +592,65 @@ fn raw_string_escapes() {
         "print '%d+'\n",
     ];
     for src in quiet {
-        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != code), "{src}: {:?}", analyzer_codes(src));
+        assert!(
+            analyzer_codes(src).iter().all(|(_, c)| *c != code),
+            "{src}: {:?}",
+            analyzer_codes(src)
+        );
     }
 }
 
 #[test]
 fn library_keyed_options() {
     // The String library declares its keyed options as records.
-    assert!(analyzer_errors("let p = \"a,b\".split(\",\", keep_empty: true, limit: 2)\nprint p\n").is_empty());
-    assert!(has_code("let p = \"a,b\".split(\",\", keep: true)\nprint p\n", 1, "unknown-keyed-arg"));
-    assert!(has_code("let p = \"a,b\".split(\",\", limit: \"2\")\nprint p\n", 1, "type-mismatch"));
+    assert!(
+        analyzer_errors("let p = \"a,b\".split(\",\", keep_empty: true, limit: 2)\nprint p\n")
+            .is_empty()
+    );
+    assert!(has_code(
+        "let p = \"a,b\".split(\",\", keep: true)\nprint p\n",
+        1,
+        "unknown-keyed-arg"
+    ));
+    assert!(has_code(
+        "let p = \"a,b\".split(\",\", limit: \"2\")\nprint p\n",
+        1,
+        "type-mismatch"
+    ));
     assert!(analyzer_errors("let s = \"{a}\".fmt(a: 1, b: 2)\nprint s\n").is_empty());
-    assert!(has_code("let n: Number = \"{a}\".fmt(a: 1)\nprint n\n", 1, "type-mismatch"));
+    assert!(has_code(
+        "let n: Number = \"{a}\".fmt(a: 1)\nprint n\n",
+        1,
+        "type-mismatch"
+    ));
 }
 
 /// The members resolved to functions of `Table` ([`MemberHint::TableFn`]),
 /// by line, with the hints the lowering gets in the mode.
 fn table_fns(src: &str, static_resolution: bool) -> Vec<(u32, String)> {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let decls = prelude_declarations();
     let root = parse.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let opts = AnalyzeOptions { static_resolution, decls: Some(&decls), lints: true, imports: None, record: false };
+    let opts = AnalyzeOptions {
+        static_resolution,
+        decls: Some(&decls),
+        lints: true,
+        imports: None,
+        record: false,
+    };
     let analysis = analyze(&root, &res, &opts);
-    let hints = if static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() };
+    let hints = if static_resolution {
+        analysis.hints
+    } else {
+        analysis.hints.without_static_resolution()
+    };
     let index = nl_syntax::LineIndex::new(src);
     let mut out: Vec<(u32, String)> = hints
         .members_declared
@@ -447,20 +690,53 @@ print u.map(fn(x) x end)
     // a function defined in the file, `!` and a literal; not the options
     // of `**opts`, a record, a constructor (`range`), `len` or an untyped
     // value. The same in both modes: nothing else finds them at runtime.
-    let want: Vec<(u32, String)> = [(2, "filter"), (2, "map"), (4, "keys"), (6, "size"), (16, "first"), (16, "second"), (16, "sum")].iter().map(|(l, k)| (*l, k.to_string())).collect();
+    let want: Vec<(u32, String)> = [
+        (2, "filter"),
+        (2, "map"),
+        (4, "keys"),
+        (6, "size"),
+        (16, "first"),
+        (16, "second"),
+        (16, "sum"),
+    ]
+    .iter()
+    .map(|(l, k)| (*l, k.to_string()))
+    .collect();
     assert_eq!(table_fns(src, true), want);
     assert_eq!(table_fns(src, false), want);
     // A member assigned, also by a compound assignment, names the function
     // as a read does, so the store is refused; a key is written in brackets.
     let place = "let t: Table = {}\nt.count = 1\nt.count += 1\nt.map ??= 2\n";
     assert!(table_fns(place, true).is_empty());
-    let refused: Vec<u32> = analyzer_codes(place).into_iter().filter(|(_, c)| *c == "table-method-assign").map(|(l, _)| l).collect();
+    let refused: Vec<u32> = analyzer_codes(place)
+        .into_iter()
+        .filter(|(_, c)| *c == "table-method-assign")
+        .map(|(l, _)| l)
+        .collect();
     assert_eq!(refused, vec![2, 3, 4]);
-    assert!(analyzer_errors("let t: Table = {}\nt[\"count\"] = 1\nt[\"count\"] += 1\nprint t[\"count\"]\n").is_empty());
+    assert!(
+        analyzer_errors(
+            "let t: Table = {}\nt[\"count\"] = 1\nt[\"count\"] += 1\nprint t[\"count\"]\n"
+        )
+        .is_empty()
+    );
     // The arguments are checked against the function, receiver first.
-    assert!(has_code("let xs: [Number] = [1]\nprint xs.take(\"2\")\n", 2, "type-mismatch"));
-    assert!(has_code("fn Table.second\n  self[2]\nend\nprint Table.second(5)\n", 4, "type-mismatch"));
-    assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nprint Table.second([1, 2]), [1, 2].second\n").is_empty());
+    assert!(has_code(
+        "let xs: [Number] = [1]\nprint xs.take(\"2\")\n",
+        2,
+        "type-mismatch"
+    ));
+    assert!(has_code(
+        "fn Table.second\n  self[2]\nend\nprint Table.second(5)\n",
+        4,
+        "type-mismatch"
+    ));
+    assert!(
+        analyzer_errors(
+            "fn Table.second\n  self[2]\nend\nprint Table.second([1, 2]), [1, 2].second\n"
+        )
+        .is_empty()
+    );
 }
 
 /// A member of a receiver typed `[T]`, `{[K]: V}` or `Table` that names a
@@ -477,24 +753,72 @@ fn unresolved_table_members() {
     assert_eq!(table_fns(src, true), vec![(2, "sum".to_string()); 3]);
     assert!(analyzer_errors(src).is_empty());
     // A union with a part that has no such function, or another one.
-    assert!(has_code("fn r(v: [Number] | String) v.reverse end\nprint r([1])\n", 1, "ambiguous-member"));
-    assert!(has_code("fn r(v: [Number] | String) v.reverse() end\nprint r([1])\n", 1, "ambiguous-member"));
-    assert!(has_code("struct P\n  x: Number\nend\nfn r(v: [Number] | P) v.sum end\nprint r([1])\n", 4, "ambiguous-member"));
+    assert!(has_code(
+        "fn r(v: [Number] | String) v.reverse end\nprint r([1])\n",
+        1,
+        "ambiguous-member"
+    ));
+    assert!(has_code(
+        "fn r(v: [Number] | String) v.reverse() end\nprint r([1])\n",
+        1,
+        "ambiguous-member"
+    ));
+    assert!(has_code(
+        "struct P\n  x: Number\nend\nfn r(v: [Number] | P) v.sum end\nprint r([1])\n",
+        4,
+        "ambiguous-member"
+    ));
     // Narrowed, or table parts that agree: resolved.
     assert!(analyzer_errors("fn r(v: [Number] | String)\n  if v is String\n    v.reverse\n  else\n    v.reverse\n  end\nend\nprint r([1])\n").is_empty());
-    assert!(analyzer_errors("fn r(v: [Number] | {[String]: Number}) v.size end\nprint r([1])\n").is_empty());
+    assert!(
+        analyzer_errors("fn r(v: [Number] | {[String]: Number}) v.size end\nprint r([1])\n")
+            .is_empty()
+    );
     // A name no function of `Table` has, on a list: reads, calls, `!`,
     // inferred lists; a function of `Table` that makes a table.
-    assert!(has_code("let xs: [Number] = [1]\nprint xs.second\n", 2, "unknown-table-member"));
-    assert!(has_code("let xs: [Number] = [1]\nprint xs.second(1)\n", 2, "unknown-table-member"));
-    assert!(has_code("let xs: [Number] = [1]\nprint xs.second!\n", 2, "unknown-table-member"));
-    assert!(has_code("let xs = [1, 2]\nprint xs.second\n", 2, "unknown-table-member"));
-    assert!(has_code("fn f(xs: [Number]?) xs?.second end\nprint f(nil)\n", 1, "unknown-table-member"));
-    assert!(has_code("let xs: [Number] = [1]\nprint xs.range\n", 2, "unknown-table-member"));
+    assert!(has_code(
+        "let xs: [Number] = [1]\nprint xs.second\n",
+        2,
+        "unknown-table-member"
+    ));
+    assert!(has_code(
+        "let xs: [Number] = [1]\nprint xs.second(1)\n",
+        2,
+        "unknown-table-member"
+    ));
+    assert!(has_code(
+        "let xs: [Number] = [1]\nprint xs.second!\n",
+        2,
+        "unknown-table-member"
+    ));
+    assert!(has_code(
+        "let xs = [1, 2]\nprint xs.second\n",
+        2,
+        "unknown-table-member"
+    ));
+    assert!(has_code(
+        "fn f(xs: [Number]?) xs?.second end\nprint f(nil)\n",
+        1,
+        "unknown-table-member"
+    ));
+    assert!(has_code(
+        "let xs: [Number] = [1]\nprint xs.range\n",
+        2,
+        "unknown-table-member"
+    ));
     // `n` of a rest table, whose count is not a key of it.
-    assert!(has_code("fn f(*a: [Number]) a.n end\nprint f(1)\n", 1, "unknown-table-member"));
+    assert!(has_code(
+        "fn f(*a: [Number]) a.n end\nprint f(1)\n",
+        1,
+        "unknown-table-member"
+    ));
     // Defined in the file, it is known.
-    assert!(analyzer_errors("fn Table.second\n  self[2]\nend\nlet xs: [Number] = [1]\nprint xs.second\n").is_empty());
+    assert!(
+        analyzer_errors(
+            "fn Table.second\n  self[2]\nend\nlet xs: [Number] = [1]\nprint xs.second\n"
+        )
+        .is_empty()
+    );
     // On a `Table` or a map another name is a key (`n` of what
     // `Table.pack` makes); the options of `**opts` and a record's fields
     // are their keys.
@@ -514,10 +838,26 @@ print f(1), g(sum: 2), r.sum
 /// function of `Table` is refused, as a read of it is the function.
 #[test]
 fn table_method_assignments() {
-    assert!(has_code("let m: {[String]: Number} = {}\nm.count = 1\n", 2, "table-method-assign"));
-    assert!(has_code("let xs: [Number] = []\nxs.map = 1\n", 2, "table-method-assign"));
-    assert!(has_code("let c: Table = {}\nc.count ??= 1\n", 2, "table-method-assign"));
-    assert!(has_code("let xs: [Number]? = []\nxs?.sum = 1\n", 2, "table-method-assign"));
+    assert!(has_code(
+        "let m: {[String]: Number} = {}\nm.count = 1\n",
+        2,
+        "table-method-assign"
+    ));
+    assert!(has_code(
+        "let xs: [Number] = []\nxs.map = 1\n",
+        2,
+        "table-method-assign"
+    ));
+    assert!(has_code(
+        "let c: Table = {}\nc.count ??= 1\n",
+        2,
+        "table-method-assign"
+    ));
+    assert!(has_code(
+        "let xs: [Number]? = []\nxs?.sum = 1\n",
+        2,
+        "table-method-assign"
+    ));
     // A record's field, a `**opts` option, a key that names no function.
     let fine = "\
 let r = {count: 1}
@@ -554,10 +894,21 @@ print maybe.foo
     assert_eq!(analyzer_errors(src), []);
     // An empty list given to a `Table` is a `Table` in the messages too;
     // undeclared, it is a list (not `[never]`).
-    let msgs: Vec<String> = analyzer_diagnostics("let w: Table = []\nw.count = 1\nlet u = []\nu.count = 0\n").into_iter().filter(|d| d.1 == "table-method-assign").map(|d| d.2).collect();
+    let msgs: Vec<String> =
+        analyzer_diagnostics("let w: Table = []\nw.count = 1\nlet u = []\nu.count = 0\n")
+            .into_iter()
+            .filter(|d| d.1 == "table-method-assign")
+            .map(|d| d.2)
+            .collect();
     assert_eq!(msgs.len(), 2, "{msgs:?}");
-    assert!(msgs[0].contains("on a value typed `Table`; write w[\"count\"]"), "{msgs:?}");
-    assert!(msgs[1].contains("on a list; write u[\"count\"]"), "{msgs:?}");
+    assert!(
+        msgs[0].contains("on a value typed `Table`; write w[\"count\"]"),
+        "{msgs:?}"
+    );
+    assert!(
+        msgs[1].contains("on a list; write u[\"count\"]"),
+        "{msgs:?}"
+    );
     assert!(!msgs.iter().any(|m| m.contains("never")), "{msgs:?}");
 }
 
@@ -571,10 +922,28 @@ lists_of_numbers_by_name[\"a\"] = [1]
 lists_of_numbers_by_name[\"a\"].count = 1
 print lists_of_numbers_by_name[\"a\"].foo
 ";
-    let msgs: Vec<(u32, &str, String)> = analyzer_diagnostics(src).into_iter().filter(|d| d.3).map(|d| (d.0, d.1, d.2)).collect();
-    assert_eq!(msgs.iter().map(|m| (m.0, m.1)).collect::<Vec<_>>(), [(3, "table-method-assign"), (4, "unknown-table-member")], "{msgs:?}");
-    assert!(msgs[0].2.contains("index the key with brackets, `[\"count\"]`, to use it as a key"), "{msgs:?}");
-    assert!(msgs[1].2.contains("read the key with brackets, `[\"foo\"]`"), "{msgs:?}");
+    let msgs: Vec<(u32, &str, String)> = analyzer_diagnostics(src)
+        .into_iter()
+        .filter(|d| d.3)
+        .map(|d| (d.0, d.1, d.2))
+        .collect();
+    assert_eq!(
+        msgs.iter().map(|m| (m.0, m.1)).collect::<Vec<_>>(),
+        [(3, "table-method-assign"), (4, "unknown-table-member")],
+        "{msgs:?}"
+    );
+    assert!(
+        msgs[0]
+            .2
+            .contains("index the key with brackets, `[\"count\"]`, to use it as a key"),
+        "{msgs:?}"
+    );
+    assert!(
+        msgs[1]
+            .2
+            .contains("read the key with brackets, `[\"foo\"]`"),
+        "{msgs:?}"
+    );
     assert!(!msgs.iter().any(|m| m.2.contains("x[")), "{msgs:?}");
 }
 
@@ -582,14 +951,46 @@ print lists_of_numbers_by_name[\"a\"].foo
 /// imported file defines) is refused at load time, so it is an error here.
 #[test]
 fn library_methods_are_not_redefined() {
-    assert!(has_code("fn Number.round\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn Number.floor\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn Number.minutes\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn Number.pi\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn String.wrap\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn String.upcase\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("fn Table.map\n  1\nend\n", 1, "library-method-redefined"));
-    assert!(has_code("interface Loud\n  fn upcase\nend\ninterface Loud for String\n  fn upcase\n    self\n  end\nend\n", 5, "library-method-redefined"));
+    assert!(has_code(
+        "fn Number.round\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn Number.floor\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn Number.minutes\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn Number.pi\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn String.wrap\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn String.upcase\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "fn Table.map\n  1\nend\n",
+        1,
+        "library-method-redefined"
+    ));
+    assert!(has_code(
+        "interface Loud\n  fn upcase\nend\ninterface Loud for String\n  fn upcase\n    self\n  end\nend\n",
+        5,
+        "library-method-redefined"
+    ));
     // New names, and operators, are fine.
     assert!(analyzer_errors("fn Number.is_cool\n  self == 7\nend\nfn String.shout\n  self\nend\nfn Table.second\n  self[2]\nend\nfn Bool.flip\n  !self\nend\nfn String.+(o)\n  self\nend\n").is_empty());
 }
@@ -597,19 +998,35 @@ fn library_methods_are_not_redefined() {
 /// The hints of a source in a mode, and the lines of the given ranges.
 fn hints_of(src: &str, static_resolution: bool) -> Hints {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let decls = prelude_declarations();
     let root = parse.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let opts = AnalyzeOptions { static_resolution, decls: Some(&decls), lints: true, imports: None, record: false };
+    let opts = AnalyzeOptions {
+        static_resolution,
+        decls: Some(&decls),
+        lints: true,
+        imports: None,
+        record: false,
+    };
     let analysis = analyze(&root, &res, &opts);
-    if static_resolution { analysis.hints } else { analysis.hints.without_static_resolution() }
+    if static_resolution {
+        analysis.hints
+    } else {
+        analysis.hints.without_static_resolution()
+    }
 }
 
 fn lines_of<'a>(src: &str, ranges: impl Iterator<Item = &'a nl_syntax::TextRange>) -> Vec<u32> {
     let index = nl_syntax::LineIndex::new(src);
-    let mut out: Vec<u32> = ranges.map(|r| index.line_col(src, r.start()).line).collect();
+    let mut out: Vec<u32> = ranges
+        .map(|r| index.line_col(src, r.start()).line)
+        .collect();
     out.sort();
     out.dedup();
     out
@@ -627,7 +1044,10 @@ fn f(t: Table, xs: [Number], m: {[String]: Number}, r: {a: Number}, o: Table?, u
   print t.a!
 end
 ";
-    assert_eq!(lines_of(src, hints_of(src, true).table_reads.iter()), vec![2, 3, 4]);
+    assert_eq!(
+        lines_of(src, hints_of(src, true).table_reads.iter()),
+        vec![2, 3, 4]
+    );
     let h = hints_of(src, true);
     // Six reads on line 2, `o?.a` (under its guard `o` is a table) on
     // line 3, `t.a!` on line 4.
@@ -670,29 +1090,60 @@ end
     // The tail of `a`, the return of `b`, the tail of `e` (the same type);
     // `half`'s own `x / 2` is proven too.
     let proven = lines_of(src, hints_of(src, true).proven.iter());
-    assert!(proven.contains(&11) && proven.contains(&14) && proven.contains(&23), "{proven:?}");
+    assert!(
+        proven.contains(&11) && proven.contains(&14) && proven.contains(&23),
+        "{proven:?}"
+    );
     assert!(!proven.contains(&17) && !proven.contains(&20), "{proven:?}");
     assert!(hints_of(src, false).proven.is_empty());
 }
 
 #[test]
 fn table_methods_of_untyped_values_are_linted() {
-    let codes = analyzer_codes("fn f(u)\n  u.map(fn(x) x end)\n  u.reverse()\n  u.frobnicate()\n  Table.map(u, fn(x) x end)\nend\n");
+    let codes = analyzer_codes(
+        "fn f(u)\n  u.map(fn(x) x end)\n  u.reverse()\n  u.frobnicate()\n  Table.map(u, fn(x) x end)\nend\n",
+    );
     assert_eq!(codes, vec![(2, "table-method-untyped")]);
     // An operator of `Table` has nowhere to live.
-    assert!(has_code("fn Table.+(other)\n  self\nend\n", 1, "operator-owner"));
+    assert!(has_code(
+        "fn Table.+(other)\n  self\nend\n",
+        1,
+        "operator-owner"
+    ));
 }
 
 #[test]
 fn primitive_method_through_its_type() {
     // `String.shout(s)`: the first argument is `self`, checked against the type.
     let decl = "fn String.surround(l: String, r: String): String\n  l <> self <> r\nend\n";
-    assert!(analyzer_errors(&format!("{decl}let s: String = String.surround(\"x\", \"<\", \">\")\nprint s\n")).is_empty());
-    assert!(has_code(&format!("{decl}print String.surround(5, \"<\", \">\")\n"), 4, "type-mismatch"));
-    assert!(has_code(&format!("{decl}print String.surround(\"x\", \"<\")\n"), 4, "missing-argument"));
-    assert!(has_code(&format!("{decl}let n: Number = String.surround(\"x\", \"<\", \">\")\nprint n\n"), 4, "type-mismatch"));
+    assert!(
+        analyzer_errors(&format!(
+            "{decl}let s: String = String.surround(\"x\", \"<\", \">\")\nprint s\n"
+        ))
+        .is_empty()
+    );
+    assert!(has_code(
+        &format!("{decl}print String.surround(5, \"<\", \">\")\n"),
+        4,
+        "type-mismatch"
+    ));
+    assert!(has_code(
+        &format!("{decl}print String.surround(\"x\", \"<\")\n"),
+        4,
+        "missing-argument"
+    ));
+    assert!(has_code(
+        &format!("{decl}let n: Number = String.surround(\"x\", \"<\", \">\")\nprint n\n"),
+        4,
+        "type-mismatch"
+    ));
     // Read without a call, it is the function.
-    assert!(analyzer_errors(&format!("{decl}let f = String.surround\nprint f(\"x\", \"<\", \">\")\n")).is_empty());
+    assert!(
+        analyzer_errors(&format!(
+            "{decl}let f = String.surround\nprint f(\"x\", \"<\", \">\")\n"
+        ))
+        .is_empty()
+    );
 }
 
 #[test]
@@ -709,20 +1160,45 @@ fn declared_names_and_members() {
     let root = p.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    assert_eq!(res.declared_path(decls.lookup("Foo").unwrap()).map(|r| r.global.as_str()), Some("foo"));
-    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+    assert_eq!(
+        res.declared_path(decls.lookup("Foo").unwrap())
+            .map(|r| r.global.as_str()),
+        Some("foo")
+    );
+    let opts = AnalyzeOptions {
+        static_resolution: true,
+        decls: Some(&decls),
+        lints: false,
+        imports: None,
+        record: false,
+    };
     let a = analyze(&root, &res, &opts);
     let index = nl_syntax::LineIndex::new(src);
-    let codes: Vec<(u32, &str)> = a.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    let codes: Vec<(u32, &str)> = a
+        .diagnostics
+        .iter()
+        .map(|d| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
     assert!(codes.contains(&(4, "assign-declared-const")), "{codes:?}");
-    assert!(codes.contains(&(6, "block-without-function-param")), "{codes:?}");
+    assert!(
+        codes.contains(&(6, "block-without-function-param")),
+        "{codes:?}"
+    );
     // The block is the final positional argument, where `b: Number` is.
     assert!(codes.contains(&(6, "type-mismatch")), "{codes:?}");
     assert!(codes.contains(&(7, "type-mismatch")), "{codes:?}");
     assert_eq!(codes.len(), 4, "{codes:?}");
     // The Lua keys of the renamed members reach the lowering.
-    let keys: Vec<String> = a.hints.members_declared.values().map(|h| h.key().to_string()).collect();
-    assert!(keys.contains(&"ReturnLargest".to_string()) && keys.contains(&"coolnessFactor".to_string()), "{keys:?}");
+    let keys: Vec<String> = a
+        .hints
+        .members_declared
+        .values()
+        .map(|h| h.key().to_string())
+        .collect();
+    assert!(
+        keys.contains(&"ReturnLargest".to_string()) && keys.contains(&"coolnessFactor".to_string()),
+        "{keys:?}"
+    );
 }
 
 /// `declare let` takes a capitalized name, as the host names its global:
@@ -741,7 +1217,11 @@ fn declared_capitalized_let() {
     let root = p.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
     let index = nl_syntax::LineIndex::new(src);
-    let codes: Vec<(u32, &str)> = res.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
+    let codes: Vec<(u32, &str)> = res
+        .diagnostics
+        .iter()
+        .map(|d| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
     assert_eq!(codes, vec![(4, "assign-declared-const")]);
 }
 
@@ -761,11 +1241,28 @@ fn declared_operators_type_results() {
     let root = p.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+    let opts = AnalyzeOptions {
+        static_resolution: true,
+        decls: Some(&decls),
+        lints: false,
+        imports: None,
+        record: false,
+    };
     let a = analyze(&root, &res, &opts);
     let index = nl_syntax::LineIndex::new(src);
-    let codes: Vec<(u32, &str)> = a.diagnostics.iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
-    assert_eq!(codes, vec![(1, "type-mismatch"), (2, "type-mismatch"), (3, "type-mismatch")]);
+    let codes: Vec<(u32, &str)> = a
+        .diagnostics
+        .iter()
+        .map(|d| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
+    assert_eq!(
+        codes,
+        vec![
+            (1, "type-mismatch"),
+            (2, "type-mismatch"),
+            (3, "type-mismatch")
+        ]
+    );
 }
 
 /// `Time` and `Duration` are prelude library types (decl/nl.d.nl): their
@@ -775,37 +1272,84 @@ fn declared_operators_type_results() {
 #[test]
 fn time_and_duration_are_declared_types() {
     let src = "let t = Time.at(0)\nlet d = 5.minutes\nlet a: String = t + d\nlet b: Duration = d * 2\nlet c: Number = t.year(utc: true)\nlet e: String = t.since(t)\nlet f = t.hour(utc: 1)\nlet g = t.min(zone: true)\nlet h: Time = Time.now\nlet i: any = t - t\nprint a, b, c, e, f, g, h, i\n";
-    let errs: Vec<(u32, &str)> = analyzer_diagnostics(src).into_iter().filter(|d| d.3).map(|d| (d.0, d.1)).collect();
-    assert_eq!(errs, vec![(3, "type-mismatch"), (6, "type-mismatch"), (7, "type-mismatch"), (8, "unknown-keyed-arg")]);
+    let errs: Vec<(u32, &str)> = analyzer_diagnostics(src)
+        .into_iter()
+        .filter(|d| d.3)
+        .map(|d| (d.0, d.1))
+        .collect();
+    assert_eq!(
+        errs,
+        vec![
+            (3, "type-mismatch"),
+            (6, "type-mismatch"),
+            (7, "type-mismatch"),
+            (8, "unknown-keyed-arg")
+        ]
+    );
     let decls = prelude_declarations();
     let parse = nl_syntax::parse("let t = Time.at(0)\nprint t.epoch\n");
     let root = parse.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
-    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
+    let opts = AnalyzeOptions {
+        static_resolution: true,
+        decls: Some(&decls),
+        lints: false,
+        imports: None,
+        record: false,
+    };
     let a = analyze(&root, &res, &opts);
-    let kinds: Vec<String> = a.hints.members_declared.values().map(|h| format!("{h:?}")).collect();
-    assert!(kinds.iter().any(|k| k.starts_with("Function") && k.contains("\"at\"")), "{kinds:?}");
-    assert!(kinds.iter().any(|k| k.starts_with("Method") && k.contains("\"epoch\"")), "{kinds:?}");
+    let kinds: Vec<String> = a
+        .hints
+        .members_declared
+        .values()
+        .map(|h| format!("{h:?}"))
+        .collect();
+    assert!(
+        kinds
+            .iter()
+            .any(|k| k.starts_with("Function") && k.contains("\"at\"")),
+        "{kinds:?}"
+    );
+    assert!(
+        kinds
+            .iter()
+            .any(|k| k.starts_with("Method") && k.contains("\"epoch\"")),
+        "{kinds:?}"
+    );
 }
 
 fn resolution(src: &str) -> (nl_syntax::SyntaxNode, Resolution) {
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let root = parse.syntax();
     let res = resolve(&root, &AnyImports);
     (root, res)
 }
 
 fn has_error(src: &str, line: u32, needle: &str) -> bool {
-    errors(src).iter().any(|(l, m)| *l == line && m.contains(needle))
+    errors(src)
+        .iter()
+        .any(|(l, m)| *l == line && m.contains(needle))
 }
 
 #[test]
 fn duplicates_are_errors() {
-    assert!(has_error("struct P\n  x: Number\n  x: String\nend\n", 3, "declared twice"));
+    assert!(has_error(
+        "struct P\n  x: Number\n  x: String\nend\n",
+        3,
+        "declared twice"
+    ));
     assert!(has_error("enum E\n  A\n  A\nend\n", 3, "declared twice"));
     assert!(has_error("fn f(a, b, a)\n  a\nend\n", 1, "declared twice"));
-    assert!(has_error("fn f(a, {b, a})\n  a\nend\n", 1, "declared twice"));
+    assert!(has_error(
+        "fn f(a, {b, a})\n  a\nend\n",
+        1,
+        "declared twice"
+    ));
     assert!(has_error("fn f(a, *a)\n  a\nend\n", 1, "declared twice"));
     // A default may hold a function with a parameter of the same name.
     assert!(errors("fn f(a, b = fn(a) a end)\n  a\nend\n").is_empty());
@@ -813,7 +1357,11 @@ fn duplicates_are_errors() {
 
 #[test]
 fn a_fn_declaration_cannot_be_assigned() {
-    assert!(has_error("fn foo\n  1\nend\nfoo = 5\n", 4, "declared with `fn`"));
+    assert!(has_error(
+        "fn foo\n  1\nend\nfoo = 5\n",
+        4,
+        "declared with `fn`"
+    ));
     assert!(errors("let foo = fn() 1 end\nfoo = fn() 2 end\n").is_empty());
 }
 
@@ -830,8 +1378,16 @@ fn when_items_bind_the_same_names() {
         .collect();
     assert_eq!(ids.len(), 2);
     assert_eq!(ids[0], ids[1]);
-    assert!(has_error("fn f(v)\n  case v\n  when [x, 1], [1, y]\n    x\n  end\nend\n", 3, "same names"));
-    assert!(has_error("fn f(v)\n  case v\n  when 1, [x]\n    x\n  end\nend\n", 3, "same names"));
+    assert!(has_error(
+        "fn f(v)\n  case v\n  when [x, 1], [1, y]\n    x\n  end\nend\n",
+        3,
+        "same names"
+    ));
+    assert!(has_error(
+        "fn f(v)\n  case v\n  when 1, [x]\n    x\n  end\nend\n",
+        3,
+        "same names"
+    ));
 }
 
 #[test]
@@ -841,7 +1397,11 @@ fn blocks_on_module_functions() {
     assert_eq!(errs.len(), 1, "{errs:?}");
     assert_eq!(errs[0].0, 11);
     // Declared after the call, with `fn M.name`.
-    assert!(has_error("module M\nend\nfn use\n  M.later 1 do\n  end\nend\nfn M.later(n)\n  n\nend\n", 4, "Function"));
+    assert!(has_error(
+        "module M\nend\nfn use\n  M.later 1 do\n  end\nend\nfn M.later(n)\n  n\nend\n",
+        4,
+        "Function"
+    ));
 }
 
 #[test]
@@ -854,7 +1414,11 @@ fn discarded_values_are_decided_here() {
         .descendants()
         .filter(|n| n.kind() == nl_syntax::SyntaxKind::EXPR_STMT)
         .filter(|n| res.value_discarded(n.text_range()))
-        .map(|n| nl_syntax::LineIndex::new(src).line_col(src, n.text_range().start()).line)
+        .map(|n| {
+            nl_syntax::LineIndex::new(src)
+                .line_col(src, n.text_range().start())
+                .line
+        })
         .collect();
     assert_eq!(discarded, vec![2, 4]);
 }
@@ -866,7 +1430,9 @@ fn dotted_names_in_patterns() {
     let (root, res) = resolution(src);
     let variants: Vec<String> = root
         .descendants()
-        .filter(|n| n.kind() == nl_syntax::SyntaxKind::QUAL_NAME && res.is_enum_variant(n.text_range()))
+        .filter(|n| {
+            n.kind() == nl_syntax::SyntaxKind::QUAL_NAME && res.is_enum_variant(n.text_range())
+        })
         .map(|n| n.text().to_string())
         .collect();
     assert_eq!(variants, vec!["Dir.North".to_string()]);
@@ -874,7 +1440,9 @@ fn dotted_names_in_patterns() {
 
 #[test]
 fn pattern_function_types_make_function_names() {
-    let (_, res) = resolution("let {f: Function} = {}\nlet {g: g: Function} = {}\nlet [h: Function] = {}\nlet {k: Number} = {}\n");
+    let (_, res) = resolution(
+        "let {f: Function} = {}\nlet {g: g: Function} = {}\nlet [h: Function] = {}\nlet {k: Number} = {}\n",
+    );
     let kind = |name: &str| res.bindings.iter().find(|b| b.name == name).map(|b| b.kind);
     assert_eq!(kind("f"), Some(BindingKind::Function));
     assert_eq!(kind("g"), Some(BindingKind::Function));
@@ -891,7 +1459,13 @@ fn self_of_a_nested_owner() {
 #[test]
 fn closures_that_assign() {
     let (_, res) = resolution("let a = 1\nlet b = 2\nfn f\n  a = 3\nend\nb = 4\n");
-    let id = |name: &str| res.bindings.iter().position(|b| b.name == name).map(|i| BindingId(i as u32)).unwrap();
+    let id = |name: &str| {
+        res.bindings
+            .iter()
+            .position(|b| b.name == name)
+            .map(|i| BindingId(i as u32))
+            .unwrap()
+    };
     assert!(res.assigned_in_closure(id("a")));
     assert!(!res.assigned_in_closure(id("b")));
 }
@@ -904,7 +1478,11 @@ fn exports_keep_the_kinds_of_their_file() {
         "pub const f: Function? = fn() 1 end\npub const g = fn() 2 end\npub const h: Function = fn() 3 end\npub fn k(cb: Function)\n  cb\nend\npub type T = Number\npub module M\nend\n",
     );
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let kinds: Vec<(String, BindingKind, DeclKind)> = res.exports().into_iter().map(|e| (e.name, e.kind, e.decl)).collect();
+    let kinds: Vec<(String, BindingKind, DeclKind)> = res
+        .exports()
+        .into_iter()
+        .map(|e| (e.name, e.kind, e.decl))
+        .collect();
     assert_eq!(
         kinds,
         vec![
@@ -916,7 +1494,11 @@ fn exports_keep_the_kinds_of_their_file() {
             ("M".to_string(), BindingKind::TypeLevel, DeclKind::Module),
         ]
     );
-    let k = res.exports().into_iter().find(|e| e.name == "k").and_then(|e| e.params);
+    let k = res
+        .exports()
+        .into_iter()
+        .find(|e| e.name == "k")
+        .and_then(|e| e.params);
     assert!(k.is_some_and(|p| p.has_function_param));
 }
 
@@ -928,7 +1510,11 @@ fn conditional_exports() {
     let src = "let a = true\nif a\n  pub fn both\n    1\n  end\n  pub const only_if = 1\nelse\n  pub fn both\n    2\n  end\nend\nunless a\n  pub module Never\n  end\nend\nprint both, only_if\n";
     let (_, res) = resolution(src);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let got: Vec<(String, BindingKind, bool)> = res.exports().into_iter().map(|e| (e.name, e.kind, e.optional)).collect();
+    let got: Vec<(String, BindingKind, bool)> = res
+        .exports()
+        .into_iter()
+        .map(|e| (e.name, e.kind, e.optional))
+        .collect();
     assert_eq!(
         got,
         vec![
@@ -938,7 +1524,10 @@ fn conditional_exports() {
         ]
     );
     // The same name twice in one branch is still an error.
-    assert_eq!(errors("let a = true\nif a\n  pub fn f\n    1\n  end\n  pub const f = 2\nend\n").len(), 1);
+    assert_eq!(
+        errors("let a = true\nif a\n  pub fn f\n    1\n  end\n  pub const f = 2\nend\n").len(),
+        1
+    );
 }
 
 /// Under the gmod-client profile, `if CLIENT` always runs and `if SERVER`
@@ -953,32 +1542,77 @@ fn conditional_exports_in_the_client_realm() {
     let p = nl_syntax::parse(src);
     let res = resolve_with(&p.syntax(), &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
-    let optional = |exports: Vec<ExportInfo>| exports.into_iter().map(|e| (e.name, e.optional)).collect::<Vec<_>>();
-    assert_eq!(optional(res.exports()), vec![("draw".into(), true), ("serve".into(), false), ("port".into(), true)]);
-    assert_eq!(optional(profile::exports(&res, Profile::GmodClient)), vec![("draw".into(), false), ("serve".into(), false), ("port".into(), true)]);
+    let optional = |exports: Vec<ExportInfo>| {
+        exports
+            .into_iter()
+            .map(|e| (e.name, e.optional))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        optional(res.exports()),
+        vec![
+            ("draw".into(), true),
+            ("serve".into(), false),
+            ("port".into(), true)
+        ]
+    );
+    assert_eq!(
+        optional(profile::exports(&res, Profile::GmodClient)),
+        vec![
+            ("draw".into(), false),
+            ("serve".into(), false),
+            ("port".into(), true)
+        ]
+    );
 }
 
 /// Import and export errors, on their lines.
 #[test]
 fn import_and_export_errors() {
     let errs = errors("import { a } from 'x'\nfn a\n  1\nend\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![2], "{errs:?}");
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![2],
+        "{errs:?}"
+    );
     let errs = errors("import { a } from 'x'\nlet a = 1\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![2], "{errs:?}");
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![2],
+        "{errs:?}"
+    );
     // A local of a function may shadow an import (a lint).
     assert!(errors("import { a } from 'x'\nfn f\n  let a = 1\n  a\nend\n").is_empty());
     // Reopening an imported module is not a clash.
     assert!(errors("import { M } from 'x'\nmodule M\n  fn more\n    1\n  end\nend\n").is_empty());
     let errs = errors("import { a } from 'x'\nimport { a } from 'y'\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![2], "{errs:?}");
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![2],
+        "{errs:?}"
+    );
     let errs = errors("import { } from 'x'\n");
     assert_eq!(errs.len(), 1, "{errs:?}");
-    let errs = errors("fn g<T>(a)\n  a is T?\nend\nfn h<T>(a: T?, b: [T])\n  a is Number and b is [T]\nend\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![2], "{errs:?}");
+    let errs = errors(
+        "fn g<T>(a)\n  a is T?\nend\nfn h<T>(a: T?, b: [T])\n  a is Number and b is [T]\nend\n",
+    );
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![2],
+        "{errs:?}"
+    );
     let errs = errors("pub fn f\n  1\nend\npub const f = 2\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![4], "{errs:?}");
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![4],
+        "{errs:?}"
+    );
     let errs = errors("module A\nend\npub module A.B\nend\n");
-    assert_eq!(errs.iter().map(|e| e.0).collect::<Vec<_>>(), vec![3], "{errs:?}");
+    assert_eq!(
+        errs.iter().map(|e| e.0).collect::<Vec<_>>(),
+        vec![3],
+        "{errs:?}"
+    );
 }
 
 /// callonly.rs: which parameters a function only calls, as its export
@@ -1067,7 +1701,13 @@ pub fn async_block(list: any, cb: Function)
 end
 ";
     let (_, res) = resolution(src);
-    let mask = |name: &str| res.exports().into_iter().find(|e| e.name == name).and_then(|e| e.params).map(|p| p.call_only);
+    let mask = |name: &str| {
+        res.exports()
+            .into_iter()
+            .find(|e| e.name == name)
+            .and_then(|e| e.params)
+            .map(|p| p.call_only)
+    };
     let expected = [
         ("each", 0b10),
         ("apply", 0b10),
@@ -1102,17 +1742,43 @@ end
 fn portable_profile() {
     let src = "let r = Regex.new(\"a\")\nload_nl(\"print 1\")\nadd_path(\"lib\")\nlet w = Worker.new(\"w.nl\")\nlet t = Worker.run(|x| -> x, 1)\nEvent.run(\"E\")\nfn f(load_nl)\n  load_nl\nend\nprint(r, w, t, f)\n";
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let root = parse.syntax();
     let res = resolve(&root, &AnyImports);
     let decls = Declarations::default();
     assert!(profile::check(&root, &res, &decls, Profile::Full).is_empty());
     let index = nl_syntax::LineIndex::new(src);
-    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::Portable).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
-    assert_eq!(found, [(1, "not-in-profile"), (2, "not-in-profile"), (3, "not-in-profile"), (4, "not-in-profile")]);
+    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::Portable)
+        .iter()
+        .map(|d| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
+    assert_eq!(
+        found,
+        [
+            (1, "not-in-profile"),
+            (2, "not-in-profile"),
+            (3, "not-in-profile"),
+            (4, "not-in-profile")
+        ]
+    );
     // gmod-client keeps the portable profile's rules.
-    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::GmodClient).iter().map(|d| (index.line_col(src, d.range.start()).line, d.code)).collect();
-    assert_eq!(found, [(1, "not-in-profile"), (2, "not-in-profile"), (3, "not-in-profile"), (4, "not-in-profile")]);
+    let found: Vec<(u32, &str)> = profile::check(&root, &res, &decls, Profile::GmodClient)
+        .iter()
+        .map(|d| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
+    assert_eq!(
+        found,
+        [
+            (1, "not-in-profile"),
+            (2, "not-in-profile"),
+            (3, "not-in-profile"),
+            (4, "not-in-profile")
+        ]
+    );
 }
 
 /// A small slice of gmod's declarations (decl/glua.d.nl), with realms in
@@ -1173,14 +1839,40 @@ fn gmod_client_errors(src: &str) -> Vec<(u32, &'static str, String)> {
     let res = resolve_with(&root, &AnyImports, &decls);
     assert!(!res.has_errors(), "{:?}", res.diagnostics);
     let mut diags = profile::check(&root, &res, &decls, Profile::GmodClient);
-    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: true };
+    let opts = AnalyzeOptions {
+        static_resolution: true,
+        decls: Some(&decls),
+        lints: false,
+        imports: None,
+        record: true,
+    };
     let a = analyze(&root, &res, &opts);
     assert!(!a.has_errors(), "{:?}", a.diagnostics);
-    diags.extend(profile::check_members(&root, &res, a.info.as_ref().unwrap(), &decls, Profile::GmodClient));
+    diags.extend(profile::check_members(
+        &root,
+        &res,
+        a.info.as_ref().unwrap(),
+        &decls,
+        Profile::GmodClient,
+    ));
     // Nothing outside gmod.
-    assert!(profile::check(&root, &res, &decls, Profile::Portable).iter().all(|d| d.code == profile::CODE));
+    assert!(
+        profile::check(&root, &res, &decls, Profile::Portable)
+            .iter()
+            .all(|d| d.code == profile::CODE)
+    );
     let index = nl_syntax::LineIndex::new(src);
-    let mut out: Vec<(u32, &'static str, String)> = diags.iter().filter(|d| d.error).map(|d| (index.line_col(src, d.range.start()).line, d.code, d.message.clone())).collect();
+    let mut out: Vec<(u32, &'static str, String)> = diags
+        .iter()
+        .filter(|d| d.error)
+        .map(|d| {
+            (
+                index.line_col(src, d.range.start()).line,
+                d.code,
+                d.message.clone(),
+            )
+        })
+        .collect();
     out.sort_by_key(|(l, ..)| *l);
     out
 }
@@ -1216,10 +1908,30 @@ print(f, t, c, tb, p, l, y, r)
     let errors = gmod_client_errors(src);
     assert_eq!(
         lines_codes(&errors),
-        [(1, "not-in-gmod"), (2, "not-in-gmod"), (4, "not-in-gmod"), (5, "not-in-gmod"), (7, "not-in-gmod"), (9, "not-in-gmod"), (11, "not-in-gmod"), (12, "not-in-gmod"), (13, "not-in-gmod"), (15, "not-in-gmod"), (17, "not-in-gmod"), (18, "not-in-gmod")],
+        [
+            (1, "not-in-gmod"),
+            (2, "not-in-gmod"),
+            (4, "not-in-gmod"),
+            (5, "not-in-gmod"),
+            (7, "not-in-gmod"),
+            (9, "not-in-gmod"),
+            (11, "not-in-gmod"),
+            (12, "not-in-gmod"),
+            (13, "not-in-gmod"),
+            (15, "not-in-gmod"),
+            (17, "not-in-gmod"),
+            (18, "not-in-gmod")
+        ],
         "{errors:#?}"
     );
-    assert!(errors[2].2.contains("`OS.getenv`") && errors[2].2.contains("`clock`, `date`, `difftime` and `time`"), "{}", errors[2].2);
+    assert!(
+        errors[2].2.contains("`OS.getenv`")
+            && errors[2]
+                .2
+                .contains("`clock`, `date`, `difftime` and `time`"),
+        "{}",
+        errors[2].2
+    );
     assert!(errors[9].2.contains("LuaJIT 2.0.4"), "{}", errors[9].2);
 }
 
@@ -1246,14 +1958,30 @@ print(pos, d)
     let errors = gmod_client_errors(src);
     assert_eq!(
         lines_codes(&errors),
-        [(2, "wrong-realm"), (5, "wrong-realm"), (6, "wrong-realm"), (9, "wrong-realm"), (10, "wrong-realm"), (11, "wrong-realm")],
+        [
+            (2, "wrong-realm"),
+            (5, "wrong-realm"),
+            (6, "wrong-realm"),
+            (9, "wrong-realm"),
+            (10, "wrong-realm"),
+            (11, "wrong-realm")
+        ],
         "{errors:#?}"
     );
     let kick = &errors[1].2;
-    assert!(kick.contains("`Player.kick` exists only on the server") && kick.contains("`if SERVER`") && kick.contains("https://wiki.facepunch.com/gmod/Player:Kick"), "{kick}");
+    assert!(
+        kick.contains("`Player.kick` exists only on the server")
+            && kick.contains("`if SERVER`")
+            && kick.contains("https://wiki.facepunch.com/gmod/Player:Kick"),
+        "{kick}"
+    );
     // A member found on a parent is named on the receiver's type.
     assert!(errors[2].2.contains("`Player.remove`"), "{}", errors[2].2);
-    assert!(errors[4].2.contains("only in the main menu"), "{}", errors[4].2);
+    assert!(
+        errors[4].2.contains("only in the main menu"),
+        "{}",
+        errors[4].2
+    );
 }
 
 /// Code that the realm constants leave dead in the client realm is not
@@ -1294,7 +2022,15 @@ Net.broadcast() if Net.start(\"y\") and SERVER
 print(f)
 ";
     let errors = gmod_client_errors(src);
-    assert_eq!(lines_codes(&errors), [(24, "wrong-realm"), (27, "wrong-realm"), (29, "wrong-realm")], "{errors:#?}");
+    assert_eq!(
+        lines_codes(&errors),
+        [
+            (24, "wrong-realm"),
+            (27, "wrong-realm"),
+            (29, "wrong-realm")
+        ],
+        "{errors:#?}"
+    );
 }
 
 /// The host types of declaration files come with their parents, every
@@ -1307,8 +2043,19 @@ fn host_types_parents_first() {
     let (decls, diags) = Declarations::load(&[("t.d.nl".to_string(), parse.syntax())]);
     assert!(diags.is_empty(), "{diags:?}");
     let got = decls.host_types();
-    let names: Vec<(&str, Option<&str>)> = got.iter().map(|(n, p)| (n.as_str(), p.as_deref())).collect();
-    assert_eq!(names, [("Entity", None), ("Lone", None), ("Player", Some("Entity")), ("Weapon", Some("Entity"))]);
+    let names: Vec<(&str, Option<&str>)> = got
+        .iter()
+        .map(|(n, p)| (n.as_str(), p.as_deref()))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("Entity", None),
+            ("Lone", None),
+            ("Player", Some("Entity")),
+            ("Weapon", Some("Entity"))
+        ]
+    );
 }
 
 /// Declarations for the tests of `fn Decl.name`: a module, a Lua class, a
@@ -1329,15 +2076,34 @@ fn extension_declarations() -> Declarations {
 fn extension_codes(src: &str, imports: &dyn ImportProvider) -> Vec<(u32, &'static str)> {
     let decls = extension_declarations();
     let parse = nl_syntax::parse(src);
-    assert!(!parse.has_errors(), "parse errors: {:?}", parse.diagnostics());
+    assert!(
+        !parse.has_errors(),
+        "parse errors: {:?}",
+        parse.diagnostics()
+    );
     let root = parse.syntax();
     let res = resolve_with(&root, imports, &decls);
     let index = nl_syntax::LineIndex::new(src);
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
-    let mut out: Vec<(u32, &'static str)> = res.diagnostics.iter().map(|d| (line(d.range), d.code)).collect();
+    let mut out: Vec<(u32, &'static str)> = res
+        .diagnostics
+        .iter()
+        .map(|d| (line(d.range), d.code))
+        .collect();
     if !res.has_errors() {
-        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports: None, record: false };
-        out.extend(analyze(&root, &res, &opts).diagnostics.iter().map(|d| (line(d.range), d.code)));
+        let opts = AnalyzeOptions {
+            static_resolution: true,
+            decls: Some(&decls),
+            lints: false,
+            imports: None,
+            record: false,
+        };
+        out.extend(
+            analyze(&root, &res, &opts)
+                .diagnostics
+                .iter()
+                .map(|d| (line(d.range), d.code)),
+        );
     }
     out
 }
@@ -1350,25 +2116,62 @@ fn extending_declared_modules_and_types() {
     let src = "fn Util.twice(s: String): String\n  s <> s\nend\nfn Player.tag(prefix: String): String\n  prefix <> self.nick\nend\nfn Color.bright: Number\n  self.r * 2\nend\nlet a: String = Util.twice(\"x\")\nlet b: String = me().tag(\"@\")\nprint a, b\n";
     assert_eq!(extension_codes(src, &AnyImports), []);
     // The signatures are checked at calls.
-    assert_eq!(extension_codes("fn Util.twice(s: String): String\n  s\nend\nprint Util.twice(5)\n", &AnyImports), [(4, "type-mismatch")]);
-    assert_eq!(extension_codes("fn Player.tag(p: String): String\n  p\nend\nlet n: Number = me().tag(\"@\")\nprint n\n", &AnyImports), [(4, "type-mismatch")]);
+    assert_eq!(
+        extension_codes(
+            "fn Util.twice(s: String): String\n  s\nend\nprint Util.twice(5)\n",
+            &AnyImports
+        ),
+        [(4, "type-mismatch")]
+    );
+    assert_eq!(
+        extension_codes(
+            "fn Player.tag(p: String): String\n  p\nend\nlet n: Number = me().tag(\"@\")\nprint n\n",
+            &AnyImports
+        ),
+        [(4, "type-mismatch")]
+    );
     // A function of a module has no `self`.
-    assert!(extension_codes("fn Util.bad\n  self\nend\n", &AnyImports).iter().any(|(l, _)| *l == 2));
+    assert!(
+        extension_codes("fn Util.bad\n  self\nend\n", &AnyImports)
+            .iter()
+            .any(|(l, _)| *l == 2)
+    );
     // The same file may define a name again: it replaces the first.
-    assert_eq!(extension_codes("fn Util.f\n  1\nend\nfn Util.f\n  2\nend\n", &AnyImports), []);
+    assert_eq!(
+        extension_codes("fn Util.f\n  1\nend\nfn Util.f\n  2\nend\n", &AnyImports),
+        []
+    );
 }
 
 #[test]
 fn extending_declared_names_is_checked() {
     // A member of the declaration, or of a parent of a host type.
-    assert_eq!(extension_codes("fn Util.width(s)\n  1\nend\n", &AnyImports), [(1, "declared-member-redefined")]);
-    assert_eq!(extension_codes("fn Player.get_class\n  \"x\"\nend\n", &AnyImports), [(1, "declared-member-redefined")]);
+    assert_eq!(
+        extension_codes("fn Util.width(s)\n  1\nend\n", &AnyImports),
+        [(1, "declared-member-redefined")]
+    );
+    assert_eq!(
+        extension_codes("fn Player.get_class\n  \"x\"\nend\n", &AnyImports),
+        [(1, "declared-member-redefined")]
+    );
     // No metatable: a type nested in a declaration.
-    assert_eq!(extension_codes("fn Nest.Inner.f\nend\n", &AnyImports), [(1, "declared-owner")]);
+    assert_eq!(
+        extension_codes("fn Nest.Inner.f\nend\n", &AnyImports),
+        [(1, "declared-owner")]
+    );
     // Not a module or a type; operators.
-    assert_eq!(extension_codes("fn Nest.Missing.f\nend\n", &AnyImports), [(1, "declared-owner")]);
-    assert_eq!(extension_codes("fn Player.+(o)\n  o\nend\n", &AnyImports), [(1, "operator-owner")]);
-    assert_eq!(extension_codes("fn Util.len\n  1\nend\n", &AnyImports), [(1, "operator-owner")]);
+    assert_eq!(
+        extension_codes("fn Nest.Missing.f\nend\n", &AnyImports),
+        [(1, "declared-owner")]
+    );
+    assert_eq!(
+        extension_codes("fn Player.+(o)\n  o\nend\n", &AnyImports),
+        [(1, "operator-owner")]
+    );
+    assert_eq!(
+        extension_codes("fn Util.len\n  1\nend\n", &AnyImports),
+        [(1, "operator-owner")]
+    );
 }
 
 /// An import that brings the functions its file adds to declared types.
@@ -1376,10 +2179,25 @@ struct ExtendingImport;
 
 impl ImportProvider for ExtendingImport {
     fn exports(&self, _path: &str) -> Result<Vec<ExportInfo>, String> {
-        Ok(vec![ExportInfo { name: "ready".into(), kind: BindingKind::Variable, params: None, decl: DeclKind::Const, optional: false }])
+        Ok(vec![ExportInfo {
+            name: "ready".into(),
+            kind: BindingKind::Variable,
+            params: None,
+            decl: DeclKind::Const,
+            optional: false,
+        }])
     }
     fn extensions(&self, _path: &str) -> Vec<ExtensionInfo> {
-        vec![ExtensionInfo { owner: "Player".into(), name: "tag".into(), method: true, params: vec![("prefix".into(), false)], rest: false, keyed: false, is_async: false, origin: None }]
+        vec![ExtensionInfo {
+            owner: "Player".into(),
+            name: "tag".into(),
+            method: true,
+            params: vec![("prefix".into(), false)],
+            rest: false,
+            keyed: false,
+            is_async: false,
+            origin: None,
+        }]
     }
 }
 
@@ -1396,15 +2214,41 @@ fn imported_extensions() {
     let parse = nl_syntax::parse(src);
     let root = parse.syntax();
     let res = resolve_with(&root, &ExtendingImport, &decls);
-    let analysis = analyze(&root, &res, &AnalyzeOptions { decls: Some(&decls), ..Default::default() });
-    let hinted = root.descendants().filter_map(|n| analysis.hints.member(n.text_range()).cloned()).collect::<Vec<_>>();
-    assert!(hinted.contains(&MemberHint::Method { key: "tag".into() }), "{hinted:?}");
+    let analysis = analyze(
+        &root,
+        &res,
+        &AnalyzeOptions {
+            decls: Some(&decls),
+            ..Default::default()
+        },
+    );
+    let hinted = root
+        .descendants()
+        .filter_map(|n| analysis.hints.member(n.text_range()).cloned())
+        .collect::<Vec<_>>();
+    assert!(
+        hinted.contains(&MemberHint::Method { key: "tag".into() }),
+        "{hinted:?}"
+    );
     let parse = nl_syntax::parse("import { ready } from 'tags'\nfn Util.f\nend\nprint ready\n");
     let res = resolve_with(&parse.syntax(), &ExtendingImport, &decls);
-    let got: Vec<(String, String, Option<String>)> = res.extensions().into_iter().map(|e| (e.owner, e.name, e.origin)).collect();
-    assert_eq!(got, [("Player".into(), "tag".into(), Some("tags".into())), ("Util".into(), "f".into(), None)]);
+    let got: Vec<(String, String, Option<String>)> = res
+        .extensions()
+        .into_iter()
+        .map(|e| (e.owner, e.name, e.origin))
+        .collect();
+    assert_eq!(
+        got,
+        [
+            ("Player".into(), "tag".into(), Some("tags".into())),
+            ("Util".into(), "f".into(), None)
+        ]
+    );
     let again = "import { ready } from 'tags'\nfn Player.tag(p)\n  p\nend\nprint ready\n";
-    assert_eq!(extension_codes(again, &ExtendingImport), [(2, "declared-member-redefined")]);
+    assert_eq!(
+        extension_codes(again, &ExtendingImport),
+        [(2, "declared-member-redefined")]
+    );
 }
 
 /// A `spawn do` block that reads the count of an enclosing function's
@@ -1412,14 +2256,32 @@ fn imported_extensions() {
 /// its items, and a rest parameter of a function inside the block, are not.
 #[test]
 fn spawn_block_rest_count() {
-    let codes = |body: &str| analyzer_codes(&format!("fn f(*args)\n  let t = spawn do\n    {body}\n  end\n  t\nend\nprint f(1)\n"));
+    let codes = |body: &str| {
+        analyzer_codes(&format!(
+            "fn f(*args)\n  let t = spawn do\n    {body}\n  end\n  t\nend\nprint f(1)\n"
+        ))
+    };
     assert!(codes("args.len").contains(&(3, "spawn-rest-count")));
     assert!(codes(":print(*args)").contains(&(3, "spawn-rest-count")));
     assert!(codes("[0, *args].len").contains(&(3, "spawn-rest-count")));
-    assert!(!codes("args[1]").iter().any(|(_, c)| *c == "spawn-rest-count"));
-    assert!(!codes("(fn(*b) b.len end)(*[1])").iter().any(|(_, c)| *c == "spawn-rest-count"));
-    let errs = analyzer_errors("fn f(*rest)\n  let t = spawn do\n    rest.len\n  end\n  t\nend\nprint f(1)\n");
-    assert!(errs.iter().any(|(_, m)| m.contains("rest parameter `rest`")), "{errs:?}");
+    assert!(
+        !codes("args[1]")
+            .iter()
+            .any(|(_, c)| *c == "spawn-rest-count")
+    );
+    assert!(
+        !codes("(fn(*b) b.len end)(*[1])")
+            .iter()
+            .any(|(_, c)| *c == "spawn-rest-count")
+    );
+    let errs = analyzer_errors(
+        "fn f(*rest)\n  let t = spawn do\n    rest.len\n  end\n  t\nend\nprint f(1)\n",
+    );
+    assert!(
+        errs.iter()
+            .any(|(_, m)| m.contains("rest parameter `rest`")),
+        "{errs:?}"
+    );
 }
 
 /// `@m!` in a method is `self.m!`: a method of the struct comes bound,
@@ -1428,14 +2290,33 @@ fn spawn_block_rest_count() {
 #[test]
 fn at_bang_binds_methods() {
     let src = "struct Box\n  v: Number\n  cb: Function?\nend\nfn Box.get(x: Number): String\n  \"#{@v}:#{x}\"\nend\nfn Box.both\n  let f = @get!\n  let c = @cb!\n  print c\n  f(1)\nend\nlet b = Box { v: 1 }\nprint b.both\n";
-    assert!(analyzer_errors(src).is_empty(), "{:?}", analyzer_errors(src));
+    assert!(
+        analyzer_errors(src).is_empty(),
+        "{:?}",
+        analyzer_errors(src)
+    );
     let parse = nl_syntax::parse(src);
     let root = parse.syntax();
     let res = resolve(&root, &AnyImports);
-    let analysis = analyze(&root, &res, &AnalyzeOptions { static_resolution: true, ..Default::default() });
-    let hinted: Vec<MemberHint> = root.descendants().filter(|n| n.kind() == nl_syntax::SyntaxKind::AT_EXPR).filter_map(|n| analysis.hints.member(n.text_range()).cloned()).collect();
+    let analysis = analyze(
+        &root,
+        &res,
+        &AnalyzeOptions {
+            static_resolution: true,
+            ..Default::default()
+        },
+    );
+    let hinted: Vec<MemberHint> = root
+        .descendants()
+        .filter(|n| n.kind() == nl_syntax::SyntaxKind::AT_EXPR)
+        .filter_map(|n| analysis.hints.member(n.text_range()).cloned())
+        .collect();
     assert_eq!(hinted, [MemberHint::Method { key: "get".into() }]);
-    assert!(has_code(&src.replace("f(1)", "f(\"x\")"), 12, "type-mismatch"));
+    assert!(has_code(
+        &src.replace("f(1)", "f(\"x\")"),
+        12,
+        "type-mismatch"
+    ));
 }
 
 /// `global fn`, `global module` and `global struct` are exports, and no
@@ -1446,8 +2327,19 @@ fn global_items_are_exported() {
     let parse = nl_syntax::parse(src);
     assert!(!parse.has_errors(), "{:?}", parse.diagnostics());
     let res = resolve(&parse.syntax(), &AnyImports);
-    let names: Vec<(String, DeclKind)> = res.exports().into_iter().map(|e| (e.name, e.decl)).collect();
-    assert_eq!(names, [("class_".into(), DeclKind::Fn), ("Registry".into(), DeclKind::Module), ("Point".into(), DeclKind::Struct)]);
+    let names: Vec<(String, DeclKind)> = res
+        .exports()
+        .into_iter()
+        .map(|e| (e.name, e.decl))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("class_".into(), DeclKind::Fn),
+            ("Registry".into(), DeclKind::Module),
+            ("Point".into(), DeclKind::Struct)
+        ]
+    );
     assert_eq!(analyzer_codes(src), []);
     // Where `pub` cannot stand, `global` cannot either.
     assert!(nl_syntax::parse("fn f\n  global fn g\n  end\nend\n").has_errors());
@@ -1477,16 +2369,32 @@ fn with_decl(decl: &str, src: &str) -> (Vec<(u32, &'static str)>, Analysis) {
     assert!(!p.has_errors(), "{:?}", p.diagnostics());
     let root = p.syntax();
     let res = resolve_with(&root, &AnyImports, &decls);
-    let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: true, imports: None, record: false };
+    let opts = AnalyzeOptions {
+        static_resolution: true,
+        decls: Some(&decls),
+        lints: true,
+        imports: None,
+        record: false,
+    };
     let a = analyze(&root, &res, &opts);
     let index = nl_syntax::LineIndex::new(src);
     let line = |r: nl_syntax::TextRange| index.line_col(src, r.start()).line;
-    let codes = res.diagnostics.iter().chain(a.diagnostics.iter()).filter(|d| d.code != "not-exported").map(|d| (line(d.range), d.code)).collect();
+    let codes = res
+        .diagnostics
+        .iter()
+        .chain(a.diagnostics.iter())
+        .filter(|d| d.code != "not-exported")
+        .map(|d| (line(d.range), d.code))
+        .collect();
     (codes, a)
 }
 
 fn declared_hints(a: &Analysis) -> Vec<String> {
-    a.hints.members_declared.values().map(|h| format!("{h:?}")).collect()
+    a.hints
+        .members_declared
+        .values()
+        .map(|h| format!("{h:?}"))
+        .collect()
 }
 
 /// A bare function-kind name passed as an argument is called with no
@@ -1495,16 +2403,46 @@ fn declared_hints(a: &Analysis) -> Vec<String> {
 /// parameter takes a function.
 #[test]
 fn autocall_argument_lint() {
-    assert!(has_code("fn f(x)\n  x\nend\nprint typeof(f)\n", 4, "autocall-argument"));
-    assert!(has_code("fn f(x: Number): Number\n  x\nend\nprint(k: f)\n", 4, "autocall-argument"));
-    let quiet = ["fn now\n  1\nend\nprint now\n", "fn f(x = 1)\n  x\nend\nprint f\n", "fn f(x: Number?)\n  x\nend\nprint f\n", "fn f(x)\n  x\nend\nprint typeof(f!)\n"];
+    assert!(has_code(
+        "fn f(x)\n  x\nend\nprint typeof(f)\n",
+        4,
+        "autocall-argument"
+    ));
+    assert!(has_code(
+        "fn f(x: Number): Number\n  x\nend\nprint(k: f)\n",
+        4,
+        "autocall-argument"
+    ));
+    let quiet = [
+        "fn now\n  1\nend\nprint now\n",
+        "fn f(x = 1)\n  x\nend\nprint f\n",
+        "fn f(x: Number?)\n  x\nend\nprint f\n",
+        "fn f(x)\n  x\nend\nprint typeof(f!)\n",
+    ];
     for src in quiet {
-        assert!(analyzer_codes(src).iter().all(|(_, c)| *c != "autocall-argument"), "{src}: {:?}", analyzer_codes(src));
+        assert!(
+            analyzer_codes(src)
+                .iter()
+                .all(|(_, c)| *c != "autocall-argument"),
+            "{src}: {:?}",
+            analyzer_codes(src)
+        );
     }
     let codes = analyzer_codes("fn reg(cb: Function)\n  cb\nend\nfn cb(x)\n  x\nend\nreg cb\n");
-    assert_eq!(codes.iter().filter(|(l, _)| *l == 7).map(|(_, c)| *c).collect::<Vec<_>>(), ["fn-kind-argument"], "{codes:?}");
+    assert_eq!(
+        codes
+            .iter()
+            .filter(|(l, _)| *l == 7)
+            .map(|(_, c)| *c)
+            .collect::<Vec<_>>(),
+        ["fn-kind-argument"],
+        "{codes:?}"
+    );
     // A declared function is a bare call too.
-    let (codes, _) = with_decl("declare fn get_name(id: Number): String = :GetName\n", "print get_name\n");
+    let (codes, _) = with_decl(
+        "declare fn get_name(id: Number): String = :GetName\n",
+        "print get_name\n",
+    );
     assert_eq!(codes, [(1, "autocall-argument")]);
 }
 
@@ -1512,12 +2450,24 @@ fn autocall_argument_lint() {
 /// with the type's table: an error, whose fix is `when is Name`.
 #[test]
 fn when_type_name_is_an_error() {
-    let case = |item: &str| format!("struct S\n  x: Number\nend\nenum E\n  A\nend\nfn f(v)\n  case v\n  when {item}\n    1\n  else\n    2\n  end\nend\nprint f(1)\n");
+    let case = |item: &str| {
+        format!(
+            "struct S\n  x: Number\nend\nenum E\n  A\nend\nfn f(v)\n  case v\n  when {item}\n    1\n  else\n    2\n  end\nend\nprint f(1)\n"
+        )
+    };
     for item in ["S", "E", "String", "Exception"] {
-        assert!(has_code(&case(item), 9, "when-type-compare"), "{item}: {:?}", analyzer_codes(&case(item)));
+        assert!(
+            has_code(&case(item), 9, "when-type-compare"),
+            "{item}: {:?}",
+            analyzer_codes(&case(item))
+        );
     }
     for item in ["is S", "S {x}", "E.A", "is String", "\"S\"", "1"] {
-        assert!(analyzer_errors(&case(item)).is_empty(), "{item}: {:?}", analyzer_errors(&case(item)));
+        assert!(
+            analyzer_errors(&case(item)).is_empty(),
+            "{item}: {:?}",
+            analyzer_errors(&case(item))
+        );
     }
 }
 
@@ -1527,14 +2477,25 @@ fn when_type_name_is_an_error() {
 #[test]
 fn nested_declared_modules() {
     let decl = "declare module Top = :Top\n  module Sub\n    fn meth(self, x: String): String\n    fn plain(x: String): String as 'Plain'\n  end\n  module Inner as 'InnerLua'\n    fn hello(): String as 'Hello'\n  end\nend\n";
-    let (codes, a) = with_decl(decl, "print Top.Sub.meth(\"a\")\nprint Top.Sub.plain(\"b\")\nprint Top.Inner.hello()\n");
+    let (codes, a) = with_decl(
+        decl,
+        "print Top.Sub.meth(\"a\")\nprint Top.Sub.plain(\"b\")\nprint Top.Inner.hello()\n",
+    );
     assert!(codes.is_empty(), "{codes:?}");
     let hints = declared_hints(&a);
-    for want in ["Method { key: \"meth\" }", "Function { key: \"Plain\" }", "Field { key: \"InnerLua\" }", "Function { key: \"Hello\" }"] {
+    for want in [
+        "Method { key: \"meth\" }",
+        "Function { key: \"Plain\" }",
+        "Field { key: \"InnerLua\" }",
+        "Function { key: \"Hello\" }",
+    ] {
         assert!(hints.iter().any(|h| h == want), "{want} not in {hints:?}");
     }
     // The key is written with `as`; a Lua path is for the top level.
-    assert!(nl_syntax::parse_decl_file("declare module T = :T\n  module S = :s\n  end\nend\n").has_errors());
+    assert!(
+        nl_syntax::parse_decl_file("declare module T = :T\n  module S = :s\n  end\nend\n")
+            .has_errors()
+    );
 }
 
 /// A member of an optional declared type is the type's member, under its
@@ -1545,7 +2506,13 @@ fn optional_declared_types_and_narrowing() {
     let decl = "declare type Panel\n  fn remove(self) as 'Remove'\nend\ndeclare fn find(): Panel? = :Find\ndeclare const PACKAGE: Panel?\ndeclare let CURRENT: Panel?\n";
     let (codes, a) = with_decl(decl, "let p = find()\np.remove() if p\nprint p.remove\n");
     assert!(codes.is_empty(), "{codes:?}");
-    assert!(declared_hints(&a).iter().any(|h| h == "Method { key: \"Remove\" }"), "{:?}", declared_hints(&a));
+    assert!(
+        declared_hints(&a)
+            .iter()
+            .any(|h| h == "Method { key: \"Remove\" }"),
+        "{:?}",
+        declared_hints(&a)
+    );
     let src = "fn need(p: Panel)\n  p.remove\nend\nif PACKAGE\n  need(PACKAGE)\nend\nneed(PACKAGE) if PACKAGE != nil\nneed(PACKAGE)\nif CURRENT\n  need(CURRENT)\nend\nCURRENT = nil\n";
     let (codes, _) = with_decl(decl, src);
     assert_eq!(codes, [(8, "type-mismatch"), (10, "type-mismatch")]);
@@ -1560,8 +2527,18 @@ fn duplicate_declared_members() {
     assert!(!parse.has_errors(), "{:?}", parse.diagnostics());
     let (_, diags) = Declarations::load(&[("d.d.nl".to_string(), parse.syntax())]);
     let index = nl_syntax::LineIndex::new(src);
-    let got: Vec<(u32, &str)> = diags.iter().map(|(_, d)| (index.line_col(src, d.range.start()).line, d.code)).collect();
-    assert_eq!(got, [(3, "duplicate-member"), (6, "duplicate-member"), (13, "duplicate-member")]);
+    let got: Vec<(u32, &str)> = diags
+        .iter()
+        .map(|(_, d)| (index.line_col(src, d.range.start()).line, d.code))
+        .collect();
+    assert_eq!(
+        got,
+        [
+            (3, "duplicate-member"),
+            (6, "duplicate-member"),
+            (13, "duplicate-member")
+        ]
+    );
 }
 
 /// A local named like a declared value or module, or an import, hides
@@ -1571,7 +2548,10 @@ fn duplicate_declared_members() {
 /// declared value.
 #[test]
 fn shadowing_declared_and_imported_names() {
-    let (codes, _) = with_decl("declare const t: Table = :t\n", "fn f(i)\n  let t = i\n  t\nend\nlet print_it = 1\nprint f(print_it)\n");
+    let (codes, _) = with_decl(
+        "declare const t: Table = :t\n",
+        "fn f(i)\n  let t = i\n  t\nend\nlet print_it = 1\nprint f(print_it)\n",
+    );
     assert_eq!(codes, [(2, "shadows-declared")]);
     let host = "\
 declare fn player(i: Number): Table = :Player
@@ -1595,9 +2575,17 @@ end
 print describe(1, 2, 3), moved(4), kept(5)
 ";
     let (codes, _) = with_decl(host, src);
-    let shadows: Vec<u32> = codes.iter().filter(|(_, c)| *c == "shadows-declared").map(|(l, _)| *l).collect();
+    let shadows: Vec<u32> = codes
+        .iter()
+        .filter(|(_, c)| *c == "shadows-declared")
+        .map(|(l, _)| *l)
+        .collect();
     assert_eq!(shadows, [5, 10], "{codes:?}");
-    assert!(has_code("import { helper } from 'x'\nfn f\n  let helper = 2\n  helper\nend\nprint f\n", 3, "shadows-declared"));
+    assert!(has_code(
+        "import { helper } from 'x'\nfn f\n  let helper = 2\n  helper\nend\nprint f\n",
+        3,
+        "shadows-declared"
+    ));
 }
 
 /// A definition named like a declared module (gmod's `team` library is
@@ -1623,10 +2611,20 @@ end
 print f
 ";
     let (codes, _) = with_decl(host, src);
-    assert!(!codes.iter().any(|(_, c)| *c == "shadows-declared"), "{codes:?}");
-    for kind in ["struct Team\n  a: Number\nend\nprint Team { a: 1 }\n", "module Team\n  fn a\n    1\n  end\nend\nprint Team.a\n", "interface Team\n  fn a: Number\nend\n"] {
+    assert!(
+        !codes.iter().any(|(_, c)| *c == "shadows-declared"),
+        "{codes:?}"
+    );
+    for kind in [
+        "struct Team\n  a: Number\nend\nprint Team { a: 1 }\n",
+        "module Team\n  fn a\n    1\n  end\nend\nprint Team.a\n",
+        "interface Team\n  fn a: Number\nend\n",
+    ] {
         let (codes, _) = with_decl(host, kind);
-        assert!(!codes.iter().any(|(_, c)| *c == "shadows-declared"), "{kind}: {codes:?}");
+        assert!(
+            !codes.iter().any(|(_, c)| *c == "shadows-declared"),
+            "{kind}: {codes:?}"
+        );
     }
     let (codes, _) = with_decl(host, "const Team = 1\nprint Team\n");
     assert!(codes.contains(&(1, "shadows-declared")), "{codes:?}");
@@ -1638,8 +2636,19 @@ print f
 fn primitive_methods_of_imports() {
     let scanned = scan_file(&nl_syntax::parse("import { a } from 'b'\nfn String.+(r: String): String\n  r\nend\nfn Number.half: Number\n  self / 2\nend\ninterface I for Bool\n  fn flip: Bool\n    not self\n  end\nend\nprint a\n").syntax());
     assert_eq!(scanned.imports, ["b"]);
-    let got: Vec<(&str, &str, Option<&str>)> = scanned.methods.iter().map(|m| (m.owner, m.name.as_str(), m.ret)).collect();
-    assert_eq!(got, [("String", "+", Some("String")), ("Number", "half", Some("Number")), ("Bool", "flip", Some("Bool"))]);
+    let got: Vec<(&str, &str, Option<&str>)> = scanned
+        .methods
+        .iter()
+        .map(|m| (m.owner, m.name.as_str(), m.ret))
+        .collect();
+    assert_eq!(
+        got,
+        [
+            ("String", "+", Some("String")),
+            ("Number", "half", Some("Number")),
+            ("Bool", "flip", Some("Bool"))
+        ]
+    );
 
     struct Ops;
     impl ImportProvider for Ops {
@@ -1647,7 +2656,11 @@ fn primitive_methods_of_imports() {
             Ok(Vec::new())
         }
         fn primitive_methods(&self, _path: &str) -> Vec<PrimMethod> {
-            vec![PrimMethod { owner: "String", name: "+".into(), ret: Some("String") }]
+            vec![PrimMethod {
+                owner: "String",
+                name: "+".into(),
+                ret: Some("String"),
+            }]
         }
     }
     let src = "import { x } from 'ops'\nlet s: Number = \"a\" + \"b\"\nprint s, x\n";
@@ -1655,17 +2668,36 @@ fn primitive_methods_of_imports() {
     let decls = prelude_declarations();
     let res = resolve_with(&root, &Ops, &decls);
     let codes = |imports: Option<&dyn ImportProvider>| {
-        let opts = AnalyzeOptions { static_resolution: true, decls: Some(&decls), lints: false, imports, record: false };
-        analyze(&root, &res, &opts).diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+        let opts = AnalyzeOptions {
+            static_resolution: true,
+            decls: Some(&decls),
+            lints: false,
+            imports,
+            record: false,
+        };
+        analyze(&root, &res, &opts)
+            .diagnostics
+            .iter()
+            .map(|d| d.code)
+            .collect::<Vec<_>>()
     };
     assert_eq!(codes(None), ["bad-operand"]);
     // Known, with its return type.
     assert_eq!(codes(Some(&Ops)), ["type-mismatch"]);
     // Through a chain of imports, each file once, a cycle included.
-    let files: std::collections::HashMap<&str, &str> =
-        [("a", "import { b } from 'b'\nfn String.one\n  1\nend\n"), ("b", "import { a } from 'a'\nimport { c } from 'c'\n"), ("c", "fn Table.two\n  2\nend\n")].into_iter().collect();
-    let found = primitive_methods_through(Some("main"), "a", &|_, p| files.contains_key(p).then(|| p.to_string()), &|name| Some(scan_file(&nl_syntax::parse(files[name]).syntax())));
+    let files: std::collections::HashMap<&str, &str> = [
+        ("a", "import { b } from 'b'\nfn String.one\n  1\nend\n"),
+        ("b", "import { a } from 'a'\nimport { c } from 'c'\n"),
+        ("c", "fn Table.two\n  2\nend\n"),
+    ]
+    .into_iter()
+    .collect();
+    let found = primitive_methods_through(
+        Some("main"),
+        "a",
+        &|_, p| files.contains_key(p).then(|| p.to_string()),
+        &|name| Some(scan_file(&nl_syntax::parse(files[name]).syntax())),
+    );
     let names: Vec<&str> = found.iter().map(|m| m.name.as_str()).collect();
     assert_eq!(names, ["one", "two"]);
 }
-

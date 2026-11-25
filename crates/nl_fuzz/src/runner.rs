@@ -56,7 +56,12 @@ pub struct Config {
 }
 
 /// The oracle: the Lua backend with the defaults.
-pub const ORACLE: Config = Config { backend: Backend::Lua, checked: true, static_resolution: true, jit: Jit::On };
+pub const ORACLE: Config = Config {
+    backend: Backend::Lua,
+    checked: true,
+    static_resolution: true,
+    jit: Jit::On,
+};
 
 impl Config {
     /// The arguments of `nlc run` before the file.
@@ -89,7 +94,11 @@ impl Config {
                 Backend::Bc => "bc",
             },
             if self.checked { "checked" } else { "unchecked" },
-            if self.static_resolution { "static" } else { "nostatic" },
+            if self.static_resolution {
+                "static"
+            } else {
+                "nostatic"
+            },
             match self.jit {
                 Jit::On => "on",
                 Jit::Off => "off",
@@ -110,7 +119,12 @@ pub fn configs(checked_only: bool) -> Vec<Config> {
             }
             for static_resolution in [true, false] {
                 for jit in [Jit::On, Jit::Off, Jit::Hot] {
-                    let c = Config { backend, checked, static_resolution, jit };
+                    let c = Config {
+                        backend,
+                        checked,
+                        static_resolution,
+                        jit,
+                    };
                     if c != ORACLE {
                         out.push(c);
                     }
@@ -160,7 +174,9 @@ impl Outcome {
         match &self.status {
             Status::Exited(0 | 1) => {
                 let err = String::from_utf8_lossy(&self.stderr);
-                err.contains("panicked at") || err.contains("[internal-error]") || err.contains("LuaJIT ASSERT")
+                err.contains("panicked at")
+                    || err.contains("[internal-error]")
+                    || err.contains("LuaJIT ASSERT")
             }
             Status::Exited(_) | Status::Signal => true,
             Status::Timeout | Status::NotStarted(_) => false,
@@ -172,11 +188,21 @@ impl Outcome {
     pub fn own_finding(&self, run: &str, timeout: Duration) -> Option<Finding> {
         let (kind, detail) = match &self.status {
             Status::NotStarted(e) => (Kind::NotStarted, e.clone()),
-            Status::Timeout => (Kind::Timeout, format!("no answer after {}s", timeout.as_secs())),
-            _ if self.crashed() => (Kind::Crash, format!("{}: {}", self.status, first_error(&self.stderr))),
+            Status::Timeout => (
+                Kind::Timeout,
+                format!("no answer after {}s", timeout.as_secs()),
+            ),
+            _ if self.crashed() => (
+                Kind::Crash,
+                format!("{}: {}", self.status, first_error(&self.stderr)),
+            ),
             _ => return None,
         };
-        Some(Finding { kind, run: run.to_string(), detail })
+        Some(Finding {
+            kind,
+            run: run.to_string(),
+            detail,
+        })
     }
 }
 
@@ -184,7 +210,10 @@ impl Nlc {
     /// Runs `nlc <args> <file>` in `cwd`, with `NL_PATH` unset.
     pub fn run(&self, args: &[&str], file: &Path, cwd: &Path) -> Outcome {
         let mut cmd = Command::new(&self.path);
-        cmd.args(args).arg(file).current_dir(cwd).env_remove("NL_PATH");
+        cmd.args(args)
+            .arg(file)
+            .current_dir(cwd)
+            .env_remove("NL_PATH");
         // A backtrace would only make stderr longer.
         cmd.env_remove("RUST_BACKTRACE");
         run_with_timeout(cmd, self.timeout)
@@ -192,10 +221,18 @@ impl Nlc {
 }
 
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Outcome {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
     let mut child = match cmd.spawn() {
         Ok(c) => c,
-        Err(e) => return Outcome { status: Status::NotStarted(e.to_string()), stdout: Vec::new(), stderr: Vec::new() },
+        Err(e) => {
+            return Outcome {
+                status: Status::NotStarted(e.to_string()),
+                stdout: Vec::new(),
+                stderr: Vec::new(),
+            };
+        }
     };
     // Both pipes are drained on threads, so that a large output cannot
     // block the child while we wait for it.
@@ -230,7 +267,11 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Outcome {
     };
     let stdout = out_t.join().unwrap_or_default();
     let stderr = err_t.join().unwrap_or_default();
-    Outcome { status, stdout, stderr }
+    Outcome {
+        status,
+        stdout,
+        stderr,
+    }
 }
 
 /// What kind of finding.
@@ -296,7 +337,11 @@ pub fn first_error(stderr: &[u8]) -> String {
     // `path.nl:line:col: message`: keep the message.
     if let Some(i) = rest.find(".nl:") {
         if rest.get(..i).is_some_and(|p| !p.contains(' ')) {
-            rest = rest.get(i + 4..).unwrap_or("").trim_start_matches(|c: char| c.is_ascii_digit() || c == ':').trim();
+            rest = rest
+                .get(i + 4..)
+                .unwrap_or("")
+                .trim_start_matches(|c: char| c.is_ascii_digit() || c == ':')
+                .trim();
         }
     }
     rest.chars().take(160).collect()
@@ -312,7 +357,11 @@ pub fn first_difference(expected: &[u8], actual: &[u8]) -> String {
         let x = el.get(i).copied();
         let y = al.get(i).copied();
         if x != y {
-            let show = |s: Option<&str>| s.map_or("<end of output>".to_string(), |s| format!("{:?}", s.chars().take(80).collect::<String>()));
+            let show = |s: Option<&str>| {
+                s.map_or("<end of output>".to_string(), |s| {
+                    format!("{:?}", s.chars().take(80).collect::<String>())
+                })
+            };
             return format!("line {}: oracle {} vs {}", i + 1, show(x), show(y));
         }
     }
@@ -323,7 +372,12 @@ pub fn first_difference(expected: &[u8], actual: &[u8]) -> String {
 /// the oracle first. `file` is the program, already written; runs happen
 /// in its directory. When the oracle run fails, that is the one finding:
 /// there is nothing to compare the other runs with.
-pub fn check_program(nlc: &Nlc, file: &Path, checked_only: bool, configs_to_run: &[Config]) -> Report {
+pub fn check_program(
+    nlc: &Nlc,
+    file: &Path,
+    checked_only: bool,
+    configs_to_run: &[Config],
+) -> Report {
     let cwd = file.parent().unwrap_or(Path::new("."));
     let name = Path::new(file.file_name().unwrap_or_default());
     let mut report = Report::default();
@@ -331,7 +385,11 @@ pub fn check_program(nlc: &Nlc, file: &Path, checked_only: bool, configs_to_run:
     if let Some(f) = check.own_finding("check", nlc.timeout) {
         report.findings.push(f);
     } else if check.status != Status::Exited(0) {
-        report.findings.push(Finding { kind: Kind::Rejected, run: "check".into(), detail: first_error(&check.stderr) });
+        report.findings.push(Finding {
+            kind: Kind::Rejected,
+            run: "check".into(),
+            detail: first_error(&check.stderr),
+        });
     }
     report.outcomes.push(("check".into(), check));
     if !report.findings.is_empty() {
@@ -348,7 +406,11 @@ pub fn check_program(nlc: &Nlc, file: &Path, checked_only: bool, configs_to_run:
             None => {
                 let failed = match out.own_finding(&label, nlc.timeout) {
                     Some(f) => Some(f),
-                    None if out.status != Status::Exited(0) => Some(Finding { kind: Kind::OracleFailed, run: label.clone(), detail: first_error(&out.stderr) }),
+                    None if out.status != Status::Exited(0) => Some(Finding {
+                        kind: Kind::OracleFailed,
+                        run: label.clone(),
+                        detail: first_error(&out.stderr),
+                    }),
                     None => None,
                 };
                 report.outcomes.push((label, out.clone()));
@@ -363,8 +425,21 @@ pub fn check_program(nlc: &Nlc, file: &Path, checked_only: bool, configs_to_run:
                 if let Some(f) = out.own_finding(&label, nlc.timeout) {
                     report.findings.push(f);
                 } else if o.stdout != out.stdout || o.status != out.status {
-                    let detail = if o.status != out.status { format!("{} vs {}: {}", o.status, out.status, first_error(&out.stderr)) } else { first_difference(&o.stdout, &out.stdout) };
-                    report.findings.push(Finding { kind: Kind::Mismatch, run: label.clone(), detail });
+                    let detail = if o.status != out.status {
+                        format!(
+                            "{} vs {}: {}",
+                            o.status,
+                            out.status,
+                            first_error(&out.stderr)
+                        )
+                    } else {
+                        first_difference(&o.stdout, &out.stdout)
+                    };
+                    report.findings.push(Finding {
+                        kind: Kind::Mismatch,
+                        run: label.clone(),
+                        detail,
+                    });
                 }
             }
         }
@@ -397,15 +472,25 @@ pub fn check_mutant(nlc: &Nlc, file: &Path) -> Report {
     if !compiled {
         return report;
     }
-    for (l, a) in [("build-lua", vec!["build", "--emit=lua"]), ("build-bc", vec!["build", "--emit=bc", "-o", "mutant.bc"])] {
+    for (l, a) in [
+        ("build-lua", vec!["build", "--emit=lua"]),
+        ("build-bc", vec!["build", "--emit=bc", "-o", "mutant.bc"]),
+    ] {
         let o = nlc.run(&a, name, cwd);
         report.findings.extend(o.own_finding(l, nlc.timeout));
         report.outcomes.push((l.to_string(), o));
     }
-    let short = Nlc { path: nlc.path.clone(), timeout: nlc.timeout.min(MUTANT_ORACLE_TIMEOUT) };
+    let short = Nlc {
+        path: nlc.path.clone(),
+        timeout: nlc.timeout.min(MUTANT_ORACLE_TIMEOUT),
+    };
     for (i, c) in configs(false).iter().enumerate() {
         let label = c.label();
-        let out = if i == 0 { short.run(&c.args(), name, cwd) } else { nlc.run(&c.args(), name, cwd) };
+        let out = if i == 0 {
+            short.run(&c.args(), name, cwd)
+        } else {
+            nlc.run(&c.args(), name, cwd)
+        };
         if i == 0 && out.status == Status::Timeout {
             report.outcomes.push((label, out));
             break;
@@ -433,24 +518,60 @@ mod tests {
 
     #[test]
     fn error_lines() {
-        assert_eq!(first_error(b"\nprog.nl:3:4: error: bad thing [code]\nmore"), "error: bad thing [code]");
-        assert_eq!(first_error(b"nlc: prog.nl:9: attempt to call nil"), "attempt to call nil");
-        assert_eq!(first_difference(b"a\nb\n", b"a\nc\n"), "line 2: oracle \"b\" vs \"c\"");
+        assert_eq!(
+            first_error(b"\nprog.nl:3:4: error: bad thing [code]\nmore"),
+            "error: bad thing [code]"
+        );
+        assert_eq!(
+            first_error(b"nlc: prog.nl:9: attempt to call nil"),
+            "attempt to call nil"
+        );
+        assert_eq!(
+            first_difference(b"a\nb\n", b"a\nc\n"),
+            "line 2: oracle \"b\" vs \"c\""
+        );
     }
 
     #[test]
     fn crash_detection() {
-        let o = |status, err: &str| Outcome { status, stdout: Vec::new(), stderr: err.as_bytes().to_vec() };
+        let o = |status, err: &str| Outcome {
+            status,
+            stdout: Vec::new(),
+            stderr: err.as_bytes().to_vec(),
+        };
         assert!(!o(Status::Exited(1), "x.nl:1:1: error: nope").crashed());
         assert!(o(Status::Exited(101), "").crashed());
         assert!(o(Status::Signal, "").crashed());
         assert!(o(Status::Exited(1), "thread 'main' panicked at src/x.rs").crashed());
         assert!(o(Status::Exited(1), "x.nl:1:1: error: boom [internal-error]").crashed());
-        assert!(o(Status::Exited(1), "LuaJIT ASSERT lj_record.c:177: rec_check_slots").crashed());
+        assert!(
+            o(
+                Status::Exited(1),
+                "LuaJIT ASSERT lj_record.c:177: rec_check_slots"
+            )
+            .crashed()
+        );
         let t = Duration::from_secs(1);
-        assert_eq!(o(Status::Signal, "LuaJIT ASSERT lj_record.c:177").own_finding("x", t).map(|f| f.kind), Some(Kind::Crash));
-        assert_eq!(o(Status::Timeout, "").own_finding("x", t).map(|f| f.kind), Some(Kind::Timeout));
-        assert_eq!(o(Status::NotStarted("no such file".into()), "").own_finding("x", t).map(|f| f.kind), Some(Kind::NotStarted));
-        assert!(o(Status::Exited(1), "x.nl:2: attempt to call nil").own_finding("x", t).is_none());
+        assert_eq!(
+            o(Status::Signal, "LuaJIT ASSERT lj_record.c:177")
+                .own_finding("x", t)
+                .map(|f| f.kind),
+            Some(Kind::Crash)
+        );
+        assert_eq!(
+            o(Status::Timeout, "").own_finding("x", t).map(|f| f.kind),
+            Some(Kind::Timeout)
+        );
+        assert_eq!(
+            o(Status::NotStarted("no such file".into()), "")
+                .own_finding("x", t)
+                .map(|f| f.kind),
+            Some(Kind::NotStarted)
+        );
+        assert!(
+            o(Status::Exited(1), "x.nl:2: attempt to call nil")
+                .own_finding("x", t)
+                .is_none()
+        );
     }
 }

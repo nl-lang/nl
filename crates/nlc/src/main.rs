@@ -83,7 +83,9 @@
 use std::io::Write as _;
 use std::process::ExitCode;
 
-use nl_syntax::{Diagnostic, DumpOptions, LineIndex, Severity, dump_tree, parse, source_from_bytes};
+use nl_syntax::{
+    Diagnostic, DumpOptions, LineIndex, Severity, dump_tree, parse, source_from_bytes,
+};
 
 mod bundle;
 mod fmt;
@@ -166,7 +168,9 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         other => {
-            eprintln!("nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle`, `runtime`, `remap`, `minify` and `fmt`\n\n{USAGE}");
+            eprintln!(
+                "nlc: unknown command `{other}`; the commands are `parse`, `check`, `build`, `run`, `bundle`, `runtime`, `remap`, `minify` and `fmt`\n\n{USAGE}"
+            );
             ExitCode::from(2)
         }
     }
@@ -214,7 +218,11 @@ fn cmd_parse(files: &[String]) -> ExitCode {
         }
     }
     let _ = out.flush();
-    if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if failed {
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }
 
 /// `nlc remap <map.json>...`: stdin to stdout, remapped
@@ -248,7 +256,9 @@ fn cmd_remap(maps: &[String]) -> ExitCode {
         return ExitCode::FAILURE;
     }
     let text = String::from_utf8_lossy(&input);
-    let _ = std::io::stdout().write_all(nl_capi::sourcemap::remap_text(&loaded.iter().collect::<Vec<_>>(), &text).as_bytes());
+    let _ = std::io::stdout().write_all(
+        nl_capi::sourcemap::remap_text(&loaded.iter().collect::<Vec<_>>(), &text).as_bytes(),
+    );
     ExitCode::SUCCESS
 }
 
@@ -317,7 +327,11 @@ fn cmd_minify(args: &[String]) -> ExitCode {
 /// With `at_end`, the position is the end of `text` (the valid prefix of a
 /// file that is not UTF-8).
 fn report(path: &str, text: &str, index: &LineIndex, d: &Diagnostic, at_end: bool) {
-    let (start, end) = if at_end { (nl_syntax::TextSize::of(text), nl_syntax::TextSize::of(text)) } else { (d.range.start(), d.range.end()) };
+    let (start, end) = if at_end {
+        (nl_syntax::TextSize::of(text), nl_syntax::TextSize::of(text))
+    } else {
+        (d.range.start(), d.range.end())
+    };
     let lc = index.line_col(text, start);
     let end = index.line_col(text, end);
     let severity = match d.severity {

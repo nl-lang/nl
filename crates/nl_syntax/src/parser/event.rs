@@ -17,7 +17,10 @@ pub(crate) enum Event {
     /// Starts a node. `kind` is `None` for an abandoned marker (a tombstone).
     /// `forward_parent` is the distance to a later `Start` event that must be
     /// opened before this one (it was created by `precede`).
-    Start { kind: Option<SyntaxKind>, forward_parent: Option<u32> },
+    Start {
+        kind: Option<SyntaxKind>,
+        forward_parent: Option<u32>,
+    },
     /// Finishes the innermost open node.
     Finish,
     /// One token with the given kind (possibly remapped from the lexer's, as
@@ -51,7 +54,11 @@ impl Marker {
     pub(crate) fn abandon(self, p: &mut Parser<'_>) {
         let idx = self.pos as usize;
         if idx + 1 == p.events.len() {
-            if let Some(Event::Start { kind: None, forward_parent: None }) = p.events.last() {
+            if let Some(Event::Start {
+                kind: None,
+                forward_parent: None,
+            }) = p.events.last()
+            {
                 p.events.pop();
             }
         }

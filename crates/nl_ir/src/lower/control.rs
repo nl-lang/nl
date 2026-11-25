@@ -33,7 +33,14 @@ impl Lowerer<'_> {
         let mut rest = otherwise;
         for c in clauses.into_iter().rev() {
             let mut stmts = c.stmts;
-            stmts.push(Stmt { line: c.line, kind: StmtKind::If { cond: c.cond, then: c.body, otherwise: rest } });
+            stmts.push(Stmt {
+                line: c.line,
+                kind: StmtKind::If {
+                    cond: c.cond,
+                    then: c.body,
+                    otherwise: rest,
+                },
+            });
             rest = Some(Block::new(stmts));
         }
         if let Some(b) = rest {
@@ -54,8 +61,12 @@ impl Lowerer<'_> {
     /// A condition, or an `if let`.
     fn condition(&mut self, owner: &SyntaxNode) -> Expr {
         if let Some(lc) = child(owner, LET_CONDITION) {
-            let Some(value) = expr_child(&lc) else { return self.internal(&lc, "let condition") };
-            let Some(pat) = pattern_children(&lc).next() else { return self.internal(&lc, "let condition") };
+            let Some(value) = expr_child(&lc) else {
+                return self.internal(&lc, "let condition");
+            };
+            let Some(pat) = pattern_children(&lc).next() else {
+                return self.internal(&lc, "let condition");
+            };
             let v = self.expr1(&value);
             return self.bind_may(&pat, v);
         }
@@ -98,13 +109,24 @@ impl Lowerer<'_> {
         match self.decided(node) {
             Some(false) => {}
             Some(true) => {
-                otherwise = Some(block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default());
+                otherwise = Some(
+                    block(node)
+                        .map(|b| self.lower_block(&b, tail))
+                        .unwrap_or_default(),
+                );
                 taken = true;
             }
             None => {
                 let (stmts, cond) = self.capture(|l| l.condition(node));
-                let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-                clauses.push(Clause { line, stmts, cond, body });
+                let body = block(node)
+                    .map(|b| self.lower_block(&b, tail))
+                    .unwrap_or_default();
+                clauses.push(Clause {
+                    line,
+                    stmts,
+                    cond,
+                    body,
+                });
             }
         }
         for c in node.children() {
@@ -118,13 +140,24 @@ impl Lowerer<'_> {
                     match self.decided(&c) {
                         Some(false) => {}
                         Some(true) => {
-                            otherwise = Some(block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default());
+                            otherwise = Some(
+                                block(&c)
+                                    .map(|b| self.lower_block(&b, tail))
+                                    .unwrap_or_default(),
+                            );
                             taken = true;
                         }
                         None => {
                             let (stmts, cond) = self.capture(|l| l.condition(&c));
-                            let body = block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-                            clauses.push(Clause { line, stmts, cond, body });
+                            let body = block(&c)
+                                .map(|b| self.lower_block(&b, tail))
+                                .unwrap_or_default();
+                            clauses.push(Clause {
+                                line,
+                                stmts,
+                                cond,
+                                body,
+                            });
                         }
                     }
                 }
@@ -140,7 +173,11 @@ impl Lowerer<'_> {
 
     /// `unless`, with the realm constants of `if`.
     pub(crate) fn lower_unless(&mut self, node: &SyntaxNode, tail: Tail) {
-        let else_block = |l: &mut Self| child(node, ELSE_CLAUSE).and_then(|c| block(&c)).map(|b| l.lower_block(&b, tail));
+        let else_block = |l: &mut Self| {
+            child(node, ELSE_CLAUSE)
+                .and_then(|c| block(&c))
+                .map(|b| l.lower_block(&b, tail))
+        };
         match self.decided(node) {
             // The body never runs.
             Some(true) => {
@@ -152,7 +189,9 @@ impl Lowerer<'_> {
                 return;
             }
             Some(false) => {
-                let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
+                let body = block(node)
+                    .map(|b| self.lower_block(&b, tail))
+                    .unwrap_or_default();
                 self.emit_branches(Vec::new(), Some(body));
                 return;
             }
@@ -160,12 +199,22 @@ impl Lowerer<'_> {
         }
         let line = self.line;
         let (stmts, cond) = self.capture(|l| l.condition(node));
-        let body = block(node).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
+        let body = block(node)
+            .map(|b| self.lower_block(&b, tail))
+            .unwrap_or_default();
         let mut otherwise = else_block(self);
         if otherwise.is_none() {
             otherwise = self.missing_branch(tail);
         }
-        self.emit_chain(vec![Clause { line, stmts, cond: Expr::lnot(cond), body }], otherwise);
+        self.emit_chain(
+            vec![Clause {
+                line,
+                stmts,
+                cond: Expr::lnot(cond),
+                body,
+            }],
+            otherwise,
+        );
     }
 
     /// `cond`: the first branch whose condition is truthy.
@@ -178,8 +227,15 @@ impl Lowerer<'_> {
                     self.line = self.line_of(&c);
                     let line = self.line;
                     let (stmts, cond) = self.capture(|l| l.condition(&c));
-                    let body = block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-                    clauses.push(Clause { line, stmts, cond, body });
+                    let body = block(&c)
+                        .map(|b| self.lower_block(&b, tail))
+                        .unwrap_or_default();
+                    clauses.push(Clause {
+                        line,
+                        stmts,
+                        cond,
+                        body,
+                    });
                 }
                 ELSE_CLAUSE => otherwise = block(&c).map(|b| self.lower_block(&b, tail)),
                 _ => {}
@@ -208,8 +264,15 @@ impl Lowerer<'_> {
                     self.line = self.line_of(&c);
                     let line = self.line;
                     let (stmts, cond) = self.capture(|l| l.when_test(&c, &s));
-                    let body = block(&c).map(|b| self.lower_block(&b, tail)).unwrap_or_default();
-                    clauses.push(Clause { line, stmts, cond, body });
+                    let body = block(&c)
+                        .map(|b| self.lower_block(&b, tail))
+                        .unwrap_or_default();
+                    clauses.push(Clause {
+                        line,
+                        stmts,
+                        cond,
+                        body,
+                    });
                 }
                 ELSE_CLAUSE => otherwise = block(&c).map(|b| self.lower_block(&b, tail)),
                 _ => {}
@@ -224,7 +287,10 @@ impl Lowerer<'_> {
     /// The test of one `when` clause: its items joined with `or`, then the
     /// guard.
     fn when_test(&mut self, clause: &SyntaxNode, subject: &Expr) -> Expr {
-        let items: Vec<SyntaxNode> = clause.children().filter(|c| is_pattern(c.kind()) || is_expr(c.kind())).collect();
+        let items: Vec<SyntaxNode> = clause
+            .children()
+            .filter(|c| is_pattern(c.kind()) || is_expr(c.kind()))
+            .collect();
         let mut tests = Vec::new();
         for item in &items {
             let (stmts, t) = self.capture(|l| {
@@ -253,11 +319,21 @@ impl Lowerer<'_> {
             let mut rest: Vec<Stmt> = Vec::new();
             for (stmts, t) in tests.into_iter().rev() {
                 let mut block = stmts;
-                block.push(Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Local(flag)], values: vec![t] } });
+                block.push(Stmt {
+                    line,
+                    kind: StmtKind::Assign {
+                        targets: vec![Place::Local(flag)],
+                        values: vec![t],
+                    },
+                });
                 if !rest.is_empty() {
                     block.push(Stmt {
                         line,
-                        kind: StmtKind::If { cond: Expr::lnot(Expr::Local(flag)), then: Block::new(rest), otherwise: None },
+                        kind: StmtKind::If {
+                            cond: Expr::lnot(Expr::Local(flag)),
+                            then: Block::new(rest),
+                            otherwise: None,
+                        },
                     });
                 }
                 rest = block;
@@ -272,8 +348,18 @@ impl Lowerer<'_> {
             } else {
                 let flag = self.fresh_temp(cond, "matched");
                 let mut body = stmts;
-                body.push(Stmt { line: self.line, kind: StmtKind::Assign { targets: vec![Place::Local(flag)], values: vec![gv] } });
-                self.emit(StmtKind::If { cond: Expr::Local(flag), then: Block::new(body), otherwise: None });
+                body.push(Stmt {
+                    line: self.line,
+                    kind: StmtKind::Assign {
+                        targets: vec![Place::Local(flag)],
+                        values: vec![gv],
+                    },
+                });
+                self.emit(StmtKind::If {
+                    cond: Expr::Local(flag),
+                    then: Block::new(body),
+                    otherwise: None,
+                });
                 cond = Expr::Local(flag);
             }
         }
@@ -286,7 +372,8 @@ impl Lowerer<'_> {
     /// with `==`.
     fn when_value(&mut self, item: &SyntaxNode, subject: Expr) -> Expr {
         let is_literal = item.kind() == LITERAL
-            || (item.kind() == PREFIX_EXPR && expr_child(item).is_some_and(|e| e.kind() == LITERAL));
+            || (item.kind() == PREFIX_EXPR
+                && expr_child(item).is_some_and(|e| e.kind() == LITERAL));
         let v = self.expr1(item);
         if is_literal {
             Expr::binary(BinOp::Eq, subject, v)
@@ -316,7 +403,9 @@ impl Lowerer<'_> {
             }
         };
         self.push_loop();
-        let body = block(node).map(|b| self.lower_block(&b, Tail::Discard)).unwrap_or_default();
+        let body = block(node)
+            .map(|b| self.lower_block(&b, Tail::Discard))
+            .unwrap_or_default();
         let body = self.finish_loop_body(body);
         if cond_stmts.is_empty() {
             self.emit(StmtKind::While { cond, body });
@@ -325,10 +414,20 @@ impl Lowerer<'_> {
             let mut stmts = cond_stmts;
             stmts.push(Stmt {
                 line,
-                kind: StmtKind::If { cond: Expr::lnot(cond), then: Block::new(vec![Stmt { line, kind: StmtKind::Break }]), otherwise: None },
+                kind: StmtKind::If {
+                    cond: Expr::lnot(cond),
+                    then: Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Break,
+                    }]),
+                    otherwise: None,
+                },
             });
             stmts.extend(body.stmts);
-            self.emit(StmtKind::While { cond: Expr::Bool(true), body: Block::new(stmts) });
+            self.emit(StmtKind::While {
+                cond: Expr::Bool(true),
+                body: Block::new(stmts),
+            });
         }
     }
 
@@ -343,7 +442,11 @@ impl Lowerer<'_> {
             match el {
                 rowan::NodeOrToken::Token(t) if t.kind() == IN_KW => seen_in = true,
                 rowan::NodeOrToken::Node(n) if !seen_in && is_pattern(n.kind()) => pats.push(n),
-                rowan::NodeOrToken::Node(n) if seen_in && iterable.is_none() && is_expr(n.kind()) => iterable = Some(n),
+                rowan::NodeOrToken::Node(n)
+                    if seen_in && iterable.is_none() && is_expr(n.kind()) =>
+                {
+                    iterable = Some(n)
+                }
                 _ => {}
             }
         }
@@ -362,12 +465,18 @@ impl Lowerer<'_> {
         for p in &pats {
             match simple_binding(p) {
                 Some((name, ty)) => {
-                    let Some(id) = self.res.declaration(name.text_range()) else { continue };
+                    let Some(id) = self.res.declaration(name.text_range()) else {
+                        continue;
+                    };
                     let l = self.local_of(id);
                     self.mark_predeclared(id);
                     vars.push(l);
                     if let Some(t) = ty {
-                        destructure.push((l, None, Some((t, name_text(&name).unwrap_or_default()))));
+                        destructure.push((
+                            l,
+                            None,
+                            Some((t, name_text(&name).unwrap_or_default())),
+                        ));
                     }
                 }
                 None => {
@@ -398,33 +507,77 @@ impl Lowerer<'_> {
         // each form is what `rt.iter` picks for such a value.
         match self.opts.hints.loop_form(node.text_range()) {
             Some(nl_sema::LoopHint::Function) => {
-                self.emit(StmtKind::GenericFor { vars, iter: vec![it], body });
+                self.emit(StmtKind::GenericFor {
+                    vars,
+                    iter: vec![it],
+                    body,
+                });
             }
             Some(nl_sema::LoopHint::Map) => {
                 let t = self.temp_of(single(it), "map");
-                self.emit(StmtKind::GenericFor { vars, iter: vec![Expr::Global("next".to_string()), t, Expr::Nil], body });
+                self.emit(StmtKind::GenericFor {
+                    vars,
+                    iter: vec![Expr::Global("next".to_string()), t, Expr::Nil],
+                    body,
+                });
             }
             Some(nl_sema::LoopHint::Array) if n == 1 => {
                 // The array values in order, up to the first nil.
                 let t = self.temp_of(single(it), "list");
                 let i = self.new_local("i");
-                self.emit(StmtKind::Local { locals: vec![i], values: vec![Expr::Number(0.0)] });
+                self.emit(StmtKind::Local {
+                    locals: vec![i],
+                    values: vec![Expr::Number(0.0)],
+                });
                 let line = self.line;
                 let var = vars.first().copied().unwrap_or(i);
                 let mut stmts = vec![
-                    Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Local(i)], values: vec![Expr::binary(BinOp::Add, Expr::Local(i), Expr::Number(1.0))] } },
-                    Stmt { line, kind: StmtKind::Local { locals: vec![var], values: vec![Expr::index(t, Expr::Local(i))] } },
-                    Stmt { line, kind: StmtKind::If { cond: Expr::binary(BinOp::Eq, Expr::Local(var), Expr::Nil), then: Block::new(vec![Stmt { line, kind: StmtKind::Break }]), otherwise: None } },
+                    Stmt {
+                        line,
+                        kind: StmtKind::Assign {
+                            targets: vec![Place::Local(i)],
+                            values: vec![Expr::binary(
+                                BinOp::Add,
+                                Expr::Local(i),
+                                Expr::Number(1.0),
+                            )],
+                        },
+                    },
+                    Stmt {
+                        line,
+                        kind: StmtKind::Local {
+                            locals: vec![var],
+                            values: vec![Expr::index(t, Expr::Local(i))],
+                        },
+                    },
+                    Stmt {
+                        line,
+                        kind: StmtKind::If {
+                            cond: Expr::binary(BinOp::Eq, Expr::Local(var), Expr::Nil),
+                            then: Block::new(vec![Stmt {
+                                line,
+                                kind: StmtKind::Break,
+                            }]),
+                            otherwise: None,
+                        },
+                    },
                 ];
                 stmts.extend(body.stmts);
-                self.emit(StmtKind::While { cond: Expr::Bool(true), body: Block::new(stmts) });
+                self.emit(StmtKind::While {
+                    cond: Expr::Bool(true),
+                    body: Block::new(stmts),
+                });
             }
             _ => {
                 if let [var] = vars[..] {
                     self.for_one(var, it, body);
                 } else {
                     let iter = Expr::intrinsic_call("iter", vec![Expr::Number(n as f64), it]);
-                    self.emit(StmtKind::GenericFor { vars, iter: vec![iter], body });
+                    self.emit(StmtKind::GenericFor {
+                        vars,
+                        iter: vec![iter],
+                        body,
+                    });
                 }
             }
         }
@@ -460,26 +613,64 @@ impl Lowerer<'_> {
         let line = self.line;
         // Hints no program is likely to use for a variable of its own: the
         // Lua backend numbers the variables that share a name.
-        let [f, state, control, hidden, c, v] =
-            ["iter_f", "iter_state", "iter_control", "iter_hidden", "iter_c", "iter_v"].map(|hint| self.new_local(hint));
+        let [f, state, control, hidden, c, v] = [
+            "iter_f",
+            "iter_state",
+            "iter_control",
+            "iter_hidden",
+            "iter_c",
+            "iter_v",
+        ]
+        .map(|hint| self.new_local(hint));
         let local = |l: LocalId| Expr::Local(l);
         let value = Expr::binary(
             BinOp::Or,
             Expr::binary(BinOp::And, local(hidden), local(v)),
             Expr::binary(BinOp::And, Expr::lnot(local(hidden)), local(c)),
         );
-        let mut stmts = vec![Stmt { line, kind: StmtKind::Local { locals: vec![var], values: vec![value] } }];
+        let mut stmts = vec![Stmt {
+            line,
+            kind: StmtKind::Local {
+                locals: vec![var],
+                values: vec![value],
+            },
+        }];
         stmts.extend(body.stmts);
         let iter = Expr::intrinsic_call("iter", vec![Expr::Number(0.0), it]);
         let marked = Expr::binary(BinOp::Eq, local(hidden), Expr::Intrinsic("iter"));
         self.emit(StmtKind::Do(Block::new(vec![
-            Stmt { line, kind: StmtKind::Local { locals: vec![f, state, control, hidden], values: vec![iter] } },
-            Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Local(hidden)], values: vec![marked] } },
-            Stmt { line, kind: StmtKind::GenericFor { vars: vec![c, v], iter: vec![local(f), local(state), local(control)], body: Block::new(stmts) } },
+            Stmt {
+                line,
+                kind: StmtKind::Local {
+                    locals: vec![f, state, control, hidden],
+                    values: vec![iter],
+                },
+            },
+            Stmt {
+                line,
+                kind: StmtKind::Assign {
+                    targets: vec![Place::Local(hidden)],
+                    values: vec![marked],
+                },
+            },
+            Stmt {
+                line,
+                kind: StmtKind::GenericFor {
+                    vars: vec![c, v],
+                    iter: vec![local(f), local(state), local(control)],
+                    body: Block::new(stmts),
+                },
+            },
         ])));
     }
 
-    fn numeric_for(&mut self, node: &SyntaxNode, pats: &[SyntaxNode], range: &SyntaxNode, step: Option<&SyntaxNode>) {
+    fn numeric_for(
+        &mut self,
+        node: &SyntaxNode,
+        pats: &[SyntaxNode],
+        range: &SyntaxNode,
+        step: Option<&SyntaxNode>,
+    ) {
         let exclusive = bin_op(range).is_some_and(|t| t.kind() == DOT3);
         let bounds: Vec<SyntaxNode> = expr_children(range).collect();
         let mut vals = self.operands(&bounds).into_iter().map(single);
@@ -504,7 +695,10 @@ impl Lowerer<'_> {
                     v => {
                         down = None;
                         let t = self.new_local("step");
-                        self.emit(StmtKind::Local { locals: vec![t], values: vec![Expr::intrinsic_call("step", vec![v])] });
+                        self.emit(StmtKind::Local {
+                            locals: vec![t],
+                            values: vec![Expr::intrinsic_call("step", vec![v])],
+                        });
                         Expr::Local(t)
                     }
                 })
@@ -522,7 +716,11 @@ impl Lowerer<'_> {
                 (l, ty.map(|t| (t, name_text(&name).unwrap_or_default())))
             }
             _ => {
-                self.error(node, "range-loop-pattern", "a loop over a range takes one plain variable");
+                self.error(
+                    node,
+                    "range-loop-pattern",
+                    "a loop over a range takes one plain variable",
+                );
                 return;
             }
         };
@@ -539,14 +737,25 @@ impl Lowerer<'_> {
                     (Some(true), _) => at_limit(BinOp::Le),
                     (None, Some(st)) => Expr::binary(
                         BinOp::Or,
-                        Expr::binary(BinOp::And, Expr::binary(BinOp::Gt, st.clone(), Expr::Number(0.0)), at_limit(BinOp::Ge)),
-                        Expr::binary(BinOp::And, Expr::binary(BinOp::Lt, st.clone(), Expr::Number(0.0)), at_limit(BinOp::Le)),
+                        Expr::binary(
+                            BinOp::And,
+                            Expr::binary(BinOp::Gt, st.clone(), Expr::Number(0.0)),
+                            at_limit(BinOp::Ge),
+                        ),
+                        Expr::binary(
+                            BinOp::And,
+                            Expr::binary(BinOp::Lt, st.clone(), Expr::Number(0.0)),
+                            at_limit(BinOp::Le),
+                        ),
                     ),
                     (None, None) => at_limit(BinOp::Ge),
                 };
                 l.emit(StmtKind::If {
                     cond,
-                    then: Block::new(vec![Stmt { line, kind: StmtKind::Break }]),
+                    then: Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Break,
+                    }]),
                     otherwise: None,
                 });
             }
@@ -559,7 +768,13 @@ impl Lowerer<'_> {
             }
         });
         let body = self.finish_loop_body(body);
-        self.emit(StmtKind::NumericFor { var, start, limit, step, body });
+        self.emit(StmtKind::NumericFor {
+            var,
+            start,
+            limit,
+            step,
+            body,
+        });
     }
 
     pub(crate) fn lower_break(&mut self, node: &SyntaxNode) {

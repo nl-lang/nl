@@ -35,18 +35,28 @@ impl Parser<'_> {
                 }
                 let m = self.start();
                 self.bump();
-                let shape = if k == CNAME { Shape::CapName } else { Shape::Name };
+                let shape = if k == CNAME {
+                    Shape::CapName
+                } else {
+                    Shape::Name
+                };
                 (m.complete(self, NAME_REF), shape)
             }
             SELF_KW | SELF_TYPE_KW => {
                 let m = self.start();
                 self.bump();
-                let shape = if k == SELF_KW { Shape::SelfValue } else { Shape::SelfType };
+                let shape = if k == SELF_KW {
+                    Shape::SelfValue
+                } else {
+                    Shape::SelfType
+                };
                 (m.complete(self, SELF_EXPR), shape)
             }
             AT_NAME => {
                 let word = self.nth_text(0).trim_start_matches('@');
-                if crate::keyword_kind(word).is_none() && crate::name_case(word) == crate::NameCase::Other {
+                if crate::keyword_kind(word).is_none()
+                    && crate::name_case(word) == crate::NameCase::Other
+                {
                     let msg = format!(
                         "`@{word}` names a field, and field names are snake_case (`@{}`); a name in \
                          the style of `{word}` is only allowed in a Lua path or after `:` in a \
@@ -86,7 +96,9 @@ impl Parser<'_> {
             CASE_KW => (self.case_expr(), Shape::Construct),
             COND_KW if self.cond_follows() => (self.cond_expr(), Shape::Construct),
             COND_KW => {
-                self.error("`cond` is a keyword: it starts a `cond … when … end` block. Use another name");
+                self.error(
+                    "`cond` is a keyword: it starts a `cond … when … end` block. Use another name",
+                );
                 // Recover as if it were a name, so that `while cond` keeps
                 // its block.
                 let m = self.start();
@@ -119,7 +131,10 @@ impl Parser<'_> {
                 self.statement();
                 (m.complete(self, ERROR_NODE), Shape::Other)
             }
-            ASYNC_KW if matches!(self.nth(1), PIPE | PIPE2) || (self.nth(1) == LNAME && self.nth_at(2, ARROW)) => {
+            ASYNC_KW
+                if matches!(self.nth(1), PIPE | PIPE2)
+                    || (self.nth(1) == LNAME && self.nth_at(2, ARROW)) =>
+            {
                 self.error("a short function cannot be async: write `async fn(a) … end`");
                 return self.junk_then_operand(start, cmd_ok);
             }
@@ -182,7 +197,11 @@ impl Parser<'_> {
                 return Some(e);
             }
         }
-        Some(Expr { cm: junk, shape: Shape::Other, start })
+        Some(Expr {
+            cm: junk,
+            shape: Shape::Other,
+            start,
+        })
     }
 
     /// `"(" expr ")"`: an `expr`, in a bracket context.
@@ -236,7 +255,11 @@ impl Parser<'_> {
                 self.error("expected a value after the key's `:`");
             }
             let value = self.text_between(value_start, self.pos());
-            let value = if value.is_empty() { "…".to_string() } else { value };
+            let value = if value.is_empty() {
+                "…".to_string()
+            } else {
+                value
+            };
             let msg = if k == NIL_KW {
                 format!(
                     "`nil` is not a key name here, and `nil` cannot be a key. For the string key \
@@ -268,14 +291,19 @@ impl Parser<'_> {
         // Lua's `{a = 1}`: at the start of an item (after `{` or `,`), a word
         // followed by `=` can only be a key written the Lua way. Read the `=`
         // as the key's colon so the rest of the table parses.
-        let at_item_start =
-            self.pos.checked_sub(1).and_then(|i| self.toks.get(i)).is_some_and(|t| matches!(t.kind, L_CURLY | COMMA));
+        let at_item_start = self
+            .pos
+            .checked_sub(1)
+            .and_then(|i| self.toks.get(i))
+            .is_some_and(|t| matches!(t.kind, L_CURLY | COMMA));
         if is_word(k) && self.nth_at(1, EQ) && at_item_start {
             let text = self.nth_text(0).to_string();
             let key = self.start();
             self.bump_word();
             key.complete(self, TABLE_KEY);
-            self.err_bump(format!("a table key is followed by `:`, not `=`: write `{text}: …`"));
+            self.err_bump(format!(
+                "a table key is followed by `:`, not `=`: write `{text}: …`"
+            ));
             if self.expr().is_none() {
                 self.error("expected a value after the key");
             }
@@ -284,7 +312,9 @@ impl Parser<'_> {
         }
         if k == MINUS && self.nth_at(1, NUMBER) && self.nth_at(2, COLON) {
             let num = self.nth_text(1).to_string();
-            self.error(format!("a table key cannot be negative: set it with an assignment, `t[-{num}] = …`"));
+            self.error(format!(
+                "a table key cannot be negative: set it with an assignment, `t[-{num}] = …`"
+            ));
             let key = self.start();
             self.bump();
             self.bump();
@@ -564,7 +594,11 @@ impl Parser<'_> {
 
     /// `->` where an operand should start: no parameters before it.
     fn arrow_without_params(&mut self) {
-        let prev = self.pos.checked_sub(1).and_then(|i| self.toks.get(i)).map(|t| t.kind);
+        let prev = self
+            .pos
+            .checked_sub(1)
+            .and_then(|i| self.toks.get(i))
+            .map(|t| t.kind);
         let msg = if matches!(prev, Some(PIPE | PIPE2)) {
             // `f |a| -> a`: after a value, `|` and `||` are operators.
             "after a value, `|` is bitwise or and `||` logical or, so a short function written \
@@ -641,7 +675,10 @@ impl Parser<'_> {
             } else {
                 let range = spawn_range.cover(self.range_from(callee.start));
                 let name = self.text_between(callee.start, self.pos()).to_string();
-                self.error_at(range, format!("`spawn` needs an argument list: `spawn {name}()`"));
+                self.error_at(
+                    range,
+                    format!("`spawn` needs an argument list: `spawn {name}()`"),
+                );
             }
         }
         if self.at_trailing_do() {
@@ -682,7 +719,10 @@ impl Parser<'_> {
         }
         let e = self.primary(false)?;
         let e = self.member_steps(e);
-        if !matches!(e.shape, Shape::Name | Shape::At | Shape::Member { lower: true, .. }) {
+        if !matches!(
+            e.shape,
+            Shape::Name | Shape::At | Shape::Member { lower: true, .. }
+        ) {
             let range = self.range_from(e.start);
             self.error_at(
                 range,
@@ -709,7 +749,9 @@ impl Parser<'_> {
                 }
                 _ => {
                     let found = self.describe_cur();
-                    self.error(format!("expected the handler's name as a string after `as`, found {found}"));
+                    self.error(format!(
+                        "expected the handler's name as a string after `as`, found {found}"
+                    ));
                 }
             }
         }

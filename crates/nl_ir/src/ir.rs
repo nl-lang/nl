@@ -31,8 +31,8 @@
 /// keeps no frame for a tail call, so an error raised in one would name
 /// the caller's line.
 pub const SINGLE_RESULT_INTRINSICS: &[&str] = &[
-    "index", "len", "new", "as", "idiv", "band", "bor", "bxor", "shl", "shr", "ushr", "bnot", "lt", "le", "gt", "ge",
-    "raise", "spawn",
+    "index", "len", "new", "as", "idiv", "band", "bor", "bxor", "shl", "shr", "ushr", "bnot", "lt",
+    "le", "gt", "ge", "raise", "spawn",
 ];
 
 /// Intrinsics whose `return` stays a tail call: they cannot raise, and
@@ -88,7 +88,9 @@ pub struct LocalInfo {
 /// or the lowering's list before the chunk exists).
 pub fn new_local(locals: &mut Vec<LocalInfo>, hint: &str) -> LocalId {
     let id = LocalId(u32::try_from(locals.len()).unwrap_or(u32::MAX));
-    locals.push(LocalInfo { hint: hint.to_string() });
+    locals.push(LocalInfo {
+        hint: hint.to_string(),
+    });
     id
 }
 
@@ -112,7 +114,9 @@ pub struct Chunk {
 impl Chunk {
     /// The name hint of a local.
     pub fn hint(&self, id: LocalId) -> &str {
-        self.locals.get(id.0 as usize).map_or("_", |l| l.hint.as_str())
+        self.locals
+            .get(id.0 as usize)
+            .map_or("_", |l| l.hint.as_str())
     }
 }
 
@@ -162,21 +166,41 @@ pub struct Stmt {
 #[derive(Clone, Debug)]
 pub enum StmtKind {
     /// `local a, b = values` (no values: all nil).
-    Local { locals: Vec<LocalId>, values: Vec<Expr> },
+    Local {
+        locals: Vec<LocalId>,
+        values: Vec<Expr>,
+    },
     /// `targets = values`.
-    Assign { targets: Vec<Place>, values: Vec<Expr> },
+    Assign {
+        targets: Vec<Place>,
+        values: Vec<Expr>,
+    },
     /// An expression evaluated for its effect (normally a call).
     Expr(Expr),
     /// `do ... end`.
     Do(Block),
     /// `if cond then ... else ... end`.
-    If { cond: Expr, then: Block, otherwise: Option<Block> },
+    If {
+        cond: Expr,
+        then: Block,
+        otherwise: Option<Block>,
+    },
     /// `while cond do ... end`.
     While { cond: Expr, body: Block },
     /// `for var = start, limit, step do ... end`.
-    NumericFor { var: LocalId, start: Expr, limit: Expr, step: Option<Expr>, body: Block },
+    NumericFor {
+        var: LocalId,
+        start: Expr,
+        limit: Expr,
+        step: Option<Expr>,
+        body: Block,
+    },
     /// `for vars in iter do ... end`.
-    GenericFor { vars: Vec<LocalId>, iter: Vec<Expr>, body: Block },
+    GenericFor {
+        vars: Vec<LocalId>,
+        iter: Vec<Expr>,
+        body: Block,
+    },
     /// `return values`.
     Return(Vec<Expr>),
     /// `break`.
@@ -267,14 +291,25 @@ pub enum Expr {
     /// A function of the runtime library, `rt.name`.
     Intrinsic(&'static str),
     /// `x.m(args)` under the member-call rule.
-    MemberCall { receiver: Box<Expr>, key: Box<Expr>, args: Vec<Expr> },
+    MemberCall {
+        receiver: Box<Expr>,
+        key: Box<Expr>,
+        args: Vec<Expr>,
+    },
     /// `x.m` whose value is used: auto-called when it is a method.
-    AutoGet { receiver: Box<Expr>, key: Box<Expr> },
+    AutoGet {
+        receiver: Box<Expr>,
+        key: Box<Expr>,
+    },
     /// `func(receiver, args)` when `func`, a member of `receiver` read
     /// before, is a method, else `func(args)`: the member-call rule
     /// applied to a value a nil-safe guard holds, so the member
     /// is read once.
-    MemberApply { func: Box<Expr>, receiver: Box<Expr>, args: Vec<Expr> },
+    MemberApply {
+        func: Box<Expr>,
+        receiver: Box<Expr>,
+        args: Vec<Expr>,
+    },
 }
 
 impl Expr {
@@ -309,12 +344,23 @@ impl Expr {
     /// changed by other code: constants. (Locals can be reassigned, so they
     /// are not constant for evaluation-order purposes.)
     pub fn is_constant(&self) -> bool {
-        matches!(self, Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Intrinsic(_))
+        matches!(
+            self,
+            Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Intrinsic(_)
+        )
     }
 
     /// True for expressions that may produce several values in a list
     /// position (calls and `...`).
     pub fn is_multi(&self) -> bool {
-        matches!(self, Expr::Call(..) | Expr::MethodCall(..) | Expr::MemberCall { .. } | Expr::MemberApply { .. } | Expr::AutoGet { .. } | Expr::Vararg)
+        matches!(
+            self,
+            Expr::Call(..)
+                | Expr::MethodCall(..)
+                | Expr::MemberCall { .. }
+                | Expr::MemberApply { .. }
+                | Expr::AutoGet { .. }
+                | Expr::Vararg
+        )
     }
 }

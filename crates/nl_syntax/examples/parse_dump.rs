@@ -26,6 +26,9 @@ fn main() {
     print!("{}", nl_syntax::dump_tree(&parse.syntax(), options));
     if !parse.diagnostics().is_empty() {
         println!("---");
-        print!("{}", nl_syntax::dump_diagnostics(&source, parse.diagnostics()));
+        print!(
+            "{}",
+            nl_syntax::dump_diagnostics(&source, parse.diagnostics())
+        );
     }
 }

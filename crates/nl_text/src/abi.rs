@@ -59,7 +59,10 @@ pub extern "C" fn nltext_available() -> c_int {
 pub unsafe extern "C" fn nltext_invalid_at(s: *const c_char, len: usize) -> usize {
     // SAFETY: the caller's guarantee.
     let b = unsafe { bytes(s, len) };
-    catch_unwind(AssertUnwindSafe(|| crate::invalid_at(b).unwrap_or(NLTEXT_NONE))).unwrap_or(0)
+    catch_unwind(AssertUnwindSafe(|| {
+        crate::invalid_at(b).unwrap_or(NLTEXT_NONE)
+    }))
+    .unwrap_or(0)
 }
 
 /// The number of characters.
@@ -108,10 +111,22 @@ pub unsafe extern "C" fn nltext_charpos(s: *const c_char, len: usize, byte: usiz
 /// `s` points at `len` readable bytes (or `len` is 0); `start` and `end`
 /// are NULL or valid out pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nltext_slice(s: *const c_char, len: usize, first: i64, last: i64, exclusive: c_int, start: *mut usize, end: *mut usize) -> c_int {
+pub unsafe extern "C" fn nltext_slice(
+    s: *const c_char,
+    len: usize,
+    first: i64,
+    last: i64,
+    exclusive: c_int,
+    start: *mut usize,
+    end: *mut usize,
+) -> c_int {
     // SAFETY: the caller's guarantee.
     let b = unsafe { bytes(s, len) };
-    match catch_unwind(AssertUnwindSafe(|| crate::slice(b, first, last, exclusive != 0))).unwrap_or(None) {
+    match catch_unwind(AssertUnwindSafe(|| {
+        crate::slice(b, first, last, exclusive != 0)
+    }))
+    .unwrap_or(None)
+    {
         Some((a, e)) => {
             // SAFETY: the caller's guarantee on the out pointers.
             unsafe {
@@ -133,7 +148,13 @@ pub unsafe extern "C" fn nltext_slice(s: *const c_char, len: usize, first: i64, 
 /// `s` points at `len` readable bytes (or `len` is 0); `start` and `end`
 /// are NULL or valid out pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nltext_charat(s: *const c_char, len: usize, pos: i64, start: *mut usize, end: *mut usize) -> c_int {
+pub unsafe extern "C" fn nltext_charat(
+    s: *const c_char,
+    len: usize,
+    pos: i64,
+    start: *mut usize,
+    end: *mut usize,
+) -> c_int {
     // SAFETY: the caller's guarantee.
     let b = unsafe { bytes(s, len) };
     match catch_unwind(AssertUnwindSafe(|| crate::char_at(b, pos))).unwrap_or(None) {
@@ -159,7 +180,12 @@ pub unsafe extern "C" fn nltext_charat(s: *const c_char, len: usize, pos: i64, s
 /// `s` points at `len` readable bytes (or `len` is 0); `outlen` is NULL or
 /// a valid out pointer.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nltext_case(s: *const c_char, len: usize, mode: c_int, outlen: *mut usize) -> *mut c_char {
+pub unsafe extern "C" fn nltext_case(
+    s: *const c_char,
+    len: usize,
+    mode: c_int,
+    outlen: *mut usize,
+) -> *mut c_char {
     // SAFETY: the caller's guarantee.
     let b = unsafe { bytes(s, len) };
     let mapped = catch_unwind(AssertUnwindSafe(|| {
@@ -209,10 +235,17 @@ pub unsafe extern "C" fn nltext_free(p: *mut c_char, len: usize) {
 /// `s` points at `len` readable bytes (or `len` is 0); `clen` is NULL or a
 /// valid out pointer.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nltext_decode(s: *const c_char, len: usize, byte: usize, clen: *mut usize) -> u32 {
+pub unsafe extern "C" fn nltext_decode(
+    s: *const c_char,
+    len: usize,
+    byte: usize,
+    clen: *mut usize,
+) -> u32 {
     // SAFETY: the caller's guarantee.
     let b = unsafe { bytes(s, len) };
-    let (cp, n) = catch_unwind(AssertUnwindSafe(|| crate::decode(b, byte))).unwrap_or(None).unwrap_or((0, 0));
+    let (cp, n) = catch_unwind(AssertUnwindSafe(|| crate::decode(b, byte)))
+        .unwrap_or(None)
+        .unwrap_or((0, 0));
     // SAFETY: the caller's guarantee on `clen`.
     unsafe { put(clen, n) };
     cp
@@ -240,7 +273,12 @@ pub unsafe extern "C" fn nltext_encode(cp: u32, out: *mut c_char) -> usize {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -262,13 +300,19 @@ mod tests {
             assert_eq!(&s[a..b], "llo");
             assert_eq!(nltext_slice(p, s.len(), 1, 2, 1, &mut a, &mut b), 1);
             assert_eq!(&s[a..b], "h");
-            assert_eq!(nltext_slice(p, s.len(), 3, 2, 0, ptr::null_mut(), ptr::null_mut()), 0);
+            assert_eq!(
+                nltext_slice(p, s.len(), 3, 2, 0, ptr::null_mut(), ptr::null_mut()),
+                0
+            );
             assert_eq!(nltext_charat(p, s.len(), 2, &mut a, &mut b), 1);
             assert_eq!(&s[a..b], "é");
             assert_eq!(nltext_charat(p, s.len(), 6, &mut a, &mut b), 0);
             let mut n = 0usize;
             let up = nltext_case(p, s.len(), 0, &mut n);
-            assert_eq!(std::slice::from_raw_parts(up.cast::<u8>(), n), "HÉLLO".as_bytes());
+            assert_eq!(
+                std::slice::from_raw_parts(up.cast::<u8>(), n),
+                "HÉLLO".as_bytes()
+            );
             nltext_free(up, n);
             let empty = nltext_case(p, 0, 1, &mut n);
             assert!(!empty.is_null());

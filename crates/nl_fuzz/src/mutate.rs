@@ -15,8 +15,90 @@ use crate::rng::Rng;
 /// Things to insert: operators, brackets, keywords and fragments that
 /// open or close constructs.
 const JUNK: &[&str] = &[
-    "(", ")", "[", "]", "{", "}", ",", ".", ":", ";", "!", "@", "*", "**", "|>", "<>", "..", "...", "=", "==", "+=", "<<=", "#{", "\"", "'", "\"\"\"", "\\", "\n", " end", " do", " do |x|", " fn", " fn(", " if", " else", " elseif", " when", " case", " try", " catch", " finally", " return", " break", " continue", " let", " const", " struct", " enum", " interface", " for", " in", " step", " is", " as", " not", " and", " or", " Self", " self", " nil", " true", " ~", " -", " //", " %", " >>>", " :", " :x.y", " 0x", " 1e", " 1.", " _", " é", "\t", "#", "##", "?.", " ??", " ??=", "?",
-    " ->", " x ->", " |a| ->", " || ->",
+    "(",
+    ")",
+    "[",
+    "]",
+    "{",
+    "}",
+    ",",
+    ".",
+    ":",
+    ";",
+    "!",
+    "@",
+    "*",
+    "**",
+    "|>",
+    "<>",
+    "..",
+    "...",
+    "=",
+    "==",
+    "+=",
+    "<<=",
+    "#{",
+    "\"",
+    "'",
+    "\"\"\"",
+    "\\",
+    "\n",
+    " end",
+    " do",
+    " do |x|",
+    " fn",
+    " fn(",
+    " if",
+    " else",
+    " elseif",
+    " when",
+    " case",
+    " try",
+    " catch",
+    " finally",
+    " return",
+    " break",
+    " continue",
+    " let",
+    " const",
+    " struct",
+    " enum",
+    " interface",
+    " for",
+    " in",
+    " step",
+    " is",
+    " as",
+    " not",
+    " and",
+    " or",
+    " Self",
+    " self",
+    " nil",
+    " true",
+    " ~",
+    " -",
+    " //",
+    " %",
+    " >>>",
+    " :",
+    " :x.y",
+    " 0x",
+    " 1e",
+    " 1.",
+    " _",
+    " é",
+    "\t",
+    "#",
+    "##",
+    "?.",
+    " ??",
+    " ??=",
+    "?",
+    " ->",
+    " x ->",
+    " |a| ->",
+    " || ->",
 ];
 
 /// A mutant of `source`, determined by `seed`.
@@ -41,7 +123,11 @@ fn mutate_once(src: &[u8], rng: &mut Rng) -> Vec<u8> {
             let mut out = src.to_vec();
             let i = rng.below(out.len());
             if let Some(b) = out.get_mut(i) {
-                *b = if rng.chance(50) { *b ^ (1 << rng.below(8)) } else { rng.below(256) as u8 };
+                *b = if rng.chance(50) {
+                    *b ^ (1 << rng.below(8))
+                } else {
+                    rng.below(256) as u8
+                };
             }
             out
         }
@@ -123,7 +209,10 @@ fn tokens(src: &[u8]) -> Vec<(usize, usize)> {
         }
         let start = i;
         if c.is_ascii_alphanumeric() || c == b'_' || c >= 0x80 {
-            while src.get(i).is_some_and(|&b| b.is_ascii_alphanumeric() || b == b'_' || b >= 0x80) {
+            while src
+                .get(i)
+                .is_some_and(|&b| b.is_ascii_alphanumeric() || b == b'_' || b >= 0x80)
+            {
                 i += 1;
             }
         } else if c == b'"' || c == b'\'' {
@@ -172,15 +261,22 @@ mod tests {
     fn deterministic_and_different() {
         let src = "let x = 1\nprint(\"a b\", x + 2)\n";
         assert_eq!(mutate(src, 3), mutate(src, 3));
-        let distinct: std::collections::HashSet<Vec<u8>> = (0..50).map(|s| mutate(src, s)).collect();
+        let distinct: std::collections::HashSet<Vec<u8>> =
+            (0..50).map(|s| mutate(src, s)).collect();
         assert!(distinct.len() > 30);
     }
 
     #[test]
     fn token_spans() {
         let t = tokens(b"let x = \"a b\"(1)");
-        let words: Vec<&[u8]> = t.iter().map(|&(s, e)| &b"let x = \"a b\"(1)"[s..e]).collect();
-        assert_eq!(words, vec![&b"let"[..], b"x", b"=", b"\"a b\"", b"(", b"1", b")"]);
+        let words: Vec<&[u8]> = t
+            .iter()
+            .map(|&(s, e)| &b"let x = \"a b\"(1)"[s..e])
+            .collect();
+        assert_eq!(
+            words,
+            vec![&b"let"[..], b"x", b"=", b"\"a b\"", b"(", b"1", b")"]
+        );
     }
 
     #[test]

@@ -113,7 +113,9 @@ pub(crate) fn read_escape(rest: &[u8]) -> (Result<EscValue, EscError>, usize) {
     match c {
         b'\n' | b'\r' => (Err(EscError::LineBreak), 0),
         b'x' => {
-            let n = (1..3).take_while(|&i| at(i).is_some_and(|b| b.is_ascii_hexdigit())).count();
+            let n = (1..3)
+                .take_while(|&i| at(i).is_some_and(|b| b.is_ascii_hexdigit()))
+                .count();
             if n == 2 {
                 let v = hex_val(at(1)) * 16 + hex_val(at(2));
                 (Ok(EscValue::Byte(v)), 3)
@@ -122,8 +124,12 @@ pub(crate) fn read_escape(rest: &[u8]) -> (Result<EscValue, EscError>, usize) {
             }
         }
         b'0'..=b'9' => {
-            let n = (0..3).take_while(|&i| at(i).is_some_and(|b| b.is_ascii_digit())).count();
-            let v = (0..n).fold(0u32, |v, i| v * 10 + u32::from(at(i).unwrap_or(b'0') - b'0'));
+            let n = (0..3)
+                .take_while(|&i| at(i).is_some_and(|b| b.is_ascii_digit()))
+                .count();
+            let v = (0..n).fold(0u32, |v, i| {
+                v * 10 + u32::from(at(i).unwrap_or(b'0') - b'0')
+            });
             match u8::try_from(v) {
                 Ok(b) => (Ok(EscValue::Byte(b)), n),
                 Err(_) => (Err(EscError::DecTooLarge), n),
@@ -138,11 +144,10 @@ pub(crate) fn read_escape(rest: &[u8]) -> (Result<EscValue, EscError>, usize) {
                 .skip(2)
                 .take_while(|b| b.is_ascii_hexdigit())
                 .count();
-            let v = rest
-                .iter()
-                .skip(2)
-                .take(n)
-                .fold(0u32, |v, &b| v.saturating_mul(16).saturating_add(u32::from(hex_val(Some(b)))));
+            let v = rest.iter().skip(2).take(n).fold(0u32, |v, &b| {
+                v.saturating_mul(16)
+                    .saturating_add(u32::from(hex_val(Some(b))))
+            });
             if at(2 + n) != Some(b'}') {
                 (Err(EscError::UnicodeUnclosed), 2 + n)
             } else if n == 0 {
@@ -196,7 +201,9 @@ pub(crate) fn escape_message(err: EscError, text: &str) -> String {
                 .to_string()
         }
         EscError::Hex => {
-            format!("`{text}` is not an escape: `\\x` takes exactly two hexadecimal digits, as in `\\x41`")
+            format!(
+                "`{text}` is not an escape: `\\x` takes exactly two hexadecimal digits, as in `\\x41`"
+            )
         }
         EscError::DecTooLarge => format!(
             "`{text}` is larger than 255: a decimal escape writes one byte. Use `\\u{{…}}` for a \
@@ -212,10 +219,14 @@ pub(crate) fn escape_message(err: EscError, text: &str) -> String {
             format!("`{text}` is beyond the last Unicode code point, `\\u{{10FFFF}}`")
         }
         EscError::UnicodeSurrogate => {
-            format!("`{text}` is a surrogate, not a character: code points D800 to DFFF cannot be written; for the bytes use `\\xHH`")
+            format!(
+                "`{text}` is a surrogate, not a character: code points D800 to DFFF cannot be written; for the bytes use `\\xHH`"
+            )
         }
         EscError::UnicodeUnclosed => {
-            format!("`{text}` is not closed: write a Unicode escape as `\\u{{48}}`, with a closing `}}`")
+            format!(
+                "`{text}` is not closed: write a Unicode escape as `\\u{{48}}`, with a closing `}}`"
+            )
         }
     }
 }
@@ -257,7 +268,11 @@ fn decode_escapes(text: &[u8], quoted: bool, out: &mut Vec<u8>) {
             i += 1;
             continue;
         }
-        let lb = if quoted { line_break_len(text, i + 1) } else { 0 };
+        let lb = if quoted {
+            line_break_len(text, i + 1)
+        } else {
+            0
+        };
         if lb > 0 {
             out.push(b'\n');
             i += 1 + lb;
@@ -296,8 +311,16 @@ pub fn string_form(first_part: &str) -> Option<StringForm> {
     let b = first_part.as_bytes();
     if b.starts_with(b"\"\"\"") {
         let flags = b.get(3..).unwrap_or(&[]);
-        let flags: Vec<u8> = flags.iter().copied().take_while(|&c| c == b'-' || c == b'=').take(2).collect();
-        Some(StringForm::Heredoc { dedent: flags.contains(&b'-'), raw: flags.contains(&b'=') })
+        let flags: Vec<u8> = flags
+            .iter()
+            .copied()
+            .take_while(|&c| c == b'-' || c == b'=')
+            .take(2)
+            .collect();
+        Some(StringForm::Heredoc {
+            dedent: flags.contains(&b'-'),
+            raw: flags.contains(&b'='),
+        })
     } else if b.starts_with(b"\"") {
         Some(StringForm::Quoted)
     } else if b.starts_with(b"'") {
@@ -336,9 +359,11 @@ pub fn decode_string(parts: &[&str]) -> Vec<Vec<u8>> {
             out.resize(parts.len(), Vec::new());
             out
         }
-        Some(StringForm::Quoted) => {
-            parts.iter().enumerate().map(|(i, p)| decode_quoted_part(p, i == 0)).collect()
-        }
+        Some(StringForm::Quoted) => parts
+            .iter()
+            .enumerate()
+            .map(|(i, p)| decode_quoted_part(p, i == 0))
+            .collect(),
         Some(StringForm::Heredoc { dedent, raw }) => decode_heredoc(parts, dedent, raw),
     }
 }
@@ -417,7 +442,9 @@ fn quoted_end(b: &[u8]) -> usize {
 /// test check that they agree on where each part's text ends.
 #[cfg(test)]
 pub(crate) fn content_ends(parts: &[&str]) -> Vec<Option<usize>> {
-    let Some(first) = parts.first() else { return Vec::new() };
+    let Some(first) = parts.first() else {
+        return Vec::new();
+    };
     let at = |end: usize, len: usize| if end < len { Some(end) } else { None };
     match string_form(first) {
         None => vec![None; parts.len()],
@@ -426,7 +453,10 @@ pub(crate) fn content_ends(parts: &[&str]) -> Vec<Option<usize>> {
             out.resize(parts.len(), None);
             out
         }
-        Some(StringForm::Quoted) => parts.iter().map(|p| at(quoted_end(p.as_bytes()), p.len())).collect(),
+        Some(StringForm::Quoted) => parts
+            .iter()
+            .map(|p| at(quoted_end(p.as_bytes()), p.len()))
+            .collect(),
         Some(StringForm::Heredoc { raw, .. }) => heredoc_scan(parts, raw).2,
     }
 }
@@ -461,7 +491,10 @@ struct HLine<'a> {
 /// True when `b[i..]` is a heredoc closer: blanks, then `"""`.
 fn is_closer(b: &[u8], i: usize) -> bool {
     let rest = b.get(i..).unwrap_or(&[]);
-    let blanks = rest.iter().take_while(|&&c| c == b' ' || c == b'\t').count();
+    let blanks = rest
+        .iter()
+        .take_while(|&&c| c == b' ' || c == b'\t')
+        .count();
     rest.get(blanks..).is_some_and(|r| r.starts_with(b"\"\"\""))
 }
 
@@ -503,11 +536,23 @@ fn heredoc_scan<'a>(parts: &[&'a str], raw: bool) -> HeredocScan<'a> {
             let text = b.get(line_start..pos).unwrap_or(&[]);
             match b.get(pos) {
                 None => {
-                    lines.push(HLine { part: pi, text, starts_line, open_end: false, has_break: false });
+                    lines.push(HLine {
+                        part: pi,
+                        text,
+                        starts_line,
+                        open_end: false,
+                        has_break: false,
+                    });
                     break;
                 }
                 Some(b'#') if !raw && b.get(pos + 1) == Some(&b'{') => {
-                    lines.push(HLine { part: pi, text, starts_line, open_end: true, has_break: false });
+                    lines.push(HLine {
+                        part: pi,
+                        text,
+                        starts_line,
+                        open_end: true,
+                        has_break: false,
+                    });
                     if let Some(s) = stops.get_mut(pi) {
                         *s = Some(pos);
                     }
@@ -515,7 +560,13 @@ fn heredoc_scan<'a>(parts: &[&'a str], raw: bool) -> HeredocScan<'a> {
                 }
                 Some(b'\\') if !raw => pos += 1 + read_escape(b.get(pos + 1..).unwrap_or(&[])).1,
                 Some(&c) if is_line_break(c) => {
-                    lines.push(HLine { part: pi, text, starts_line, open_end: false, has_break: true });
+                    lines.push(HLine {
+                        part: pi,
+                        text,
+                        starts_line,
+                        open_end: false,
+                        has_break: true,
+                    });
                     pos += line_break_len(b, pos);
                     line_start = pos;
                     starts_line = true;
@@ -593,7 +644,10 @@ fn decode_heredoc(parts: &[&str], dedent: bool, raw: bool) -> Vec<Vec<u8>> {
 }
 
 fn leading_blanks(text: &[u8]) -> &[u8] {
-    let n = text.iter().take_while(|&&c| c == b' ' || c == b'\t').count();
+    let n = text
+        .iter()
+        .take_while(|&&c| c == b' ' || c == b'\t')
+        .count();
     text.get(..n).unwrap_or(&[])
 }
 
@@ -604,7 +658,11 @@ mod tests {
     fn one(parts: &[&str]) -> String {
         let pieces = decode_string(parts);
         assert_eq!(pieces.len(), parts.len());
-        pieces.iter().map(|p| String::from_utf8_lossy(p).into_owned()).collect::<Vec<_>>().join("|")
+        pieces
+            .iter()
+            .map(|p| String::from_utf8_lossy(p).into_owned())
+            .collect::<Vec<_>>()
+            .join("|")
     }
 
     #[test]
@@ -627,12 +685,21 @@ mod tests {
 
     #[test]
     fn escapes() {
-        assert_eq!(decode_string(&[r#""\a\b\f\n\r\t\v\\\"\'\#""#]), vec![b"\x07\x08\x0c\n\r\t\x0b\\\"'#".to_vec()]);
-        assert_eq!(decode_string(&[r#""\x41\65\0\255""#]), vec![vec![b'A', b'A', 0, 255]]);
+        assert_eq!(
+            decode_string(&[r#""\a\b\f\n\r\t\v\\\"\'\#""#]),
+            vec![b"\x07\x08\x0c\n\r\t\x0b\\\"'#".to_vec()]
+        );
+        assert_eq!(
+            decode_string(&[r#""\x41\65\0\255""#]),
+            vec![vec![b'A', b'A', 0, 255]]
+        );
         assert_eq!(one(&[r#""\u{48}\u{e9}\u{1F600}""#]), "Hé😀");
         assert_eq!(one(&[r#""\u{D7FF}\u{E000}""#]), "\u{D7FF}\u{E000}");
         // Invalid escapes are kept as written.
-        assert_eq!(one(&[r#""\d\x4\256\u{}\u{110000}\u{D800}\u{41""#]), r"\d\x4\256\u{}\u{110000}\u{D800}\u{41");
+        assert_eq!(
+            one(&[r#""\d\x4\256\u{}\u{110000}\u{D800}\u{41""#]),
+            r"\d\x4\256\u{}\u{110000}\u{D800}\u{41"
+        );
         assert_eq!(one(&[r#""a\#{b}""#]), "a#{b}");
     }
 
@@ -660,10 +727,19 @@ mod tests {
         assert_eq!(one(&["\"\"\"\n\n\n\"\"\""]), "\n");
         assert_eq!(one(&["\"\"\"\r\na\r\nb\r\"\"\""]), "a\nb");
         assert_eq!(one(&["\"\"\"   \n  a\\tb\n  \"\"\""]), "  a\tb");
-        assert_eq!(one(&["\"\"\"-\n  first\n    indented\n\n  last\n\"\"\""]), "first\n  indented\n\nlast");
+        assert_eq!(
+            one(&["\"\"\"-\n  first\n    indented\n\n  last\n\"\"\""]),
+            "first\n  indented\n\nlast"
+        );
         assert_eq!(one(&["\"\"\"-\n  a\n   \n  b\n    \"\"\""]), "a\n\nb");
-        assert_eq!(one(&["\"\"\"=\nno #{a} and no \\n escape\n\"\"\""]), "no #{a} and no \\n escape");
-        assert_eq!(one(&["\"\"\"-=\n    kept #{a}\n    as written\n\"\"\""]), "kept #{a}\nas written");
+        assert_eq!(
+            one(&["\"\"\"=\nno #{a} and no \\n escape\n\"\"\""]),
+            "no #{a} and no \\n escape"
+        );
+        assert_eq!(
+            one(&["\"\"\"-=\n    kept #{a}\n    as written\n\"\"\""]),
+            "kept #{a}\nas written"
+        );
         // Tabs and spaces are compared character for character.
         assert_eq!(one(&["\"\"\"-\n\t a\n\t\tb\n\"\"\""]), " a\n\tb");
         // `\"""` is content.
@@ -697,8 +773,20 @@ mod tests {
     fn forms() {
         assert_eq!(string_form("'a'"), Some(StringForm::Raw));
         assert_eq!(string_form("\"a\""), Some(StringForm::Quoted));
-        assert_eq!(string_form("\"\"\"-=\n\"\"\""), Some(StringForm::Heredoc { dedent: true, raw: true }));
-        assert_eq!(string_form("\"\"\"=\n\"\"\""), Some(StringForm::Heredoc { dedent: false, raw: true }));
+        assert_eq!(
+            string_form("\"\"\"-=\n\"\"\""),
+            Some(StringForm::Heredoc {
+                dedent: true,
+                raw: true
+            })
+        );
+        assert_eq!(
+            string_form("\"\"\"=\n\"\"\""),
+            Some(StringForm::Heredoc {
+                dedent: false,
+                raw: true
+            })
+        );
         assert_eq!(string_form("x"), None);
         assert!(decode_string(&[]).is_empty());
     }

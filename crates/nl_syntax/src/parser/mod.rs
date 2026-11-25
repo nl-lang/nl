@@ -268,7 +268,13 @@ fn run(lexed: &Lexed<'_>, toks: Vec<Tok>, hints: Vec<(usize, u32)>) -> RunOutput
     let errors = p.diags.iter().filter(|d| d.is_error()).count();
     let other_errors = errors.saturating_sub(p.missing_end_errors);
     let stuck = p.stuck.get();
-    RunOutput { green, diags: p.diags, unclosed_at_eof: p.unclosed_at_eof, stuck, other_errors }
+    RunOutput {
+        green,
+        diags: p.diags,
+        unclosed_at_eof: p.unclosed_at_eof,
+        stuck,
+        other_errors,
+    }
 }
 
 /// The parser's token stream: the non-trivia tokens without the lexer's
@@ -326,7 +332,11 @@ fn significant_tokens(lexed: &Lexed<'_>) -> Vec<Tok> {
     }
     if out.last().is_none_or(|t| t.kind != EOF) {
         let end = TextSize::of(lexed.source);
-        let end = if lexed.tokens.is_empty() { TextSize::new(0) } else { end };
+        let end = if lexed.tokens.is_empty() {
+            TextSize::new(0)
+        } else {
+            end
+        };
         out.push(Tok {
             kind: EOF,
             range: TextRange::empty(end),
@@ -362,12 +372,18 @@ fn count_line_breaks(text: &str) -> u32 {
 /// keyword. Parsing again, the constructs at least that indented are closed
 /// there (for an `end`, those more indented, so that the `end` closes its own
 /// construct).
-fn indentation_hints(toks: &[Tok], unclosed: &[usize], existing: &[(usize, u32)]) -> Vec<(usize, u32)> {
+fn indentation_hints(
+    toks: &[Tok],
+    unclosed: &[usize],
+    existing: &[(usize, u32)],
+) -> Vec<(usize, u32)> {
     let mut out: Vec<(usize, u32)> = Vec::new();
     let mut openers = unclosed.to_vec();
     openers.sort_unstable();
     for opener in openers {
-        let Some(open) = toks.get(opener) else { continue };
+        let Some(open) = toks.get(opener) else {
+            continue;
+        };
         let indent = open.indent;
         // Skip to the line after the opener.
         let mut i = opener + 1;
@@ -401,7 +417,10 @@ impl<'a> Parser<'a> {
             pos: 0,
             events: Vec::new(),
             diags: Vec::new(),
-            ctx: vec![Ctx { stmt: true, ..Ctx::default() }],
+            ctx: vec![Ctx {
+                stmt: true,
+                ..Ctx::default()
+            }],
             open_brackets: [0; 6],
             constructs: Vec::new(),
             open_closers: [0; 6],
@@ -456,7 +475,10 @@ impl<'a> Parser<'a> {
         if self.halted() {
             return self.eof_tok();
         }
-        self.toks.get(self.pos.saturating_add(n)).copied().unwrap_or_else(|| self.eof_tok())
+        self.toks
+            .get(self.pos.saturating_add(n))
+            .copied()
+            .unwrap_or_else(|| self.eof_tok())
     }
 
     /// The token `n` positions ahead (`EOF` past the end, or once halted).
@@ -465,7 +487,10 @@ impl<'a> Parser<'a> {
         if self.halted() {
             return self.eof_tok();
         }
-        self.toks.get(self.pos + n).copied().unwrap_or_else(|| self.eof_tok())
+        self.toks
+            .get(self.pos + n)
+            .copied()
+            .unwrap_or_else(|| self.eof_tok())
     }
 
     pub(crate) fn nth(&self, n: usize) -> SyntaxKind {
@@ -492,7 +517,9 @@ impl<'a> Parser<'a> {
     /// The text of the token `n` ahead.
     pub(crate) fn nth_text(&self, n: usize) -> &'a str {
         let t = self.tok(n);
-        self.src.get(std::ops::Range::<usize>::from(t.range)).unwrap_or("")
+        self.src
+            .get(std::ops::Range::<usize>::from(t.range))
+            .unwrap_or("")
     }
 
     /// The current token is `LNAME` with this text (a contextual word).
@@ -539,7 +566,10 @@ impl<'a> Parser<'a> {
         if to <= from {
             return String::new();
         }
-        let text = self.src.get(usize::from(a.range.start())..usize::from(b.range.end())).unwrap_or("");
+        let text = self
+            .src
+            .get(usize::from(a.range.start())..usize::from(b.range.end()))
+            .unwrap_or("");
         if text.chars().count() > 40 {
             let mut short: String = text.chars().take(39).collect();
             short.push('…');
@@ -551,7 +581,10 @@ impl<'a> Parser<'a> {
 
     /// The range from the token at `from` to the last consumed token.
     pub(crate) fn range_from(&self, from: usize) -> TextRange {
-        let start = self.toks.get(from).map_or(TextSize::new(0), |t| t.range.start());
+        let start = self
+            .toks
+            .get(from)
+            .map_or(TextSize::new(0), |t| t.range.start());
         let end = if self.pos > from {
             self.toks.get(self.pos - 1).map_or(start, |t| t.range.end())
         } else {
@@ -564,7 +597,10 @@ impl<'a> Parser<'a> {
 
     fn start_event(&mut self) -> u32 {
         let pos = u32::try_from(self.events.len()).unwrap_or(u32::MAX);
-        self.events.push(Event::Start { kind: None, forward_parent: None });
+        self.events.push(Event::Start {
+            kind: None,
+            forward_parent: None,
+        });
         pos
     }
 
@@ -584,11 +620,16 @@ impl<'a> Parser<'a> {
         if self.halted() {
             return;
         }
-        let Some(t) = self.toks.get(self.pos).copied() else { return };
+        let Some(t) = self.toks.get(self.pos).copied() else {
+            return;
+        };
         if t.kind == EOF {
             return;
         }
-        self.events.push(Event::Token { kind, range: t.range });
+        self.events.push(Event::Token {
+            kind,
+            range: t.range,
+        });
         self.pos += 1;
         self.fuel.set(FUEL);
     }
@@ -618,11 +659,22 @@ impl<'a> Parser<'a> {
             USHR_EQ => SHR_EQ,
             _ => return false,
         };
-        let Some(t) = self.toks.get(self.pos).copied() else { return false };
+        let Some(t) = self.toks.get(self.pos).copied() else {
+            return false;
+        };
         let mid = t.range.start() + TextSize::new(1);
-        self.events.push(Event::Token { kind: GT, range: TextRange::new(t.range.start(), mid) });
+        self.events.push(Event::Token {
+            kind: GT,
+            range: TextRange::new(t.range.start(), mid),
+        });
         if let Some(slot) = self.toks.get_mut(self.pos) {
-            *slot = Tok { kind: rest, range: TextRange::new(mid, t.range.end()), nl: false, sp: false, ..t };
+            *slot = Tok {
+                kind: rest,
+                range: TextRange::new(mid, t.range.end()),
+                nl: false,
+                sp: false,
+                ..t
+            };
         }
         self.fuel.set(FUEL);
         true
@@ -728,7 +780,10 @@ impl<'a> Parser<'a> {
     // ---- Contexts ------------------------------------------------------------
 
     pub(crate) fn ctx_top(&self) -> Ctx {
-        self.ctx.last().copied().unwrap_or(Ctx { stmt: true, ..Ctx::default() })
+        self.ctx.last().copied().unwrap_or(Ctx {
+            stmt: true,
+            ..Ctx::default()
+        })
     }
 
     pub(crate) fn ctx_top_mut(&mut self) -> Option<&mut Ctx> {
@@ -736,7 +791,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Runs `f` in a new bracket context closed by `closer`.
-    pub(crate) fn in_bracket<R>(&mut self, closer: SyntaxKind, f: impl FnOnce(&mut Self) -> R) -> R {
+    pub(crate) fn in_bracket<R>(
+        &mut self,
+        closer: SyntaxKind,
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> R {
         self.in_bracket_with(closer, false, f)
     }
 
@@ -747,7 +806,11 @@ impl<'a> Parser<'a> {
         no_union: bool,
         f: impl FnOnce(&mut Self) -> R,
     ) -> R {
-        self.ctx.push(Ctx { stmt: false, no_union, ..Ctx::default() });
+        self.ctx.push(Ctx {
+            stmt: false,
+            no_union,
+            ..Ctx::default()
+        });
         let slot = bracket_slot(closer);
         if let Some(n) = self.open_brackets.get_mut(slot) {
             *n += 1;
@@ -762,7 +825,11 @@ impl<'a> Parser<'a> {
 
     /// Runs `f` with the flags of the current context changed by `set`, and
     /// restores them afterwards.
-    pub(crate) fn with_flags<R>(&mut self, set: impl FnOnce(&mut Ctx), f: impl FnOnce(&mut Self) -> R) -> R {
+    pub(crate) fn with_flags<R>(
+        &mut self,
+        set: impl FnOnce(&mut Ctx),
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> R {
         let saved = self.ctx_top();
         if let Some(top) = self.ctx_top_mut() {
             set(top);
@@ -779,7 +846,11 @@ impl<'a> Parser<'a> {
     pub(crate) fn in_construct<R>(&mut self, closers: u8, f: impl FnOnce(&mut Self) -> R) -> R {
         let opener = self.pos;
         let indent = self.indent_of(opener);
-        self.constructs.push(Construct { opener, indent, header_do: None });
+        self.constructs.push(Construct {
+            opener,
+            indent,
+            header_do: None,
+        });
         for bit in 0..6 {
             if closers & (1 << bit) != 0 {
                 if let Some(n) = self.open_closers.get_mut(bit) {
@@ -787,7 +858,10 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        self.ctx.push(Ctx { stmt: true, ..Ctx::default() });
+        self.ctx.push(Ctx {
+            stmt: true,
+            ..Ctx::default()
+        });
         let r = f(self);
         self.ctx.pop();
         for bit in 0..6 {
@@ -822,23 +896,39 @@ impl<'a> Parser<'a> {
     /// Directly in a branch of an `if` or `unless` statement at file level
     /// (`if CLIENT … end`), where a `pub` declaration is allowed.
     pub(crate) fn in_file_level_branch(&self) -> bool {
-        let [c] = self.constructs.as_slice() else { return false };
-        let Some(t) = self.toks.get(c.opener) else { return false };
-        let stmt_start = c.opener == 0 || t.nl || c.opener.checked_sub(1).and_then(|i| self.toks.get(i)).is_some_and(|p| p.kind == SEMI);
+        let [c] = self.constructs.as_slice() else {
+            return false;
+        };
+        let Some(t) = self.toks.get(c.opener) else {
+            return false;
+        };
+        let stmt_start = c.opener == 0
+            || t.nl
+            || c.opener
+                .checked_sub(1)
+                .and_then(|i| self.toks.get(i))
+                .is_some_and(|p| p.kind == SEMI);
         matches!(t.kind, IF_KW | UNLESS_KW) && stmt_start
     }
 
     /// Some open construct accepts this closer keyword.
     pub(crate) fn closer_accepted(&self, kind: SyntaxKind) -> bool {
         let bit = closer_bit(kind);
-        bit != 0 && self.open_closers.get(bit.trailing_zeros() as usize).is_some_and(|&n| n > 0)
+        bit != 0
+            && self
+                .open_closers
+                .get(bit.trailing_zeros() as usize)
+                .is_some_and(|&n| n > 0)
     }
 
     /// The token closes an enclosing bracket context: `)`, `]`, `}`, or the
     /// end of an interpolation.
     pub(crate) fn closes_bracket(&self, kind: SyntaxKind) -> bool {
         matches!(kind, R_PAREN | R_BRACK | R_CURLY | STR_MID | STR_END)
-            && self.open_brackets.get(bracket_slot(kind)).is_some_and(|&n| n > 0)
+            && self
+                .open_brackets
+                .get(bracket_slot(kind))
+                .is_some_and(|&n| n > 0)
     }
 
     /// The current token ends a block: `EOF`, a closer keyword some construct
@@ -855,7 +945,11 @@ impl<'a> Parser<'a> {
         if self.hints.is_empty() || self.halted() {
             return None;
         }
-        self.hints.binary_search_by_key(&self.pos, |h| h.0).ok().and_then(|i| self.hints.get(i)).map(|h| h.1)
+        self.hints
+            .binary_search_by_key(&self.pos, |h| h.0)
+            .ok()
+            .and_then(|i| self.hints.get(i))
+            .map(|h| h.1)
     }
 
     /// A hint says the innermost construct ends before the current token,
@@ -895,7 +989,10 @@ impl<'a> Parser<'a> {
     /// it (once per top-level statement), skips the rest of the construct
     /// (see [`Parser::skip_deep`]) and returns `Err` with the `ERROR_NODE` of
     /// the skipped tokens, if any.
-    pub(crate) fn guarded<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> Result<R, Option<CompletedMarker>> {
+    pub(crate) fn guarded<R>(
+        &mut self,
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> Result<R, Option<CompletedMarker>> {
         if self.nesting() > NESTING_LIMIT
             || self.rec_depth >= RECURSION_LIMIT
             || self.tree_depth >= TREE_DEPTH_LIMIT
@@ -986,9 +1083,11 @@ impl<'a> Parser<'a> {
             match k {
                 L_PAREN | L_BRACK | L_CURLY | STR_BEGIN => depth += 1,
                 R_PAREN | R_BRACK | R_CURLY | STR_END | END_KW => depth = depth.saturating_sub(1),
-                FN_KW | DO_KW | LOOP_KW | FOR_KW | CASE_KW | COND_KW | TRY_KW | STRUCT_KW | INTERFACE_KW
-                | ENUM_KW | MODULE_KW => depth += 1,
-                IF_KW | UNLESS_KW | WHILE_KW | UNTIL_KW if !self.at_modifier_position() => depth += 1,
+                FN_KW | DO_KW | LOOP_KW | FOR_KW | CASE_KW | COND_KW | TRY_KW | STRUCT_KW
+                | INTERFACE_KW | ENUM_KW | MODULE_KW => depth += 1,
+                IF_KW | UNLESS_KW | WHILE_KW | UNTIL_KW if !self.at_modifier_position() => {
+                    depth += 1
+                }
                 _ => {}
             }
             self.bump();
@@ -1009,12 +1108,31 @@ impl<'a> Parser<'a> {
         if self.tok(0).nl {
             return false;
         }
-        let Some(prev) = self.pos.checked_sub(1).and_then(|i| self.toks.get(i)) else { return false };
+        let Some(prev) = self.pos.checked_sub(1).and_then(|i| self.toks.get(i)) else {
+            return false;
+        };
         matches!(
             prev.kind,
-            LNAME | CNAME | ONAME | AT_NAME | NUMBER | STRING | STR_END | R_PAREN | R_BRACK | R_CURLY
-                | END_KW | BANG_POSTFIX | SELF_KW | SELF_TYPE_KW | TRUE_KW | FALSE_KW | NIL_KW
-                | RETURN_KW | BREAK_KW | CONTINUE_KW
+            LNAME
+                | CNAME
+                | ONAME
+                | AT_NAME
+                | NUMBER
+                | STRING
+                | STR_END
+                | R_PAREN
+                | R_BRACK
+                | R_CURLY
+                | END_KW
+                | BANG_POSTFIX
+                | SELF_KW
+                | SELF_TYPE_KW
+                | TRUE_KW
+                | FALSE_KW
+                | NIL_KW
+                | RETURN_KW
+                | BREAK_KW
+                | CONTINUE_KW
         )
     }
 
@@ -1023,7 +1141,10 @@ impl<'a> Parser<'a> {
     /// that the tree still holds the whole source. Then the `EOF` token.
     pub(crate) fn finish_file(&mut self) {
         if self.stuck.get() {
-            let range = self.toks.get(self.pos).map_or_else(TextRange::default, |t| t.range);
+            let range = self
+                .toks
+                .get(self.pos)
+                .map_or_else(TextRange::default, |t| t.range);
             self.diags.push(Diagnostic::error(
                 range,
                 "internal parser error: the parser stopped making progress here; the rest of the \
@@ -1035,14 +1156,20 @@ impl<'a> Parser<'a> {
             let m = self.start();
             while self.pos < last {
                 if let Some(t) = self.toks.get(self.pos) {
-                    self.events.push(Event::Token { kind: t.kind, range: t.range });
+                    self.events.push(Event::Token {
+                        kind: t.kind,
+                        range: t.range,
+                    });
                 }
                 self.pos += 1;
             }
             m.complete(self, ERROR_NODE);
         }
         if let Some(t) = self.toks.get(self.pos) {
-            self.events.push(Event::Token { kind: t.kind, range: t.range });
+            self.events.push(Event::Token {
+                kind: t.kind,
+                range: t.range,
+            });
             self.pos += 1;
         }
     }
@@ -1091,11 +1218,18 @@ pub(crate) enum Shape {
     At,
     /// `x.name`: `lower` when the name is a lowercase word (callee);
     /// `cap_path` when the whole chain is a capitalized name path.
-    Member { lower: bool, cap_path: bool },
+    Member {
+        lower: bool,
+        cap_path: bool,
+    },
     /// A Lua path, by its last step.
-    LuaPath { last: LuaLast },
+    LuaPath {
+        last: LuaLast,
+    },
     /// `x:m` (`args`: with an argument list or block).
-    Method { args: bool },
+    Method {
+        args: bool,
+    },
     /// A call with parentheses and no block.
     Call,
     /// A call with a trailing block.
@@ -1125,18 +1259,26 @@ impl Shape {
             Shape::Name
                 | Shape::At
                 | Shape::Member { lower: true, .. }
-                | Shape::LuaPath { last: LuaLast::Name | LuaLast::Field | LuaLast::Method }
+                | Shape::LuaPath {
+                    last: LuaLast::Name | LuaLast::Field | LuaLast::Method
+                }
                 | Shape::Method { args: false }
         )
     }
 
     /// A capitalized name path, which a `{` makes a struct literal.
     pub(crate) fn is_cap_path(self) -> bool {
-        matches!(self, Shape::CapName | Shape::SelfType | Shape::Member { cap_path: true, .. })
+        matches!(
+            self,
+            Shape::CapName | Shape::SelfType | Shape::Member { cap_path: true, .. }
+        )
     }
 
     /// May be followed by a postfix `!`.
     pub(crate) fn bang_ok(self) -> bool {
-        matches!(self, Shape::Name | Shape::CapName | Shape::At | Shape::Member { .. })
+        matches!(
+            self,
+            Shape::Name | Shape::CapName | Shape::At | Shape::Member { .. }
+        )
     }
 }

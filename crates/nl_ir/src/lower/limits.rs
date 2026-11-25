@@ -62,12 +62,22 @@ pub(crate) struct Overflow {
 /// ([`drop_localized_over`]); when something is still over after the
 /// runtime values are dropped, the remaining paths are dropped before the
 /// file's locals move.
-pub(crate) fn fit(chunk: &mut Chunk, rt_cache: &[(&'static str, LocalId)], localized: &[(LocalId, String, Option<String>)]) -> Vec<Overflow> {
+pub(crate) fn fit(
+    chunk: &mut Chunk,
+    rt_cache: &[(&'static str, LocalId)],
+    localized: &[(LocalId, String, Option<String>)],
+) -> Vec<Overflow> {
     if over_limits(&chunk.main).is_empty() {
         return Vec::new();
     }
-    let mut kept: Vec<(LocalId, Expr)> = localized.iter().map(|(l, r, n)| (*l, super::localize::path_value(r, n.as_deref()))).collect();
-    if !kept.is_empty() && drop_localized_over(chunk, &mut kept) && over_limits(&chunk.main).is_empty() {
+    let mut kept: Vec<(LocalId, Expr)> = localized
+        .iter()
+        .map(|(l, r, n)| (*l, super::localize::path_value(r, n.as_deref())))
+        .collect();
+    if !kept.is_empty()
+        && drop_localized_over(chunk, &mut kept)
+        && over_limits(&chunk.main).is_empty()
+    {
         return Vec::new();
     }
     if drop_rt_cache(chunk, rt_cache) && over_limits(&chunk.main).is_empty() {
@@ -135,7 +145,11 @@ fn upvalue_sets(f: &Function, out: &mut Vec<HashSet<LocalId>>) -> HashSet<LocalI
 /// statement of the main function's top level; localize.rs) and from
 /// `kept`, and reads their paths where they were used.
 fn drop_localized(chunk: &mut Chunk, kept: &mut Vec<(LocalId, Expr)>, drop: &HashSet<LocalId>) {
-    let values: HashMap<LocalId, Expr> = kept.iter().filter(|(l, _)| drop.contains(l)).cloned().collect();
+    let values: HashMap<LocalId, Expr> = kept
+        .iter()
+        .filter(|(l, _)| drop.contains(l))
+        .cloned()
+        .collect();
     kept.retain(|(l, _)| !drop.contains(l));
     let stmts = &mut chunk.main.body.stmts;
     if let Some(at) = stmts.iter().position(|s| matches!(&s.kind, StmtKind::Local { locals, .. } if locals.iter().any(|l| drop.contains(l)))) {
@@ -157,10 +171,22 @@ fn drop_localized(chunk: &mut Chunk, kept: &mut Vec<(LocalId, Expr)>, drop: &Has
 /// nothing to drop.
 fn drop_rt_cache(chunk: &mut Chunk, rt_cache: &[(&'static str, LocalId)]) -> bool {
     let cached: Vec<LocalId> = rt_cache.iter().map(|(_, l)| *l).collect();
-    let at = chunk.main.body.stmts.iter().position(|s| matches!(&s.kind, StmtKind::Local { locals, .. } if *locals == cached));
-    let Some(at) = at.filter(|_| !cached.is_empty()) else { return false };
+    let at = chunk
+        .main
+        .body
+        .stmts
+        .iter()
+        .position(|s| matches!(&s.kind, StmtKind::Local { locals, .. } if *locals == cached));
+    let Some(at) = at.filter(|_| !cached.is_empty()) else {
+        return false;
+    };
     chunk.main.body.stmts.remove(at);
-    let field = |l: &LocalId| rt_cache.iter().find(|(_, c)| c == l).map(|(n, _)| Expr::Intrinsic(n));
+    let field = |l: &LocalId| {
+        rt_cache
+            .iter()
+            .find(|(_, c)| c == l)
+            .map(|(n, _)| Expr::Intrinsic(n))
+    };
     rewrite_block(&mut chunk.main.body, &field, false);
     true
 }
@@ -207,7 +233,12 @@ fn check_function(f: &Function, out: &mut Vec<Overflow>) -> HashSet<LocalId> {
 
 /// Collects what a block declares and uses, and the functions inside it
 /// (which are checked on their own).
-fn scan_block<'a>(b: &'a Block, declared: &mut HashSet<LocalId>, used: &mut HashSet<LocalId>, nested: &mut Vec<&'a Function>) {
+fn scan_block<'a>(
+    b: &'a Block,
+    declared: &mut HashSet<LocalId>,
+    used: &mut HashSet<LocalId>,
+    nested: &mut Vec<&'a Function>,
+) {
     for s in &b.stmts {
         match &s.kind {
             StmtKind::Local { locals, values } => {
@@ -231,7 +262,11 @@ fn scan_block<'a>(b: &'a Block, declared: &mut HashSet<LocalId>, used: &mut Hash
             }
             StmtKind::Expr(e) => scan_expr(e, used, nested),
             StmtKind::Do(b) => scan_block(b, declared, used, nested),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 scan_expr(cond, used, nested);
                 scan_block(then, declared, used, nested);
                 if let Some(o) = otherwise {
@@ -242,7 +277,13 @@ fn scan_block<'a>(b: &'a Block, declared: &mut HashSet<LocalId>, used: &mut Hash
                 scan_expr(cond, used, nested);
                 scan_block(body, declared, used, nested);
             }
-            StmtKind::NumericFor { var, start, limit, step, body } => {
+            StmtKind::NumericFor {
+                var,
+                start,
+                limit,
+                step,
+                body,
+            } => {
                 declared.insert(*var);
                 scan_expr(start, used, nested);
                 scan_expr(limit, used, nested);
@@ -296,12 +337,20 @@ fn scan_expr<'a>(e: &'a Expr, used: &mut HashSet<LocalId>, nested: &mut Vec<&'a 
                 }
             }
         }
-        Expr::MemberCall { receiver, key, args } => {
+        Expr::MemberCall {
+            receiver,
+            key,
+            args,
+        } => {
             scan_expr(receiver, used, nested);
             scan_expr(key, used, nested);
             args.iter().for_each(|a| scan_expr(a, used, nested));
         }
-        Expr::MemberApply { func, receiver, args } => {
+        Expr::MemberApply {
+            func,
+            receiver,
+            args,
+        } => {
             scan_expr(func, used, nested);
             scan_expr(receiver, used, nested);
             args.iter().for_each(|a| scan_expr(a, used, nested));
@@ -310,7 +359,13 @@ fn scan_expr<'a>(e: &'a Expr, used: &mut HashSet<LocalId>, nested: &mut Vec<&'a 
             scan_expr(receiver, used, nested);
             scan_expr(key, used, nested);
         }
-        Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Global(_) | Expr::Vararg | Expr::Intrinsic(_) => {}
+        Expr::Nil
+        | Expr::Bool(_)
+        | Expr::Number(_)
+        | Expr::Str(_)
+        | Expr::Global(_)
+        | Expr::Vararg
+        | Expr::Intrinsic(_) => {}
     }
 }
 
@@ -323,9 +378,22 @@ pub(crate) fn max_active(b: &Block, base: usize) -> usize {
     for s in &b.stmts {
         match &s.kind {
             StmtKind::Local { locals, .. } => active += locals.len(),
-            StmtKind::Expr(e) if !matches!(e, Expr::Call(..) | Expr::MethodCall(..) | Expr::MemberCall { .. } | Expr::MemberApply { .. } | Expr::AutoGet { .. }) => active += 1,
+            StmtKind::Expr(e)
+                if !matches!(
+                    e,
+                    Expr::Call(..)
+                        | Expr::MethodCall(..)
+                        | Expr::MemberCall { .. }
+                        | Expr::MemberApply { .. }
+                        | Expr::AutoGet { .. }
+                ) =>
+            {
+                active += 1
+            }
             StmtKind::Do(b) => max = max.max(max_active(b, active)),
-            StmtKind::If { then, otherwise, .. } => {
+            StmtKind::If {
+                then, otherwise, ..
+            } => {
                 max = max.max(max_active(then, active));
                 if let Some(o) = otherwise {
                     max = max.max(max_active(o, active));
@@ -333,7 +401,9 @@ pub(crate) fn max_active(b: &Block, base: usize) -> usize {
             }
             StmtKind::While { body, .. } => max = max.max(max_active(body, active)),
             StmtKind::NumericFor { body, .. } => max = max.max(max_active(body, active + 4)),
-            StmtKind::GenericFor { vars, body, .. } => max = max.max(max_active(body, active + 3 + vars.len())),
+            StmtKind::GenericFor { vars, body, .. } => {
+                max = max.max(max_active(body, active + 3 + vars.len()))
+            }
             StmtKind::Hoist { defs, rest } => {
                 // Printed one after the other, or in segments that are
                 // blocks of their own: counting them in sequence is an
@@ -373,10 +443,22 @@ fn demote_top_level(chunk: &mut Chunk) {
         taken.insert(key.clone());
         keys.insert(*l, key);
     }
-    let field = |l: &LocalId| keys.get(l).map(|k| Expr::index(Expr::Local(table), Expr::str(k)));
+    let field = |l: &LocalId| {
+        keys.get(l)
+            .map(|k| Expr::index(Expr::Local(table), Expr::str(k)))
+    };
     rewrite_block(&mut chunk.main.body, &field, true);
     let line = chunk.main.line;
-    chunk.main.body.stmts.insert(0, Stmt { line, kind: StmtKind::Local { locals: vec![table], values: vec![Expr::Table(Vec::new())] } });
+    chunk.main.body.stmts.insert(
+        0,
+        Stmt {
+            line,
+            kind: StmtKind::Local {
+                locals: vec![table],
+                values: vec![Expr::Table(Vec::new())],
+            },
+        },
+    );
 }
 
 /// The locals declared by the top-level statements of a block (a `Hoist`
@@ -403,16 +485,26 @@ pub(crate) fn rewrite_block(b: &mut Block, field: &Field<'_>, top: bool) {
     let stmts = std::mem::take(&mut b.stmts);
     for mut s in stmts {
         match &mut s.kind {
-            StmtKind::Local { locals, values } if top && locals.iter().any(|l| field(l).is_some()) => {
+            StmtKind::Local { locals, values }
+                if top && locals.iter().any(|l| field(l).is_some()) =>
+            {
                 values.iter_mut().for_each(|v| rewrite_expr(v, field));
                 if values.is_empty() {
                     // `local a, b`: a field that was never set is nil.
                     continue;
                 }
-                let targets = locals.iter().map(|l| field(l).map_or(Place::Local(*l), place_of)).collect();
-                s.kind = StmtKind::Assign { targets, values: std::mem::take(values) };
+                let targets = locals
+                    .iter()
+                    .map(|l| field(l).map_or(Place::Local(*l), place_of))
+                    .collect();
+                s.kind = StmtKind::Assign {
+                    targets,
+                    values: std::mem::take(values),
+                };
             }
-            StmtKind::Local { values, .. } => values.iter_mut().for_each(|v| rewrite_expr(v, field)),
+            StmtKind::Local { values, .. } => {
+                values.iter_mut().for_each(|v| rewrite_expr(v, field))
+            }
             StmtKind::Assign { targets, values } => {
                 for t in targets.iter_mut() {
                     match t {
@@ -432,7 +524,11 @@ pub(crate) fn rewrite_block(b: &mut Block, field: &Field<'_>, top: bool) {
             }
             StmtKind::Expr(e) => rewrite_expr(e, field),
             StmtKind::Do(b) => rewrite_block(b, field, false),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 rewrite_expr(cond, field);
                 rewrite_block(then, field, false);
                 if let Some(o) = otherwise {
@@ -443,7 +539,13 @@ pub(crate) fn rewrite_block(b: &mut Block, field: &Field<'_>, top: bool) {
                 rewrite_expr(cond, field);
                 rewrite_block(body, field, false);
             }
-            StmtKind::NumericFor { start, limit, step, body, .. } => {
+            StmtKind::NumericFor {
+                start,
+                limit,
+                step,
+                body,
+                ..
+            } => {
                 rewrite_expr(start, field);
                 rewrite_expr(limit, field);
                 if let Some(st) = step {
@@ -506,12 +608,20 @@ fn rewrite_expr(e: &mut Expr, field: &Field<'_>) {
                 }
             }
         }
-        Expr::MemberCall { receiver, key, args } => {
+        Expr::MemberCall {
+            receiver,
+            key,
+            args,
+        } => {
             rewrite_expr(receiver, field);
             rewrite_expr(key, field);
             args.iter_mut().for_each(|a| rewrite_expr(a, field));
         }
-        Expr::MemberApply { func, receiver, args } => {
+        Expr::MemberApply {
+            func,
+            receiver,
+            args,
+        } => {
             rewrite_expr(func, field);
             rewrite_expr(receiver, field);
             args.iter_mut().for_each(|a| rewrite_expr(a, field));
@@ -520,6 +630,12 @@ fn rewrite_expr(e: &mut Expr, field: &Field<'_>) {
             rewrite_expr(receiver, field);
             rewrite_expr(key, field);
         }
-        Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Global(_) | Expr::Vararg | Expr::Intrinsic(_) => {}
+        Expr::Nil
+        | Expr::Bool(_)
+        | Expr::Number(_)
+        | Expr::Str(_)
+        | Expr::Global(_)
+        | Expr::Vararg
+        | Expr::Intrinsic(_) => {}
     }
 }

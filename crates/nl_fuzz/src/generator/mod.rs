@@ -118,7 +118,15 @@ struct Ex {
 
 impl Ex {
     fn new(code: impl Into<String>, ty: Ty, bound: f64) -> Ex {
-        Ex { code: code.into(), ty, bound, elem: 0.0, ascii: true, atomic: false, min_len: 0 }
+        Ex {
+            code: code.into(),
+            ty,
+            bound,
+            elem: 0.0,
+            ascii: true,
+            atomic: false,
+            min_len: 0,
+        }
     }
     fn atom(mut self) -> Ex {
         self.atomic = true;
@@ -134,7 +142,11 @@ impl Ex {
     }
     /// The text as an operand of a binary operator.
     fn operand(&self) -> String {
-        if self.atomic && !self.code.starts_with('-') { self.code.clone() } else { format!("({})", self.code) }
+        if self.atomic && !self.code.starts_with('-') {
+            self.code.clone()
+        } else {
+            format!("({})", self.code)
+        }
     }
 }
 
@@ -316,19 +328,41 @@ struct Ctx {
 
 impl Frame {
     fn new(ret: Ret, ret_cap: f64) -> Frame {
-        Frame { ret, ret_cap, ret_bound: 0.0, cost: 0.0, raises: false, assigns: Vec::new() }
+        Frame {
+            ret,
+            ret_cap,
+            ret_bound: 0.0,
+            cost: 0.0,
+            raises: false,
+            assigns: Vec::new(),
+        }
     }
 }
 
 impl Ctx {
     fn top() -> Ctx {
-        Ctx { depth: 0, loops: 0, mult: 1.0, raise_ok: false, caught: false, method_of: None }
+        Ctx {
+            depth: 0,
+            loops: 0,
+            mult: 1.0,
+            raise_ok: false,
+            caught: false,
+            method_of: None,
+        }
     }
     fn nested(&self) -> Ctx {
-        Ctx { depth: self.depth + 1, ..self.clone() }
+        Ctx {
+            depth: self.depth + 1,
+            ..self.clone()
+        }
     }
     fn in_loop(&self, iterations: f64) -> Ctx {
-        Ctx { depth: self.depth + 1, loops: self.loops + 1, mult: self.mult * iterations.max(1.0), ..self.clone() }
+        Ctx {
+            depth: self.depth + 1,
+            loops: self.loops + 1,
+            mult: self.mult * iterations.max(1.0),
+            ..self.clone()
+        }
     }
 }
 
@@ -470,7 +504,10 @@ impl Gen {
                 // A function assigns only its own variables and scalars
                 // of the file: lists and maps of outer scopes keep their
                 // length, so that walking them always ends.
-                if assign && v.fn_depth < self.fn_depth() && !matches!(ty, Ty::Int | Ty::Num | Ty::Str | Ty::Bool) {
+                if assign
+                    && v.fn_depth < self.fn_depth()
+                    && !matches!(ty, Ty::Int | Ty::Num | Ty::Str | Ty::Bool)
+                {
                     continue;
                 }
                 found.push((si, vi));
@@ -529,7 +566,11 @@ impl Gen {
     }
 
     fn cost_cap(&self) -> f64 {
-        if self.frames.is_empty() { COST_CAP } else { FN_COST_CAP }
+        if self.frames.is_empty() {
+            COST_CAP
+        } else {
+            FN_COST_CAP
+        }
     }
 
     fn add_cost(&mut self, c: f64) {
@@ -633,7 +674,11 @@ impl Gen {
         }
         // The final trace: every file-level variable. It is also what
         // keeps them from being unused.
-        let vars: Vec<(String, Ty)> = self.scopes.first().map(|s| s.vars.iter().map(|v| (v.name.clone(), v.ty)).collect()).unwrap_or_default();
+        let vars: Vec<(String, Ty)> = self
+            .scopes
+            .first()
+            .map(|s| s.vars.iter().map(|v| (v.name.clone(), v.ty)).collect())
+            .unwrap_or_default();
         for (name, ty) in vars {
             body.push(self.show_stmt(&name, ty));
         }
@@ -645,7 +690,11 @@ impl Gen {
             source.push_str(&b);
             source.push('\n');
         }
-        Program { seed: self.seed, source, checked_only: self.checked_only }
+        Program {
+            seed: self.seed,
+            source,
+            checked_only: self.checked_only,
+        }
     }
 
     /// A statement that prints a value of any type readably: never a table
@@ -656,7 +705,11 @@ impl Gen {
 
     fn show(&self, code: &str, ty: Ty) -> String {
         let simple = code.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
-        let code = if simple { code.to_string() } else { format!("({code})") };
+        let code = if simple {
+            code.to_string()
+        } else {
+            format!("({code})")
+        };
         let code = code.as_str();
         match ty {
             Ty::IntList => format!("show_list({code})"),
@@ -667,8 +720,21 @@ impl Gen {
                 if fields.is_empty() {
                     format!("typeof({code})")
                 } else {
-                    let parts: Vec<String> = fields.iter().map(|f| if f.ty == Ty::Str { format!("#{{{code}.{}}}", f.name) } else { format!("#{{{code}.{} + 0}}", f.name) }).collect();
-                    format!("\"{} {}\"", self.structs.get(i).map_or("?", |s| s.name.as_str()), parts.join(" "))
+                    let parts: Vec<String> = fields
+                        .iter()
+                        .map(|f| {
+                            if f.ty == Ty::Str {
+                                format!("#{{{code}.{}}}", f.name)
+                            } else {
+                                format!("#{{{code}.{} + 0}}", f.name)
+                            }
+                        })
+                        .collect();
+                    format!(
+                        "\"{} {}\"",
+                        self.structs.get(i).map_or("?", |s| s.name.as_str()),
+                        parts.join(" ")
+                    )
                 }
             }
             Ty::Int | Ty::Num => format!("{code} + 0"),
@@ -766,7 +832,11 @@ fn fit(e: Ex, b: f64) -> Ex {
 /// A string for a slot declared `String`: the analyzer types `s[a..b]`
 /// as `String?`, so the value gets an `or ""` that never applies.
 fn non_nil(e: &Ex) -> String {
-    if e.code.contains('\n') { format!("({}) or \"\"", e.code) } else { format!("{} or \"\"", e.operand()) }
+    if e.code.contains('\n') {
+        format!("({}) or \"\"", e.code)
+    } else {
+        format!("{} or \"\"", e.operand())
+    }
 }
 
 /// Indents every line of `code` by two spaces.
@@ -786,7 +856,11 @@ fn indent(code: &str) -> String {
 
 /// The statements of a block, indented, one per line.
 fn block_text(stmts: &[String]) -> String {
-    stmts.iter().map(|s| indent(s)).collect::<Vec<_>>().join("\n")
+    stmts
+        .iter()
+        .map(|s| indent(s))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// A float literal for a bound: the integer part, at least 1.
@@ -827,7 +901,11 @@ mod tests {
                 // assignment operator.
                 let t = line.trim_start();
                 let target = t.split_whitespace().next().unwrap_or("");
-                let assigns = target.ends_with(".count") && t.get(target.len()..).unwrap_or("").trim_start().starts_with(|c: char| "=+-|*%".contains(c));
+                let assigns = target.ends_with(".count")
+                    && t.get(target.len()..)
+                        .unwrap_or("")
+                        .trim_start()
+                        .starts_with(|c: char| "=+-|*%".contains(c));
                 assert!(!assigns, "seed {seed}: {line}");
             }
         }

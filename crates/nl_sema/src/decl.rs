@@ -108,23 +108,46 @@ impl Declarations {
                     DECL_VALUE => DeclItemKind::Let,
                     _ => continue,
                 };
-                let Some(name_node) = child(&item, NAME) else { continue };
+                let Some(name_node) = child(&item, NAME) else {
+                    continue;
+                };
                 let name = name_text(&name_node).unwrap_or_default();
                 let root = match kind {
                     DeclItemKind::HostType => None,
-                    _ => Some(match child(&item, LUA_ROOT).and_then(|r| child(&r, LUA_PATH)) {
-                        Some(path) => match lua_root(&path) {
-                            Ok(r) => r,
-                            Err(msg) => {
-                                diags.push((file.clone(), SemaDiagnostic { range: path.text_range(), code: "decl-lua-root", message: msg, error: true, lint: false }));
-                                LuaRoot { global: name.clone(), steps: Vec::new() }
-                            }
+                    _ => Some(
+                        match child(&item, LUA_ROOT).and_then(|r| child(&r, LUA_PATH)) {
+                            Some(path) => match lua_root(&path) {
+                                Ok(r) => r,
+                                Err(msg) => {
+                                    diags.push((
+                                        file.clone(),
+                                        SemaDiagnostic {
+                                            range: path.text_range(),
+                                            code: "decl-lua-root",
+                                            message: msg,
+                                            error: true,
+                                            lint: false,
+                                        },
+                                    ));
+                                    LuaRoot {
+                                        global: name.clone(),
+                                        steps: Vec::new(),
+                                    }
+                                }
+                            },
+                            None => LuaRoot {
+                                global: name.clone(),
+                                steps: Vec::new(),
+                            },
                         },
-                        None => LuaRoot { global: name.clone(), steps: Vec::new() },
-                    }),
+                    ),
                 };
                 if let Some(&earlier) = decls.by_name.get(&name) {
-                    let other = decls.items.get(earlier.0 as usize).map(|i| i.file.clone()).unwrap_or_default();
+                    let other = decls
+                        .items
+                        .get(earlier.0 as usize)
+                        .map(|i| i.file.clone())
+                        .unwrap_or_default();
                     diags.push((
                         file.clone(),
                         SemaDiagnostic {
@@ -137,12 +160,22 @@ impl Declarations {
                     ));
                     continue;
                 }
-                if matches!(kind, DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType) {
+                if matches!(
+                    kind,
+                    DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType
+                ) {
                     duplicate_members(&item, file, &mut diags);
                 }
                 let id = DeclId(u32::try_from(decls.items.len()).unwrap_or(u32::MAX));
                 decls.by_name.insert(name.clone(), id);
-                decls.items.push(DeclItem { name, kind, file: file.clone(), range: name_node.text_range(), node: item, root });
+                decls.items.push(DeclItem {
+                    name,
+                    kind,
+                    file: file.clone(),
+                    range: name_node.text_range(),
+                    node: item,
+                    root,
+                });
             }
         }
         (decls, diags)
@@ -162,19 +195,30 @@ impl Declarations {
 
     /// The binding kind of a declared name.
     pub fn binding_kind(&self, id: DeclId) -> BindingKind {
-        let Some(item) = self.get(id) else { return BindingKind::Variable };
+        let Some(item) = self.get(id) else {
+            return BindingKind::Variable;
+        };
         match item.kind {
-            DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType => BindingKind::TypeLevel,
+            DeclItemKind::Module | DeclItemKind::Struct | DeclItemKind::HostType => {
+                BindingKind::TypeLevel
+            }
             DeclItemKind::Fn => BindingKind::Function,
             DeclItemKind::Let | DeclItemKind::Const => {
-                if type_child(&item.node).is_some_and(|t| is_function_type(&t)) { BindingKind::Function } else { BindingKind::Variable }
+                if type_child(&item.node).is_some_and(|t| is_function_type(&t)) {
+                    BindingKind::Function
+                } else {
+                    BindingKind::Variable
+                }
             }
         }
     }
 
     /// True for a name usable as a type (`declare struct`, `declare type`).
     pub fn is_type(&self, id: DeclId) -> bool {
-        matches!(self.get(id).map(|i| i.kind), Some(DeclItemKind::Struct | DeclItemKind::HostType))
+        matches!(
+            self.get(id).map(|i| i.kind),
+            Some(DeclItemKind::Struct | DeclItemKind::HostType)
+        )
     }
 
     /// The host types (`declare type Name : Parent`), each with the name
@@ -182,15 +226,23 @@ impl Declarations {
     /// registers so that runtime checks against them work.
     pub fn host_types(&self) -> Vec<(String, Option<String>)> {
         let parent_of = |item: &DeclItem| {
-            child(&item.node, STRUCT_PARENT).and_then(|p| type_child(&p)).map(|t| t.text().to_string().trim().to_owned()).filter(|t| !t.is_empty())
+            child(&item.node, STRUCT_PARENT)
+                .and_then(|p| type_child(&p))
+                .map(|t| t.text().to_string().trim().to_owned())
+                .filter(|t| !t.is_empty())
         };
-        let all: Vec<(String, Option<String>)> =
-            self.items.iter().filter(|i| i.kind == DeclItemKind::HostType).map(|i| (i.name.clone(), parent_of(i))).collect();
+        let all: Vec<(String, Option<String>)> = self
+            .items
+            .iter()
+            .filter(|i| i.kind == DeclItemKind::HostType)
+            .map(|i| (i.name.clone(), parent_of(i)))
+            .collect();
         let mut out: Vec<(String, Option<String>)> = Vec::with_capacity(all.len());
         // Parents first: repeated passes, each taking the types whose
         // parent is placed (or not a declared host type); a cycle, which
         // the analyzer reports, ends the loop and is left out.
-        let declared: std::collections::HashSet<&str> = all.iter().map(|(n, _)| n.as_str()).collect();
+        let declared: std::collections::HashSet<&str> =
+            all.iter().map(|(n, _)| n.as_str()).collect();
         let mut placed: std::collections::HashSet<String> = std::collections::HashSet::new();
         loop {
             let before = out.len();
@@ -198,7 +250,9 @@ impl Declarations {
                 if placed.contains(name) {
                     continue;
                 }
-                let ready = parent.as_deref().is_none_or(|p| !declared.contains(p) || placed.contains(p));
+                let ready = parent
+                    .as_deref()
+                    .is_none_or(|p| !declared.contains(p) || placed.contains(p));
                 if ready {
                     placed.insert(name.clone());
                     out.push((name.clone(), parent.clone()));
@@ -223,17 +277,24 @@ fn duplicate_members(node: &SyntaxNode, file: &str, diags: &mut Vec<(String, Sem
     let mut ops: HashMap<String, TextRange> = HashMap::new();
     for m in node.children() {
         let (name, range, is_op) = match m.kind() {
-            DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE => match child(&m, NAME) {
-                Some(n) => (name_text(&n).unwrap_or_default(), n.text_range(), false),
-                None => continue,
-            },
+            DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE => {
+                match child(&m, NAME) {
+                    Some(n) => (name_text(&n).unwrap_or_default(), n.text_range(), false),
+                    None => continue,
+                }
+            }
             DECL_FN => match (child(&m, NAME), child(&m, OP_NAME)) {
                 (Some(n), _) => (name_text(&n).unwrap_or_default(), n.text_range(), false),
                 // `fn -` (negation) and `fn -(right)` are two operators.
                 (None, Some(o)) => {
                     let op: String = o.text().to_string().split_whitespace().collect();
-                    let binary = child(&m, PARAM_LIST).is_some_and(|l| l.children().any(|p| p.kind() == PARAM));
-                    (if binary { format!("{op}(right)") } else { op }, o.text_range(), true)
+                    let binary = child(&m, PARAM_LIST)
+                        .is_some_and(|l| l.children().any(|p| p.kind() == PARAM));
+                    (
+                        if binary { format!("{op}(right)") } else { op },
+                        o.text_range(),
+                        true,
+                    )
                 }
                 (None, None) => continue,
             },
@@ -249,7 +310,11 @@ fn duplicate_members(node: &SyntaxNode, file: &str, diags: &mut Vec<(String, Sem
         if let std::collections::hash_map::Entry::Vacant(e) = table.entry(name.clone()) {
             e.insert(range);
         } else {
-            let what = if is_op { format!("the operator `{}`", name.trim_end_matches("(right)")) } else { format!("`{name}`") };
+            let what = if is_op {
+                format!("the operator `{}`", name.trim_end_matches("(right)"))
+            } else {
+                format!("`{name}`")
+            };
             diags.push((
                 file.to_string(),
                 SemaDiagnostic {
@@ -284,7 +349,15 @@ impl Declarations {
                 Some(_) => {}
                 None if item.kind == DeclItemKind::Module => {
                     for m in item.node.children() {
-                        if !matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE) {
+                        if !matches!(
+                            m.kind(),
+                            DECL_FN
+                                | DECL_FIELD
+                                | DECL_VALUE
+                                | DECL_MODULE
+                                | DECL_STRUCT
+                                | DECL_TYPE
+                        ) {
                             continue;
                         }
                         let key = match child(&m, LUA_KEY).and_then(|k| token(&k, STRING)) {
@@ -313,7 +386,10 @@ fn lua_root(path: &SyntaxNode) -> Result<LuaRoot, String> {
     for step in path.children() {
         match step.kind() {
             LUA_FIELD => {
-                let name = tokens(&step).find(|t| t.kind().is_name() || t.kind().is_keyword()).map(|t| t.text().to_string()).unwrap_or_default();
+                let name = tokens(&step)
+                    .find(|t| t.kind().is_name() || t.kind().is_keyword())
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 steps.push(LuaStep::Field(name));
             }
             LUA_INDEX => {
@@ -327,7 +403,9 @@ fn lua_root(path: &SyntaxNode) -> Result<LuaRoot, String> {
                         if is_expr(a.kind()) {
                             args.push(literal_arg(&a).ok_or_else(|| "an argument in a `lua_root` must be a literal: a string, a number, `true`, `false` or `nil`".to_string())?);
                         } else {
-                            return Err("a call in a `lua_root` takes literal arguments only".to_string());
+                            return Err(
+                                "a call in a `lua_root` takes literal arguments only".to_string()
+                            );
                         }
                     }
                 }
@@ -336,11 +414,19 @@ fn lua_root(path: &SyntaxNode) -> Result<LuaRoot, String> {
                 }
                 steps.push(LuaStep::Call(args));
             }
-            LUA_METHOD => return Err("a `lua_root` names a value: it cannot end in a method call `:name()`".to_string()),
+            LUA_METHOD => {
+                return Err(
+                    "a `lua_root` names a value: it cannot end in a method call `:name()`"
+                        .to_string(),
+                );
+            }
             _ => {}
         }
     }
-    Ok(LuaRoot { global: first.text().to_string(), steps })
+    Ok(LuaRoot {
+        global: first.text().to_string(),
+        steps,
+    })
 }
 
 fn literal_arg(e: &SyntaxNode) -> Option<LuaArg> {
@@ -349,7 +435,12 @@ fn literal_arg(e: &SyntaxNode) -> Option<LuaArg> {
             let tok: SyntaxToken = first_token(e)?;
             Some(match tok.kind() {
                 NUMBER => LuaArg::Number(nl_syntax::number_value(tok.text()).unwrap_or(0.0)),
-                STRING => LuaArg::Str(nl_syntax::decode_string(&[tok.text()]).into_iter().next().unwrap_or_default()),
+                STRING => LuaArg::Str(
+                    nl_syntax::decode_string(&[tok.text()])
+                        .into_iter()
+                        .next()
+                        .unwrap_or_default(),
+                ),
                 TRUE_KW => LuaArg::Bool(true),
                 FALSE_KW => LuaArg::Bool(false),
                 NIL_KW => LuaArg::Nil,
@@ -359,7 +450,9 @@ fn literal_arg(e: &SyntaxNode) -> Option<LuaArg> {
         PREFIX_EXPR => {
             let inner = expr_child(e)?;
             match literal_arg(&inner)? {
-                LuaArg::Number(n) if first_token(e).is_some_and(|t| t.kind() == MINUS) => Some(LuaArg::Number(-n)),
+                LuaArg::Number(n) if first_token(e).is_some_and(|t| t.kind() == MINUS) => {
+                    Some(LuaArg::Number(-n))
+                }
                 _ => None,
             }
         }
@@ -391,7 +484,10 @@ fn prelude_trees() -> &'static Vec<(String, rowan::GreenNode)> {
 /// The parsed built-in declaration files of `decl/`, to load together
 /// with a host's own ([`Declarations::load`]).
 pub fn prelude_files() -> Vec<(String, SyntaxNode)> {
-    prelude_trees().iter().map(|(n, g)| (n.clone(), SyntaxNode::new_root(g.clone()))).collect()
+    prelude_trees()
+        .iter()
+        .map(|(n, g)| (n.clone(), SyntaxNode::new_root(g.clone())))
+        .collect()
 }
 
 /// Garry's Mod's API (decl/glua.d.nl, generated by crates/nl_glua_decl):
@@ -403,7 +499,10 @@ pub const GMOD_SOURCE: (&str, &str) = ("decl/glua.d.nl", include_str!("../../../
 pub fn gmod_file() -> (String, SyntaxNode) {
     static TREE: OnceLock<rowan::GreenNode> = OnceLock::new();
     let green = TREE.get_or_init(|| nl_syntax::parse_decl_file(GMOD_SOURCE.1).into_parts().0);
-    (GMOD_SOURCE.0.to_owned(), SyntaxNode::new_root(green.clone()))
+    (
+        GMOD_SOURCE.0.to_owned(),
+        SyntaxNode::new_root(green.clone()),
+    )
 }
 
 /// The built-in declarations of `decl/` (see the module documentation).
@@ -418,7 +517,16 @@ pub(crate) fn prelude_syntax_errors() -> Vec<String> {
         .iter()
         .flat_map(|(name, src)| {
             let parse = nl_syntax::parse_decl_file(src);
-            parse.diagnostics().iter().map(|d| format!("{name}: {}", nl_syntax::dump_diagnostics(src, std::slice::from_ref(d)))).collect::<Vec<_>>()
+            parse
+                .diagnostics()
+                .iter()
+                .map(|d| {
+                    format!(
+                        "{name}: {}",
+                        nl_syntax::dump_diagnostics(src, std::slice::from_ref(d))
+                    )
+                })
+                .collect::<Vec<_>>()
         })
         .collect()
 }

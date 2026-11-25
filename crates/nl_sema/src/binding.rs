@@ -4,9 +4,9 @@ use std::collections::{HashMap, HashSet};
 
 use nl_syntax::{SyntaxNode, TextRange};
 
-use crate::{ExportInfo, ExtensionInfo};
 use crate::decl::{DeclId, DeclItemKind, LuaRoot};
 use crate::prelude::Prelude;
+use crate::{ExportInfo, ExtensionInfo};
 
 /// Index of a [`Binding`] in [`Resolution::bindings`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -110,7 +110,10 @@ pub enum SelfTarget {
     Binding(BindingId),
     /// A table reached from a binding through a path: `Self` in
     /// `fn Inventory.Filters.add` is `Inventory.Filters`.
-    Member { id: BindingId, path: Vec<String> },
+    Member {
+        id: BindingId,
+        path: Vec<String>,
+    },
     Prelude(&'static Prelude),
 }
 
@@ -252,7 +255,11 @@ impl Resolution {
     /// from it is not bound to the table: `String.shout(s)` passes `s` as
     /// `self`. `from`, which `From<T>` defines, is the exception: it is
     /// called on the type, which is its `self` (`Number.from(x)`).
-    pub fn plain_primitive_member(&self, recv: &SyntaxNode, name: &str) -> Option<&'static Prelude> {
+    pub fn plain_primitive_member(
+        &self,
+        recv: &SyntaxNode,
+        name: &str,
+    ) -> Option<&'static Prelude> {
         if name == "from" {
             return None;
         }
@@ -262,10 +269,12 @@ impl Resolution {
                 Ref::Prelude(p) => *p,
                 _ => return None,
             },
-            SELF_EXPR if crate::util::has_token(recv, SELF_TYPE_KW) => match self.self_target(recv.text_range())? {
-                SelfTarget::Prelude(p) => *p,
-                _ => return None,
-            },
+            SELF_EXPR if crate::util::has_token(recv, SELF_TYPE_KW) => {
+                match self.self_target(recv.text_range())? {
+                    SelfTarget::Prelude(p) => *p,
+                    _ => return None,
+                }
+            }
             _ => return None,
         };
         p.takes_methods().then_some(p)
@@ -299,7 +308,10 @@ impl Resolution {
     /// exporting file (imported names keep their kinds); for
     /// `import from … as Name`, `Import`.
     pub fn declared_as(&self, id: BindingId) -> Option<DeclKind> {
-        self.imported.get(&id).copied().or_else(|| self.binding(id).map(|b| b.decl))
+        self.imported
+            .get(&id)
+            .copied()
+            .or_else(|| self.binding(id).map(|b| b.decl))
     }
 
     /// True when the value of the expression statement at `range` (an
@@ -320,7 +332,9 @@ impl Resolution {
     /// For a `pub` item in a branch of a file-level `if`: the `if` (or
     /// `unless`) and the branches that declare it.
     pub fn conditional_export(&self, id: BindingId) -> Option<(&SyntaxNode, &[usize])> {
-        self.conditional_exports.get(&id).map(|(n, c)| (n, c.as_slice()))
+        self.conditional_exports
+            .get(&id)
+            .map(|(n, c)| (n, c.as_slice()))
     }
 
     /// The bindings of the `pub` items in branches of file-level `if`s.
@@ -383,7 +397,8 @@ impl Resolution {
     /// True when the binding is a `const` directly in a module body: a
     /// member of the module.
     pub fn module_const_of(&self, id: BindingId) -> bool {
-        self.binding(id).is_some_and(|b| self.module_consts.keys().any(|r| r.contains_range(b.range)))
+        self.binding(id)
+            .is_some_and(|b| self.module_consts.keys().any(|r| r.contains_range(b.range)))
     }
 
     /// True when some diagnostic is an error.

@@ -30,7 +30,9 @@ pub(crate) fn arg_nodes(list: Option<SyntaxNode>) -> Vec<Arg> {
         .filter_map(|c| match c.kind() {
             SPREAD_ARG => expr_child(&c).map(Arg::Spread),
             KEYED_ARG => {
-                let key = first_token(&c).map(|t| t.text().to_string()).unwrap_or_default();
+                let key = first_token(&c)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 expr_child(&c).map(|e| Arg::Keyed(key, e))
             }
             KEYED_SPREAD_ARG => expr_child(&c).map(Arg::KeyedSpread),
@@ -46,7 +48,9 @@ impl Lowerer<'_> {
         match node.kind() {
             METHOD_CALL => self.method_call(node, Vec::new(), &[], None),
             CALL_EXPR | COMMAND_CALL => {
-                let Some(callee) = expr_child(node) else { return self.internal(node, "call without callee") };
+                let Some(callee) = expr_child(node) else {
+                    return self.internal(node, "call without callee");
+                };
                 let list = child(node, ARG_LIST).or_else(|| child(node, COMMAND_ARGS));
                 let args = arg_nodes(list);
                 let block = child(node, TRAILING_BLOCK);
@@ -58,7 +62,13 @@ impl Lowerer<'_> {
 
     /// A call of `callee` with the already lowered values `pre` (the piped
     /// value) followed by `args` and the trailing block.
-    pub(crate) fn call_target(&mut self, callee: &SyntaxNode, pre: Vec<Expr>, args: &[Arg], block: Option<&SyntaxNode>) -> Expr {
+    pub(crate) fn call_target(
+        &mut self,
+        callee: &SyntaxNode,
+        pre: Vec<Expr>,
+        args: &[Arg],
+        block: Option<&SyntaxNode>,
+    ) -> Expr {
         match callee.kind() {
             NAME_REF => {
                 let mut vals = Vec::new();
@@ -72,7 +82,10 @@ impl Lowerer<'_> {
                     vals.push(m);
                 }
                 // The piped value is the first written argument.
-                let call_only = u32::try_from(pre.len()).ok().and_then(|n| self.call_only_mask(callee).checked_shr(n)).unwrap_or(0);
+                let call_only = u32::try_from(pre.len())
+                    .ok()
+                    .and_then(|n| self.call_only_mask(callee).checked_shr(n))
+                    .unwrap_or(0);
                 vals.extend(pre);
                 self.push_args(&mut vals, args, block, call_only);
                 let mut it = vals.into_iter();
@@ -80,7 +93,9 @@ impl Lowerer<'_> {
                 Expr::call(f, it.collect())
             }
             FIELD_EXPR if !is_len(callee) => self.member_call_of(callee, pre, args, block),
-            METHOD_CALL if child(callee, ARG_LIST).is_none() && child(callee, TRAILING_BLOCK).is_none() => {
+            METHOD_CALL
+                if child(callee, ARG_LIST).is_none() && child(callee, TRAILING_BLOCK).is_none() =>
+            {
                 self.method_call(callee, pre, args, block)
             }
             LUA_PATH => self.lua_path_call(callee, pre, args, block),
@@ -113,16 +128,31 @@ impl Lowerer<'_> {
     /// name is a `fn` declaration or an imported `pub fn`: an exact callee,
     /// since neither can be reassigned. Zero otherwise.
     fn call_only_mask(&self, callee: &SyntaxNode) -> u64 {
-        let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else { return 0 };
-        let Some(b) = self.res.binding(*id) else { return 0 };
-        let exact = b.decl == DeclKind::Fn || (b.decl == DeclKind::Import && self.res.declared_as(*id) == Some(DeclKind::Fn));
-        if b.kind == BindingKind::Function && exact { b.params.map_or(0, |p| p.call_only) } else { 0 }
+        let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else {
+            return 0;
+        };
+        let Some(b) = self.res.binding(*id) else {
+            return 0;
+        };
+        let exact = b.decl == DeclKind::Fn
+            || (b.decl == DeclKind::Import && self.res.declared_as(*id) == Some(DeclKind::Fn));
+        if b.kind == BindingKind::Function && exact {
+            b.params.map_or(0, |p| p.call_only)
+        } else {
+            0
+        }
     }
 
     /// Lowers written arguments and the trailing block onto `vals`.
     /// `call_only` has a bit for each written position whose parameter
     /// the callee only calls (see [`Self::push_arg_refs`]).
-    pub(crate) fn push_args(&mut self, vals: &mut Vec<Expr>, args: &[Arg], block: Option<&SyntaxNode>, call_only: u64) {
+    pub(crate) fn push_args(
+        &mut self,
+        vals: &mut Vec<Expr>,
+        args: &[Arg],
+        block: Option<&SyntaxNode>,
+        call_only: u64,
+    ) {
         let refs: Vec<&Arg> = args.iter().collect();
         self.push_arg_refs(vals, &refs, block, 0, call_only);
     }
@@ -138,7 +168,14 @@ impl Lowerer<'_> {
     /// `call_only` is marked transient ([`Function::transient`]): the callee
     /// only calls it, so lift.rs may make it once. After a spread the
     /// positions are unknown.
-    pub(crate) fn push_arg_refs(&mut self, vals: &mut Vec<Expr>, args: &[&Arg], block: Option<&SyntaxNode>, keep: usize, call_only: u64) {
+    pub(crate) fn push_arg_refs(
+        &mut self,
+        vals: &mut Vec<Expr>,
+        args: &[&Arg],
+        block: Option<&SyntaxNode>,
+        keep: usize,
+        call_only: u64,
+    ) {
         let mut spread_at = None;
         // The spread is a rest parameter, whose count is its `n`.
         let mut counted = None;
@@ -213,13 +250,17 @@ impl Lowerer<'_> {
                     // The keyed table rides along with the spread values.
                     Some(kw) if last => match counted {
                         // A rest parameter whose count is a local.
-                        Some((c, n)) if matches!(list, Expr::Local(l) if l == c) => Expr::intrinsic_call("unpackkw", vec![list, kw, n]),
+                        Some((c, n)) if matches!(list, Expr::Local(l) if l == c) => {
+                            Expr::intrinsic_call("unpackkw", vec![list, kw, n])
+                        }
                         _ => Expr::intrinsic_call("unpackkw", vec![list, kw]),
                     },
                     other => {
                         keyed = other;
                         match (counted, &list) {
-                            (Some((c, n)), Expr::Local(l)) if *l == c => Expr::intrinsic_call("unpack", vec![list, Expr::Number(1.0), n]),
+                            (Some((c, n)), Expr::Local(l)) if *l == c => {
+                                Expr::intrinsic_call("unpack", vec![list, Expr::Number(1.0), n])
+                            }
                             _ => Expr::intrinsic_call("spread", vec![list]),
                         }
                     }
@@ -242,7 +283,9 @@ impl Lowerer<'_> {
     /// The module to pass as `self` when `name` is called by its bare name
     /// inside its module.
     fn module_self_of(&mut self, name: &SyntaxNode) -> Option<Expr> {
-        let Some(Ref::Binding(id)) = self.res.reference(name.text_range()).cloned() else { return None };
+        let Some(Ref::Binding(id)) = self.res.reference(name.text_range()).cloned() else {
+            return None;
+        };
         let m = self.res.binding(id)?.module_owner?;
         Some(Expr::Local(self.local_of(m)))
     }
@@ -260,9 +303,19 @@ impl Lowerer<'_> {
     }
 
     /// `x.m(args)`: the member-call rule, decided at runtime.
-    pub(crate) fn member_call_of(&mut self, field: &SyntaxNode, pre: Vec<Expr>, args: &[Arg], block: Option<&SyntaxNode>) -> Expr {
-        let Some(recv) = expr_child(field) else { return self.internal(field, "member call") };
-        let name = field_name(field).map(|t| t.text().to_string()).unwrap_or_default();
+    pub(crate) fn member_call_of(
+        &mut self,
+        field: &SyntaxNode,
+        pre: Vec<Expr>,
+        args: &[Arg],
+        block: Option<&SyntaxNode>,
+    ) -> Expr {
+        let Some(recv) = expr_child(field) else {
+            return self.internal(field, "member call");
+        };
+        let name = field_name(field)
+            .map(|t| t.text().to_string())
+            .unwrap_or_default();
         let mut vals = Vec::new();
         self.push_operand(&mut vals, |l| l.expr1(&recv));
         vals.extend(pre);
@@ -276,7 +329,11 @@ impl Lowerer<'_> {
             let f = match self.preset(field) {
                 Some(f) => f,
                 None => {
-                    let key = self.opts.hints.member(field.text_range()).map_or(name, |h| h.key().to_string());
+                    let key = self
+                        .opts
+                        .hints
+                        .member(field.text_range())
+                        .map_or(name, |h| h.key().to_string());
                     Expr::index(r, Expr::str(&key))
                 }
             };
@@ -286,26 +343,50 @@ impl Lowerer<'_> {
         // which is called, not read again.
         if let Some(f) = self.preset(field) {
             return match self.opts.hints.member(field.text_range()) {
-                Some(MemberHint::Method { .. } | MemberHint::TableFn { .. }) => Expr::call(f, std::iter::once(r).chain(it).collect()),
-                Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => Expr::call(f, it.collect()),
-                None => Expr::MemberApply { func: Box::new(f), receiver: Box::new(r), args: it.collect() },
+                Some(MemberHint::Method { .. } | MemberHint::TableFn { .. }) => {
+                    Expr::call(f, std::iter::once(r).chain(it).collect())
+                }
+                Some(MemberHint::Field { .. } | MemberHint::Function { .. }) => {
+                    Expr::call(f, it.collect())
+                }
+                None => Expr::MemberApply {
+                    func: Box::new(f),
+                    receiver: Box::new(r),
+                    args: it.collect(),
+                },
             };
         }
         // A member the analyzer resolved from the receiver's declared
         // type, or a declared member with a Lua key.
         match self.opts.hints.member(field.text_range()).cloned() {
-            Some(MemberHint::Field { key } | MemberHint::Function { key }) => Expr::call(Expr::index(r, Expr::str(&key)), it.collect()),
+            Some(MemberHint::Field { key } | MemberHint::Function { key }) => {
+                Expr::call(Expr::index(r, Expr::str(&key)), it.collect())
+            }
             Some(MemberHint::Method { key }) => Expr::MethodCall(Box::new(r), key, it.collect()),
-            Some(MemberHint::TableFn { key }) => Expr::call(table_fn(&key), std::iter::once(r).chain(it).collect()),
-            None => Expr::MemberCall { receiver: Box::new(r), key: Box::new(Expr::str(&name)), args: it.collect() },
+            Some(MemberHint::TableFn { key }) => {
+                Expr::call(table_fn(&key), std::iter::once(r).chain(it).collect())
+            }
+            None => Expr::MemberCall {
+                receiver: Box::new(r),
+                key: Box::new(Expr::str(&name)),
+                args: it.collect(),
+            },
         }
     }
 
     /// `x:m(args)`: Lua's method call. `pre` and `extra` come
     /// from a pipe or command arguments around a method call without its
     /// own argument list.
-    pub(crate) fn method_call(&mut self, node: &SyntaxNode, pre: Vec<Expr>, extra: &[Arg], extra_block: Option<&SyntaxNode>) -> Expr {
-        let Some(recv) = expr_child(node) else { return self.internal(node, "method call") };
+    pub(crate) fn method_call(
+        &mut self,
+        node: &SyntaxNode,
+        pre: Vec<Expr>,
+        extra: &[Arg],
+        extra_block: Option<&SyntaxNode>,
+    ) -> Expr {
+        let Some(recv) = expr_child(node) else {
+            return self.internal(node, "method call");
+        };
         let name = method_name(node).unwrap_or_default();
         let own = arg_nodes(child(node, ARG_LIST).or_else(|| child(node, COMMAND_ARGS)));
         let own_block = child(node, TRAILING_BLOCK);
@@ -324,11 +405,15 @@ impl Lowerer<'_> {
     /// argument; the target is never auto-called first.
     pub(crate) fn pipe(&mut self, node: &SyntaxNode) -> Expr {
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let (Some(lhs), Some(target)) = (parts.first(), parts.get(1)) else { return self.internal(node, "pipe") };
+        let (Some(lhs), Some(target)) = (parts.first(), parts.get(1)) else {
+            return self.internal(node, "pipe");
+        };
         let value = self.expr1(lhs);
         match target.kind() {
             CALL_EXPR => {
-                let Some(callee) = expr_child(target) else { return self.internal(target, "pipe target") };
+                let Some(callee) = expr_child(target) else {
+                    return self.internal(target, "pipe target");
+                };
                 let args = arg_nodes(child(target, ARG_LIST));
                 let block = child(target, TRAILING_BLOCK);
                 self.call_target(&callee, vec![value], &args, block.as_ref())

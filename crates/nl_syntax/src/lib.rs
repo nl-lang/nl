@@ -167,7 +167,15 @@
 //! [`source_from_bytes`] first, which returns a diagnostic pointing at the
 //! first invalid byte; such a file is not lexed.
 
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing
+    )
+)]
 
 mod diagnostic;
 mod format;
@@ -187,9 +195,11 @@ pub use diagnostic::{Diagnostic, Severity};
 pub use format::{Continued, FormatOptions, Formatted, format, format_decl};
 pub use kind::{NlLanguage, SyntaxKind, keyword_kind};
 pub use lexer::{Lexed, Token, lex, source_from_bytes};
-pub use literal::{StringForm, decode_string, number_value, string_form};
 pub use line_index::{LineCol, LineIndex};
+pub use literal::{StringForm, decode_string, number_value, string_form};
 pub use names::{NameCase, name_case};
 pub use printer::{DumpOptions, dump_diagnostics, dump_parse, dump_parse_decl, dump_tree};
-pub use syntax::{Parse, SyntaxElement, SyntaxNode, SyntaxToken, doc_comment, parse, parse_decl_file};
 pub use rowan::{TextRange, TextSize};
+pub use syntax::{
+    Parse, SyntaxElement, SyntaxNode, SyntaxToken, doc_comment, parse, parse_decl_file,
+};

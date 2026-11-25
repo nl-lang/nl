@@ -21,12 +21,20 @@
 //!   is the source, every node's text is the source at its range, and
 //!   parsing the tree's text again gives the same dump (parse, print, parse).
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use nl_syntax::{DumpOptions, Parse, SyntaxKind, dump_diagnostics, dump_parse, dump_parse_decl, dump_tree, parse, parse_decl_file};
+use nl_syntax::{
+    DumpOptions, Parse, SyntaxKind, dump_diagnostics, dump_parse, dump_parse_decl, dump_tree,
+    parse, parse_decl_file,
+};
 
 /// A `.d.nl` file is a declaration file and has a parser of
 /// its own.
@@ -35,11 +43,19 @@ fn is_decl(path: &Path) -> bool {
 }
 
 fn parse_any(path: &Path, src: &str) -> Parse {
-    if is_decl(path) { parse_decl_file(src) } else { parse(src) }
+    if is_decl(path) {
+        parse_decl_file(src)
+    } else {
+        parse(src)
+    }
 }
 
 fn dump_any(path: &Path, src: &str) -> String {
-    if is_decl(path) { dump_parse_decl(src) } else { dump_parse(src) }
+    if is_decl(path) {
+        dump_parse_decl(src)
+    } else {
+        dump_parse(src)
+    }
 }
 
 fn repo_root() -> PathBuf {
@@ -52,7 +68,9 @@ fn syntax_dir() -> PathBuf {
 
 /// Every file under `dir` (recursively) with extension `ext`, sorted.
 fn files_with_ext(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
-    let Ok(read) = std::fs::read_dir(dir) else { return };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut entries: Vec<PathBuf> = read.map(|e| e.unwrap().path()).collect();
     entries.sort();
     for path in entries {
@@ -75,7 +93,8 @@ fn read_source(path: &Path) -> String {
 fn rel(path: &Path) -> String {
     let root = repo_root().canonicalize().unwrap();
     let full = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    full.strip_prefix(&root).map_or_else(|_| path.display().to_string(), |p| p.display().to_string())
+    full.strip_prefix(&root)
+        .map_or_else(|_| path.display().to_string(), |p| p.display().to_string())
 }
 
 fn updating() -> bool {
@@ -114,12 +133,16 @@ fn syntax_snapshots() {
             let name = rel(source_path);
             let src = read_source(source_path);
             if !src.trim_start_matches('\u{feff}').starts_with('#') {
-                problems.push(format!("{name}: must start with a `#` comment saying what it checks"));
+                problems.push(format!(
+                    "{name}: must start with a `#` comment saying what it checks"
+                ));
             }
 
             let p = parse_any(source_path, &src);
             if expect_diagnostics && p.diagnostics().is_empty() {
-                problems.push(format!("{name}: a case under err/ must produce a diagnostic, and has none"));
+                problems.push(format!(
+                    "{name}: a case under err/ must produce a diagnostic, and has none"
+                ));
             }
             if !expect_diagnostics {
                 if !p.diagnostics().is_empty() {
@@ -128,7 +151,10 @@ fn syntax_snapshots() {
                         indent(&dump_diagnostics(&src, p.diagnostics()))
                     ));
                 }
-                if p.syntax().descendants().any(|n| n.kind() == SyntaxKind::ERROR_NODE) {
+                if p.syntax()
+                    .descendants()
+                    .any(|n| n.kind() == SyntaxKind::ERROR_NODE)
+                {
                     problems.push(format!("{name}: a case under ok/ has an ERROR_NODE"));
                 }
             }
@@ -147,7 +173,10 @@ fn syntax_snapshots() {
                     tree_path.file_name().unwrap().to_string_lossy()
                 )),
                 Some(expected) => {
-                    problems.push(format!("{name}: snapshot differs (- expected, + actual)\n{}", diff(&expected, &actual)));
+                    problems.push(format!(
+                        "{name}: snapshot differs (- expected, + actual)\n{}",
+                        diff(&expected, &actual)
+                    ));
                 }
             }
         }
@@ -175,7 +204,10 @@ fn round_trip() {
     let run_start = files.len();
     files_with_ext(&repo_root().join("tests/run"), "nl", &mut files);
     assert!(run_start > 0, "no files under tests/syntax");
-    assert!(files.len() - run_start >= 158, "expected the conformance corpus under tests/run");
+    assert!(
+        files.len() - run_start >= 158,
+        "expected the conformance corpus under tests/run"
+    );
 
     let mut problems = Vec::new();
     for path in &files {
@@ -184,13 +216,21 @@ fn round_trip() {
         let root = first.syntax();
         let printed = root.to_string();
         if printed != src {
-            problems.push(format!("{}: the tree's text differs from the source", rel(path)));
+            problems.push(format!(
+                "{}: the tree's text differs from the source",
+                rel(path)
+            ));
             continue;
         }
         for node in root.descendants() {
             let range = std::ops::Range::<usize>::from(node.text_range());
             if src.get(range).is_none_or(|s| s != node.to_string()) {
-                problems.push(format!("{}: {:?}@{:?} does not cover its source text", rel(path), node.kind(), node.text_range()));
+                problems.push(format!(
+                    "{}: {:?}@{:?} does not cover its source text",
+                    rel(path),
+                    node.kind(),
+                    node.text_range()
+                ));
                 break;
             }
         }
@@ -199,10 +239,18 @@ fn round_trip() {
         if dump_tree(&root, options) != dump_tree(&second.syntax(), options)
             || first.diagnostics() != second.diagnostics()
         {
-            problems.push(format!("{}: parsing the printed tree gives a different result", rel(path)));
+            problems.push(format!(
+                "{}: parsing the printed tree gives a different result",
+                rel(path)
+            ));
         }
     }
-    assert!(problems.is_empty(), "{} round-trip problem(s):\n{}", problems.len(), problems.join("\n"));
+    assert!(
+        problems.is_empty(),
+        "{} round-trip problem(s):\n{}",
+        problems.len(),
+        problems.join("\n")
+    );
 }
 
 fn indent(text: &str) -> String {
@@ -219,7 +267,11 @@ fn diff(expected: &str, actual: &str) -> String {
     let mut lcs = vec![vec![0u32; m + 1]; n + 1];
     for i in (0..n).rev() {
         for j in (0..m).rev() {
-            lcs[i][j] = if a[i] == b[j] { lcs[i + 1][j + 1] + 1 } else { lcs[i + 1][j].max(lcs[i][j + 1]) };
+            lcs[i][j] = if a[i] == b[j] {
+                lcs[i + 1][j + 1] + 1
+            } else {
+                lcs[i + 1][j].max(lcs[i][j + 1])
+            };
         }
     }
     // Edit script: (' ' | '-' | '+', line).
@@ -239,7 +291,12 @@ fn diff(expected: &str, actual: &str) -> String {
         }
     }
     const CONTEXT: usize = 3;
-    let changed: Vec<usize> = ops.iter().enumerate().filter(|(_, (c, _))| *c != ' ').map(|(k, _)| k).collect();
+    let changed: Vec<usize> = ops
+        .iter()
+        .enumerate()
+        .filter(|(_, (c, _))| *c != ' ')
+        .map(|(k, _)| k)
+        .collect();
     let mut out = String::new();
     let mut last_printed: Option<usize> = None;
     for (k, (c, line)) in ops.iter().enumerate() {

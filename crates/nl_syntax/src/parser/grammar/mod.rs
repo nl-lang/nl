@@ -15,7 +15,6 @@ mod types;
 use super::{Parser, closer_bit};
 use crate::SyntaxKind::{self, *};
 
-
 /// `file = block EOF`.
 pub(crate) fn source_file(p: &mut Parser<'_>) {
     let m = p.start();
@@ -40,7 +39,8 @@ pub(crate) fn is_lua_name(k: SyntaxKind) -> bool {
 }
 
 /// The targeted error for `x =~ re`.
-pub(crate) const MATCH_OPERATOR: &str = "there is no match operator `=~`: use `re.test(x)` or `x.match(re)`";
+pub(crate) const MATCH_OPERATOR: &str =
+    "there is no match operator `=~`: use `re.test(x)` or `x.match(re)`";
 
 /// `lower_word`: an `LNAME` or a keyword other than `Self`.
 pub(crate) fn is_lower_word(k: SyntaxKind) -> bool {
@@ -185,10 +185,16 @@ impl Parser<'_> {
         match (k, class) {
             (LNAME, NameClass::Lower) | (CNAME, NameClass::Cap) => {}
             (LNAME, NameClass::Cap) => {
-                self.error(format!("{what} is capitalized: write `{}`", to_pascal(text)));
+                self.error(format!(
+                    "{what} is capitalized: write `{}`",
+                    to_pascal(text)
+                ));
             }
             (CNAME, NameClass::Lower) => {
-                self.error(format!("{what} is lowercase (snake_case): write `{}`", to_snake(text)));
+                self.error(format!(
+                    "{what} is lowercase (snake_case): write `{}`",
+                    to_snake(text)
+                ));
             }
             (ONAME, _) => {
                 let msg = oname_message(text);
@@ -380,7 +386,11 @@ impl Parser<'_> {
         // swallow the body. The closer itself is left for the block.
         if !reported {
             let found = self.describe_cur();
-            let fix = if then_ok { "write `then` before a body on the same line" } else { "separate it with `;`" };
+            let fix = if then_ok {
+                "write `then` before a body on the same line"
+            } else {
+                "separate it with `;`"
+            };
             self.error(format!(
                 "unexpected {found}: the header of `{keyword}` ends at the end of its line; put \
                  the body on the next line, or {fix}"
@@ -457,14 +467,20 @@ impl Parser<'_> {
             let new_line = self.nth_raw_nl(0) && closer != R_CURLY && !self.closer_follows(closer);
             if can_start_expr(self.cur()) && !self.at_list_stop(closer) && !new_line {
                 let found = self.describe_cur();
-                self.error(format!("expected `,` or `{}`, found {found}", closer.fixed_text().unwrap_or("?")));
+                self.error(format!(
+                    "expected `,` or `{}`, found {found}",
+                    closer.fixed_text().unwrap_or("?")
+                ));
                 continue;
             }
             // Junk after an item (`f(a, 1 + 2 ? 3, b)`): skip it up to the
             // next `,` of this list, so that the items after it are read.
             if let Some(n) = self.list_junk_len(closer).filter(|&n| n > 0) {
                 let found = self.describe_cur();
-                self.error(format!("expected `,` or `{}`, found {found}", closer.fixed_text().unwrap_or("?")));
+                self.error(format!(
+                    "expected `,` or `{}`, found {found}",
+                    closer.fixed_text().unwrap_or("?")
+                ));
                 self.bump_into_error(n);
                 self.eat(COMMA);
                 continue;
@@ -503,7 +519,9 @@ impl Parser<'_> {
             let t = self.peek(i);
             match t.kind {
                 k if k == closer && depth == 0 => return true,
-                EOF | END_KW | ELSE_KW | ELSEIF_KW | WHEN_KW | CATCH_KW | FINALLY_KW => return false,
+                EOF | END_KW | ELSE_KW | ELSEIF_KW | WHEN_KW | CATCH_KW | FINALLY_KW => {
+                    return false;
+                }
                 k if i > 0 && t.nl && is_statement_keyword(k) => return false,
                 L_PAREN | L_BRACK | L_CURLY => depth += 1,
                 R_PAREN | R_BRACK | R_CURLY if depth == 0 => return false,
@@ -544,7 +562,9 @@ impl Parser<'_> {
             self.error(MATCH_OPERATOR);
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected `{c}` to close this `{opener}`, found {found}"));
+            self.error(format!(
+                "expected `{c}` to close this `{opener}`, found {found}"
+            ));
         }
         let m = self.start();
         let mut skipped = false;

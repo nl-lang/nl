@@ -115,7 +115,16 @@ pub struct FnType {
 impl FnType {
     /// A function about which nothing is known but that it is one.
     pub fn unknown() -> FnType {
-        FnType { params: Vec::new(), rest: Some(Type::Any), keyed: Some(None), ret: Type::Any, is_method: false, is_async: false, named: false, declared: false }
+        FnType {
+            params: Vec::new(),
+            rest: Some(Type::Any),
+            keyed: Some(None),
+            ret: Type::Any,
+            is_method: false,
+            is_async: false,
+            named: false,
+            declared: false,
+        }
     }
 
     /// True when some parameter takes a block: `Function`, a
@@ -135,7 +144,11 @@ impl FnType {
 pub fn takes_block(ty: &Type) -> bool {
     match ty {
         Type::Function | Type::Fn(_) => true,
-        Type::Union(m) => m.len() == 2 && m.contains(&Type::Nil) && m.iter().any(|t| matches!(t, Type::Function | Type::Fn(_))),
+        Type::Union(m) => {
+            m.len() == 2
+                && m.contains(&Type::Nil)
+                && m.iter().any(|t| matches!(t, Type::Function | Type::Fn(_)))
+        }
         _ => false,
     }
 }
@@ -201,10 +214,16 @@ pub enum NamedKind {
     /// `import from … as Name`.
     Module { members: HashMap<String, Member> },
     /// `declare type Name : Parent`: a host type, a kind of userdata.
-    HostType { parent: Option<NamedId>, members: HashMap<String, Member> },
+    HostType {
+        parent: Option<NamedId>,
+        members: HashMap<String, Member>,
+    },
     /// `declare struct Name = :path`: a class written in Lua over tables,
     /// checked by its metatable.
-    LuaClass { fields: Vec<Field>, members: HashMap<String, Member> },
+    LuaClass {
+        fields: Vec<Field>,
+        members: HashMap<String, Member>,
+    },
     /// `type Name = T`.
     Alias(Type),
     /// A type the analyzer knows only by name (an import, a type parameter
@@ -228,7 +247,10 @@ pub struct TypeTable {
 impl TypeTable {
     pub fn add(&mut self, name: &str, kind: NamedKind) -> NamedId {
         let id = NamedId(u32::try_from(self.entries.len()).unwrap_or(u32::MAX));
-        self.entries.push(Named { name: name.to_string(), kind });
+        self.entries.push(Named {
+            name: name.to_string(),
+            kind,
+        });
         id
     }
 
@@ -293,7 +315,9 @@ impl TypeTable {
         }
         let mut out = Vec::new();
         for c in chain.into_iter().rev() {
-            if let Some(NamedKind::Struct { fields, .. } | NamedKind::LuaClass { fields, .. }) = self.kind(c) {
+            if let Some(NamedKind::Struct { fields, .. } | NamedKind::LuaClass { fields, .. }) =
+                self.kind(c)
+            {
                 out.extend(fields.iter().cloned());
             }
         }
@@ -304,7 +328,9 @@ impl TypeTable {
         let mut cur = Some(id);
         for _ in 0..64 {
             let Some(c) = cur else { break };
-            if let Some(NamedKind::Struct { fields, .. } | NamedKind::LuaClass { fields, .. }) = self.kind(c) {
+            if let Some(NamedKind::Struct { fields, .. } | NamedKind::LuaClass { fields, .. }) =
+                self.kind(c)
+            {
                 if let Some(f) = fields.iter().find(|f| f.name == name) {
                     return Some(f.clone());
                 }
@@ -326,7 +352,11 @@ impl TypeTable {
                         return Some(m.clone());
                     }
                 }
-                Some(NamedKind::HostType { members, .. } | NamedKind::LuaClass { members, .. } | NamedKind::Module { members }) => {
+                Some(
+                    NamedKind::HostType { members, .. }
+                    | NamedKind::LuaClass { members, .. }
+                    | NamedKind::Module { members },
+                ) => {
                     if let Some(Member::Function(f)) = members.get(name) {
                         return Some(f.clone());
                     }
@@ -415,30 +445,49 @@ impl TypeTable {
             (a, b) if a == b => true,
             // Tables.
             (Record(_) | Array(_) | Map(..), Table) => true,
-            (Named(id), Table) => matches!(self.kind(*id), Some(NamedKind::Struct { .. } | NamedKind::LuaClass { .. } | NamedKind::Opaque)),
+            (Named(id), Table) => matches!(
+                self.kind(*id),
+                Some(NamedKind::Struct { .. } | NamedKind::LuaClass { .. } | NamedKind::Opaque)
+            ),
             (Static(_), Table) => true,
             // A field a value lacks is `nil` at runtime (records
             // are checked field by field), so a field whose type accepts
             // nil may be left out.
-            (Record(a), Record(b)) => b.iter().all(|(k, bt)| match a.iter().find(|(ak, _)| ak == k) {
-                Some((_, at)) => self.assignable_depth(at, bt, depth + 1),
-                None => self.assignable_depth(&Nil, bt, depth + 1),
+            (Record(a), Record(b)) => {
+                b.iter()
+                    .all(|(k, bt)| match a.iter().find(|(ak, _)| ak == k) {
+                        Some((_, at)) => self.assignable_depth(at, bt, depth + 1),
+                        None => self.assignable_depth(&Nil, bt, depth + 1),
+                    })
+            }
+            (Record(a), Map(k, v)) => a.iter().all(|(_, at)| {
+                self.assignable_depth(&String, k, depth + 1)
+                    && self.assignable_depth(at, v, depth + 1)
             }),
-            (Record(a), Map(k, v)) => a.iter().all(|(_, at)| self.assignable_depth(&String, k, depth + 1) && self.assignable_depth(at, v, depth + 1)),
             (Array(a), Array(b)) => self.assignable_depth(a, b, depth + 1),
-            (Array(a), Map(k, v)) => self.assignable_depth(&Number, k, depth + 1) && self.assignable_depth(a, v, depth + 1),
-            (Map(ak, av), Map(bk, bv)) => self.assignable_depth(ak, bk, depth + 1) && self.assignable_depth(av, bv, depth + 1),
+            (Array(a), Map(k, v)) => {
+                self.assignable_depth(&Number, k, depth + 1)
+                    && self.assignable_depth(a, v, depth + 1)
+            }
+            (Map(ak, av), Map(bk, bv)) => {
+                self.assignable_depth(ak, bk, depth + 1) && self.assignable_depth(av, bv, depth + 1)
+            }
             (Table, Record(_) | Array(_) | Map(..)) => true,
             (Record(_), Array(_)) | (Array(_), Record(_)) => false,
             (Named(id), Record(fields)) => match self.kind(*id) {
-                Some(NamedKind::Struct { .. } | NamedKind::LuaClass { .. }) => fields.iter().all(|(k, ft)| match self.field(*id, k) {
-                    Some(f) => self.assignable_depth(&f.ty, ft, depth + 1),
-                    None => self.assignable_depth(&Nil, ft, depth + 1),
-                }),
+                Some(NamedKind::Struct { .. } | NamedKind::LuaClass { .. }) => {
+                    fields.iter().all(|(k, ft)| match self.field(*id, k) {
+                        Some(f) => self.assignable_depth(&f.ty, ft, depth + 1),
+                        None => self.assignable_depth(&Nil, ft, depth + 1),
+                    })
+                }
                 Some(NamedKind::Opaque) => true,
                 _ => false,
             },
-            (Named(id), Array(_) | Map(..)) => matches!(self.kind(*id), Some(NamedKind::Struct { .. } | NamedKind::Opaque)),
+            (Named(id), Array(_) | Map(..)) => matches!(
+                self.kind(*id),
+                Some(NamedKind::Struct { .. } | NamedKind::Opaque)
+            ),
             // Functions.
             (Fn(_), Function) => true,
             (Function, Fn(_)) => true,
@@ -456,7 +505,10 @@ impl TypeTable {
                 Some(NamedKind::Enum { variants }) => variants.iter().all(|(_, t)| *t == to),
                 _ => false,
             },
-            (Named(a), Userdata) => matches!(self.kind(*a), Some(NamedKind::HostType { .. } | NamedKind::Opaque)),
+            (Named(a), Userdata) => matches!(
+                self.kind(*a),
+                Some(NamedKind::HostType { .. } | NamedKind::Opaque)
+            ),
             (Named(a), _) => matches!(self.kind(*a), Some(NamedKind::Opaque)),
             (_, Named(b)) => matches!(self.kind(*b), Some(NamedKind::Opaque)),
             (Task(a), Task(b)) => self.assignable_depth(a, b, depth + 1),
@@ -470,11 +522,14 @@ impl TypeTable {
         // Parameters are checked loosely (contravariance would reject
         // too many untyped functions); the return type is covariant.
         for (pa, pb) in a.params.iter().zip(b.params.iter()) {
-            if !self.assignable_depth(&pb.ty, &pa.ty, depth + 1) && !self.assignable_depth(&pa.ty, &pb.ty, depth + 1) {
+            if !self.assignable_depth(&pb.ty, &pa.ty, depth + 1)
+                && !self.assignable_depth(&pa.ty, &pb.ty, depth + 1)
+            {
                 return false;
             }
         }
-        self.assignable_depth(&a.ret, &b.ret, depth + 1) || self.assignable_depth(&b.ret, &a.ret, depth + 1)
+        self.assignable_depth(&a.ret, &b.ret, depth + 1)
+            || self.assignable_depth(&b.ret, &a.ret, depth + 1)
     }
 
     fn named_assignable(&self, a: NamedId, b: NamedId) -> bool {
@@ -484,8 +539,12 @@ impl TypeTable {
         match (self.kind(a), self.kind(b)) {
             (Some(NamedKind::Opaque), _) | (_, Some(NamedKind::Opaque)) => true,
             (Some(NamedKind::Struct { .. }), Some(NamedKind::Struct { .. })) => self.descends(a, b),
-            (Some(NamedKind::HostType { .. }), Some(NamedKind::HostType { .. })) => self.descends(a, b),
-            (Some(NamedKind::Struct { .. }), Some(NamedKind::Interface { .. })) => self.implements(a, b),
+            (Some(NamedKind::HostType { .. }), Some(NamedKind::HostType { .. })) => {
+                self.descends(a, b)
+            }
+            (Some(NamedKind::Struct { .. }), Some(NamedKind::Interface { .. })) => {
+                self.implements(a, b)
+            }
             // Conformance is nominal and may be declared in another file:
             // a struct the analyzer does not see implementing an interface
             // may still do so at runtime. Only interfaces and structs of
@@ -522,7 +581,11 @@ impl TypeTable {
             (_, Not(inner)) => !self.assignable_depth(&a, inner, depth + 1),
             (Tuple(m), _) => self.overlaps_depth(m.first().unwrap_or(&Nil), &b, depth + 1),
             (_, Tuple(m)) => self.overlaps_depth(&a, m.first().unwrap_or(&Nil), depth + 1),
-            _ => self.assignable_depth(&a, &b, depth + 1) || self.assignable_depth(&b, &a, depth + 1) || self.same_runtime_kind(&a, &b),
+            _ => {
+                self.assignable_depth(&a, &b, depth + 1)
+                    || self.assignable_depth(&b, &a, depth + 1)
+                    || self.same_runtime_kind(&a, &b)
+            }
         }
     }
 
@@ -530,7 +593,10 @@ impl TypeTable {
     /// a record and a struct, two records, two interfaces.
     fn same_runtime_kind(&self, a: &Type, b: &Type) -> bool {
         use Type::*;
-        let tableish = |t: &Type| matches!(t, Table | Record(_) | Array(_) | Map(..) | Static(_)) || matches!(t, Named(id) if !self.is_enum(*id));
+        let tableish = |t: &Type| {
+            matches!(t, Table | Record(_) | Array(_) | Map(..) | Static(_))
+                || matches!(t, Named(id) if !self.is_enum(*id))
+        };
         if tableish(a) && tableish(b) {
             // Two different structs never overlap unless related; a struct
             // and an interface may (an implementation may be declared
@@ -595,7 +661,14 @@ impl TypeTable {
         }
         // A tuple joins member-wise with other results.
         if members.iter().any(|t| matches!(t, Type::Tuple(_))) {
-            let width = members.iter().map(|t| match t { Type::Tuple(m) => m.len(), _ => 1 }).max().unwrap_or(1);
+            let width = members
+                .iter()
+                .map(|t| match t {
+                    Type::Tuple(m) => m.len(),
+                    _ => 1,
+                })
+                .max()
+                .unwrap_or(1);
             let mut cols: Vec<Vec<Type>> = (0..width).map(|_| Vec::new()).collect();
             for t in &members {
                 let parts: Vec<Type> = match t {
@@ -683,7 +756,11 @@ impl TypeTable {
                         // `S & I`, as TypeScript narrows: the implementation
                         // is a runtime statement, perhaps in another file,
                         // and the struct's own members stay.
-                        (Type::Named(s), Type::Named(i)) if self.is_struct(*s) && self.is_interface(*i) => out.push(self.intersect(&m, &tm)),
+                        (Type::Named(s), Type::Named(i))
+                            if self.is_struct(*s) && self.is_interface(*i) =>
+                        {
+                            out.push(self.intersect(&m, &tm))
+                        }
                         (_, Type::Named(_)) => out.push(tm.clone()),
                         _ => out.push(m.clone()),
                     }
@@ -722,7 +799,11 @@ impl TypeTable {
         if matches!(t, Type::Any | Type::Unknown) {
             return t;
         }
-        let out: Vec<Type> = self.members(&t).into_iter().filter(|m| *m != Type::Nil).collect();
+        let out: Vec<Type> = self
+            .members(&t)
+            .into_iter()
+            .filter(|m| *m != Type::Nil)
+            .collect();
         self.union_all(&out)
     }
 
@@ -732,7 +813,11 @@ impl TypeTable {
         if matches!(t, Type::Any | Type::Unknown) {
             return t;
         }
-        let out: Vec<Type> = self.members(&t).into_iter().filter(|m| matches!(m, Type::Nil | Type::Bool)).collect();
+        let out: Vec<Type> = self
+            .members(&t)
+            .into_iter()
+            .filter(|m| matches!(m, Type::Nil | Type::Bool))
+            .collect();
         self.union_all(&out)
     }
 
@@ -767,7 +852,9 @@ impl TypeTable {
             Type::Any | Type::Unknown => false,
             Type::Named(id) => !matches!(self.kind(id), Some(NamedKind::Opaque)),
             Type::Union(m) | Type::And(m) => m.iter().all(|x| self.is_definite_depth(x, depth + 1)),
-            Type::Tuple(m) => m.first().is_none_or(|x| self.is_definite_depth(x, depth + 1)),
+            Type::Tuple(m) => m
+                .first()
+                .is_none_or(|x| self.is_definite_depth(x, depth + 1)),
             _ => true,
         }
     }
@@ -866,7 +953,11 @@ impl fmt::Display for Shown<'_> {
                 if m.len() == 2 && m.contains(&Type::Nil) {
                     if let Some(other) = m.iter().find(|x| **x != Type::Nil) {
                         let inner = sub(other);
-                        return if matches!(other, Type::Union(_) | Type::And(_) | Type::Fn(_)) { write!(f, "({inner})?") } else { write!(f, "{inner}?") };
+                        return if matches!(other, Type::Union(_) | Type::And(_) | Type::Fn(_)) {
+                            write!(f, "({inner})?")
+                        } else {
+                            write!(f, "{inner}?")
+                        };
                     }
                 }
                 for (i, x) in m.iter().enumerate() {
@@ -920,17 +1011,61 @@ mod tests {
 
     fn table() -> (TypeTable, NamedId, NamedId, NamedId, NamedId) {
         let mut t = TypeTable::default();
-        let entity = t.add("Entity", NamedKind::Struct { parent: None, fields: vec![Field { name: "id".into(), ty: Type::Number, has_default: false }], methods: HashMap::new(), operators: HashMap::new(), interfaces: Vec::new(), type_params: Vec::new(), to: Vec::new(), from: Vec::new() });
-        let monster = t.add("Monster", NamedKind::Struct { parent: Some(entity), fields: Vec::new(), methods: HashMap::new(), operators: HashMap::new(), interfaces: Vec::new(), type_params: Vec::new(), to: Vec::new(), from: Vec::new() });
-        let shape = t.add("Shape", NamedKind::Interface { methods: HashMap::new(), fields: Vec::new(), type_params: Vec::new() });
-        let dir = t.add("Dir", NamedKind::Enum { variants: vec![("North".into(), Type::String)] });
+        let entity = t.add(
+            "Entity",
+            NamedKind::Struct {
+                parent: None,
+                fields: vec![Field {
+                    name: "id".into(),
+                    ty: Type::Number,
+                    has_default: false,
+                }],
+                methods: HashMap::new(),
+                operators: HashMap::new(),
+                interfaces: Vec::new(),
+                type_params: Vec::new(),
+                to: Vec::new(),
+                from: Vec::new(),
+            },
+        );
+        let monster = t.add(
+            "Monster",
+            NamedKind::Struct {
+                parent: Some(entity),
+                fields: Vec::new(),
+                methods: HashMap::new(),
+                operators: HashMap::new(),
+                interfaces: Vec::new(),
+                type_params: Vec::new(),
+                to: Vec::new(),
+                from: Vec::new(),
+            },
+        );
+        let shape = t.add(
+            "Shape",
+            NamedKind::Interface {
+                methods: HashMap::new(),
+                fields: Vec::new(),
+                type_params: Vec::new(),
+            },
+        );
+        let dir = t.add(
+            "Dir",
+            NamedKind::Enum {
+                variants: vec![("North".into(), Type::String)],
+            },
+        );
         (t, entity, monster, shape, dir)
     }
 
     #[test]
     fn intersections() {
         let (t, entity, monster, shape, _) = table();
-        let (e, m, s) = (Type::Named(entity), Type::Named(monster), Type::Named(shape));
+        let (e, m, s) = (
+            Type::Named(entity),
+            Type::Named(monster),
+            Type::Named(shape),
+        );
         // A struct tested against an interface it is not seen to implement.
         let es = t.narrow(&e, &s);
         assert_eq!(es, Type::And(vec![e.clone(), s.clone()].into()));
@@ -955,7 +1090,19 @@ mod tests {
         assert_eq!(t.union(&Type::Never, &Type::Number), Type::Number);
         let o = optional(&t, &Type::Number);
         assert_eq!(t.show(&o), "Number?");
-        assert_eq!(t.union(&Type::Tuple(vec![Type::Number, Type::String].into()), &Type::Nil), Type::Tuple(vec![t.union(&Type::Number, &Type::Nil), t.union(&Type::String, &Type::Nil)].into()));
+        assert_eq!(
+            t.union(
+                &Type::Tuple(vec![Type::Number, Type::String].into()),
+                &Type::Nil
+            ),
+            Type::Tuple(
+                vec![
+                    t.union(&Type::Number, &Type::Nil),
+                    t.union(&Type::String, &Type::Nil)
+                ]
+                .into()
+            )
+        );
     }
 
     #[test]
@@ -987,10 +1134,30 @@ mod tests {
         // Records and structs.
         let rec: Type = Type::Record(vec![("id".to_string(), Type::Number)].into());
         assert!(t.assignable(&Type::Named(entity), &rec));
-        assert!(t.assignable(&Type::Record(vec![("id".to_string(), Type::Number), ("z".to_string(), Type::String)].into()), &rec));
-        assert!(!t.assignable(&Type::Record(vec![("id".to_string(), Type::String)].into()), &rec));
-        assert!(t.assignable(&rec, &Type::Map(Rc::new(Type::String), Rc::new(Type::Number))));
-        assert!(t.assignable(&Type::Array(Rc::new(Type::Never)), &Type::Array(Rc::new(Type::Number))));
+        assert!(
+            t.assignable(
+                &Type::Record(
+                    vec![
+                        ("id".to_string(), Type::Number),
+                        ("z".to_string(), Type::String)
+                    ]
+                    .into()
+                ),
+                &rec
+            )
+        );
+        assert!(!t.assignable(
+            &Type::Record(vec![("id".to_string(), Type::String)].into()),
+            &rec
+        ));
+        assert!(t.assignable(
+            &rec,
+            &Type::Map(Rc::new(Type::String), Rc::new(Type::Number))
+        ));
+        assert!(t.assignable(
+            &Type::Array(Rc::new(Type::Never)),
+            &Type::Array(Rc::new(Type::Number))
+        ));
         // Functions.
         assert!(t.assignable(&Type::Fn(Rc::new(FnType::unknown())), &Type::Function));
     }
@@ -1022,13 +1189,28 @@ mod tests {
         let opt = optional(&t, &Type::Named(entity));
         assert_eq!(t.exclude(&opt, &Type::Nil), Type::Named(entity));
         assert_eq!(t.truthy(&opt), Type::Named(entity));
-        assert_eq!(t.narrow(&Type::Named(entity), &Type::Named(monster)), Type::Named(monster));
-        assert_eq!(t.exclude(&Type::Named(entity), &Type::Named(monster)), Type::Named(entity));
-        assert_eq!(t.narrow(&Type::Named(monster), &Type::Named(entity)), Type::Named(monster));
-        assert_eq!(t.exclude(&Type::Named(monster), &Type::Named(entity)), Type::Never);
+        assert_eq!(
+            t.narrow(&Type::Named(entity), &Type::Named(monster)),
+            Type::Named(monster)
+        );
+        assert_eq!(
+            t.exclude(&Type::Named(entity), &Type::Named(monster)),
+            Type::Named(entity)
+        );
+        assert_eq!(
+            t.narrow(&Type::Named(monster), &Type::Named(entity)),
+            Type::Named(monster)
+        );
+        assert_eq!(
+            t.exclude(&Type::Named(monster), &Type::Named(entity)),
+            Type::Never
+        );
         assert_eq!(t.narrow(&Type::String, &Type::Number), Type::Never);
         assert!(t.may_be_nil(&opt));
         assert!(!t.may_be_nil(&Type::Named(entity)));
-        assert_eq!(t.narrow(&Type::Unknown, &t.negate(&Type::String)), t.negate(&Type::String));
+        assert_eq!(
+            t.narrow(&Type::Unknown, &t.negate(&Type::String)),
+            t.negate(&Type::String)
+        );
     }
 }

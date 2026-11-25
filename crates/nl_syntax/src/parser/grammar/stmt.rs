@@ -28,7 +28,9 @@ impl Parser<'_> {
             if closer_bit(k) != 0 {
                 let text = self.nth_text(0).to_string();
                 let msg = match k {
-                    END_KW => "unexpected `end`: there is no open block for it to close".to_string(),
+                    END_KW => {
+                        "unexpected `end`: there is no open block for it to close".to_string()
+                    }
                     ELSE_KW | ELSEIF_KW => {
                         format!("unexpected `{text}`: there is no `if` here for it to continue")
                     }
@@ -41,7 +43,9 @@ impl Parser<'_> {
             }
             if matches!(k, R_PAREN | R_BRACK | R_CURLY | STR_MID | STR_END) {
                 let found = self.describe_nth(0);
-                self.err_bump(format!("unexpected {found}: there is no open bracket for it to close"));
+                self.err_bump(format!(
+                    "unexpected {found}: there is no open bracket for it to close"
+                ));
                 continue;
             }
             if self.hint_closes_construct() {
@@ -159,8 +163,8 @@ impl Parser<'_> {
             }
         }
         match self.cur() {
-            LET_KW | CONST_KW | GLOBAL_KW | STRUCT_KW | INTERFACE_KW | ENUM_KW | TYPE_KW | MODULE_KW
-            | IMPORT_KW | PUB_KW => {
+            LET_KW | CONST_KW | GLOBAL_KW | STRUCT_KW | INTERFACE_KW | ENUM_KW | TYPE_KW
+            | MODULE_KW | IMPORT_KW | PUB_KW => {
                 self.declaration();
                 self.no_modifier_after("a declaration");
             }
@@ -192,7 +196,9 @@ impl Parser<'_> {
     pub(crate) fn fn_decl_follows(&self, n: usize) -> bool {
         match self.nth(n) {
             LNAME | ONAME => true,
-            CNAME => self.nth_at(n + 1, DOT) || (self.nth_at(n + 1, L_PAREN) && !self.nth_raw_nl(n + 1)),
+            CNAME => {
+                self.nth_at(n + 1, DOT) || (self.nth_at(n + 1, L_PAREN) && !self.nth_raw_nl(n + 1))
+            }
             _ => false,
         }
     }
@@ -205,7 +211,8 @@ impl Parser<'_> {
             "local" => {
                 same_line
                     && (self.nth_at(1, LNAME) && self.nth_text(1) == "function"
-                        || (matches!(self.nth(1), LNAME | CNAME | ONAME) && self.local_assign_follows()))
+                        || (matches!(self.nth(1), LNAME | CNAME | ONAME)
+                            && self.local_assign_follows()))
             }
             "function" => same_line && matches!(self.nth(1), LNAME | CNAME | ONAME),
             _ => false,
@@ -264,7 +271,10 @@ impl Parser<'_> {
             self.bump();
             e.complete(self, ERROR_NODE);
             let range = self.range_from(self.pos().saturating_sub(1));
-            self.error_at(range, "NL declares functions with `fn`: write `fn name(…) … end`");
+            self.error_at(
+                range,
+                "NL declares functions with `fn`: write `fn name(…) … end`",
+            );
             self.fn_decl_after_keyword(m);
         }
     }
@@ -298,7 +308,11 @@ impl Parser<'_> {
             p.expect_end("function");
         });
         let cm = f.complete(self, FN_EXPR);
-        self.postfix_steps(Expr { cm, shape: Shape::Construct, start });
+        self.postfix_steps(Expr {
+            cm,
+            shape: Shape::Construct,
+            start,
+        });
         list.complete(self, EXPR_LIST);
         m.complete(self, LET_DECL);
     }
@@ -447,7 +461,8 @@ impl Parser<'_> {
             // targets are checked only if `=` follows.
             // `f (a), b` is `f(a), b`, but the whitespace before `(`
             // shows that command arguments were meant.
-            let spaced_call = lhs.shape == Shape::Call && self.spaced_call_paren(lhs.start, self.pos());
+            let spaced_call =
+                lhs.shape == Shape::Call && self.spaced_call_paren(lhs.start, self.pos());
             let tl = lhs.cm.precede(self);
             let mut target_diags = Vec::new();
             let before = self.diag_count();
@@ -540,7 +555,14 @@ impl Parser<'_> {
     /// a nil-safe target is not allowed: when its receiver is
     /// `nil` it would take no value, and the other targets would.
     fn check_multi_target(&mut self, e: Expr) {
-        let target_shape = matches!(e.shape, Shape::Member { .. } | Shape::Index | Shape::LuaPath { last: LuaLast::Field | LuaLast::Index });
+        let target_shape = matches!(
+            e.shape,
+            Shape::Member { .. }
+                | Shape::Index
+                | Shape::LuaPath {
+                    last: LuaLast::Field | LuaLast::Index
+                }
+        );
         if target_shape && self.safe_chain_starts.contains(&e.start) {
             let range = self.range_from(e.start);
             self.error_at(
@@ -561,8 +583,12 @@ impl Parser<'_> {
             | Shape::At
             | Shape::Member { .. }
             | Shape::Index
-            | Shape::LuaPath { last: LuaLast::Field | LuaLast::Index } => return,
-            Shape::LuaPath { last: LuaLast::Name } => {
+            | Shape::LuaPath {
+                last: LuaLast::Field | LuaLast::Index,
+            } => return,
+            Shape::LuaPath {
+                last: LuaLast::Name,
+            } => {
                 "a Lua path without a step cannot be assigned to: to set a Lua global, write \
                  `:_G.name = value`"
             }

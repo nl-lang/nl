@@ -51,16 +51,33 @@ impl Lowerer<'_> {
     /// values.
     pub(crate) fn thunk(&mut self, f: impl FnOnce(&mut Self) -> Expr) -> Expr {
         let line = self.line;
-        self.fns.push(FnState { ret_check: None, loops: Vec::new(), regions: Vec::new() });
+        self.fns.push(FnState {
+            ret_check: None,
+            loops: Vec::new(),
+            regions: Vec::new(),
+        });
         let (mut stmts, value) = self.capture(f);
         self.fns.pop();
-        stmts.push(Stmt { line, kind: StmtKind::Return(vec![value]) });
-        Expr::Function(Box::new(Function { params: Vec::new(), vararg: false, body: Block::new(stmts), line, name: None, method: false, transient: false }))
+        stmts.push(Stmt {
+            line,
+            kind: StmtKind::Return(vec![value]),
+        });
+        Expr::Function(Box::new(Function {
+            params: Vec::new(),
+            vararg: false,
+            body: Block::new(stmts),
+            line,
+            name: None,
+            method: false,
+            transient: false,
+        }))
     }
 
     /// `struct Name [: Parent] fields end`.
     pub(crate) fn lower_struct(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
         let Some(id) = self.res.declaration(name.text_range()) else {
             self.internal(node, "undeclared struct");
             return;
@@ -73,13 +90,16 @@ impl Lowerer<'_> {
         // The layout starts with the parent's fields, as `rt.struct` lists
         // them; a parent that is not a struct of this file whose layout is
         // known leaves the layout unknown.
-        let mut layout: Option<Vec<FieldLayout>> = match child(node, STRUCT_PARENT).and_then(|p| type_child(&p)) {
-            None => Some(Vec::new()),
-            Some(t) => self.parent_layout(&t),
-        };
+        let mut layout: Option<Vec<FieldLayout>> =
+            match child(node, STRUCT_PARENT).and_then(|p| type_child(&p)) {
+                None => Some(Vec::new()),
+                Some(t) => self.parent_layout(&t),
+            };
         let mut fields = Vec::new();
         for f in children(node, FIELD_DECL) {
-            let Some(fname) = child(&f, NAME).and_then(|n| name_text(&n)) else { continue };
+            let Some(fname) = child(&f, NAME).and_then(|n| name_text(&n)) else {
+                continue;
+            };
             let mut entry = vec![TableEntry::Pair(Expr::str("name"), Expr::str(&fname))];
             let mut checked = None;
             if let Some(t) = type_child(&f) {
@@ -98,8 +118,15 @@ impl Lowerer<'_> {
                 let thunk = self.thunk(|l| l.expr1(&d));
                 default = Some(match &thunk {
                     Expr::Function(func) => match func.body.stmts.as_slice() {
-                        [Stmt { kind: StmtKind::Return(vals), .. }] => match vals.as_slice() {
-                            [c] if c.is_constant() && !matches!(c, Expr::Intrinsic(_)) => FieldDefault::Constant(c.clone()),
+                        [
+                            Stmt {
+                                kind: StmtKind::Return(vals),
+                                ..
+                            },
+                        ] => match vals.as_slice() {
+                            [c] if c.is_constant() && !matches!(c, Expr::Intrinsic(_)) => {
+                                FieldDefault::Constant(c.clone())
+                            }
                             _ => FieldDefault::Thunk,
                         },
                         _ => FieldDefault::Thunk,
@@ -111,18 +138,29 @@ impl Lowerer<'_> {
             fields.push(TableEntry::Item(Expr::Table(entry)));
             // A field declared twice is refused by the resolver;
             // should one get here, the runtime's way stays.
-            let twice = layout.as_ref().is_some_and(|l| l.iter().any(|x| x.name == fname));
+            let twice = layout
+                .as_ref()
+                .is_some_and(|l| l.iter().any(|x| x.name == fname));
             if twice {
                 layout = None;
             }
             if let Some(l) = layout.as_mut() {
-                l.push(FieldLayout { name: fname, ty: checked, default });
+                l.push(FieldLayout {
+                    name: fname,
+                    ty: checked,
+                    default,
+                });
             }
         }
         self.struct_layouts.insert(id, layout.map(Rc::from));
         let value = Expr::intrinsic_call(
             "struct",
-            vec![Expr::str(&text), parent, Expr::Table(fields), Expr::str(&self.opts.file_label)],
+            vec![
+                Expr::str(&text),
+                parent,
+                Expr::Table(fields),
+                Expr::str(&self.opts.file_label),
+            ],
         );
         // A struct declared at file level or in a module
         // body is registered under its file and its path of modules
@@ -141,7 +179,9 @@ impl Lowerer<'_> {
                 self.self_target_value(node, t)
             }
             FIELD_EXPR => {
-                let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
+                let name = field_name(node)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 let base = match expr_child(node) {
                     Some(r) => self.type_path(&r),
                     None => self.internal(node, "type path"),
@@ -162,11 +202,17 @@ impl Lowerer<'_> {
         if qual_segments(&q).len() != 1 {
             return None;
         }
-        let Some(Ref::Binding(pid)) = self.res.type_ref(q.text_range()) else { return None };
+        let Some(Ref::Binding(pid)) = self.res.type_ref(q.text_range()) else {
+            return None;
+        };
         if self.res.binding(*pid).map(|b| b.decl) != Some(DeclKind::Struct) {
             return None;
         }
-        self.struct_layouts.get(pid).cloned().flatten().map(|l| l.to_vec())
+        self.struct_layouts
+            .get(pid)
+            .cloned()
+            .flatten()
+            .map(|l| l.to_vec())
     }
 
     /// The struct a literal's path names when the literal can be built
@@ -207,7 +253,12 @@ impl Lowerer<'_> {
     /// `rt.newfield` raising the TypeError when the test fails. The
     /// literal is `(rt.setmetatable(t, S))`, an instance exactly like
     /// `rt.new`'s.
-    fn inline_struct_literal(&mut self, node: &SyntaxNode, id: BindingId, layout: &[FieldLayout]) -> Option<Expr> {
+    fn inline_struct_literal(
+        &mut self,
+        node: &SyntaxNode,
+        id: BindingId,
+        layout: &[FieldLayout],
+    ) -> Option<Expr> {
         let inits: Vec<(String, SyntaxNode, SyntaxNode)> = children(node, FIELD_INIT)
             .filter_map(|fi| {
                 let k = name_token(&fi)?.text().to_string();
@@ -215,7 +266,10 @@ impl Lowerer<'_> {
                 Some((k, v, fi))
             })
             .collect();
-        if inits.iter().any(|(k, _, _)| !layout.iter().any(|f| f.name == *k)) {
+        if inits
+            .iter()
+            .any(|(k, _, _)| !layout.iter().any(|f| f.name == *k))
+        {
             return None;
         }
         let s = Expr::Local(self.local_of(id));
@@ -228,9 +282,15 @@ impl Lowerer<'_> {
         // whether the analyzer proved the written value's type.
         let mut given: Vec<(Option<Expr>, bool)> = Vec::new();
         for f in layout {
-            let last = inits.iter().zip(&vals).rev().find(|((k, _, _), _)| *k == f.name);
+            let last = inits
+                .iter()
+                .zip(&vals)
+                .rev()
+                .find(|((k, _, _), _)| *k == f.name);
             given.push(match last {
-                Some(((_, _, fi), v)) => (Some(v.clone()), self.opts.hints.is_proven(fi.text_range())),
+                Some(((_, _, fi), v)) => {
+                    (Some(v.clone()), self.opts.hints.is_proven(fi.text_range()))
+                }
                 None => (None, false),
             });
         }
@@ -260,9 +320,17 @@ impl Lowerer<'_> {
             if let Some(d) = &f.default {
                 let value = match d {
                     FieldDefault::Constant(c) => c.clone(),
-                    FieldDefault::Thunk => Expr::intrinsic_call("newdefault", vec![s.clone(), index.clone()]),
+                    FieldDefault::Thunk => {
+                        Expr::intrinsic_call("newdefault", vec![s.clone(), index.clone()])
+                    }
                 };
-                let set = Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Index(Expr::Local(obj), Expr::str(&f.name))], values: vec![value] } };
+                let set = Stmt {
+                    line,
+                    kind: StmtKind::Assign {
+                        targets: vec![Place::Index(Expr::Local(obj), Expr::str(&f.name))],
+                        values: vec![value],
+                    },
+                };
                 match (&known, d) {
                     // A written constant other than nil stays.
                     (Some(c), _) if !matches!(c, Expr::Nil) => {}
@@ -280,7 +348,14 @@ impl Lowerer<'_> {
                     // A value that may be nil, and then the default.
                     (None, _) => {
                         let cond = Expr::binary(BinOp::Eq, field(&f.name), Expr::Nil);
-                        steps.push(Stmt { line, kind: StmtKind::If { cond, then: Block::new(vec![set]), otherwise: None } });
+                        steps.push(Stmt {
+                            line,
+                            kind: StmtKind::If {
+                                cond,
+                                then: Block::new(vec![set]),
+                                otherwise: None,
+                            },
+                        });
                         // The proof was of the written value only.
                         proven = false;
                     }
@@ -299,12 +374,25 @@ impl Lowerer<'_> {
                 None => g.as_ref().is_some_and(|w| l.accepts_statically(t, w)),
             };
             let v = known.clone().unwrap_or_else(|| field(&f.name));
-            let call = Stmt { line, kind: StmtKind::Expr(Expr::intrinsic_call("newfield", vec![s.clone(), index, v.clone()])) };
+            let call = Stmt {
+                line,
+                kind: StmtKind::Expr(Expr::intrinsic_call(
+                    "newfield",
+                    vec![s.clone(), index, v.clone()],
+                )),
+            };
             match test {
                 Some(t) if statically(self, &t) => {}
                 Some(t) => {
                     let cond = self.inline_fails(&t, &v);
-                    steps.push(Stmt { line, kind: StmtKind::If { cond, then: Block::new(vec![call]), otherwise: None } });
+                    steps.push(Stmt {
+                        line,
+                        kind: StmtKind::If {
+                            cond,
+                            then: Block::new(vec![call]),
+                            otherwise: None,
+                        },
+                    });
                 }
                 None => steps.push(call),
             }
@@ -313,12 +401,18 @@ impl Lowerer<'_> {
         let instance = if steps.is_empty() {
             table
         } else {
-            self.emit(StmtKind::Local { locals: vec![obj], values: vec![table] });
+            self.emit(StmtKind::Local {
+                locals: vec![obj],
+                values: vec![table],
+            });
             self.stmts.extend(steps);
             Expr::Local(obj)
         };
         let setmetatable = self.rt_cached("setmetatable");
-        Some(Expr::Paren(Box::new(Expr::call(setmetatable, vec![instance, s]))))
+        Some(Expr::Paren(Box::new(Expr::call(
+            setmetatable,
+            vec![instance, s],
+        ))))
     }
 
     /// `Name { field: value, … }`: built inline when the
@@ -332,7 +426,10 @@ impl Lowerer<'_> {
     /// the instance without its loops (runtime/nl_20_struct.lua,
     /// CONSTRUCTORS), which the JIT compiles into the calling trace.
     pub(crate) fn struct_literal(&mut self, node: &SyntaxNode) -> Expr {
-        let Some(path) = node.children().find(|c| matches!(c.kind(), NAME_REF | FIELD_EXPR | SELF_EXPR)) else {
+        let Some(path) = node
+            .children()
+            .find(|c| matches!(c.kind(), NAME_REF | FIELD_EXPR | SELF_EXPR))
+        else {
             return self.internal(node, "struct literal");
         };
         if let Some((id, layout)) = self.inline_literal_target(&path) {
@@ -359,13 +456,19 @@ impl Lowerer<'_> {
         let mut it = vals.into_iter();
         let s = it.next().unwrap_or(Expr::Nil);
         let shape = keys.join(",");
-        let fields = keys.into_iter().zip(it).map(|(k, v)| TableEntry::Pair(Expr::str(&k), v)).collect();
+        let fields = keys
+            .into_iter()
+            .zip(it)
+            .map(|(k, v)| TableEntry::Pair(Expr::str(&k), v))
+            .collect();
         Expr::intrinsic_call("new", vec![s, Expr::Table(fields), Expr::str(&shape)])
     }
 
     /// `enum Name variants end`.
     pub(crate) fn lower_enum(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
         let Some(id) = self.res.declaration(name.text_range()) else {
             self.internal(node, "undeclared enum");
             return;
@@ -373,12 +476,17 @@ impl Lowerer<'_> {
         let text = name_text(&name).unwrap_or_default();
         let mut variants = Vec::new();
         for v in children(node, VARIANT) {
-            let Some(vname) = child(&v, NAME).and_then(|n| name_text(&n)) else { continue };
+            let Some(vname) = child(&v, NAME).and_then(|n| name_text(&n)) else {
+                continue;
+            };
             let value = match expr_child(&v) {
                 Some(e) => self.expr1(&e),
                 None => Expr::str(&vname),
             };
-            variants.push(TableEntry::Item(Expr::Table(vec![TableEntry::Item(Expr::str(&vname)), TableEntry::Item(value)])));
+            variants.push(TableEntry::Item(Expr::Table(vec![
+                TableEntry::Item(Expr::str(&vname)),
+                TableEntry::Item(value),
+            ])));
         }
         let value = Expr::intrinsic_call("enum", vec![Expr::str(&text), Expr::Table(variants)]);
         let value = self.register_type(id, node, value);
@@ -390,7 +498,9 @@ impl Lowerer<'_> {
     pub(crate) fn lower_method_decl(&mut self, node: &SyntaxNode) {
         let word = child(node, NAME).and_then(|n| name_text(&n));
         // `len`, `coerce` and `iter` are operators too.
-        if child(node, OP_NAME).is_some() || matches!(word.as_deref(), Some("len" | "coerce" | "iter")) {
+        if child(node, OP_NAME).is_some()
+            || matches!(word.as_deref(), Some("len" | "coerce" | "iter"))
+        {
             self.lower_operator_def(node);
             return;
         }
@@ -398,10 +508,18 @@ impl Lowerer<'_> {
             self.internal(node, "method owner");
             return;
         };
-        let method = child(node, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
-        let owner_text = child(node, QUAL_NAME).map(|q| qual_text(&q)).unwrap_or_default();
+        let method = child(node, NAME)
+            .and_then(|n| name_text(&n))
+            .unwrap_or_default();
+        let owner_text = child(node, QUAL_NAME)
+            .map(|q| qual_text(&q))
+            .unwrap_or_default();
         let self_binding = self.res.method_self(node.text_range());
-        let spec = FnSpec { name: format!("{owner_text}.{method}"), self_binding, discard_tail: false };
+        let spec = FnSpec {
+            name: format!("{owner_text}.{method}"),
+            self_binding,
+            discard_tail: false,
+        };
         let f = self.function_value(node, spec);
         match owner {
             MethodOwner::Binding { id, path } => {
@@ -413,7 +531,9 @@ impl Lowerer<'_> {
                 // A named function, under its owner's
                 // registry name, when the owner has one and the method is
                 // declared where a declaration can have one (spawn.rs).
-                if let (Some(owner_name), Some(_)) = (self.registry_name(id), self.registry_scope(node)) {
+                if let (Some(owner_name), Some(_)) =
+                    (self.registry_name(id), self.registry_scope(node))
+                {
                     let mut member = path.join(".");
                     if !member.is_empty() {
                         member.push('.');
@@ -422,22 +542,46 @@ impl Lowerer<'_> {
                     let full = format!("{owner_name}.{member}");
                     marked = self.register_named((Some(id), member), &full, marked);
                 }
-                self.emit(StmtKind::Assign { targets: vec![Place::Index(o, Expr::str(&method))], values: vec![marked] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Index(o, Expr::str(&method))],
+                    values: vec![marked],
+                });
             }
             MethodOwner::Primitive(p) => {
                 // Registered by name only once `primmethod` has accepted it:
                 // a rejected redefinition leaves no trace.
                 let fl = self.new_local("method");
                 let line = self.line;
-                let define = Expr::intrinsic_call("primmethod", vec![Expr::str(p.name), Expr::str(&method), Expr::Local(fl), self.owner_value()]);
+                let define = Expr::intrinsic_call(
+                    "primmethod",
+                    vec![
+                        Expr::str(p.name),
+                        Expr::str(&method),
+                        Expr::Local(fl),
+                        self.owner_value(),
+                    ],
+                );
                 let mut stmts = vec![
-                    Stmt { line, kind: StmtKind::Local { locals: vec![fl], values: vec![f] } },
-                    Stmt { line, kind: StmtKind::Expr(define) },
+                    Stmt {
+                        line,
+                        kind: StmtKind::Local {
+                            locals: vec![fl],
+                            values: vec![f],
+                        },
+                    },
+                    Stmt {
+                        line,
+                        kind: StmtKind::Expr(define),
+                    },
                 ];
                 if self.registry_scope(node).is_some() {
                     let full = format!("{}.{method}", p.name);
-                    let register = self.register_named((None, full.clone()), &full, Expr::Local(fl));
-                    stmts.push(Stmt { line, kind: StmtKind::Expr(register) });
+                    let register =
+                        self.register_named((None, full.clone()), &full, Expr::Local(fl));
+                    stmts.push(Stmt {
+                        line,
+                        kind: StmtKind::Expr(register),
+                    });
                 }
                 self.emit(StmtKind::Do(Block::new(stmts)));
             }
@@ -451,7 +595,9 @@ impl Lowerer<'_> {
             MethodOwner::Declared(id) => {
                 let kind = self.res.declared_kind(id);
                 let target = match kind {
-                    Some(nl_sema::decl::DeclItemKind::HostType) => Expr::intrinsic_call("gettype", vec![Expr::str(&owner_text)]),
+                    Some(nl_sema::decl::DeclItemKind::HostType) => {
+                        Expr::intrinsic_call("gettype", vec![Expr::str(&owner_text)])
+                    }
                     _ => match self.res.declared_path(id).cloned() {
                         Some(root) => self.lua_root_value(&root),
                         None => {
@@ -462,10 +608,27 @@ impl Lowerer<'_> {
                 };
                 let owner = self.owner_value();
                 let call = match kind {
-                    Some(nl_sema::decl::DeclItemKind::Module) => Expr::intrinsic_call("declfn", vec![target, Expr::str(&method), f, owner, Expr::str(&owner_text)]),
+                    Some(nl_sema::decl::DeclItemKind::Module) => Expr::intrinsic_call(
+                        "declfn",
+                        vec![target, Expr::str(&method), f, owner, Expr::str(&owner_text)],
+                    ),
                     _ => {
-                        let how = if kind == Some(nl_sema::decl::DeclItemKind::HostType) { "host" } else { "class" };
-                        Expr::intrinsic_call("declmethod", vec![target, Expr::str(&method), f, owner, Expr::str(&owner_text), Expr::str(how)])
+                        let how = if kind == Some(nl_sema::decl::DeclItemKind::HostType) {
+                            "host"
+                        } else {
+                            "class"
+                        };
+                        Expr::intrinsic_call(
+                            "declmethod",
+                            vec![
+                                target,
+                                Expr::str(&method),
+                                f,
+                                owner,
+                                Expr::str(&owner_text),
+                                Expr::str(how),
+                            ],
+                        )
                     }
                 };
                 self.emit(StmtKind::Expr(call));

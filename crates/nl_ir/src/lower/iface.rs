@@ -24,7 +24,9 @@ use SyntaxKind::*;
 impl Lowerer<'_> {
     /// `interface Name [<T>] members end`.
     pub(crate) fn lower_interface(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
         let Some(id) = self.res.declaration(name.text_range()) else {
             self.internal(node, "undeclared interface");
             return;
@@ -33,31 +35,56 @@ impl Lowerer<'_> {
         let mut methods = Vec::new();
         let mut fields = Vec::new();
         let mut seen = HashSet::new();
-        for m in node.children().filter(|c| matches!(c.kind(), IFACE_METHOD | IFACE_FIELD)) {
+        for m in node
+            .children()
+            .filter(|c| matches!(c.kind(), IFACE_METHOD | IFACE_FIELD))
+        {
             let Some(n) = child(&m, NAME) else { continue };
             let mname = name_text(&n).unwrap_or_default();
             if !self.check_member_name(&n, &mname, &mut seen) {
                 continue;
             }
-            let list = if m.kind() == IFACE_METHOD { &mut methods } else { &mut fields };
+            let list = if m.kind() == IFACE_METHOD {
+                &mut methods
+            } else {
+                &mut fields
+            };
             list.push(TableEntry::Item(Expr::str(&mname)));
         }
         let value = Expr::intrinsic_call(
             "interface",
-            vec![Expr::str(&text), Expr::Table(methods), Expr::Table(fields), Expr::str(&self.opts.file_label)],
+            vec![
+                Expr::str(&text),
+                Expr::Table(methods),
+                Expr::Table(fields),
+                Expr::str(&self.opts.file_label),
+            ],
         );
         let value = self.register_type(id, node, value);
         self.define(id, Some(value));
     }
 
     /// `len` is reserved, and a member is declared once.
-    fn check_member_name(&mut self, name: &SyntaxNode, text: &str, seen: &mut HashSet<String>) -> bool {
+    fn check_member_name(
+        &mut self,
+        name: &SyntaxNode,
+        text: &str,
+        seen: &mut HashSet<String>,
+    ) -> bool {
         if text == "len" {
-            self.error(name, "len-member", "`len` is a reserved member name; a struct defines its length with `fn Name.len`");
+            self.error(
+                name,
+                "len-member",
+                "`len` is a reserved member name; a struct defines its length with `fn Name.len`",
+            );
             return false;
         }
         if !seen.insert(text.to_string()) {
-            self.error(name, "duplicate-member", format!("`{text}` is declared twice in this interface"));
+            self.error(
+                name,
+                "duplicate-member",
+                format!("`{text}` is declared twice in this interface"),
+            );
             return false;
         }
         true
@@ -70,13 +97,23 @@ impl Lowerer<'_> {
             self.internal(node, "interface implementation");
             return;
         };
-        let Some(conversion) = self.check_interface_ref(iface_ty) else { return };
-        let Some(target_text) = self.check_impl_target(target_ty) else { return };
+        let Some(conversion) = self.check_interface_ref(iface_ty) else {
+            return;
+        };
+        let Some(target_text) = self.check_impl_target(target_ty) else {
+            return;
+        };
         let targ = match conversion {
             Some(which) => {
-                let args: Vec<SyntaxNode> = child(iface_ty, TYPE_ARGS).map(|a| a.children().filter(|c| is_type(c.kind())).collect()).unwrap_or_default();
+                let args: Vec<SyntaxNode> = child(iface_ty, TYPE_ARGS)
+                    .map(|a| a.children().filter(|c| is_type(c.kind())).collect())
+                    .unwrap_or_default();
                 let [arg] = args.as_slice() else {
-                    self.error(iface_ty, "conversion-type-arg", format!("`{which}` takes one type argument: `{which}<Type>`"));
+                    self.error(
+                        iface_ty,
+                        "conversion-type-arg",
+                        format!("`{which}` takes one type argument: `{which}<Type>`"),
+                    );
                     return;
                 };
                 match self.type_value(arg) {
@@ -102,7 +139,9 @@ impl Lowerer<'_> {
         // or a struct with a registry name) and the implementation stands
         // where a declaration can have one; they are registered under the
         // target's registry name (spawn.rs).
-        let named = match child(target_ty, QUAL_NAME).and_then(|q| self.res.type_ref(q.text_range()).cloned()) {
+        let named = match child(target_ty, QUAL_NAME)
+            .and_then(|q| self.res.type_ref(q.text_range()).cloned())
+        {
             _ if self.registry_scope(node).is_none() => None,
             Some(Ref::Prelude(_)) => Some((None, target_text.clone())),
             Some(Ref::Binding(id)) => self.registry_name(id).map(|n| (Some(id), n)),
@@ -121,7 +160,11 @@ impl Lowerer<'_> {
                 continue;
             }
             self.line = self.line_of(&f);
-            let spec = FnSpec { name: format!("{target_text}.{mname}"), self_binding: self.res.method_self(f.text_range()), discard_tail: false };
+            let spec = FnSpec {
+                name: format!("{target_text}.{mname}"),
+                self_binding: self.res.method_self(f.text_range()),
+                discard_tail: false,
+            };
             let mut value = self.function_value(&f, spec);
             if let Some((owner, prefix)) = &named {
                 let slot = match owner {
@@ -135,9 +178,19 @@ impl Lowerer<'_> {
         self.line = self.line_of(node);
         // The methods of an implementation for a primitive type are
         // primitive methods, owned by the chunk.
-        let primitive = matches!(child(target_ty, QUAL_NAME).and_then(|q| self.res.type_ref(q.text_range()).cloned()), Some(Ref::Prelude(_)));
-        let owner = if primitive { self.owner_value() } else { Expr::str(&self.opts.file_label) };
-        let call = Expr::intrinsic_call("implement", vec![iface, target, Expr::Table(methods), targ, owner]);
+        let primitive = matches!(
+            child(target_ty, QUAL_NAME).and_then(|q| self.res.type_ref(q.text_range()).cloned()),
+            Some(Ref::Prelude(_))
+        );
+        let owner = if primitive {
+            self.owner_value()
+        } else {
+            Expr::str(&self.opts.file_label)
+        };
+        let call = Expr::intrinsic_call(
+            "implement",
+            vec![iface, target, Expr::Table(methods), targ, owner],
+        );
         self.emit(StmtKind::Expr(call));
     }
 
@@ -147,17 +200,31 @@ impl Lowerer<'_> {
     /// interface, and `None` after reporting an error.
     fn check_interface_ref(&mut self, ty: &SyntaxNode) -> Option<Option<&'static str>> {
         let q = child(ty, QUAL_NAME);
-        let r = q.as_ref().and_then(|q| self.res.type_ref(q.text_range()).cloned());
+        let r = q
+            .as_ref()
+            .and_then(|q| self.res.type_ref(q.text_range()).cloned());
         let single = q.as_ref().is_some_and(|q| qual_segments(q).len() == 1);
         match r {
             Some(Ref::Prelude(p)) if p.class == PreludeClass::Interface => {
                 Some(Some(if p.name == "To" { "To" } else { "From" }))
             }
-            Some(Ref::Binding(id)) if self.binding_decl(id) == Some(DeclKind::Interface) && single => Some(None),
+            Some(Ref::Binding(id))
+                if self.binding_decl(id) == Some(DeclKind::Interface) && single =>
+            {
+                Some(None)
+            }
             // An imported name or a path into a module: the runtime checks.
-            Some(Ref::Binding(id)) if self.binding_decl(id) == Some(DeclKind::Import) || !single => Some(None),
+            Some(Ref::Binding(id))
+                if self.binding_decl(id) == Some(DeclKind::Import) || !single =>
+            {
+                Some(None)
+            }
             _ => {
-                self.error(ty, "not-an-interface", "only an interface can be implemented with `interface … for …`");
+                self.error(
+                    ty,
+                    "not-an-interface",
+                    "only an interface can be implemented with `interface … for …`",
+                );
                 None
             }
         }
@@ -167,7 +234,11 @@ impl Lowerer<'_> {
     /// Returns its name for messages.
     fn check_impl_target(&mut self, ty: &SyntaxNode) -> Option<String> {
         let Some(q) = child(ty, QUAL_NAME) else {
-            self.error(ty, "impl-target", "interfaces are implemented for structs, `Number`, `String` and `Bool`");
+            self.error(
+                ty,
+                "impl-target",
+                "interfaces are implemented for structs, `Number`, `String` and `Bool`",
+            );
             return None;
         };
         let text = qual_text(&q);
@@ -180,11 +251,21 @@ impl Lowerer<'_> {
         let single = qual_segments(&q).len() == 1;
         match self.res.type_ref(q.text_range()).cloned() {
             Some(Ref::Prelude(p)) if p.is_primitive() => Some(text),
-            Some(Ref::Binding(id)) if self.binding_decl(id) == Some(DeclKind::Struct) && single => Some(text),
+            Some(Ref::Binding(id)) if self.binding_decl(id) == Some(DeclKind::Struct) && single => {
+                Some(text)
+            }
             // An imported name or a path into a module: the runtime checks.
-            Some(Ref::Binding(id)) if self.binding_decl(id) == Some(DeclKind::Import) || !single => Some(text),
+            Some(Ref::Binding(id))
+                if self.binding_decl(id) == Some(DeclKind::Import) || !single =>
+            {
+                Some(text)
+            }
             _ => {
-                self.error(ty, "impl-target", "interfaces are implemented for structs, `Number`, `String` and `Bool`");
+                self.error(
+                    ty,
+                    "impl-target",
+                    "interfaces are implemented for structs, `Number`, `String` and `Bool`",
+                );
                 None
             }
         }

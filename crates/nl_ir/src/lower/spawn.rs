@@ -65,20 +65,32 @@ impl Lowerer<'_> {
         if has_token(node, DO_KW) {
             return self.spawn_block(node);
         }
-        let Some(call) = node.children().find(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL)) else {
+        let Some(call) = node
+            .children()
+            .find(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL))
+        else {
             return self.internal(node, "`spawn` without a call");
         };
-        let Some(callee) = expr_child(&call) else { return self.internal(&call, "`spawn` call without a callee") };
+        let Some(callee) = expr_child(&call) else {
+            return self.internal(&call, "`spawn` call without a callee");
+        };
         let args = arg_nodes(child(&call, ARG_LIST).or_else(|| child(&call, COMMAND_ARGS)));
-        if let Some(Arg::Keyed(_, e) | Arg::KeyedSpread(e)) = args.iter().find(|a| matches!(a, Arg::Keyed(..) | Arg::KeyedSpread(_))) {
+        if let Some(Arg::Keyed(_, e) | Arg::KeyedSpread(e)) = args
+            .iter()
+            .find(|a| matches!(a, Arg::Keyed(..) | Arg::KeyedSpread(_)))
+        {
             self.error(e, "spawn-keyed", "`spawn` sends positional arguments only: keyed arguments (`key: value`) cannot travel to a worker");
             return Expr::Nil;
         }
         let mut vals = Vec::new();
         match callee.kind() {
             FIELD_EXPR if !is_len(&callee) => {
-                let Some(recv) = expr_child(&callee) else { return self.internal(&callee, "`spawn` member callee") };
-                let name = field_name(&callee).map(|t| t.text().to_string()).unwrap_or_default();
+                let Some(recv) = expr_child(&callee) else {
+                    return self.internal(&callee, "`spawn` member callee");
+                };
+                let name = field_name(&callee)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 if self.res.plain_primitive_member(&recv, &name).is_some() {
                     // `spawn String.shout(s)`: a plain call, as outside `spawn`.
                     vals.push(Expr::Nil);
@@ -98,7 +110,11 @@ impl Lowerer<'_> {
                     Some(Ref::Binding(id)) => self.res.binding(id).and_then(|b| b.module_owner),
                     _ => None,
                 };
-                vals.push(if module.is_some() { Expr::Bool(false) } else { Expr::Nil });
+                vals.push(if module.is_some() {
+                    Expr::Bool(false)
+                } else {
+                    Expr::Nil
+                });
                 vals.push(self.name_raw(&callee));
                 if let Some(m) = module {
                     vals.push(Expr::Local(self.local_of(m)));
@@ -133,9 +149,15 @@ impl Lowerer<'_> {
             params.push(p);
             saved.push((*id, self.bindings.insert(*id, p)));
         }
-        let pos = self.lines.line_col(self.source, trimmed_range(node).start());
+        let pos = self
+            .lines
+            .line_col(self.source, trimmed_range(node).start());
         let hidden = format!("<spawn do at {}:{}>", pos.line, pos.col);
-        let spec = FnSpec { name: hidden.clone(), self_binding: None, discard_tail: false };
+        let spec = FnSpec {
+            name: hidden.clone(),
+            self_binding: None,
+            discard_tail: false,
+        };
         // The block runs in a worker as a function of its own: the type
         // pools of the enclosing function are not there (types.rs).
         let barrier = std::mem::replace(&mut self.pool_barrier, self.pools.len());
@@ -154,8 +176,15 @@ impl Lowerer<'_> {
             }
         }
         f.params = params;
-        let mut info = vec![TableEntry::Item(Expr::str(&self.opts.file_label)), TableEntry::Item(Expr::str(&hidden))];
-        info.extend(captures.iter().map(|(_, name)| TableEntry::Item(Expr::str(name))));
+        let mut info = vec![
+            TableEntry::Item(Expr::str(&self.opts.file_label)),
+            TableEntry::Item(Expr::str(&hidden)),
+        ];
+        info.extend(
+            captures
+                .iter()
+                .map(|(_, name)| TableEntry::Item(Expr::str(name))),
+        );
         let mut args = vec![Expr::Table(info), Expr::Function(Box::new(f))];
         args.extend(values);
         Expr::intrinsic_call("spawn", args)
@@ -167,11 +196,16 @@ impl Lowerer<'_> {
         let inside = node.text_range();
         let mut found: BTreeMap<BindingId, String> = BTreeMap::new();
         let mut consider = |id: BindingId| {
-            let Some(b) = self.res.binding(id) else { return };
+            let Some(b) = self.res.binding(id) else {
+                return;
+            };
             let captured = !inside.contains_range(b.range)
                 && !b.file_level
                 && !b.named
-                && !matches!(b.decl, DeclKind::Global | DeclKind::TypeAlias | DeclKind::TypeParam)
+                && !matches!(
+                    b.decl,
+                    DeclKind::Global | DeclKind::TypeAlias | DeclKind::TypeParam
+                )
                 && !(declares_type(b.decl) && b.function == 0);
             if captured {
                 found.entry(id).or_insert_with(|| b.name.clone());
@@ -209,7 +243,10 @@ impl Lowerer<'_> {
                 self.registered.insert(name.to_string(), slot);
             }
         }
-        Expr::intrinsic_call("register", vec![Expr::str(&self.opts.file_label), Expr::str(name), value])
+        Expr::intrinsic_call(
+            "register",
+            vec![Expr::str(&self.opts.file_label), Expr::str(name), value],
+        )
     }
 
     /// `value`, registered under the registry name of the type-level
@@ -267,9 +304,8 @@ impl Lowerer<'_> {
             let found = match d.kind() {
                 // Enums and interfaces cross by name too, as values:
                 // registered like structs.
-                STRUCT_DECL | ENUM_DECL | INTERFACE_DECL => {
-                    child(&d, NAME).and_then(|n| Some((self.res.declaration(n.text_range())?, name_text(&n)?)))
-                }
+                STRUCT_DECL | ENUM_DECL | INTERFACE_DECL => child(&d, NAME)
+                    .and_then(|n| Some((self.res.declaration(n.text_range())?, name_text(&n)?))),
                 MODULE_DECL => match (self.res.module(d.text_range()), child(&d, QUAL_NAME)) {
                     (Some((id, false)), Some(q)) => Some((id, qual_text(&q))),
                     _ => None,
@@ -293,10 +329,17 @@ pub(crate) type RegistrySlot = (Option<BindingId>, String);
 
 /// `scope.name`, or `name` at file level.
 pub(crate) fn qualified(scope: &str, name: &str) -> String {
-    if scope.is_empty() { name.to_string() } else { format!("{scope}.{name}") }
+    if scope.is_empty() {
+        name.to_string()
+    } else {
+        format!("{scope}.{name}")
+    }
 }
 
 /// Declarations of type-level values.
 fn declares_type(decl: DeclKind) -> bool {
-    matches!(decl, DeclKind::Struct | DeclKind::Enum | DeclKind::Interface | DeclKind::Module)
+    matches!(
+        decl,
+        DeclKind::Struct | DeclKind::Enum | DeclKind::Interface | DeclKind::Module
+    )
 }

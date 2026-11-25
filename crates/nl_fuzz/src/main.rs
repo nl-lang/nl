@@ -21,7 +21,8 @@ use std::time::Duration;
 
 use nl_fuzz::campaign::{self, Options};
 
-const USAGE: &str = "usage: nl-fuzz [--nlc <path>] [--seed N] [--count N] [--mutate] [--mutants N] [--keep-passing]
+const USAGE: &str =
+    "usage: nl-fuzz [--nlc <path>] [--seed N] [--count N] [--mutate] [--mutants N] [--keep-passing]
                [--jobs N] [--timeout SECONDS] [--out DIR] [--no-minimize]
        nl-fuzz --print SEED
        nl-fuzz --print-mutant SEED K
@@ -66,9 +67,14 @@ enum Cmd {
 }
 
 fn parse(args: &[String]) -> Result<Cmd, String> {
-    let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from));
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(PathBuf::from));
     let mut opts = Options {
-        nlc: exe_dir.as_ref().map(|d| d.join(format!("nlc{}", std::env::consts::EXE_SUFFIX))).unwrap_or_else(|| PathBuf::from("nlc")),
+        nlc: exe_dir
+            .as_ref()
+            .map(|d| d.join(format!("nlc{}", std::env::consts::EXE_SUFFIX)))
+            .unwrap_or_else(|| PathBuf::from("nlc")),
         seed: clock_seed(),
         count: 200,
         mutate: false,
@@ -80,7 +86,11 @@ fn parse(args: &[String]) -> Result<Cmd, String> {
         minimize: true,
     };
     let mut it = args.iter();
-    let num = |v: Option<&String>, what: &str| -> Result<u64, String> { v.ok_or(format!("{what} takes a number"))?.parse::<u64>().map_err(|_| format!("{what} takes a number")) };
+    let num = |v: Option<&String>, what: &str| -> Result<u64, String> {
+        v.ok_or(format!("{what} takes a number"))?
+            .parse::<u64>()
+            .map_err(|_| format!("{what} takes a number"))
+    };
     while let Some(a) = it.next() {
         match a.as_str() {
             "--nlc" => opts.nlc = PathBuf::from(it.next().ok_or("--nlc takes a path")?),
@@ -89,7 +99,11 @@ fn parse(args: &[String]) -> Result<Cmd, String> {
             "--mutate" => opts.mutate = true,
             "--mutants" => opts.mutants = num(it.next(), "--mutants")?,
             "--keep-passing" => opts.keep_passing = true,
-            "--jobs" => opts.jobs = usize::try_from(num(it.next(), "--jobs")?).unwrap_or(1).max(1),
+            "--jobs" => {
+                opts.jobs = usize::try_from(num(it.next(), "--jobs")?)
+                    .unwrap_or(1)
+                    .max(1)
+            }
             "--timeout" => opts.timeout = Duration::from_secs(num(it.next(), "--timeout")?.max(1)),
             "--out" => opts.out = PathBuf::from(it.next().ok_or("--out takes a directory")?),
             "--no-minimize" => opts.minimize = false,
@@ -109,28 +123,43 @@ fn parse(args: &[String]) -> Result<Cmd, String> {
 /// A seed from the clock, so that every campaign explores new programs;
 /// it is printed, so that the campaign can be repeated.
 fn clock_seed() -> u64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000 * 1000)
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(1, |d| d.as_secs() % 1_000_000 * 1000)
 }
 
 /// `target/fuzz` beside the profile directory the binary is in, or in
 /// the working directory.
 fn default_out(exe_dir: Option<&std::path::Path>) -> PathBuf {
     match exe_dir {
-        Some(d) if d.file_name().is_some_and(|n| n == "debug" || n == "release") => d.parent().map_or_else(|| PathBuf::from("target/fuzz"), |t| t.join("fuzz")),
+        Some(d)
+            if d.file_name()
+                .is_some_and(|n| n == "debug" || n == "release") =>
+        {
+            d.parent()
+                .map_or_else(|| PathBuf::from("target/fuzz"), |t| t.join("fuzz"))
+        }
         _ => PathBuf::from("target/fuzz"),
     }
 }
 
 fn run(opts: &Options) -> ExitCode {
     if !opts.nlc.exists() {
-        eprintln!("nl-fuzz: no nlc at {}; build it (`cargo build -p nlc`) or pass --nlc", opts.nlc.display());
+        eprintln!(
+            "nl-fuzz: no nlc at {}; build it (`cargo build -p nlc`) or pass --nlc",
+            opts.nlc.display()
+        );
         return ExitCode::from(2);
     }
     eprintln!(
         "nl-fuzz: seeds {}..{}{}, {} jobs, nlc {}, findings in {}",
         opts.seed,
         opts.seed.wrapping_add(opts.count),
-        if opts.mutate { format!(", {} mutants each", opts.mutants) } else { String::new() },
+        if opts.mutate {
+            format!(", {} mutants each", opts.mutants)
+        } else {
+            String::new()
+        },
         opts.jobs,
         opts.nlc.display(),
         opts.out.join("findings").display()
@@ -145,5 +174,9 @@ fn run(opts: &Options) -> ExitCode {
         s.elapsed.as_secs_f64(),
         s.records.len()
     );
-    if s.records.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if s.records.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }

@@ -20,7 +20,13 @@ impl Gen {
         let mut used_nums: Vec<i64> = Vec::new();
         let mut lines = vec![format!("enum {name}")];
         for i in 0..n {
-            let vname = format!("{}{}", self.rng.pick(&["Red", "Green", "Blue", "North", "South", "Low", "High", "Idle"]), i);
+            let vname = format!(
+                "{}{}",
+                self.rng.pick(&[
+                    "Red", "Green", "Blue", "North", "South", "Low", "High", "Idle"
+                ]),
+                i
+            );
             let val = match kind {
                 0 => EnumVal::Name,
                 1 => EnumVal::Str(format!("{}{i}", self.rng.pick(&["v", "mode", "x", "on"]))),
@@ -49,20 +55,42 @@ impl Gen {
     pub(super) fn struct_decl(&mut self) -> Vec<String> {
         let idx = self.structs.len();
         let name = self.fresh("Shape");
-        let parent = if idx > 0 && self.rng.chance(35) { Some(self.rng.below(idx)) } else { None };
+        let parent = if idx > 0 && self.rng.chance(35) {
+            Some(self.rng.below(idx))
+        } else {
+            None
+        };
         let mut fields = Vec::new();
-        let n = if parent.is_some() { self.rng.below(3) } else { 1 + self.rng.below(3) };
+        let n = if parent.is_some() {
+            self.rng.below(3)
+        } else {
+            1 + self.rng.below(3)
+        };
         for _ in 0..n {
             let fname = self.fresh("f");
             let is_str = self.rng.chance(20);
             let typed = self.rng.chance(60);
-            let (ty, bound) = if is_str { (Ty::Str, STR_CAP) } else { (Ty::Int, self.rng.pick(&[100.0, 1000.0])) };
+            let (ty, bound) = if is_str {
+                (Ty::Str, STR_CAP)
+            } else {
+                (Ty::Int, self.rng.pick(&[100.0, 1000.0]))
+            };
             let default = if self.rng.chance(40) {
-                Some(if is_str { format!("\"{}\"", self.rng.pick(&["dflt", "", "zz"])) } else { format!("{}", self.rng.range(0, 9)) })
+                Some(if is_str {
+                    format!("\"{}\"", self.rng.pick(&["dflt", "", "zz"]))
+                } else {
+                    format!("{}", self.rng.range(0, 9))
+                })
             } else {
                 None
             };
-            fields.push(Field { name: fname, ty, bound, typed, default });
+            fields.push(Field {
+                name: fname,
+                ty,
+                bound,
+                typed,
+                default,
+            });
         }
         let mut lines = vec![match parent.and_then(|p| self.structs.get(p)) {
             Some(p) => format!("struct {name} : {}", p.name),
@@ -78,10 +106,26 @@ impl Gen {
             });
         }
         lines.push("end".into());
-        self.structs.push(StructDef { name: name.clone(), parent, fields, methods: Vec::new(), to_string: false, plus: false, len: None, lt: false, eq: false, call_op: false, make: None });
+        self.structs.push(StructDef {
+            name: name.clone(),
+            parent,
+            fields,
+            methods: Vec::new(),
+            to_string: false,
+            plus: false,
+            len: None,
+            lt: false,
+            eq: false,
+            call_op: false,
+            make: None,
+        });
         let mut out = vec![lines.join("\n")];
 
-        let int_fields: Vec<Field> = self.all_fields(idx).into_iter().filter(|f| f.ty == Ty::Int).collect();
+        let int_fields: Vec<Field> = self
+            .all_fields(idx)
+            .into_iter()
+            .filter(|f| f.ty == Ty::Int)
+            .collect();
         // Methods: a computing one and a mutating one.
         let n_methods = self.rng.below(3);
         for _ in 0..n_methods {
@@ -90,7 +134,12 @@ impl Gen {
             }
         }
         if !int_fields.is_empty() && self.rng.chance(40) {
-            let f = self.rng.pick(&int_fields.iter().map(|f| f.name.clone()).collect::<Vec<_>>());
+            let f = self.rng.pick(
+                &int_fields
+                    .iter()
+                    .map(|f| f.name.clone())
+                    .collect::<Vec<_>>(),
+            );
             out.push(format!("interface To<String> for {name}\n  fn to: String\n    \"{name}<#{{@{f} + 0}}>\"\n  end\nend"));
             if let Some(s) = self.structs.get_mut(idx) {
                 s.to_string = true;
@@ -103,16 +152,30 @@ impl Gen {
                 .iter()
                 .map(|f| match f.ty {
                     Ty::Str => format!("{}: @{}", f.name, f.name),
-                    _ => format!("{}: (@{} + other.{}) % {}", f.name, f.name, f.name, bound_lit(f.bound)),
+                    _ => format!(
+                        "{}: (@{} + other.{}) % {}",
+                        f.name,
+                        f.name,
+                        f.name,
+                        bound_lit(f.bound)
+                    ),
                 })
                 .collect();
-            out.push(format!("fn {name}.+(other)\n  {name} {{ {} }}\nend", inits.join(", ")));
+            out.push(format!(
+                "fn {name}.+(other)\n  {name} {{ {} }}\nend",
+                inits.join(", ")
+            ));
             if let Some(s) = self.structs.get_mut(idx) {
                 s.plus = true;
             }
         }
         if !int_fields.is_empty() && self.rng.chance(25) {
-            let f = self.rng.pick(&int_fields.iter().map(|f| f.name.clone()).collect::<Vec<_>>());
+            let f = self.rng.pick(
+                &int_fields
+                    .iter()
+                    .map(|f| f.name.clone())
+                    .collect::<Vec<_>>(),
+            );
             out.push(format!("fn {name}.len\n  @{f} % 10\nend"));
             if let Some(s) = self.structs.get_mut(idx) {
                 s.len = Some(10.0);
@@ -127,16 +190,45 @@ impl Gen {
         let sname = self.structs.get(idx)?.name.clone();
         let mname = self.fresh("m");
         let n_params = self.rng.below(3);
-        let params: Vec<Param> = (0..n_params).map(|_| Param { name: self.fresh("k"), ty: Ty::Int, bound: 1000.0, default: None }).collect();
-        let plist = if params.is_empty() && self.rng.chance(50) { String::new() } else { format!("({})", params.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ")) };
+        let params: Vec<Param> = (0..n_params)
+            .map(|_| Param {
+                name: self.fresh("k"),
+                ty: Ty::Int,
+                bound: 1000.0,
+                default: None,
+            })
+            .collect();
+        let plist = if params.is_empty() && self.rng.chance(50) {
+            String::new()
+        } else {
+            format!(
+                "({})",
+                params
+                    .iter()
+                    .map(|p| p.name.clone())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
         let mutate = !int_fields.is_empty() && self.rng.chance(40);
-        let ctx = Ctx { method_of: Some(idx), ..Ctx::top() };
+        let ctx = Ctx {
+            method_of: Some(idx),
+            ..Ctx::top()
+        };
         let (body, ret) = if mutate {
             let f = self.rng.pick_ref(int_fields)?;
             self.frames.push(Frame::new(Ret::Nothing, INT_CAP));
             self.push_scope();
             for p in &params {
-                self.declare(Var { name: p.name.clone(), ty: Ty::Int, bound: p.bound, mutable: true, used: true, fn_depth: 1, ..Var::default() });
+                self.declare(Var {
+                    name: p.name.clone(),
+                    ty: Ty::Int,
+                    bound: p.bound,
+                    mutable: true,
+                    used: true,
+                    fn_depth: 1,
+                    ..Var::default()
+                });
             }
             let e = self.int(&ctx, 2);
             let mut stmts = Vec::new();
@@ -144,16 +236,42 @@ impl Gen {
                 stmts.push(format!("print(\"{mname}\", @{} + 0)", f.name));
                 self.add_cost(1.0);
             }
-            stmts.push(format!("@{} = (@{} + {}) % {}", f.name, f.name, e.operand(), bound_lit(f.bound)));
+            stmts.push(format!(
+                "@{} = (@{} + {}) % {}",
+                f.name,
+                f.name,
+                e.operand(),
+                bound_lit(f.bound)
+            ));
             let mut tail_prints = self.pop_scope(&ctx);
             stmts.append(&mut tail_prints);
             let frame = self.frames.pop()?;
-            self.structs.get_mut(idx)?.methods.push(Method { name: mname.clone(), params: params.iter().map(|p| p.bound).collect(), ret: None, cost: frame.cost });
+            self.structs.get_mut(idx)?.methods.push(Method {
+                name: mname.clone(),
+                params: params.iter().map(|p| p.bound).collect(),
+                ret: None,
+                cost: frame.cost,
+            });
             (block_text(&stmts), None)
         } else {
-            let (body, frame) = self.fn_body(&ctx, &params, &[], Ret::One(Ty::Int, 0.0), 2, INT_CAP, false);
-            let Ret::One(_, b) = frame.ret else { return None };
-            self.structs.get_mut(idx)?.methods.push(Method { name: mname.clone(), params: params.iter().map(|p| p.bound).collect(), ret: Some(b), cost: frame.cost });
+            let (body, frame) = self.fn_body(
+                &ctx,
+                &params,
+                &[],
+                Ret::One(Ty::Int, 0.0),
+                2,
+                INT_CAP,
+                false,
+            );
+            let Ret::One(_, b) = frame.ret else {
+                return None;
+            };
+            self.structs.get_mut(idx)?.methods.push(Method {
+                name: mname.clone(),
+                params: params.iter().map(|p| p.bound).collect(),
+                ret: Some(b),
+                cost: frame.cost,
+            });
             (body, Some(b))
         };
         let _ = ret;
@@ -162,9 +280,17 @@ impl Gen {
 
     pub(super) fn error_decl(&mut self) -> String {
         let name = self.fresh("Oops");
-        let parent = if !self.errors.is_empty() && self.rng.chance(40) { self.rng.pick(&self.errors.clone()) } else { String::new() };
+        let parent = if !self.errors.is_empty() && self.rng.chance(40) {
+            self.rng.pick(&self.errors.clone())
+        } else {
+            String::new()
+        };
         self.errors.push(name.clone());
-        if parent.is_empty() { format!("struct {name} : Exception\n  code: Number = 0\nend") } else { format!("struct {name} : {parent}\nend") }
+        if parent.is_empty() {
+            format!("struct {name} : Exception\n  code: Number = 0\nend")
+        } else {
+            format!("struct {name} : {parent}\nend")
+        }
     }
 
     /// Generates a function body: parameters in scope, some statements, and
@@ -173,7 +299,16 @@ impl Gen {
     /// With `may_raise`, the body may raise; the frame says whether it
     /// does.
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn fn_body(&mut self, outer: &Ctx, params: &[Param], locals: &[Param], ret: Ret, size: usize, cap: f64, may_raise: bool) -> (String, Frame) {
+    pub(super) fn fn_body(
+        &mut self,
+        outer: &Ctx,
+        params: &[Param],
+        locals: &[Param],
+        ret: Ret,
+        size: usize,
+        cap: f64,
+        may_raise: bool,
+    ) -> (String, Frame) {
         self.frames.push(Frame::new(ret, cap));
         self.push_scope();
         let depth = self.fn_depth();
@@ -181,10 +316,31 @@ impl Gen {
         // declared before the body are, so they start unused.
         // A parameter may be annotated: strings assigned to it get a
         // default (`non_nil`).
-        for (p, used) in params.iter().map(|p| (p, true)).chain(locals.iter().map(|p| (p, false))) {
-            self.declare(Var { name: p.name.clone(), ty: p.ty, bound: p.bound, mutable: true, used, fn_depth: depth, ascii: p.ty != Ty::Str, typed: used, ..Var::default() });
+        for (p, used) in params
+            .iter()
+            .map(|p| (p, true))
+            .chain(locals.iter().map(|p| (p, false)))
+        {
+            self.declare(Var {
+                name: p.name.clone(),
+                ty: p.ty,
+                bound: p.bound,
+                mutable: true,
+                used,
+                fn_depth: depth,
+                ascii: p.ty != Ty::Str,
+                typed: used,
+                ..Var::default()
+            });
         }
-        let ctx = Ctx { depth: outer.depth + 1, loops: 0, mult: 1.0, raise_ok: may_raise, caught: false, method_of: outer.method_of };
+        let ctx = Ctx {
+            depth: outer.depth + 1,
+            loops: 0,
+            mult: 1.0,
+            raise_ok: may_raise,
+            caught: false,
+            method_of: outer.method_of,
+        };
         let n = self.rng.below(size + 1);
         let mut stmts: Vec<String> = Vec::new();
         for _ in 0..n {
@@ -193,7 +349,11 @@ impl Gen {
         let tail = match ret {
             Ret::One(ty, _) => {
                 let e = self.tail_expr(&ctx, ty);
-                let e = if matches!(ty, Ty::Int | Ty::Num) { fit(e, cap) } else { e };
+                let e = if matches!(ty, Ty::Int | Ty::Num) {
+                    fit(e, cap)
+                } else {
+                    e
+                };
                 if let Some(f) = self.frames.last_mut() {
                     f.ret_bound = f.ret_bound.max(e.bound);
                 }
@@ -215,7 +375,11 @@ impl Gen {
         if let Ret::One(ty, _) = ret {
             frame.ret = Ret::One(ty, frame.ret_bound.max(1.0));
         }
-        let body = if stmts.is_empty() { String::new() } else { block_text(&stmts) };
+        let body = if stmts.is_empty() {
+            String::new()
+        } else {
+            block_text(&stmts)
+        };
         (body, frame)
     }
 
@@ -242,22 +406,37 @@ impl Gen {
         let mut params = Vec::new();
         for i in 0..n_params {
             let pname = self.fresh("a");
-            let ty = if self.rng.chance(25) { Ty::Str } else { Ty::Int };
-            let bound = if ty == Ty::Str { STR_CAP } else { self.rng.pick(&[100.0, 1000.0, 100_000.0]) };
+            let ty = if self.rng.chance(25) {
+                Ty::Str
+            } else {
+                Ty::Int
+            };
+            let bound = if ty == Ty::Str {
+                STR_CAP
+            } else {
+                self.rng.pick(&[100.0, 1000.0, 100_000.0])
+            };
             // Defaults come last; one may use an earlier
             // parameter.
             let default = if i + 1 == n_params && self.rng.chance(40) {
                 Some(match ty {
                     Ty::Str => format!("\"{}\"", self.rng.pick(&["d", "dflt", ""])),
                     _ => match params.iter().find(|p: &&Param| p.ty == Ty::Int) {
-                        Some(p) if self.rng.chance(40) => format!("{} % {}", p.name, bound_lit(bound)),
+                        Some(p) if self.rng.chance(40) => {
+                            format!("{} % {}", p.name, bound_lit(bound))
+                        }
                         _ => format!("{}", self.rng.range(0, 50)),
                     },
                 })
             } else {
                 None
             };
-            params.push(Param { name: pname, ty, bound, default });
+            params.push(Param {
+                name: pname,
+                ty,
+                bound,
+                default,
+            });
         }
         let rest = !typed && self.rng.chance(12);
         let opts: Vec<String> = if self.rng.chance(20) {
@@ -289,12 +468,22 @@ impl Gen {
             let v = self.fresh("o");
             let d = self.rng.range(0, 9);
             pre.push(format!("let {v} = ({opts_name}.{k} or {d}) % 1000"));
-            extra.push(Param { name: v, ty: Ty::Int, bound: 1000.0, default: None });
+            extra.push(Param {
+                name: v,
+                ty: Ty::Int,
+                bound: 1000.0,
+                default: None,
+            });
         }
         if rest {
             let v = self.fresh("n");
             pre.push(format!("let {v} = {rest_name}.len"));
-            extra.push(Param { name: v, ty: Ty::Int, bound: 10.0, default: None });
+            extra.push(Param {
+                name: v,
+                ty: Ty::Int,
+                bound: 10.0,
+                default: None,
+            });
         }
         // Some functions may raise; they are then only called where that
         // is caught.
@@ -306,7 +495,15 @@ impl Gen {
         let mut plist: Vec<String> = params
             .iter()
             .map(|p| {
-                let ann = if typed { if p.ty == Ty::Str { ": String" } else { ": Number" } } else { "" };
+                let ann = if typed {
+                    if p.ty == Ty::Str {
+                        ": String"
+                    } else {
+                        ": Number"
+                    }
+                } else {
+                    ""
+                };
                 match &p.default {
                     Some(d) => format!("{}{ann} = {d}", p.name),
                     None => format!("{}{ann}", p.name),
@@ -317,7 +514,11 @@ impl Gen {
             plist.push(format!("*{rest_name}"));
         }
         if !opts.is_empty() {
-            plist.push(if typed { format!("**{opts_name}: any") } else { format!("**{opts_name}") });
+            plist.push(if typed {
+                format!("**{opts_name}: any")
+            } else {
+                format!("**{opts_name}")
+            });
         }
         let ret_ann = if typed && self.rng.chance(60) {
             match frame.ret {
@@ -329,8 +530,16 @@ impl Gen {
         } else {
             ""
         };
-        let header = if plist.is_empty() && self.rng.chance(50) { format!("fn {name}{ret_ann}") } else { format!("fn {name}({}){ret_ann}", plist.join(", ")) };
-        let doc = if self.rng.chance(15) { format!("## {name} computes something.\n") } else { String::new() };
+        let header = if plist.is_empty() && self.rng.chance(50) {
+            format!("fn {name}{ret_ann}")
+        } else {
+            format!("fn {name}({}){ret_ann}", plist.join(", "))
+        };
+        let doc = if self.rng.chance(15) {
+            format!("## {name} computes something.\n")
+        } else {
+            String::new()
+        };
         let mut text = format!("{doc}{header}\n");
         for p in &pre {
             text.push_str(&indent(p));
@@ -370,7 +579,9 @@ impl Gen {
         self.note_call(&f, ctx);
         Some(match f.ret {
             Ret::Nothing => call.code,
-            Ret::One(Ty::Int | Ty::Num, _) | Ret::Pair(_) => format!("print(\"{}\", {} + 0)", f.name, call.code),
+            Ret::One(Ty::Int | Ty::Num, _) | Ret::Pair(_) => {
+                format!("print(\"{}\", {} + 0)", f.name, call.code)
+            }
             _ => format!("print(\"{}\", {})", f.name, call.code),
         })
     }
@@ -385,16 +596,29 @@ impl Gen {
         let i = self.fresh("i");
         let body = match self.rng.below(4) {
             0 => format!("  ({cb}({x}) + {cb}(({x} * 2) % 1000)) % 1000"),
-            1 => format!("  let {acc} = 0\n  for {i} in 1..3\n    {acc} = ({acc} + {cb}(({x} + {i}) % 1000)) % 1000\n  end\n  {acc}"),
+            1 => format!(
+                "  let {acc} = 0\n  for {i} in 1..3\n    {acc} = ({acc} + {cb}(({x} + {i}) % 1000)) % 1000\n  end\n  {acc}"
+            ),
             2 => format!("  {cb}({cb}({x}) % 1000) % 1000"),
-            _ => format!("  if {x} > 500\n    return {cb}({x} - 500) % 1000\n  end\n  {cb}({x}) % 1000"),
+            _ => format!(
+                "  if {x} > 500\n    return {cb}({x} - 500) % 1000\n  end\n  {cb}({x}) % 1000"
+            ),
         };
         let ret = if self.rng.chance(50) { ": Number" } else { "" };
-        let ann = if self.rng.chance(30) { "Function(n: Number): Number" } else { "Function" };
+        let ann = if self.rng.chance(30) {
+            "Function(n: Number): Number"
+        } else {
+            "Function"
+        };
         let text = format!("fn {name}({x}: Number, {cb}: {ann}){ret}\n{body}\nend");
         self.declare_fn(Func {
             name,
-            params: vec![Param { name: x, ty: Ty::Int, bound: 999.0, default: None }],
+            params: vec![Param {
+                name: x,
+                ty: Ty::Int,
+                bound: 999.0,
+                default: None,
+            }],
             rest: false,
             opts: Vec::new(),
             ret: Ret::One(Ty::Int, 1000.0),
@@ -415,12 +639,19 @@ impl Gen {
         let cb = self.fresh("cb");
         let v = self.fresh("v");
         let lty = self.rng.pick(&["[Number]", "Table", "any"]);
-        let text = format!("fn {name}({l}: {lty}, {cb}: Function): nil\n  for {v} in {l}\n    {cb}({v})\n  end\nend");
+        let text = format!(
+            "fn {name}({l}: {lty}, {cb}: Function): nil\n  for {v} in {l}\n    {cb}({v})\n  end\nend"
+        );
         // Marked by a zero bound on the block's argument: the caller binds
         // it to the list's items.
         self.declare_fn(Func {
             name,
-            params: vec![Param { name: l, ty: Ty::IntList, bound: LIST_CAP, default: None }],
+            params: vec![Param {
+                name: l,
+                ty: Ty::IntList,
+                bound: LIST_CAP,
+                default: None,
+            }],
             rest: false,
             opts: Vec::new(),
             ret: Ret::Nothing,
@@ -445,13 +676,23 @@ impl Gen {
         let inner = if takes {
             match self.rng.below(2) {
                 0 => format!("  fn({v})\n    {c} = ({c} + {v} + {step}) % 1000\n    {c}\n  end"),
-                _ => format!("  {}", self.fn_literal(std::slice::from_ref(&v), &format!("({v} * {step} + {c}) % 1000"), true)),
+                _ => format!(
+                    "  {}",
+                    self.fn_literal(
+                        std::slice::from_ref(&v),
+                        &format!("({v} * {step} + {c}) % 1000"),
+                        true
+                    )
+                ),
             }
         } else {
             match self.rng.below(3) {
                 0 => format!("  fn()\n    {c} = ({c} + {step}) % 1000\n    {c}\n  end"),
                 1 => format!("  fn()\n    {c} += {step}\n    {c} %= 1000\n    {c}\n  end"),
-                _ => format!("  {}", self.fn_literal(&[], &format!("({c} + {step}) % 1000"), true)),
+                _ => format!(
+                    "  {}",
+                    self.fn_literal(&[], &format!("({c} + {step}) % 1000"), true)
+                ),
             }
         };
         let start = self.rng.range(0, 20);
@@ -459,8 +700,29 @@ impl Gen {
         let inst = self.fresh("ctr");
         let arg = self.int_within(ctx, 1, 1000.0);
         let mut out = format!("{text}\nlet {inst} = {name}({})", arg.code);
-        let params = if takes { vec![Param { name: self.fresh("u"), ty: Ty::Int, bound: 1000.0, default: None }] } else { Vec::new() };
-        let f = Func { name: inst.clone(), params, rest: false, opts: Vec::new(), ret: Ret::One(Ty::Int, 1000.0), cost: 1.0, raises: false, assigns: Vec::new(), block: None, kind: FnKind::Value, typed: false };
+        let params = if takes {
+            vec![Param {
+                name: self.fresh("u"),
+                ty: Ty::Int,
+                bound: 1000.0,
+                default: None,
+            }]
+        } else {
+            Vec::new()
+        };
+        let f = Func {
+            name: inst.clone(),
+            params,
+            rest: false,
+            opts: Vec::new(),
+            ret: Ret::One(Ty::Int, 1000.0),
+            cost: 1.0,
+            raises: false,
+            assigns: Vec::new(),
+            block: None,
+            kind: FnKind::Value,
+            typed: false,
+        };
         // Read it once, so that the binding is used.
         let call = self.call_text(ctx, &f)?;
         self.add_cost(ctx.mult);
@@ -473,29 +735,82 @@ impl Gen {
     fn let_fn(&mut self, ctx: &Ctx) -> String {
         let name = self.fresh("lam");
         let n = self.rng.below(3);
-        let params: Vec<Param> = (0..n).map(|_| Param { name: self.fresh("p"), ty: Ty::Int, bound: 1000.0, default: None }).collect();
-        let plist = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ");
+        let params: Vec<Param> = (0..n)
+            .map(|_| Param {
+                name: self.fresh("p"),
+                ty: Ty::Int,
+                bound: 1000.0,
+                default: None,
+            })
+            .collect();
+        let plist = params
+            .iter()
+            .map(|p| p.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ");
         let short = self.rng.chance(50);
         let (text, frame) = if short {
             // One line: the body is a single expression.
-            self.frames.push(Frame::new(Ret::One(Ty::Int, 0.0), INT_CAP));
+            self.frames
+                .push(Frame::new(Ret::One(Ty::Int, 0.0), INT_CAP));
             self.push_scope();
             for p in &params {
-                self.declare(Var { name: p.name.clone(), ty: Ty::Int, bound: p.bound, mutable: true, used: true, fn_depth: self.fn_depth(), ..Var::default() });
+                self.declare(Var {
+                    name: p.name.clone(),
+                    ty: Ty::Int,
+                    bound: p.bound,
+                    mutable: true,
+                    used: true,
+                    fn_depth: self.fn_depth(),
+                    ..Var::default()
+                });
             }
-            let inner = Ctx { depth: ctx.depth + 1, loops: 0, mult: 1.0, raise_ok: false, caught: false, method_of: ctx.method_of };
+            let inner = Ctx {
+                depth: ctx.depth + 1,
+                loops: 0,
+                mult: 1.0,
+                raise_ok: false,
+                caught: false,
+                method_of: ctx.method_of,
+            };
             let e = self.int(&inner, 2);
             let _ = self.pop_scope(&inner);
-            let mut frame = self.frames.pop().unwrap_or_else(|| Frame::new(Ret::Nothing, INT_CAP));
+            let mut frame = self
+                .frames
+                .pop()
+                .unwrap_or_else(|| Frame::new(Ret::Nothing, INT_CAP));
             frame.ret = Ret::One(Ty::Int, e.bound.max(1.0));
             let names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
-            (format!("let {name} = {}", self.fn_literal(&names, &e.code, false)), frame)
+            (
+                format!("let {name} = {}", self.fn_literal(&names, &e.code, false)),
+                frame,
+            )
         } else {
             let may_raise = !self.errors.is_empty() && self.rng.chance(15);
-            let (body, frame) = self.fn_body(ctx, &params, &[], Ret::One(Ty::Int, 0.0), 2, INT_CAP, may_raise);
+            let (body, frame) = self.fn_body(
+                ctx,
+                &params,
+                &[],
+                Ret::One(Ty::Int, 0.0),
+                2,
+                INT_CAP,
+                may_raise,
+            );
             (format!("let {name} = fn({plist})\n{body}\nend"), frame)
         };
-        let f = Func { name: name.clone(), params, rest: false, opts: Vec::new(), ret: frame.ret, cost: frame.cost + 1.0, raises: frame.raises, assigns: frame.assigns, block: None, kind: FnKind::Let, typed: false };
+        let f = Func {
+            name: name.clone(),
+            params,
+            rest: false,
+            opts: Vec::new(),
+            ret: frame.ret,
+            cost: frame.cost + 1.0,
+            raises: frame.raises,
+            assigns: frame.assigns,
+            block: None,
+            kind: FnKind::Let,
+            typed: false,
+        };
         let mut out = text;
         if let Some(call) = self.call_text(ctx, &f) {
             self.note_call(&f, ctx);
@@ -503,7 +818,9 @@ impl Gen {
             if f.raises && !ctx.raise_ok {
                 // It may raise and nothing outside would catch it.
                 let e = self.fresh("err");
-                out.push_str(&format!("\ntry\n  {line}\ncatch {e}\n  print(\"caught\", typeof({e}))\nend"));
+                out.push_str(&format!(
+                    "\ntry\n  {line}\ncatch {e}\n  print(\"caught\", typeof({e}))\nend"
+                ));
             } else {
                 out.push('\n');
                 out.push_str(&line);
@@ -528,9 +845,17 @@ impl Gen {
         let n = self.rng.range(2, 6);
         // The loop: a `for` over a range, or a `while` over a counter.
         let (head, step, end) = if self.rng.chance(70) {
-            (format!("for {i} in 1..{n}"), String::new(), "end".to_string())
+            (
+                format!("for {i} in 1..{n}"),
+                String::new(),
+                "end".to_string(),
+            )
         } else {
-            (format!("let {i} = 0\nwhile {i} < {n}"), format!("  {i} += 1\n"), "end".to_string())
+            (
+                format!("let {i} = 0\nwhile {i} < {n}"),
+                format!("  {i} += 1\n"),
+                "end".to_string(),
+            )
         };
         let mut body = step;
         // A local of the iteration, maybe changed after it is captured:
@@ -571,13 +896,20 @@ impl Gen {
         let n = self.fresh("n");
         let k = self.rng.range(1, 7);
         let body = match self.rng.below(2) {
-            0 => format!("  if {n} <= 0\n    return 1\n  end\n  ({n} * {k} + {name}({n} - 1)) % 1000"),
+            0 => format!(
+                "  if {n} <= 0\n    return 1\n  end\n  ({n} * {k} + {name}({n} - 1)) % 1000"
+            ),
             _ => format!("  return {k} if {n} < 1\n  ({name}({n} - 1) * 2 + {n}) % 1000"),
         };
         let text = format!("fn {name}({n})\n{body}\nend");
         self.declare_fn(Func {
             name,
-            params: vec![Param { name: n, ty: Ty::Int, bound: 7.0, default: None }],
+            params: vec![Param {
+                name: n,
+                ty: Ty::Int,
+                bound: 7.0,
+                default: None,
+            }],
             rest: false,
             opts: Vec::new(),
             ret: Ret::One(Ty::Int, 1000.0),

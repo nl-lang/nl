@@ -169,7 +169,12 @@ mod pipeline;
 mod regex_literal;
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -185,7 +190,12 @@ mod tests {
     }
 
     fn lua(src: &str) -> String {
-        let out = compile(src.as_bytes(), "@t.nl", &CompileOptions::default(), &NoFiles);
+        let out = compile(
+            src.as_bytes(),
+            "@t.nl",
+            &CompileOptions::default(),
+            &NoFiles,
+        );
         assert!(out.chunk.is_some(), "{:?}", out.diagnostics);
         String::from_utf8(out.chunk.unwrap()).unwrap()
     }
@@ -214,43 +224,89 @@ mod tests {
     fn declaration_files() {
         const DECL: &str = "declare module Foo = :foo\n  coolness_factor: Number as 'coolnessFactor'\n  const limit: Number\n  fn return_largest(a: Number, b: Number): Number as 'ReturnLargest'\nend\ndeclare module Json = :require('json')\n  fn encode(value: any): String\nend\ndeclare struct Point\n  x: Number\n  fn new(x: Number?, y: Number?): Point\n  fn length(self): Number\nend\ndeclare type Player : Entity\n  fn pos(self): Point as 'GetPos'\nend\ndeclare type Entity\nend\ndeclare fn local_player(): Player = :LocalPlayer\ndeclare const max_players: Number = :config.maxPlayers\n";
         let src = "let n: Number = Foo.return_largest(1, 2)\nFoo.coolness_factor = n + Foo.limit\nprint Json.encode({a: 1})\nlet p = Point.new(1, 2)\nprint p.length\nfn at(pt: Point, pl: Player): Number\n  pl.pos.x + pt.x\nend\nprint at(p, local_player)\nprint max_players\n";
-        let out = compile(src.as_bytes(), "@t.nl", &CompileOptions::default(), &Decls(DECL));
+        let out = compile(
+            src.as_bytes(),
+            "@t.nl",
+            &CompileOptions::default(),
+            &Decls(DECL),
+        );
         assert!(out.chunk.is_some(), "{:?}", out.diagnostics);
         let lua = String::from_utf8(out.chunk.unwrap()).unwrap();
         assert!(lua.contains("foo.ReturnLargest(1, 2)"), "{lua}");
-        assert!(lua.contains("foo.coolnessFactor = ") && lua.contains("foo.limit"), "{lua}");
+        assert!(
+            lua.contains("foo.coolnessFactor = ") && lua.contains("foo.limit"),
+            "{lua}"
+        );
         assert!(lua.contains("(require(\"json\")).encode("), "{lua}");
         // The Lua backend prints `x:m()` as `__rt.lmethod.m(x)`.
-        assert!(lua.contains("Point.new(1, 2)") && lua.contains("lmethod.length(p)"), "{lua}");
+        assert!(
+            lua.contains("Point.new(1, 2)") && lua.contains("lmethod.length(p)"),
+            "{lua}"
+        );
         assert!(lua.contains("lmethod.GetPos(pl)"), "{lua}");
-        assert!(lua.contains("__rt.luaclass(\"Point\"") && lua.contains(" ~= Point or Point == nil"), "{lua}");
+        assert!(
+            lua.contains("__rt.luaclass(\"Point\"") && lua.contains(" ~= Point or Point == nil"),
+            "{lua}"
+        );
         assert!(lua.contains("__rt.gettype(\"Player\")"), "{lua}");
-        assert!(lua.contains("LocalPlayer()") && lua.contains("config.maxPlayers"), "{lua}");
+        assert!(
+            lua.contains("LocalPlayer()") && lua.contains("config.maxPlayers"),
+            "{lua}"
+        );
 
         // The analyzer: a wrong argument, a block, an assigned const.
         let bad = "Foo.return_largest(\"a\", 2)\nFoo.limit = 3\nFoo.return_largest 1 do end\n";
-        let out = compile(bad.as_bytes(), "@t.nl", &CompileOptions::default(), &Decls(DECL));
+        let out = compile(
+            bad.as_bytes(),
+            "@t.nl",
+            &CompileOptions::default(),
+            &Decls(DECL),
+        );
         assert!(out.chunk.is_none());
-        let codes: Vec<(u32, &str)> = out.diagnostics.iter().filter(|d| d.severity == Severity::Error).map(|d| (d.line, d.code)).collect();
-        assert!(codes.contains(&(1, "type-mismatch")) && codes.contains(&(2, "assign-declared-const")) && codes.contains(&(3, "block-without-function-param")), "{codes:?}");
+        let codes: Vec<(u32, &str)> = out
+            .diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .map(|d| (d.line, d.code))
+            .collect();
+        assert!(
+            codes.contains(&(1, "type-mismatch"))
+                && codes.contains(&(2, "assign-declared-const"))
+                && codes.contains(&(3, "block-without-function-param")),
+            "{codes:?}"
+        );
 
         // Without the analyzer the names still compile to their paths.
-        let opts = CompileOptions { analyze: false, ..CompileOptions::default() };
+        let opts = CompileOptions {
+            analyze: false,
+            ..CompileOptions::default()
+        };
         let out = compile(src.as_bytes(), "@t.nl", &opts, &Decls(DECL));
         let lua = String::from_utf8(out.chunk.expect("chunk")).unwrap();
-        assert!(lua.contains("foo.ReturnLargest(1, 2)") && lua.contains("lmethod.GetPos(pl)"), "{lua}");
+        assert!(
+            lua.contains("foo.ReturnLargest(1, 2)") && lua.contains("lmethod.GetPos(pl)"),
+            "{lua}"
+        );
     }
 
     /// Type values are built once, in the pool of the block that declares
     /// their types, not at each check.
     #[test]
     fn type_values_are_built_once() {
-        let lua = lua("struct Pt\n  x: Number\nend\nfn f(a: Number?, b: Number?, p: Pt?, q: {x: Number})\n  a\nend\nprint f(1, 2, nil, {x: 1})\n");
+        let lua = lua(
+            "struct Pt\n  x: Number\nend\nfn f(a: Number?, b: Number?, p: Pt?, q: {x: Number})\n  a\nend\nprint f(1, 2, nil, {x: 1})\n",
+        );
         assert_eq!(lua.matches("__rt.optional(").count(), 2, "{lua}");
         assert_eq!(lua.matches("__rt.record(").count(), 1, "{lua}");
         let body = lua.split("function(a, b, p, q)").nth(1).unwrap();
-        assert!(!body.contains("__rt.optional(") && !body.contains("__rt.record("), "{lua}");
-        assert!(body.contains("__rt.check(a, types[1]") && body.contains("__rt.check(b, types[1]"), "{lua}");
+        assert!(
+            !body.contains("__rt.optional(") && !body.contains("__rt.record("),
+            "{lua}"
+        );
+        assert!(
+            body.contains("__rt.check(a, types[1]") && body.contains("__rt.check(b, types[1]"),
+            "{lua}"
+        );
     }
 
     /// `==` and `!=` go through `rt.eq` (the
@@ -258,9 +314,20 @@ mod tests {
     /// boolean or nil, which stay Lua's comparisons.
     #[test]
     fn equality_with_literals_stays_lua() {
-        let lua = lua("let a: any = {}\nlet b: any = {}\nprint(a == nil, a != 1, \"s\" == a, a == true)\nprint(a == b, a != b)\n");
-        assert!(lua.contains("a == nil") && lua.contains("a ~= 1") && lua.contains("\"s\" == a") && lua.contains("a == true"), "{lua}");
-        assert!(lua.contains("__rt.eq(a, b)") && lua.contains("not __rt.eq(a, b)"), "{lua}");
+        let lua = lua(
+            "let a: any = {}\nlet b: any = {}\nprint(a == nil, a != 1, \"s\" == a, a == true)\nprint(a == b, a != b)\n",
+        );
+        assert!(
+            lua.contains("a == nil")
+                && lua.contains("a ~= 1")
+                && lua.contains("\"s\" == a")
+                && lua.contains("a == true"),
+            "{lua}"
+        );
+        assert!(
+            lua.contains("__rt.eq(a, b)") && lua.contains("not __rt.eq(a, b)"),
+            "{lua}"
+        );
     }
 
     /// The owner of the chunk's
@@ -270,10 +337,22 @@ mod tests {
     fn chunk_owner_is_computed_once_per_load() {
         let out = lua("fn Number.dbl\n  self * 2\nend\nfn Bool.+(r)\n  1\nend\n");
         // A line map may come between (crates/nl_luagen), on the same line.
-        assert!(out.starts_with("local __rt = ...; local owner = __rt.owner(\"@t.nl\");"), "{out}");
-        assert!(out.lines().next().unwrap().contains(" return function(...)"), "{out}");
+        assert!(
+            out.starts_with("local __rt = ...; local owner = __rt.owner(\"@t.nl\");"),
+            "{out}"
+        );
+        assert!(
+            out.lines()
+                .next()
+                .unwrap()
+                .contains(" return function(...)"),
+            "{out}"
+        );
         assert_eq!(out.matches("__rt.owner(").count(), 1, "{out}");
-        assert!(out.contains("method, owner)") && out.contains("__rt.primop(\"Bool\", \"__add\""), "{out}");
+        assert!(
+            out.contains("method, owner)") && out.contains("__rt.primop(\"Bool\", \"__add\""),
+            "{out}"
+        );
         let plain = lua("print 1\n");
         assert!(!plain.contains("__rt.owner"), "{plain}");
     }
@@ -282,8 +361,16 @@ mod tests {
     /// function over LuaJIT's limits is an error naming it.
     #[test]
     fn bytecode_backend() {
-        let opts = CompileOptions { emit: Emit::Bytecode, ..CompileOptions::default() };
-        let out = compile(b"fn f(a)\n  a + 1\nend\nprint f(1)\n", "@t.nl", &opts, &NoFiles);
+        let opts = CompileOptions {
+            emit: Emit::Bytecode,
+            ..CompileOptions::default()
+        };
+        let out = compile(
+            b"fn f(a)\n  a + 1\nend\nprint f(1)\n",
+            "@t.nl",
+            &opts,
+            &NoFiles,
+        );
         let chunk = out.chunk.expect("a dump");
         assert_eq!(&chunk[..3], b"\x1bLJ", "{:?}", out.diagnostics);
         let mut src = String::from("fn big()\n");
@@ -345,37 +432,79 @@ mod tests {
         use nl_codegen::bc::{self, Op};
         use nl_codegen::intrinsics::index;
         let compile_at = |src: &str, level: u8, static_resolution: bool| {
-            let opts = CompileOptions { emit: Emit::Bytecode, strip: true, level, static_resolution, ..CompileOptions::default() };
+            let opts = CompileOptions {
+                emit: Emit::Bytecode,
+                strip: true,
+                level,
+                static_resolution,
+                ..CompileOptions::default()
+            };
             let out = compile(src.as_bytes(), "@t.nl", &opts, &NoFiles);
             dump_instructions(&out.chunk.unwrap_or_else(|| panic!("{:?}", out.diagnostics)))
         };
-        let ops = |ins: &[bc::Ins]| ins.iter().map(|i| Op::from_ins(*i).expect("a known opcode")).collect::<Vec<_>>();
+        let ops = |ins: &[bc::Ins]| {
+            ins.iter()
+                .map(|i| Op::from_ins(*i).expect("a known opcode"))
+                .collect::<Vec<_>>()
+        };
         // The bitwise intrinsics `KINTR` loads, by name.
-        let names = ["band", "bor", "bxor", "shl", "shr", "ushr", "bnot", "nband", "nbor", "nbxor", "nlshift", "narshift", "nrshift"];
+        let names = [
+            "band", "bor", "bxor", "shl", "shr", "ushr", "bnot", "nband", "nbor", "nbxor",
+            "nlshift", "narshift", "nrshift",
+        ];
         let loaded = |ins: &[bc::Ins]| -> Vec<&str> {
             ins.iter()
                 .filter(|i| Op::from_ins(**i) == Some(Op::KINTR))
-                .filter_map(|i| names.iter().copied().find(|n| index(n) == Some(bc::d_of(*i))))
+                .filter_map(|i| {
+                    names
+                        .iter()
+                        .copied()
+                        .find(|n| index(n) == Some(bc::d_of(*i)))
+                })
                 .collect()
         };
         let typed = "fn f(a: Number, b: Number): Number\n  ~(a & b | a ^ b << 1 >> 2 >>> 3)\nend\nlet x: Number = 5\nx &= 3\nprint f(x, 2)\n";
         let (flags, ins) = compile_at(typed, 1, true);
         let o = ops(&ins);
         assert_eq!(flags & 0x10, 0x10, "BCDUMP_F_BITOP");
-        for op in [Op::BAND, Op::BOR, Op::BXOR, Op::BSHL, Op::BSAR, Op::BSHR, Op::BNOT] {
+        for op in [
+            Op::BAND,
+            Op::BOR,
+            Op::BXOR,
+            Op::BSHL,
+            Op::BSAR,
+            Op::BSHR,
+            Op::BNOT,
+        ] {
             let n = o.iter().filter(|x| **x == op).count();
             assert_eq!(n, if op == Op::BAND { 2 } else { 1 }, "{op:?} in {o:?}");
         }
         assert_eq!(loaded(&ins), Vec::<&str>::new());
         let untyped = typed.replace(": Number", ": any");
-        for (src, level, sr) in [(untyped.as_str(), 1, true), (typed, 1, false), (typed, 0, true)] {
+        for (src, level, sr) in [
+            (untyped.as_str(), 1, true),
+            (typed, 1, false),
+            (typed, 0, true),
+        ] {
             let (flags, ins) = compile_at(src, level, sr);
-            assert_eq!(flags & 0x10, 0, "level {level}, static resolution {sr}: {:?}", ops(&ins));
-            assert!(!ops(&ins).iter().any(|o| o.is_bitop()), "level {level}, static resolution {sr}: {:?}", ops(&ins));
+            assert_eq!(
+                flags & 0x10,
+                0,
+                "level {level}, static resolution {sr}: {:?}",
+                ops(&ins)
+            );
+            assert!(
+                !ops(&ins).iter().any(|o| o.is_bitop()),
+                "level {level}, static resolution {sr}: {:?}",
+                ops(&ins)
+            );
             if level == 1 {
                 let mut l = loaded(&ins);
                 l.sort_unstable();
-                assert_eq!(l, ["band", "band", "bnot", "bor", "bxor", "shl", "shr", "ushr"]);
+                assert_eq!(
+                    l,
+                    ["band", "band", "bnot", "bor", "bxor", "shl", "shr", "ushr"]
+                );
             }
         }
     }
@@ -388,6 +517,9 @@ mod tests {
         let define = lua.find("__rt.primmethod(").unwrap();
         let register = lua.find("__rt.register(").unwrap();
         assert!(define < register, "{lua}");
-        assert!(!lua.contains("__rt.primmethod(\"Number\", \"dbl\", __rt.register"), "{lua}");
+        assert!(
+            !lua.contains("__rt.primmethod(\"Number\", \"dbl\", __rt.register"),
+            "{lua}"
+        );
     }
 }

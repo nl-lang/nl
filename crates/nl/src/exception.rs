@@ -72,7 +72,10 @@ impl Exception {
             return lua.registry_value(k);
         }
         let Some(ty) = crate::types::nl_type(lua, &self.0.type_name)? else {
-            return Err(Error::runtime(format!("no exception type named {} is known (nl_gettype)", self.0.type_name)));
+            return Err(Error::runtime(format!(
+                "no exception type named {} is known (nl_gettype)",
+                self.0.type_name
+            )));
         };
         let fields = lua.create_table()?;
         fields.raw_set("message", self.0.message.as_str())?;
@@ -81,15 +84,22 @@ impl Exception {
         }
         let inst = crate::types::instantiate(lua, ty.as_table(), Value::Table(fields))?;
         if !is_exception(lua, &Value::Table(inst.clone())) {
-            return Err(Error::runtime(format!("{} is not an exception type", self.0.type_name)));
+            return Err(Error::runtime(format!(
+                "{} is not an exception type",
+                self.0.type_name
+            )));
         }
-        let _ = self.0.instance.set(lua.create_registry_value(inst.clone())?);
+        let _ = self
+            .0
+            .instance
+            .set(lua.create_registry_value(inst.clone())?);
         Ok(inst)
     }
 
     /// An exception instance raised in NL code.
     pub(crate) fn from_table(lua: &Lua, t: Table) -> Result<Exception> {
-        let type_name = raw::typeof_(lua, Value::Table(t.clone()))?.unwrap_or_else(|| "Exception".to_owned());
+        let type_name =
+            raw::typeof_(lua, Value::Table(t.clone()))?.unwrap_or_else(|| "Exception".to_owned());
         let message = match t.raw_get::<Value>("message")? {
             Value::Nil => String::new(),
             Value::String(s) => s.to_string_lossy(),
@@ -101,7 +111,12 @@ impl Exception {
         };
         let instance = OnceLock::new();
         let _ = instance.set(lua.create_registry_value(t)?);
-        Ok(Exception(Arc::new(Inner { type_name, message, trace, instance })))
+        Ok(Exception(Arc::new(Inner {
+            type_name,
+            message,
+            trace,
+            instance,
+        })))
     }
 }
 
@@ -201,10 +216,12 @@ pub(crate) fn failure(lua: &Lua, status: std::ffi::c_int, v: Value) -> Error {
         return Error::MemoryError(text(&v));
     }
     match v {
-        Value::Table(t) if is_exception(lua, &Value::Table(t.clone())) => match Exception::from_table(lua, t) {
-            Ok(e) => e.into(),
-            Err(e) => e,
-        },
+        Value::Table(t) if is_exception(lua, &Value::Table(t.clone())) => {
+            match Exception::from_table(lua, t) {
+                Ok(e) => e.into(),
+                Err(e) => e,
+            }
+        }
         Value::Error(e) => *e,
         other => Error::RuntimeError(text(&other)),
     }
@@ -246,7 +263,11 @@ fn lua_error(lua: &Lua, message: String, value: Value) -> Result<Value> {
     let fields = lua.create_table()?;
     fields.raw_set("message", message)?;
     fields.raw_set("value", value)?;
-    Ok(Value::Table(crate::types::instantiate(lua, ty.as_table(), Value::Table(fields))?))
+    Ok(Value::Table(crate::types::instantiate(
+        lua,
+        ty.as_table(),
+        Value::Table(fields),
+    )?))
 }
 
 pub(crate) fn panic_text(p: &(dyn Any + Send)) -> String {
@@ -274,7 +295,9 @@ fn translate(lua: &Lua, holder: &Table, shared: &Shared) -> Result<Value> {
         Ok(Ok(v)) => v,
         Ok(Err(_)) => return Ok(Value::Nil),
     };
-    let Value::Error(err) = v else { return Ok(Value::Nil) };
+    let Value::Error(err) = v else {
+        return Ok(Value::Nil);
+    };
     if let Some(e) = err.exception() {
         match e.instance(lua) {
             Ok(t) => return Ok(Value::Table(t)),

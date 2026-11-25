@@ -34,7 +34,11 @@ pub struct NlcLoader {
         ) -> c_int,
     >,
     pub read: Option<
-        unsafe extern "C" fn(data: *mut c_void, name: *const c_char, size: *mut usize) -> *const c_char,
+        unsafe extern "C" fn(
+            data: *mut c_void,
+            name: *const c_char,
+            size: *mut usize,
+        ) -> *const c_char,
     >,
     pub release:
         Option<unsafe extern "C" fn(data: *mut c_void, name: *const c_char, buf: *const c_char)>,
@@ -93,7 +97,11 @@ pub struct NlcResult {
 impl NlcResult {
     fn from_output(out: CompileOutput) -> NlcResult {
         let (diagnostics, strings) = c_diagnostics(&out.diagnostics);
-        NlcResult { chunk: out.chunk, diagnostics, _strings: strings }
+        NlcResult {
+            chunk: out.chunk,
+            diagnostics,
+            _strings: strings,
+        }
     }
 }
 
@@ -152,7 +160,10 @@ pub(crate) fn panic_message(payload: &(dyn Any + Send)) -> String {
 }
 
 fn file_of(chunk_name: &str) -> String {
-    chunk_name.strip_prefix(['@', '=']).unwrap_or(chunk_name).to_owned()
+    chunk_name
+        .strip_prefix(['@', '='])
+        .unwrap_or(chunk_name)
+        .to_owned()
 }
 
 /// The result for a compile that panicked.
@@ -189,7 +200,12 @@ pub(crate) struct CLoader {
 
 impl CLoader {
     pub(crate) fn new(raw: NlcLoader) -> CLoader {
-        CLoader { raw, names: RefCell::new(HashMap::new()), decls: RefCell::new(Vec::new()), missing: RefCell::new(Vec::new()) }
+        CLoader {
+            raw,
+            names: RefCell::new(HashMap::new()),
+            decls: RefCell::new(Vec::new()),
+            missing: RefCell::new(Vec::new()),
+        }
     }
 
     /// The text that stands for a name given as bytes.
@@ -215,7 +231,11 @@ impl CLoader {
 
     /// The bytes a text stands for.
     fn to_bytes(&self, text: &str) -> Vec<u8> {
-        self.names.borrow().get(text).cloned().unwrap_or_else(|| text.as_bytes().to_vec())
+        self.names
+            .borrow()
+            .get(text)
+            .cloned()
+            .unwrap_or_else(|| text.as_bytes().to_vec())
     }
 
     fn c_name(&self, text: &str) -> Option<CString> {
@@ -304,14 +324,18 @@ fn compile_caught(
     options: &CompileOptions,
     loader: &dyn Loader,
 ) -> CompileOutput {
-    match catch_unwind(AssertUnwindSafe(|| compile(source, chunk_name, options, loader))) {
+    match catch_unwind(AssertUnwindSafe(|| {
+        compile(source, chunk_name, options, loader)
+    })) {
         Ok(out) => out,
         Err(payload) => {
             // Formatting the message could itself panic in theory (a payload
             // whose Display panics is impossible here: only &str and String
             // are read), so the fallback is guarded too.
-            catch_unwind(AssertUnwindSafe(|| internal_error(chunk_name, payload.as_ref())))
-                .unwrap_or_default()
+            catch_unwind(AssertUnwindSafe(|| {
+                internal_error(chunk_name, payload.as_ref())
+            }))
+            .unwrap_or_default()
         }
     }
 }
@@ -377,9 +401,14 @@ unsafe fn nl_compile_with(
                 CompileOptions {
                     checks: o.checks != 0,
                     strip: o.strip != 0,
-                    emit: if o.bytecode != 0 { driver::Emit::Bytecode } else { driver::Emit::Lua },
+                    emit: if o.bytecode != 0 {
+                        driver::Emit::Bytecode
+                    } else {
+                        driver::Emit::Lua
+                    },
                     level: if o.level >= 1 { 1 } else { 0 },
-                    localize: driver::Localize::from_level(i64::from(o.localize)).unwrap_or_default(),
+                    localize: driver::Localize::from_level(i64::from(o.localize))
+                        .unwrap_or_default(),
                     ..CompileOptions::default()
                 }
             }
@@ -438,7 +467,17 @@ pub unsafe extern "C" fn nl_compile(
     loader: *const NlcLoader,
 ) -> *mut NlcResult {
     // SAFETY: the caller's guarantees are those of nl_compile_with.
-    unsafe { nl_compile_with(driver::compile, true, source, size, chunkname, options, loader) }
+    unsafe {
+        nl_compile_with(
+            driver::compile,
+            true,
+            source,
+            size,
+            chunkname,
+            options,
+            loader,
+        )
+    }
 }
 
 /// The chunk, or NULL when the compile failed (nlc.h).
@@ -469,8 +508,10 @@ pub unsafe extern "C" fn nlc_chunk(r: *const NlcResult, size: *mut usize) -> *co
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn nlc_ndiagnostics(r: *const NlcResult) -> usize {
     // SAFETY: `r` is NULL or a live result (the caller's guarantee).
-    catch_unwind(AssertUnwindSafe(|| unsafe { r.as_ref() }.map_or(0, |r| r.diagnostics.len())))
-        .unwrap_or(0)
+    catch_unwind(AssertUnwindSafe(|| {
+        unsafe { r.as_ref() }.map_or(0, |r| r.diagnostics.len())
+    }))
+    .unwrap_or(0)
 }
 
 /// Diagnostic `i`, or NULL past the end (nlc.h).
@@ -509,7 +550,12 @@ pub unsafe extern "C" fn nlc_free(r: *mut NlcResult) {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
     use std::cell::RefCell;
@@ -533,7 +579,8 @@ mod tests {
         // SAFETY: tests pass a `Files` as data and valid strings.
         let files = unsafe { &*(data as *const Files) };
         let path = unsafe { CStr::from_ptr(path) }.to_str().unwrap();
-        let from = (!from.is_null()).then(|| unsafe { CStr::from_ptr(from) }.to_str().unwrap().to_owned());
+        let from =
+            (!from.is_null()).then(|| unsafe { CStr::from_ptr(from) }.to_str().unwrap().to_owned());
         *files.last_from.borrow_mut() = from;
         let name = format!("/{path}.nl");
         if !files.files.contains_key(&name) || name.len() + 1 > size {
@@ -547,7 +594,11 @@ mod tests {
         1
     }
 
-    unsafe extern "C" fn t_read(data: *mut c_void, name: *const c_char, size: *mut usize) -> *const c_char {
+    unsafe extern "C" fn t_read(
+        data: *mut c_void,
+        name: *const c_char,
+        size: *mut usize,
+    ) -> *const c_char {
         // SAFETY: tests pass a `Files` as data.
         let files = unsafe { &mut *(data as *mut Files) };
         let name = unsafe { CStr::from_ptr(name) }.to_str().unwrap();
@@ -569,7 +620,10 @@ mod tests {
 
     fn files(entries: &[(&str, &str)]) -> Box<Files> {
         Box::new(Files {
-            files: entries.iter().map(|(k, v)| ((*k).to_owned(), v.as_bytes().to_vec())).collect(),
+            files: entries
+                .iter()
+                .map(|(k, v)| ((*k).to_owned(), v.as_bytes().to_vec()))
+                .collect(),
             reads: 0,
             releases: 0,
             last_from: RefCell::new(None),
@@ -590,21 +644,50 @@ mod tests {
 
     /// Compiles with `compile` through the C ABI and returns the chunk and
     /// diagnostics read back through the C accessors.
-    fn run(compile: CompileFn, src: &str, name: &str, ld: &NlcLoader) -> (Option<Vec<u8>>, Vec<Diag>) {
+    fn run(
+        compile: CompileFn,
+        src: &str,
+        name: &str,
+        ld: &NlcLoader,
+    ) -> (Option<Vec<u8>>, Vec<Diag>) {
         let name_c = CString::new(name).unwrap();
-        let opts = NlcOptions { checks: 1, strip: 0, bytecode: 0, level: 0, decls: ptr::null(), ndecls: 0, localize: 1 };
+        let opts = NlcOptions {
+            checks: 1,
+            strip: 0,
+            bytecode: 0,
+            level: 0,
+            decls: ptr::null(),
+            ndecls: 0,
+            localize: 1,
+        };
         unsafe {
-            let r = nl_compile_with(compile, false, src.as_ptr().cast(), src.len(), name_c.as_ptr(), &opts, ld);
+            let r = nl_compile_with(
+                compile,
+                false,
+                src.as_ptr().cast(),
+                src.len(),
+                name_c.as_ptr(),
+                &opts,
+                ld,
+            );
             assert!(!r.is_null());
             let mut size = 0usize;
             let c = nlc_chunk(r, &mut size);
-            let chunk = (!c.is_null()).then(|| std::slice::from_raw_parts(c.cast::<u8>(), size).to_vec());
+            let chunk =
+                (!c.is_null()).then(|| std::slice::from_raw_parts(c.cast::<u8>(), size).to_vec());
             let n = nlc_ndiagnostics(r);
             let mut diags = Vec::new();
             for i in 0..n {
                 let d = &*nlc_diagnostic(r, i);
                 let s = |p: *const c_char| CStr::from_ptr(p).to_str().unwrap().to_owned();
-                diags.push((d.severity, s(d.code), s(d.message), s(d.file), d.line, d.column));
+                diags.push((
+                    d.severity,
+                    s(d.code),
+                    s(d.message),
+                    s(d.file),
+                    d.line,
+                    d.column,
+                ));
             }
             assert!(nlc_diagnostic(r, n).is_null());
             nlc_free(r);
@@ -613,7 +696,10 @@ mod tests {
     }
 
     fn echo(src: &[u8], _name: &str, _o: &CompileOptions, _l: &dyn Loader) -> CompileOutput {
-        CompileOutput { chunk: Some(src.to_vec()), diagnostics: vec![] }
+        CompileOutput {
+            chunk: Some(src.to_vec()),
+            diagnostics: vec![],
+        }
     }
 
     #[test]
@@ -653,7 +739,17 @@ mod tests {
         let (chunk, diags) = run(diagnose, "", "@/m.nl", &ld);
         assert!(chunk.is_none());
         assert_eq!(diags.len(), 3);
-        assert_eq!(diags[0], (NLC_DIAG_ERROR, "undeclared-name".into(), "x is not declared".into(), "/m.nl".into(), 3, 7));
+        assert_eq!(
+            diags[0],
+            (
+                NLC_DIAG_ERROR,
+                "undeclared-name".into(),
+                "x is not declared".into(),
+                "/m.nl".into(),
+                3,
+                7
+            )
+        );
         assert_eq!(diags[1].0, NLC_DIAG_WARNING);
         assert_eq!(diags[1].2, "nul\u{FFFD}inside");
         assert_eq!(diags[2].0, NLC_DIAG_LINT);
@@ -666,7 +762,10 @@ mod tests {
         let text = l.read(&found).expect("lib/a reads");
         assert!(l.resolve(from, "missing").is_none());
         assert!(l.read("/missing.nl").is_none());
-        CompileOutput { chunk: Some(text), diagnostics: vec![] }
+        CompileOutput {
+            chunk: Some(text),
+            diagnostics: vec![],
+        }
     }
 
     #[test]
@@ -697,7 +796,9 @@ mod tests {
         // SAFETY: tests pass a `Latin1` as data and valid strings.
         let l = unsafe { &*(data as *const Latin1) };
         if !from.is_null() {
-            l.froms.borrow_mut().push(unsafe { CStr::from_ptr(from) }.to_bytes().to_vec());
+            l.froms
+                .borrow_mut()
+                .push(unsafe { CStr::from_ptr(from) }.to_bytes().to_vec());
         }
         let path = unsafe { CStr::from_ptr(path) }.to_bytes();
         // "caf\xe9/" + path + ".nl", as a Latin-1 file system would name it.
@@ -715,16 +816,27 @@ mod tests {
         1
     }
 
-    unsafe extern "C" fn l1_read(data: *mut c_void, name: *const c_char, size: *mut usize) -> *const c_char {
+    unsafe extern "C" fn l1_read(
+        data: *mut c_void,
+        name: *const c_char,
+        size: *mut usize,
+    ) -> *const c_char {
         // SAFETY: tests pass a `Latin1` as data.
         let l = unsafe { &*(data as *const Latin1) };
-        l.reads.borrow_mut().push(unsafe { CStr::from_ptr(name) }.to_bytes().to_vec());
+        l.reads
+            .borrow_mut()
+            .push(unsafe { CStr::from_ptr(name) }.to_bytes().to_vec());
         static TEXT: &[u8] = b"contents";
         unsafe { *size = TEXT.len() };
         TEXT.as_ptr().cast::<c_char>()
     }
 
-    fn imports_twice(_src: &[u8], name: &str, _o: &CompileOptions, l: &dyn Loader) -> CompileOutput {
+    fn imports_twice(
+        _src: &[u8],
+        name: &str,
+        _o: &CompileOptions,
+        l: &dyn Loader,
+    ) -> CompileOutput {
         let from = name.strip_prefix('@');
         let a = l.resolve(from, "a").expect("a resolves");
         let b = l.resolve(from, "b").expect("b resolves");
@@ -732,12 +844,18 @@ mod tests {
         assert!(l.read(&a).is_some() && l.read(&b).is_some());
         // An import of the imported file: `from` is a name given back.
         assert!(l.resolve(Some(&a), "c").is_some());
-        CompileOutput { chunk: Some(Vec::new()), diagnostics: vec![] }
+        CompileOutput {
+            chunk: Some(Vec::new()),
+            diagnostics: vec![],
+        }
     }
 
     #[test]
     fn names_that_are_not_utf8_go_back_as_the_same_bytes() {
-        let l = Box::new(Latin1 { froms: RefCell::new(vec![]), reads: RefCell::new(vec![]) });
+        let l = Box::new(Latin1 {
+            froms: RefCell::new(vec![]),
+            reads: RefCell::new(vec![]),
+        });
         let ld = NlcLoader {
             resolve: Some(l1_resolve),
             read: Some(l1_read),
@@ -746,17 +864,40 @@ mod tests {
         };
         // The chunk is itself a file with a Latin-1 name.
         let name = b"@caf\xe9/main.nl\0";
-        let opts = NlcOptions { checks: 1, strip: 0, bytecode: 0, level: 0, decls: ptr::null(), ndecls: 0, localize: 1 };
+        let opts = NlcOptions {
+            checks: 1,
+            strip: 0,
+            bytecode: 0,
+            level: 0,
+            decls: ptr::null(),
+            ndecls: 0,
+            localize: 1,
+        };
         unsafe {
-            let r = nl_compile_with(imports_twice, false, ptr::null(), 0, name.as_ptr().cast(), &opts, &ld);
+            let r = nl_compile_with(
+                imports_twice,
+                false,
+                ptr::null(),
+                0,
+                name.as_ptr().cast(),
+                &opts,
+                &ld,
+            );
             assert!(!r.is_null());
             assert_eq!(nlc_ndiagnostics(r), 0);
             nlc_free(r);
         }
-        assert_eq!(*l.reads.borrow(), vec![b"caf\xe9/a.nl".to_vec(), b"caf\xe9/b.nl".to_vec()]);
+        assert_eq!(
+            *l.reads.borrow(),
+            vec![b"caf\xe9/a.nl".to_vec(), b"caf\xe9/b.nl".to_vec()]
+        );
         assert_eq!(
             *l.froms.borrow(),
-            vec![b"caf\xe9/main.nl".to_vec(), b"caf\xe9/main.nl".to_vec(), b"caf\xe9/a.nl".to_vec()]
+            vec![
+                b"caf\xe9/main.nl".to_vec(),
+                b"caf\xe9/main.nl".to_vec(),
+                b"caf\xe9/a.nl".to_vec()
+            ]
         );
     }
 
@@ -772,7 +913,11 @@ mod tests {
         assert!(chunk.is_none());
         assert_eq!(diags.len(), 1);
         assert_eq!(diags[0].1, "internal-error");
-        assert!(diags[0].2.contains("the resolver fell over"), "{}", diags[0].2);
+        assert!(
+            diags[0].2.contains("the resolver fell over"),
+            "{}",
+            diags[0].2
+        );
         assert_eq!(diags[0].3, "stdin");
     }
 
@@ -785,7 +930,15 @@ mod tests {
         let name = c"=stdin";
         let src = b"print(1)\n";
         for (bytecode, is_dump) in [(1, true), (0, false)] {
-            let opts = NlcOptions { checks: 1, strip: 0, bytecode, level: 0, decls: ptr::null(), ndecls: 0, localize: 1 };
+            let opts = NlcOptions {
+                checks: 1,
+                strip: 0,
+                bytecode,
+                level: 0,
+                decls: ptr::null(),
+                ndecls: 0,
+                localize: 1,
+            };
             let chunk = unsafe {
                 let r = nl_compile(src.as_ptr().cast(), src.len(), name.as_ptr(), &opts, &ld);
                 assert!(!r.is_null());
@@ -807,30 +960,61 @@ mod tests {
     /// however many files the compile checks.
     #[test]
     fn declaration_files_are_read_through_the_loader() {
-        let mut f = files(&[("game.d.nl", "declare fn host_hello(): String\n"), ("/lib/a.nl", "pub fn f\n  1\nend\n")]);
+        let mut f = files(&[
+            ("game.d.nl", "declare fn host_hello(): String\n"),
+            ("/lib/a.nl", "pub fn f\n  1\nend\n"),
+        ]);
         let ld = loader(&mut f);
         let src = b"import { f } from 'lib/a'\nprint host_hello(), f\n";
         let name = c"@/main.nl";
         let run = |names: &[&std::ffi::CStr]| {
             let ptrs: Vec<*const c_char> = names.iter().map(|n| n.as_ptr()).collect();
-            let opts = NlcOptions { checks: 1, strip: 0, bytecode: 0, level: 0, decls: ptrs.as_ptr(), ndecls: ptrs.len(), localize: 1 };
+            let opts = NlcOptions {
+                checks: 1,
+                strip: 0,
+                bytecode: 0,
+                level: 0,
+                decls: ptrs.as_ptr(),
+                ndecls: ptrs.len(),
+                localize: 1,
+            };
             unsafe {
                 let r = nl_compile(src.as_ptr().cast(), src.len(), name.as_ptr(), &opts, &ld);
                 assert!(!r.is_null());
                 let mut size = 0usize;
                 let chunk = !nlc_chunk(r, &mut size).is_null();
-                let codes: Vec<String> = (0..nlc_ndiagnostics(r)).map(|i| CStr::from_ptr((*nlc_diagnostic(r, i)).code).to_str().unwrap().to_owned()).collect();
+                let codes: Vec<String> = (0..nlc_ndiagnostics(r))
+                    .map(|i| {
+                        CStr::from_ptr((*nlc_diagnostic(r, i)).code)
+                            .to_str()
+                            .unwrap()
+                            .to_owned()
+                    })
+                    .collect();
                 nlc_free(r);
                 (chunk, codes)
             }
         };
         let (chunk, codes) = run(&[]);
-        assert!(!chunk && codes.contains(&"undeclared-name".to_owned()), "{codes:?}");
+        assert!(
+            !chunk && codes.contains(&"undeclared-name".to_owned()),
+            "{codes:?}"
+        );
         let (chunk, codes) = run(&[c"game.d.nl"]);
         assert!(chunk, "{codes:?}");
         let (chunk, codes) = run(&[c"game.d.nl", c"missing.d.nl"]);
-        assert!(!chunk && codes.first().map(String::as_str) == Some("missing-declaration-file"), "{codes:?}");
-        assert_eq!(codes.iter().filter(|c| *c == "missing-declaration-file").count(), 1, "{codes:?}");
+        assert!(
+            !chunk && codes.first().map(String::as_str) == Some("missing-declaration-file"),
+            "{codes:?}"
+        );
+        assert_eq!(
+            codes
+                .iter()
+                .filter(|c| *c == "missing-declaration-file")
+                .count(),
+            1,
+            "{codes:?}"
+        );
     }
 
     #[test]
@@ -840,7 +1024,15 @@ mod tests {
             assert_eq!(nlc_ndiagnostics(ptr::null()), 0);
             assert!(nlc_diagnostic(ptr::null(), 0).is_null());
             nlc_free(ptr::null_mut());
-            let r = nl_compile_with(echo, false, ptr::null(), 0, ptr::null(), ptr::null(), ptr::null());
+            let r = nl_compile_with(
+                echo,
+                false,
+                ptr::null(),
+                0,
+                ptr::null(),
+                ptr::null(),
+                ptr::null(),
+            );
             assert!(!r.is_null());
             let mut size = 99usize;
             assert!(!nlc_chunk(r, &mut size).is_null());
@@ -858,10 +1050,17 @@ mod tests {
         let src = "let x = 1\n";
         let name = CString::new("=t").unwrap();
         unsafe {
-            let r = nl_compile(src.as_ptr().cast(), src.len(), name.as_ptr(), ptr::null(), &ld);
+            let r = nl_compile(
+                src.as_ptr().cast(),
+                src.len(),
+                name.as_ptr(),
+                ptr::null(),
+                &ld,
+            );
             assert!(!r.is_null());
             let chunk = nlc_chunk(r, ptr::null_mut());
-            let has_error = (0..nlc_ndiagnostics(r)).any(|i| (*nlc_diagnostic(r, i)).severity == NLC_DIAG_ERROR);
+            let has_error = (0..nlc_ndiagnostics(r))
+                .any(|i| (*nlc_diagnostic(r, i)).severity == NLC_DIAG_ERROR);
             assert!(!chunk.is_null() || has_error);
             nlc_free(r);
         }

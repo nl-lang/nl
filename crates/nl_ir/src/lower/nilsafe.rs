@@ -24,8 +24,8 @@
 //! closure, no runtime call: a test and a jump on both backends (`ISNEP`
 //! and `JMP` in bytecode).
 
-use nl_sema::util::*;
 use nl_sema::MemberHint;
+use nl_sema::util::*;
 use nl_syntax::{SyntaxKind, SyntaxNode, TextRange};
 
 use super::Lowerer;
@@ -68,10 +68,16 @@ impl Lowerer<'_> {
             return None;
         }
         let r = self.new_local("v");
-        self.emit(StmtKind::Local { locals: vec![r], values: Vec::new() });
+        self.emit(StmtKind::Local {
+            locals: vec![r],
+            values: Vec::new(),
+        });
         self.guard_chain(node, |l| {
             let v = l.expr1(node);
-            l.emit(StmtKind::Assign { targets: vec![Place::Local(r)], values: vec![v] });
+            l.emit(StmtKind::Assign {
+                targets: vec![Place::Local(r)],
+                values: vec![v],
+            });
         });
         self.leave_chain(node);
         Some(Expr::Local(r))
@@ -92,7 +98,12 @@ impl Lowerer<'_> {
     /// step: the whole statement runs only when every test passes, so
     /// nothing is stored and the value is not evaluated otherwise.
     /// True when it was lowered here.
-    pub(crate) fn safe_assignment(&mut self, stmt: &SyntaxNode, target: &SyntaxNode, lower: fn(&mut Self, &SyntaxNode)) -> bool {
+    pub(crate) fn safe_assignment(
+        &mut self,
+        stmt: &SyntaxNode,
+        target: &SyntaxNode,
+        lower: fn(&mut Self, &SyntaxNode),
+    ) -> bool {
         if !has_safe_step(target) || !self.enter_chain(target) {
             return false;
         }
@@ -110,9 +121,13 @@ impl Lowerer<'_> {
         let mut keys = Vec::new();
         for s in &steps {
             let (key, value) = match s {
-                SafeStep::Postfix { step, receiver } if step.kind() == CALL_EXPR => (preset_key(receiver), self.safe_callee(receiver, &mut keys)),
+                SafeStep::Postfix { step, receiver } if step.kind() == CALL_EXPR => {
+                    (preset_key(receiver), self.safe_callee(receiver, &mut keys))
+                }
                 SafeStep::Postfix { receiver, .. } => (preset_key(receiver), self.expr1(receiver)),
-                SafeStep::Lua { path, step } => (preset_key(step), self.lua_path_before(path, step)),
+                SafeStep::Lua { path, step } => {
+                    (preset_key(step), self.lua_path_before(path, step))
+                }
             };
             let tested = self.tested(value);
             self.presets.insert(key, tested.clone());
@@ -123,7 +138,14 @@ impl Lowerer<'_> {
         inner(self);
         while let Some((cond, outer, line)) = frames.pop() {
             let then = Block::new(std::mem::replace(&mut self.stmts, outer));
-            self.stmts.push(Stmt { line, kind: StmtKind::If { cond, then, otherwise: None } });
+            self.stmts.push(Stmt {
+                line,
+                kind: StmtKind::If {
+                    cond,
+                    then,
+                    otherwise: None,
+                },
+            });
         }
         for k in keys {
             self.presets.remove(&k);
@@ -152,7 +174,9 @@ impl Lowerer<'_> {
             NAME_REF => self.name_raw(callee),
             AT_EXPR => self.at_expr(callee),
             FIELD_EXPR if !super::expr::is_len(callee) => {
-                let Some(recv) = expr_child(callee) else { return self.internal(callee, "member call") };
+                let Some(recv) = expr_child(callee) else {
+                    return self.internal(callee, "member call");
+                };
                 let r = self.expr1(&recv);
                 let r = self.tested(r);
                 self.presets.insert(preset_key(&recv), r.clone());
@@ -160,11 +184,17 @@ impl Lowerer<'_> {
                 match self.opts.hints.member(callee.text_range()) {
                     // A member of a declared struct, module or Lua
                     // class: a plain read, as after `.`.
-                    Some(MemberHint::Field { key } | MemberHint::Function { key } | MemberHint::Method { key }) => Expr::index(r, Expr::str(key)),
+                    Some(
+                        MemberHint::Field { key }
+                        | MemberHint::Function { key }
+                        | MemberHint::Method { key },
+                    ) => Expr::index(r, Expr::str(key)),
                     // A function of `Table`: called with the receiver.
                     Some(MemberHint::TableFn { key }) => super::expr::table_fn(key),
                     None => {
-                        let key = field_name(callee).map(|t| t.text().to_string()).unwrap_or_default();
+                        let key = field_name(callee)
+                            .map(|t| t.text().to_string())
+                            .unwrap_or_default();
                         self.index_read(r, Expr::str(&key))
                     }
                 }
@@ -180,9 +210,16 @@ impl Lowerer<'_> {
         let t = self.fresh_temp(x, "c");
         let body = self.sub_block(|l| {
             let y = l.expr1(b);
-            l.emit(StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![single(y)] });
+            l.emit(StmtKind::Assign {
+                targets: vec![Place::Local(t)],
+                values: vec![single(y)],
+            });
         });
-        self.emit(StmtKind::If { cond: Expr::binary(BinOp::Eq, Expr::Local(t), Expr::Nil), then: body, otherwise: None });
+        self.emit(StmtKind::If {
+            cond: Expr::binary(BinOp::Eq, Expr::Local(t), Expr::Nil),
+            then: body,
+            otherwise: None,
+        });
         Expr::Local(t)
     }
 }

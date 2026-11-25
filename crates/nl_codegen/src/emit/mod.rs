@@ -128,7 +128,11 @@ pub(crate) struct Exp {
 
 impl Exp {
     pub(crate) fn new(k: Kind) -> Exp {
-        Exp { k, t: NO_JMP, f: NO_JMP }
+        Exp {
+            k,
+            t: NO_JMP,
+            f: NO_JMP,
+        }
     }
 
     pub(crate) fn has_jump(&self) -> bool {
@@ -137,7 +141,10 @@ impl Exp {
 
     /// A constant (`expr_isk`).
     pub(crate) fn is_k(&self) -> bool {
-        matches!(self.k, Kind::Nil | Kind::False | Kind::True | Kind::Str(_) | Kind::Num(_))
+        matches!(
+            self.k,
+            Kind::Nil | Kind::False | Kind::True | Kind::Str(_) | Kind::Num(_)
+        )
     }
 
     pub(crate) fn is_k_nojump(&self) -> bool {
@@ -348,7 +355,8 @@ impl<'a> Gen<'a> {
         // The stack is never empty while compiling; a missing entry would
         // be a bug of this module, answered with an unused scratch state.
         if self.funcs.is_empty() {
-            self.funcs.push(FuncState::new("?".to_owned(), 0, false, false));
+            self.funcs
+                .push(FuncState::new("?".to_owned(), 0, false, false));
         }
         let n = self.funcs.len() - 1;
         #[allow(clippy::indexing_slicing)]
@@ -360,11 +368,15 @@ impl<'a> Gen<'a> {
     }
 
     pub(crate) fn err(&self, message: impl Into<String>) -> Error {
-        Error { line: self.line, message: message.into() }
+        Error {
+            line: self.line,
+            message: message.into(),
+        }
     }
 
     fn fname(&self) -> String {
-        self.fs_ref().map_or_else(|| "a function".to_owned(), |f| f.name.clone())
+        self.fs_ref()
+            .map_or_else(|| "a function".to_owned(), |f| f.name.clone())
     }
 
     // ---- instructions ----------------------------------------------------
@@ -378,7 +390,11 @@ impl<'a> Gen<'a> {
         self.jmp_patchval(jpc, pc, NO_REG, pc)?;
         self.fs().jpc = NO_JMP;
         if pc >= bc::MAX_BCINS {
-            return Err(self.err(format!("{} has more than {} bytecode instructions", self.fname(), bc::MAX_BCINS)));
+            return Err(self.err(format!(
+                "{} has more than {} bytecode instructions",
+                self.fname(),
+                bc::MAX_BCINS
+            )));
         }
         let fs = self.fs();
         fs.bc.push(ins);
@@ -465,7 +481,11 @@ impl<'a> Gen<'a> {
 
     fn jmp_next(&mut self, pc: u32) -> u32 {
         let delta = bc::j_of(self.ins_at(pc));
-        if delta == -1 { NO_JMP } else { (pc as i64 + 1 + i64::from(delta)) as u32 }
+        if delta == -1 {
+            NO_JMP
+        } else {
+            (pc as i64 + 1 + i64::from(delta)) as u32
+        }
     }
 
     /// True when an instruction on the list produces no value.
@@ -491,7 +511,14 @@ impl<'a> Gen<'a> {
             if reg != NO_REG && reg != bc::d_of(ins) {
                 bc::set_a(&mut ins, reg);
             } else {
-                bc::set_op(&mut ins, if op == Some(Op::ISTC) { Op::IST } else { Op::ISF });
+                bc::set_op(
+                    &mut ins,
+                    if op == Some(Op::ISTC) {
+                        Op::IST
+                    } else {
+                        Op::ISF
+                    },
+                );
                 bc::set_a(&mut ins, 0);
             }
             self.set_ins(tpc, ins);
@@ -523,7 +550,10 @@ impl<'a> Gen<'a> {
     pub(crate) fn jmp_patchins(&mut self, pc: u32, dest: u32) -> R<()> {
         let offset = dest.wrapping_sub(pc + 1).wrapping_add(bc::BCBIAS_J);
         if offset > bc::BCMAX_D {
-            return Err(self.err(format!("a control structure of {} is too long for one jump", self.fname())));
+            return Err(self.err(format!(
+                "a control structure of {} is too long for one jump",
+                self.fname()
+            )));
         }
         self.patch_ins(pc, |i| bc::set_d(i, offset));
         Ok(())
@@ -588,7 +618,11 @@ impl<'a> Gen<'a> {
         let pc = self.fs().pc();
         self.fs().jpc = NO_JMP;
         let mut j = pc.wrapping_sub(1);
-        let prev = if pc > 0 { Op::from_ins(self.ins_at(j)) } else { None };
+        let prev = if pc > 0 {
+            Op::from_ins(self.ins_at(j))
+        } else {
+            None
+        };
         if pc > 0 && j >= self.fs().lasttarget && prev == Some(Op::UCLO) {
             self.patch_ins(j, |i| bc::set_j(i, NO_JMP));
             self.fs().lasttarget = j + 1;
@@ -612,7 +646,11 @@ impl<'a> Gen<'a> {
         }
         let i = u32::try_from(self.fs().knum.len()).unwrap_or(u32::MAX);
         if i > bc::BCMAX_D {
-            return Err(self.err(format!("{} has more than {} number constants", self.fname(), bc::BCMAX_D + 1)));
+            return Err(self.err(format!(
+                "{} has more than {} number constants",
+                self.fname(),
+                bc::BCMAX_D + 1
+            )));
         }
         self.fs().knum.push(n);
         self.fs().knum_map.insert(bits, i);
@@ -622,7 +660,11 @@ impl<'a> Gen<'a> {
     fn check_kgc(&mut self) -> R<u32> {
         let i = u32::try_from(self.fs().kgc.len()).unwrap_or(u32::MAX);
         if i > bc::BCMAX_D {
-            return Err(self.err(format!("{} has more than {} constants", self.fname(), bc::BCMAX_D + 1)));
+            return Err(self.err(format!(
+                "{} has more than {} constants",
+                self.fname(),
+                bc::BCMAX_D + 1
+            )));
         }
         Ok(i)
     }
@@ -688,7 +730,11 @@ impl<'a> Gen<'a> {
         let pc = self.fs().pc() + 1;
         let fs = self.fs();
         let info = fs.vars.len();
-        fs.vars.push(VarInfo { name, startpc: pc, endpc: pc });
+        fs.vars.push(VarInfo {
+            name,
+            startpc: pc,
+            endpc: pc,
+        });
         fs.actvars.push(ActVar { id, info });
         if let Some(id) = id {
             fs.var_slots.insert(id, slot);
@@ -733,7 +779,10 @@ impl<'a> Gen<'a> {
         let level = self.funcs.len().saturating_sub(1);
         match self.upvalue(level, id)? {
             Some(idx) => Ok(Exp::new(Kind::Upval(idx))),
-            None => Err(self.err(format!("internal error: local `{}` is used outside its scope", String::from_utf8_lossy(&self.var_name(id))))),
+            None => Err(self.err(format!(
+                "internal error: local `{}` is used outside its scope",
+                String::from_utf8_lossy(&self.var_name(id))
+            ))),
         }
     }
 
@@ -743,8 +792,14 @@ impl<'a> Gen<'a> {
         if let Some(&idx) = self.funcs.get(level).and_then(|f| f.uv_map.get(&id)) {
             return Ok(Some(idx));
         }
-        let Some(parent) = level.checked_sub(1) else { return Ok(None) };
-        let desc = match self.funcs.get(parent).and_then(|f| f.var_slots.get(&id).copied()) {
+        let Some(parent) = level.checked_sub(1) else {
+            return Ok(None);
+        };
+        let desc = match self
+            .funcs
+            .get(parent)
+            .and_then(|f| f.var_slots.get(&id).copied())
+        {
             Some(slot) => {
                 let immutable = match id {
                     VarId::Rt => true,
@@ -758,7 +813,9 @@ impl<'a> Gen<'a> {
                 None => return Ok(None),
             },
         };
-        let Some(fs) = self.funcs.get_mut(level) else { return Ok(None) };
+        let Some(fs) = self.funcs.get_mut(level) else {
+            return Ok(None);
+        };
         let idx = u32::try_from(fs.upvals.len()).unwrap_or(u32::MAX);
         if idx >= bc::MAX_UPVAL {
             let name = fs.name.clone();
@@ -775,7 +832,9 @@ impl<'a> Gen<'a> {
     /// Marks the scope of function `level` that declares slot `slot` as
     /// having a captured local (`fscope_uvmark`).
     fn scope_uvmark(&mut self, level: usize, slot: u32) {
-        let Some(fs) = self.funcs.get_mut(level) else { return };
+        let Some(fs) = self.funcs.get_mut(level) else {
+            return;
+        };
         if let Some(bl) = fs.scopes.iter_mut().rev().find(|bl| bl.nactvar <= slot) {
             bl.flags |= SCOPE_UPVAL;
         }
@@ -787,14 +846,20 @@ impl<'a> Gen<'a> {
         let fs = self.fs();
         debug_assert_eq!(fs.freereg, fs.nactvar, "registers left over at scope start");
         let nactvar = fs.nactvar;
-        fs.scopes.push(Scope { nactvar, flags: if is_loop { SCOPE_LOOP } else { 0 }, gotos: Vec::new() });
+        fs.scopes.push(Scope {
+            nactvar,
+            flags: if is_loop { SCOPE_LOOP } else { 0 },
+            gotos: Vec::new(),
+        });
     }
 
     /// Ends the innermost scope (`fscope_end`): closes its captured locals,
     /// resolves its breaks when it is a loop, and hands its other pending
     /// gotos to the enclosing scope.
     pub(crate) fn scope_end(&mut self) -> R<()> {
-        let Some(mut bl) = self.fs().scopes.pop() else { return Ok(()) };
+        let Some(mut bl) = self.fs().scopes.pop() else {
+            return Ok(());
+        };
         self.var_remove(bl.nactvar);
         let fs = self.fs();
         fs.freereg = fs.nactvar;
@@ -818,7 +883,11 @@ impl<'a> Gen<'a> {
             }
             match self.fs().scopes.last_mut() {
                 Some(outer) => {
-                    outer.flags |= if g.target == Target::Break { SCOPE_BREAK } else { SCOPE_GOLA };
+                    outer.flags |= if g.target == Target::Break {
+                        SCOPE_BREAK
+                    } else {
+                        SCOPE_GOLA
+                    };
                     outer.gotos.push(g);
                 }
                 None => {
@@ -826,7 +895,9 @@ impl<'a> Gen<'a> {
                         line: g.line,
                         message: match g.target {
                             Target::Break => "internal error: `break` outside a loop".to_owned(),
-                            Target::Label(_) => "internal error: `continue` without its loop label".to_owned(),
+                            Target::Label(_) => {
+                                "internal error: `continue` without its loop label".to_owned()
+                            }
                         },
                     });
                 }
@@ -840,8 +911,17 @@ impl<'a> Gen<'a> {
         let line = self.line;
         let slot = self.fs().nactvar;
         if let Some(bl) = self.fs().scopes.last_mut() {
-            bl.flags |= if target == Target::Break { SCOPE_BREAK } else { SCOPE_GOLA };
-            bl.gotos.push(Goto { target, pc, slot, line });
+            bl.flags |= if target == Target::Break {
+                SCOPE_BREAK
+            } else {
+                SCOPE_GOLA
+            };
+            bl.gotos.push(Goto {
+                target,
+                pc,
+                slot,
+                line,
+            });
         }
     }
 
@@ -850,9 +930,13 @@ impl<'a> Gen<'a> {
         let pc = self.fs().pc();
         let slot = self.fs().nactvar;
         self.fs().lasttarget = pc;
-        let Some(bl) = self.fs().scopes.last_mut() else { return Ok(()) };
+        let Some(bl) = self.fs().scopes.last_mut() else {
+            return Ok(());
+        };
         bl.flags |= SCOPE_GOLA;
-        let (mine, rest): (Vec<Goto>, Vec<Goto>) = std::mem::take(&mut bl.gotos).into_iter().partition(|g| g.target == Target::Label(label));
+        let (mine, rest): (Vec<Goto>, Vec<Goto>) = std::mem::take(&mut bl.gotos)
+            .into_iter()
+            .partition(|g| g.target == Target::Label(label));
         bl.gotos = rest;
         for g in mine {
             self.gola_patch(g, pc, slot)?;
@@ -887,7 +971,14 @@ impl<'a> Gen<'a> {
 
     /// Starts compiling a function: its state, its outermost scope and its
     /// parameters.
-    pub(crate) fn func_begin(&mut self, name: String, line: u32, vararg: bool, method: bool, params: &[VarId]) -> R<()> {
+    pub(crate) fn func_begin(
+        &mut self,
+        name: String,
+        line: u32,
+        vararg: bool,
+        method: bool,
+        params: &[VarId],
+    ) -> R<()> {
         self.funcs.push(FuncState::new(name, line, vararg, method));
         self.scope_begin(false);
         for p in params {
@@ -903,9 +994,15 @@ impl<'a> Gen<'a> {
     /// (`fs_fixup_ret`, `fs_finish`).
     pub(crate) fn func_end(&mut self) -> R<Proto> {
         let lastpc = self.fs().pc();
-        let last_is_ret = lastpc > 0 && Op::from_ins(self.ins_at(lastpc - 1)).is_some_and(Op::is_ret_or_tail);
+        let last_is_ret =
+            lastpc > 0 && Op::from_ins(self.ins_at(lastpc - 1)).is_some_and(Op::is_ret_or_tail);
         if lastpc <= self.fs().lasttarget || !last_is_ret {
-            if self.fs().scopes.first().is_some_and(|bl| bl.flags & SCOPE_UPVAL != 0) {
+            if self
+                .fs()
+                .scopes
+                .first()
+                .is_some_and(|bl| bl.flags & SCOPE_UPVAL != 0)
+            {
                 self.emit_aj(Op::UCLO, 0, 0)?;
             }
             self.emit_ad(Op::RET0, 0, 1)?;
@@ -914,11 +1011,22 @@ impl<'a> Gen<'a> {
             bl.flags |= SCOPE_NOCLOSE;
         }
         self.scope_end()?;
-        let Some(fs) = self.funcs.pop() else { return Err(self.err("internal error: no function to finish")) };
+        let Some(fs) = self.funcs.pop() else {
+            return Err(self.err("internal error: no function to finish"));
+        };
         if let Some(g) = fs.scopes.iter().flat_map(|s| s.gotos.iter()).next() {
-            return Err(Error { line: g.line, message: "internal error: a `break` or `continue` has no target".to_owned() });
+            return Err(Error {
+                line: g.line,
+                message: "internal error: a `break` or `continue` has no target".to_owned(),
+            });
         }
-        let maxline = fs.lines.iter().copied().max().unwrap_or(fs.linedefined).max(fs.linedefined);
+        let maxline = fs
+            .lines
+            .iter()
+            .copied()
+            .max()
+            .unwrap_or(fs.linedefined)
+            .max(fs.linedefined);
         let mut flags = 0;
         if fs.vararg {
             flags |= proto::FLAG_VARARG;
@@ -977,7 +1085,11 @@ pub(crate) fn assigned_locals(chunk: &Chunk) -> HashSet<LocalId> {
                 }
                 StmtKind::Expr(e) => expr(e, out),
                 StmtKind::Do(b) => block(b, out),
-                StmtKind::If { cond, then, otherwise } => {
+                StmtKind::If {
+                    cond,
+                    then,
+                    otherwise,
+                } => {
                     expr(cond, out);
                     block(then, out);
                     if let Some(o) = otherwise {
@@ -988,7 +1100,13 @@ pub(crate) fn assigned_locals(chunk: &Chunk) -> HashSet<LocalId> {
                     expr(cond, out);
                     block(body, out);
                 }
-                StmtKind::NumericFor { start, limit, step, body, .. } => {
+                StmtKind::NumericFor {
+                    start,
+                    limit,
+                    step,
+                    body,
+                    ..
+                } => {
                     expr(start, out);
                     expr(limit, out);
                     if let Some(s) = step {
@@ -1036,12 +1154,20 @@ pub(crate) fn assigned_locals(chunk: &Chunk) -> HashSet<LocalId> {
                     }
                 }
             }
-            Expr::MemberCall { receiver, key, args } => {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => {
                 expr(receiver, out);
                 expr(key, out);
                 args.iter().for_each(|a| expr(a, out));
             }
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 expr(func, out);
                 expr(receiver, out);
                 args.iter().for_each(|a| expr(a, out));
@@ -1079,11 +1205,19 @@ pub(crate) fn has_closures(f: &Function) -> bool {
             }
             StmtKind::Expr(e) => expr(e),
             StmtKind::Do(b) => block(b),
-            StmtKind::If { cond, then, otherwise } => expr(cond) || block(then) || otherwise.as_ref().is_some_and(block),
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => expr(cond) || block(then) || otherwise.as_ref().is_some_and(block),
             StmtKind::While { cond, body } => expr(cond) || block(body),
-            StmtKind::NumericFor { start, limit, step, body, .. } => {
-                expr(start) || expr(limit) || step.as_ref().is_some_and(expr) || block(body)
-            }
+            StmtKind::NumericFor {
+                start,
+                limit,
+                step,
+                body,
+                ..
+            } => expr(start) || expr(limit) || step.as_ref().is_some_and(expr) || block(body),
             StmtKind::GenericFor { iter, body, .. } => iter.iter().any(expr) || block(body),
             StmtKind::Hoist { defs, rest } => block(defs) || block(rest),
             StmtKind::Break | StmtKind::Goto(_) | StmtKind::Label(_) => false,
@@ -1100,8 +1234,16 @@ pub(crate) fn has_closures(f: &Function) -> bool {
                 TableEntry::Item(v) => expr(v),
                 TableEntry::Pair(k, v) => expr(k) || expr(v),
             }),
-            Expr::MemberCall { receiver, key, args } => expr(receiver) || expr(key) || args.iter().any(expr),
-            Expr::MemberApply { func, receiver, args } => expr(func) || expr(receiver) || args.iter().any(expr),
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => expr(receiver) || expr(key) || args.iter().any(expr),
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => expr(func) || expr(receiver) || args.iter().any(expr),
             Expr::AutoGet { receiver, key } => expr(receiver) || expr(key),
             Expr::Nil
             | Expr::Bool(_)

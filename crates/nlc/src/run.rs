@@ -55,7 +55,12 @@ struct Parsed {
 
 /// Parses the options shared by `check`, `build` and `run`; `many`: the
 /// command takes several files.
-fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Result<Parsed, ExitCode> {
+fn parse_options(
+    args: &[String],
+    command: &str,
+    usage: &str,
+    many: bool,
+) -> Result<Parsed, ExitCode> {
     let mut files = Vec::new();
     let mut options = CompileOptions::default();
     let mut emit_given = false;
@@ -70,20 +75,28 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
             "--strip" => options.strip = true,
             "--no-static-resolution" => options.static_resolution = false,
             "--no-analyzer" => options.analyze = false,
-            s if s.starts_with("--profile=") => match nl_capi::Profile::from_name(s.trim_start_matches("--profile=")) {
-                Some(p) => options.profile = p,
-                None => {
-                    eprintln!("nlc {command}: `--profile` is `full`, `portable` or `gmod-client`\n\n{usage}");
-                    return Err(ExitCode::from(2));
+            s if s.starts_with("--profile=") => {
+                match nl_capi::Profile::from_name(s.trim_start_matches("--profile=")) {
+                    Some(p) => options.profile = p,
+                    None => {
+                        eprintln!(
+                            "nlc {command}: `--profile` is `full`, `portable` or `gmod-client`\n\n{usage}"
+                        );
+                        return Err(ExitCode::from(2));
+                    }
                 }
-            },
-            s if s.starts_with("--localize=") => match nl_capi::Localize::from_name(s.trim_start_matches("--localize=")) {
-                Some(l) => options.localize = l,
-                None => {
-                    eprintln!("nlc {command}: `--localize` is `none`, `std` or `all`\n\n{usage}");
-                    return Err(ExitCode::from(2));
+            }
+            s if s.starts_with("--localize=") => {
+                match nl_capi::Localize::from_name(s.trim_start_matches("--localize=")) {
+                    Some(l) => options.localize = l,
+                    None => {
+                        eprintln!(
+                            "nlc {command}: `--localize` is `none`, `std` or `all`\n\n{usage}"
+                        );
+                        return Err(ExitCode::from(2));
+                    }
                 }
-            },
+            }
             "--decl" => match it.next() {
                 Some(p) => decls.push(p.clone()),
                 None => {
@@ -91,7 +104,9 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
                     return Err(ExitCode::from(2));
                 }
             },
-            s if s.starts_with("--decl=") => decls.push(s.trim_start_matches("--decl=").to_string()),
+            s if s.starts_with("--decl=") => {
+                decls.push(s.trim_start_matches("--decl=").to_string())
+            }
             "--emit=lua" if command == "build" => {
                 options.emit = Emit::Lua;
                 emit_given = true;
@@ -131,8 +146,15 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
     // The portable profiles run Lua source on stock LuaJIT; Garry's Mod
     // refuses bytecode.
     if options.profile.is_stock() && options.emit == Emit::Bytecode {
-        let what = if command == "run" { "`--backend=bc`" } else { "`--emit=bc`" };
-        eprintln!("nlc {command}: the {} profile compiles to Lua source; {what} is for the VM fork\n\n{usage}", options.profile.name());
+        let what = if command == "run" {
+            "`--backend=bc`"
+        } else {
+            "`--emit=bc`"
+        };
+        eprintln!(
+            "nlc {command}: the {} profile compiles to Lua source; {what} is for the VM fork\n\n{usage}",
+            options.profile.name()
+        );
         return Err(ExitCode::from(2));
     }
     if options.profile.is_gmod() && command == "run" {
@@ -147,13 +169,29 @@ fn parse_options(args: &[String], command: &str, usage: &str, many: bool) -> Res
         eprintln!("nlc {command}: `--minify` is for Lua source (`--emit=lua`)\n\n{usage}");
         return Err(ExitCode::from(2));
     }
-    Ok(Parsed { files, options, emit_given, output, minify, jit, decls })
+    Ok(Parsed {
+        files,
+        options,
+        emit_given,
+        output,
+        minify,
+        jit,
+        decls,
+    })
 }
 
 fn parse_args(args: &[String], command: &str, usage: &str) -> Result<Args, ExitCode> {
     let p = parse_options(args, command, usage, false)?;
     let file = p.files.into_iter().next().unwrap_or_default();
-    Ok(Args { file, options: p.options, emit_given: p.emit_given, output: p.output, minify: p.minify, jit: p.jit, decls: p.decls })
+    Ok(Args {
+        file,
+        options: p.options,
+        emit_given: p.emit_given,
+        output: p.output,
+        minify: p.minify,
+        jit: p.jit,
+        decls: p.decls,
+    })
 }
 
 /// The text of the files that diagnostics point at, each read once: the
@@ -165,11 +203,21 @@ pub(crate) struct Sources(HashMap<String, Option<String>>);
 impl Sources {
     /// `name` is the canonical name of the compiled file, `bytes` its source.
     pub(crate) fn new(name: &str, bytes: &[u8]) -> Sources {
-        Sources(HashMap::from([(name.to_string(), Some(String::from_utf8_lossy(bytes).into_owned()))]))
+        Sources(HashMap::from([(
+            name.to_string(),
+            Some(String::from_utf8_lossy(bytes).into_owned()),
+        )]))
     }
 
     pub(crate) fn get(&mut self, file: &str) -> Option<&str> {
-        self.0.entry(file.to_string()).or_insert_with(|| std::fs::read(file).ok().map(|b| String::from_utf8_lossy(&b).into_owned())).as_deref()
+        self.0
+            .entry(file.to_string())
+            .or_insert_with(|| {
+                std::fs::read(file)
+                    .ok()
+                    .map(|b| String::from_utf8_lossy(&b).into_owned())
+            })
+            .as_deref()
     }
 }
 
@@ -200,14 +248,29 @@ pub fn cmd_check(args: &[String], usage: &str) -> ExitCode {
             continue;
         };
         let canonical = files.canonical(std::path::Path::new(path));
-        let out = nl_capi::compile(&source, &format!("@{canonical}"), &p.options, &LoaderRef(&files));
+        let out = nl_capi::compile(
+            &source,
+            &format!("@{canonical}"),
+            &p.options,
+            &LoaderRef(&files),
+        );
         let mut sources = Sources::new(&canonical, &source);
-        for d in out.diagnostics.iter().chain(&output_diagnostics(&lua, &p.options, &canonical, &source, out.chunk.as_deref())) {
+        for d in out.diagnostics.iter().chain(&output_diagnostics(
+            &lua,
+            &p.options,
+            &canonical,
+            &source,
+            out.chunk.as_deref(),
+        )) {
             report(d, &mut sources);
             failed |= d.severity == Severity::Error;
         }
     }
-    if failed { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if failed {
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }
 
 /// `nlc build --emit=lua|bc [-o path] <file>`: the backend's output on
@@ -227,22 +290,37 @@ pub fn cmd_build(args: &[String], usage: &str) -> ExitCode {
         return ExitCode::FAILURE;
     };
     let canonical = files.canonical(std::path::Path::new(&a.file));
-    let out = nl_capi::compile(&source, &format!("@{canonical}"), &a.options, &LoaderRef(&files));
+    let out = nl_capi::compile(
+        &source,
+        &format!("@{canonical}"),
+        &a.options,
+        &LoaderRef(&files),
+    );
     let mut sources = Sources::new(&canonical, &source);
-    let checked = output_diagnostics(&Lua::new(), &a.options, &canonical, &source, out.chunk.as_deref());
+    let checked = output_diagnostics(
+        &Lua::new(),
+        &a.options,
+        &canonical,
+        &source,
+        out.chunk.as_deref(),
+    );
     for d in out.diagnostics.iter().chain(&checked) {
         report(d, &mut sources);
     }
     let chunk = if checked.is_empty() { out.chunk } else { None };
     // `--minify`: as `nlc bundle` carries the file (nl_capi::minify).
     let chunk = match chunk {
-        Some(c) if a.minify => match nl_capi::minify::minify_bytes(&c, nl_capi::minify::MinifyOptions::COMPILED) {
-            Ok(m) => Some(m),
-            Err(e) => {
-                eprintln!("{canonical}: error: internal error: the Lua of this file does not minify: {e}");
-                None
+        Some(c) if a.minify => {
+            match nl_capi::minify::minify_bytes(&c, nl_capi::minify::MinifyOptions::COMPILED) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    eprintln!(
+                        "{canonical}: error: internal error: the Lua of this file does not minify: {e}"
+                    );
+                    None
+                }
             }
-        },
+        }
         other => other,
     };
     match chunk {
@@ -279,20 +357,36 @@ fn files_for(_options: &CompileOptions, decls: &[String]) -> Files {
 /// (`nl_capi::bundle::Check`).
 pub(crate) fn lua_check(lua: &Lua) -> impl Fn(&str, &str) -> Result<(), String> + '_ {
     move |name, text| {
-        lua.load(text).set_name(name).set_mode(ChunkMode::Text).into_function().map(|_| ()).map_err(|e| match e {
-            mlua::Error::SyntaxError { message, .. } => message,
-            other => other.to_string(),
-        })
+        lua.load(text)
+            .set_name(name)
+            .set_mode(ChunkMode::Text)
+            .into_function()
+            .map(|_| ())
+            .map_err(|e| match e {
+                mlua::Error::SyntaxError { message, .. } => message,
+                other => other.to_string(),
+            })
     }
 }
 
 /// For a gmod profile, the errors of the Lua a file compiled to
 /// (`nl_capi::bundle::check_output`); nothing otherwise.
-fn output_diagnostics(lua: &Lua, options: &CompileOptions, name: &str, source: &[u8], chunk: Option<&[u8]>) -> Vec<nl_capi::Diagnostic> {
+fn output_diagnostics(
+    lua: &Lua,
+    options: &CompileOptions,
+    name: &str,
+    source: &[u8],
+    chunk: Option<&[u8]>,
+) -> Vec<nl_capi::Diagnostic> {
     match chunk {
         Some(c) if options.profile.is_gmod() && options.emit == Emit::Lua => {
             let check = lua_check(lua);
-            nl_capi::bundle::check_output(name, &String::from_utf8_lossy(source), &String::from_utf8_lossy(c), Some(&check))
+            nl_capi::bundle::check_output(
+                name,
+                &String::from_utf8_lossy(source),
+                &String::from_utf8_lossy(c),
+                Some(&check),
+            )
         }
         _ => Vec::new(),
     }
@@ -332,7 +426,8 @@ fn run(a: &Args) -> Result<(), String> {
     for d in &a.decls {
         files.add_decl(d);
     }
-    let source = std::fs::read(&a.file).map_err(|e| format!("{}: error: cannot read the file: {e}", a.file))?;
+    let source = std::fs::read(&a.file)
+        .map_err(|e| format!("{}: error: cannot read the file: {e}", a.file))?;
     let canonical = files.canonical(std::path::Path::new(&a.file));
     let name = format!("@{canonical}");
     // Compile first, so that a compile error is reported as such: the
@@ -341,8 +436,17 @@ fn run(a: &Args) -> Result<(), String> {
     let Some(chunk) = out.chunk else {
         let mut msg = host::error_message(&out.diagnostics);
         let mut sources = Sources::new(&canonical, &source);
-        if let Some(d) = out.diagnostics.iter().find(|d| d.severity == Severity::Error) {
-            let s = sources.get(&d.file).map(|src| nl_capi::snippet::snippet(src, d.line, d.column, d.end_line, d.end_column)).unwrap_or_default();
+        if let Some(d) = out
+            .diagnostics
+            .iter()
+            .find(|d| d.severity == Severity::Error)
+        {
+            let s = sources
+                .get(&d.file)
+                .map(|src| {
+                    nl_capi::snippet::snippet(src, d.line, d.column, d.end_line, d.end_column)
+                })
+                .unwrap_or_default();
             if !s.is_empty() {
                 msg.push('\n');
                 msg.push_str(&s);
@@ -355,14 +459,30 @@ fn run(a: &Args) -> Result<(), String> {
     let lua_err = |e: mlua::Error| format!("nlc: {}", error_text(&e));
     match a.jit {
         Jit::On => {}
-        Jit::Off => lua.load("jit.off()").set_name("=nl host").exec().map_err(lua_err)?,
-        Jit::Hot => lua.load("jit.opt.start('hotloop=1')").set_name("=nl host").exec().map_err(lua_err)?,
+        Jit::Off => lua
+            .load("jit.off()")
+            .set_name("=nl host")
+            .exec()
+            .map_err(lua_err)?,
+        Jit::Hot => lua
+            .load("jit.opt.start('hotloop=1')")
+            .set_name("=nl host")
+            .exec()
+            .map_err(lua_err)?,
     }
     // Lua's `pcall`, taken before any script runs.
-    let protected: Function = lua.load("local pcall = pcall; return function(f, ...) return pcall(f, ...) end").set_name("=nl host").call(()).map_err(lua_err)?;
+    let protected: Function = lua
+        .load("local pcall = pcall; return function(f, ...) return pcall(f, ...) end")
+        .set_name("=nl host")
+        .call(())
+        .map_err(lua_err)?;
     host::install_debug_standin(&lua).map_err(lua_err)?;
     let host_table = host::host_table(&lua, files.clone(), a.options).map_err(lua_err)?;
-    let rt: Table = lua.load(host::RUNTIME).set_name("=nl runtime").call(host_table).map_err(lua_err)?;
+    let rt: Table = lua
+        .load(host::RUNTIME)
+        .set_name("=nl runtime")
+        .call(host_table)
+        .map_err(lua_err)?;
     let timers = Timers::install(&lua, &rt).map_err(lua_err)?;
     expose_runtime_for_tests(&lua, &rt).map_err(lua_err)?;
 
@@ -371,13 +491,20 @@ fn run(a: &Args) -> Result<(), String> {
         Emit::Lua => ChunkMode::Text,
         Emit::Bytecode => ChunkMode::Binary,
     };
-    let p: Function = lua.load(&chunk[..]).set_name(&name).set_mode(mode).into_function().map_err(lua_err)?;
+    let p: Function = lua
+        .load(&chunk[..])
+        .set_name(&name)
+        .set_mode(mode)
+        .into_function()
+        .map_err(lua_err)?;
     let main: Function = p.call(rt.clone()).map_err(lua_err)?;
     let run_main: Function = rt.get("runmain").map_err(lua_err)?;
     // `rt.runmain` raises the error with its trace already in the message;
     // called through `pcall`, it reaches here without the second traceback
     // that mlua would add to a string error.
-    let (ok, err): (bool, Value) = protected.call((run_main, main, name.clone())).map_err(lua_err)?;
+    let (ok, err): (bool, Value) = protected
+        .call((run_main, main, name.clone()))
+        .map_err(lua_err)?;
     if !ok {
         let text = match &err {
             Value::String(s) => s.to_string_lossy(),
@@ -405,7 +532,9 @@ fn run(a: &Args) -> Result<(), String> {
         if n <= 0 {
             break;
         }
-        return Err(format!("nlc: {n} task(s) still pending and nothing left to run"));
+        return Err(format!(
+            "nlc: {n} task(s) still pending and nothing left to run"
+        ));
     }
     Ok(())
 }
@@ -442,7 +571,11 @@ impl Timers {
             if seconds == f64::INFINITY {
                 return Ok(());
             }
-            let secs = if seconds.is_finite() && seconds > 0.0 { seconds.min(1.0e6) } else { 0.0 };
+            let secs = if seconds.is_finite() && seconds > 0.0 {
+                seconds.min(1.0e6)
+            } else {
+                0.0
+            };
             let at = std::time::Instant::now() + std::time::Duration::from_secs_f64(secs);
             seq += 1;
             l.borrow_mut().push((at, seq, wake));
@@ -457,7 +590,11 @@ impl Timers {
     fn next(&self) -> Option<Function> {
         let (at, wake) = {
             let mut list = self.list.borrow_mut();
-            let i = list.iter().enumerate().min_by_key(|(_, (at, seq, _))| (*at, *seq)).map(|(i, _)| i)?;
+            let i = list
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, (at, seq, _))| (*at, *seq))
+                .map(|(i, _)| i)?;
             let (at, _, wake) = list.remove(i);
             (at, wake)
         };
@@ -472,7 +609,9 @@ impl Timers {
 fn error_text(e: &mlua::Error) -> String {
     match e {
         mlua::Error::RuntimeError(s) => s.clone(),
-        mlua::Error::CallbackError { traceback, cause } => format!("{}\n{traceback}", error_text(cause)),
+        mlua::Error::CallbackError { traceback, cause } => {
+            format!("{}\n{traceback}", error_text(cause))
+        }
         mlua::Error::ExternalError(x) => x.to_string(),
         other => other.to_string(),
     }

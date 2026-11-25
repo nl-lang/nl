@@ -78,7 +78,9 @@ pub fn parse_decl_file(source: &str) -> Parse {
 pub fn doc_comment(node: &SyntaxNode) -> Option<String> {
     let mut lines = Vec::new();
     for element in node.children_with_tokens() {
-        let Some(token) = element.as_token() else { break };
+        let Some(token) = element.as_token() else {
+            break;
+        };
         let marker = match token.kind() {
             SyntaxKind::DOC_COMMENT => "##",
             // A `#` line continues a doc comment; it never starts one.
@@ -91,5 +93,9 @@ pub fn doc_comment(node: &SyntaxNode) -> Option<String> {
         let text = text.strip_prefix(' ').unwrap_or(text);
         lines.push(text.to_string());
     }
-    if lines.is_empty() { None } else { Some(lines.join("\n")) }
+    if lines.is_empty() {
+        None
+    } else {
+        Some(lines.join("\n"))
+    }
 }

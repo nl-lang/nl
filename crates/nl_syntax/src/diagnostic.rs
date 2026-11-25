@@ -28,12 +28,20 @@ pub struct Diagnostic {
 impl Diagnostic {
     /// An error at `range`.
     pub fn error(range: TextRange, message: impl Into<String>) -> Self {
-        Diagnostic { severity: Severity::Error, range, message: message.into() }
+        Diagnostic {
+            severity: Severity::Error,
+            range,
+            message: message.into(),
+        }
     }
 
     /// A warning at `range`.
     pub fn warning(range: TextRange, message: impl Into<String>) -> Self {
-        Diagnostic { severity: Severity::Warning, range, message: message.into() }
+        Diagnostic {
+            severity: Severity::Warning,
+            range,
+            message: message.into(),
+        }
     }
 
     /// True for [`Severity::Error`].

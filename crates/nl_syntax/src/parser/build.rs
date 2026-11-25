@@ -95,7 +95,10 @@ pub(crate) fn build_tree(lexed: &Lexed<'_>, mut events: Vec<Event>) -> GreenNode
             continue;
         };
         match event {
-            Event::Start { kind, forward_parent } => {
+            Event::Start {
+                kind,
+                forward_parent,
+            } => {
                 kinds.clear();
                 if let Some(kind) = kind {
                     kinds.push(kind);
@@ -106,7 +109,11 @@ pub(crate) fn build_tree(lexed: &Lexed<'_>, mut events: Vec<Event>) -> GreenNode
                     idx = idx.saturating_add(distance as usize);
                     fp = None;
                     if let Some(parent) = events.get_mut(idx) {
-                        if let Event::Start { kind, forward_parent } = std::mem::replace(parent, TOMBSTONE) {
+                        if let Event::Start {
+                            kind,
+                            forward_parent,
+                        } = std::mem::replace(parent, TOMBSTONE)
+                        {
                             if let Some(kind) = kind {
                                 kinds.push(kind);
                             }
@@ -122,7 +129,9 @@ pub(crate) fn build_tree(lexed: &Lexed<'_>, mut events: Vec<Event>) -> GreenNode
                         skipped_root = true;
                         continue;
                     }
-                    let later = kinds.get(..n).is_some_and(|ks| ks.iter().any(|&k| takes_doc_comment(k)))
+                    let later = kinds
+                        .get(..n)
+                        .is_some_and(|ks| ks.iter().any(|&k| takes_doc_comment(k)))
                         || later_starts_take_doc(&events, i + 1);
                     b.open(kind, later);
                 }
@@ -140,7 +149,10 @@ pub(crate) fn build_tree(lexed: &Lexed<'_>, mut events: Vec<Event>) -> GreenNode
     b.inner.finish()
 }
 
-const TOMBSTONE: Event = Event::Start { kind: None, forward_parent: None };
+const TOMBSTONE: Event = Event::Start {
+    kind: None,
+    forward_parent: None,
+};
 
 /// A run of `Start` events from `from` (before the next token) contains a
 /// node that takes a doc comment.
@@ -165,7 +177,8 @@ impl Builder<'_> {
 
     /// The lexer token at `i` is one the parser does not consume.
     fn is_pending(&self, i: usize) -> bool {
-        self.lex_kind(i).is_some_and(|k| k.is_trivia() || k == ERROR)
+        self.lex_kind(i)
+            .is_some_and(|k| k.is_trivia() || k == ERROR)
     }
 
     /// End (exclusive) of the run of pending tokens at `lex_idx`.
@@ -306,16 +319,29 @@ impl Builder<'_> {
     fn token(&mut self, kind: SyntaxKind, range: TextRange) {
         // Pending tokens that lie before this one.
         while self.is_pending(self.lex_idx)
-            && self.lexed.tokens.get(self.lex_idx).is_some_and(|t| t.range.start() < range.start())
+            && self
+                .lexed
+                .tokens
+                .get(self.lex_idx)
+                .is_some_and(|t| t.range.start() < range.start())
         {
             self.emit_lexer_token(self.lex_idx);
             self.lex_idx += 1;
         }
         self.doc_reserved = false;
         self.last_token = Some(kind);
-        let text = self.lexed.source.get(std::ops::Range::<usize>::from(range)).unwrap_or("");
+        let text = self
+            .lexed
+            .source
+            .get(std::ops::Range::<usize>::from(range))
+            .unwrap_or("");
         self.inner.token(kind.into(), text);
-        if self.lexed.tokens.get(self.lex_idx).is_some_and(|t| t.range.end() <= range.end()) {
+        if self
+            .lexed
+            .tokens
+            .get(self.lex_idx)
+            .is_some_and(|t| t.range.end() <= range.end())
+        {
             self.lex_idx += 1;
         }
     }

@@ -37,7 +37,10 @@ impl NameCase {
 
     /// True for the classes that give a `CNAME`.
     pub fn is_capitalized(self) -> bool {
-        matches!(self, NameCase::Pascal | NameCase::AllCaps | NameCase::Screaming)
+        matches!(
+            self,
+            NameCase::Pascal | NameCase::AllCaps | NameCase::Screaming
+        )
     }
 }
 
@@ -68,7 +71,17 @@ mod tests {
 
     #[test]
     fn grammar_examples() {
-        for w in ["health", "x1", "_", "_tmp", "build_mesh", "from", "step", "then", "__x"] {
+        for w in [
+            "health",
+            "x1",
+            "_",
+            "_tmp",
+            "build_mesh",
+            "from",
+            "step",
+            "then",
+            "__x",
+        ] {
             assert_eq!(name_case(w), NameCase::Snake, "{w}");
         }
         for w in ["Player", "HTTPServer", "Vec2", "Self"] {

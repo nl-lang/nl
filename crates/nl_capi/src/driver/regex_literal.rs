@@ -13,7 +13,9 @@
 
 use nl_sema::util::{child, expr_child, field_name, name_text, token};
 use nl_sema::{Ref, Resolution};
-use nl_syntax::SyntaxKind::{ARG_LIST, CALL_EXPR, COMMAND_ARGS, COMMAND_CALL, FIELD_EXPR, LITERAL, NAME_REF, STRING};
+use nl_syntax::SyntaxKind::{
+    ARG_LIST, CALL_EXPR, COMMAND_ARGS, COMMAND_CALL, FIELD_EXPR, LITERAL, NAME_REF, STRING,
+};
 use nl_syntax::{SyntaxNode, TextRange};
 
 /// The diagnostic code of a bad literal pattern.
@@ -23,18 +25,32 @@ pub(crate) const CODE: &str = "invalid-regex";
 /// reject: the range of the literal and the message.
 pub(crate) fn check(root: &SyntaxNode, res: &Resolution) -> Vec<(TextRange, String)> {
     let mut out = Vec::new();
-    for node in root.descendants().filter(|n| matches!(n.kind(), CALL_EXPR | COMMAND_CALL)) {
-        let Some(callee) = expr_child(&node) else { continue };
+    for node in root
+        .descendants()
+        .filter(|n| matches!(n.kind(), CALL_EXPR | COMMAND_CALL))
+    {
+        let Some(callee) = expr_child(&node) else {
+            continue;
+        };
         if !is_prelude_regex_new(&callee, res) {
             continue;
         }
-        let Some(list) = child(&node, ARG_LIST).or_else(|| child(&node, COMMAND_ARGS)) else { continue };
-        let Some(arg) = list.children().next() else { continue };
+        let Some(list) = child(&node, ARG_LIST).or_else(|| child(&node, COMMAND_ARGS)) else {
+            continue;
+        };
+        let Some(arg) = list.children().next() else {
+            continue;
+        };
         if arg.kind() != LITERAL {
             continue;
         }
-        let Some(tok) = token(&arg, STRING) else { continue };
-        let bytes = nl_syntax::decode_string(&[tok.text()]).into_iter().next().unwrap_or_default();
+        let Some(tok) = token(&arg, STRING) else {
+            continue;
+        };
+        let bytes = nl_syntax::decode_string(&[tok.text()])
+            .into_iter()
+            .next()
+            .unwrap_or_default();
         let message = match std::str::from_utf8(&bytes) {
             Err(_) => "invalid regex pattern: the pattern is not valid UTF-8".to_owned(),
             Ok(pattern) => match regex_syntax::Parser::new().parse(pattern) {
@@ -52,7 +68,9 @@ fn is_prelude_regex_new(callee: &SyntaxNode, res: &Resolution) -> bool {
     if callee.kind() != FIELD_EXPR || !field_name(callee).is_some_and(|t| t.text() == "new") {
         return false;
     }
-    let Some(recv) = expr_child(callee) else { return false };
+    let Some(recv) = expr_child(callee) else {
+        return false;
+    };
     if recv.kind() != NAME_REF || name_text(&recv).as_deref() != Some("Regex") {
         return false;
     }
@@ -70,7 +88,12 @@ fn describe(e: &regex_syntax::Error) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -88,7 +111,10 @@ mod tests {
         let errs = errors(src);
         assert_eq!(errs.len(), 1);
         let (range, msg) = &errs[0];
-        assert_eq!(&src[usize::from(range.start())..usize::from(range.end())], "'('");
+        assert_eq!(
+            &src[usize::from(range.start())..usize::from(range.end())],
+            "'('"
+        );
         assert!(msg.contains("unclosed group"), "{msg}");
         // The command form, and an unsupported feature.
         let errs = errors("let re = Regex.new '(?<=a)b'\n");
@@ -102,9 +128,18 @@ mod tests {
     #[test]
     fn good_and_unchecked_patterns_pass() {
         assert!(errors("let re = Regex.new('^(?<year>\\d{4})-(\\d{2})$')\n").is_empty());
-        assert!(errors("let re = Regex.new \"a#{1}(\"\n").is_empty(), "interpolation is not checked");
+        assert!(
+            errors("let re = Regex.new \"a#{1}(\"\n").is_empty(),
+            "interpolation is not checked"
+        );
         assert!(errors("let p = '('\nlet re = Regex.new(p)\n").is_empty());
-        assert!(errors("struct Regex\n  p: String\nend\nfn Regex.new(p) p end\nlet re = Regex.new('(')\n").is_empty(), "a struct Regex is not the prelude's");
+        assert!(
+            errors(
+                "struct Regex\n  p: String\nend\nfn Regex.new(p) p end\nlet re = Regex.new('(')\n"
+            )
+            .is_empty(),
+            "a struct Regex is not the prelude's"
+        );
         assert!(errors("let re = Regex.new()\n").is_empty());
     }
 }

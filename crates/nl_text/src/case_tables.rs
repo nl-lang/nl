@@ -66,7 +66,13 @@ fn runs(pairs: &[(u32, u32)], out: &mut String) {
             }
         }
         let sign = if delta < 0 { '-' } else { '+' };
-        let _ = write!(out, "{start:x} {:x} {:x} {sign}{:x};", best.0, best.1, delta.unsigned_abs());
+        let _ = write!(
+            out,
+            "{start:x} {:x} {:x} {sign}{:x};",
+            best.0,
+            best.1,
+            delta.unsigned_abs()
+        );
         i += best.0;
     }
 }
@@ -122,7 +128,12 @@ pub fn case_tables() -> CaseTables {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
     use std::collections::HashMap;
@@ -165,8 +176,17 @@ mod tests {
             let want_l: Vec<u32> = c.to_lowercase().map(u32::from).collect();
             assert_eq!(up.get(&cp).cloned().unwrap_or(vec![cp]), want_u, "{c:?}");
             assert_eq!(down.get(&cp).cloned().unwrap_or(vec![cp]), want_l, "{c:?}");
-            let swap = swapx.get(&cp).or(down.get(&cp)).or(up.get(&cp)).cloned().unwrap_or(vec![cp]);
-            assert_eq!(swap, swap_of(c).into_iter().map(u32::from).collect::<Vec<_>>(), "{c:?}");
+            let swap = swapx
+                .get(&cp)
+                .or(down.get(&cp))
+                .or(up.get(&cp))
+                .cloned()
+                .unwrap_or(vec![cp]);
+            assert_eq!(
+                swap,
+                swap_of(c).into_iter().map(u32::from).collect::<Vec<_>>(),
+                "{c:?}"
+            );
         }
         // Compact: a few kilobytes in all.
         let size = t.up.len() + t.upx.len() + t.down.len() + t.downx.len() + t.swapx.len();

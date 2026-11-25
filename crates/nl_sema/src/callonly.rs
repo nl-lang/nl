@@ -62,16 +62,36 @@ struct ParamUses {
 /// (see the module documentation).
 pub(crate) fn compute(root: &SyntaxNode, res: &mut Resolution) {
     let mut fns: Vec<(BindingId, Vec<ParamUses>)> = Vec::new();
-    for decl in root.descendants().filter(|n| n.kind() == FN_DECL && child(n, QUAL_NAME).is_none()) {
-        let Some(id) = child(&decl, NAME).and_then(|n| res.decls.get(&n.text_range()).copied()) else { continue };
+    for decl in root
+        .descendants()
+        .filter(|n| n.kind() == FN_DECL && child(n, QUAL_NAME).is_none())
+    {
+        let Some(id) = child(&decl, NAME).and_then(|n| res.decls.get(&n.text_range()).copied())
+        else {
+            continue;
+        };
         let params = written_params(&decl, res);
         let is_async = has_token(&decl, ASYNC_KW);
-        let mut uses: Vec<ParamUses> = params.iter().map(|p| ParamUses { leak: p.is_none() || is_async, needs: Vec::new() }).collect();
-        let index: HashMap<BindingId, usize> = params.iter().enumerate().filter_map(|(k, p)| p.map(|p| (p, k))).collect();
+        let mut uses: Vec<ParamUses> = params
+            .iter()
+            .map(|p| ParamUses {
+                leak: p.is_none() || is_async,
+                needs: Vec::new(),
+            })
+            .collect();
+        let index: HashMap<BindingId, usize> = params
+            .iter()
+            .enumerate()
+            .filter_map(|(k, p)| p.map(|p| (p, k)))
+            .collect();
         if !is_async {
             for n in decl.descendants().filter(|n| n.kind() == NAME_REF) {
-                let Some(Ref::Binding(p)) = res.refs.get(&n.text_range()) else { continue };
-                let Some(u) = index.get(p).and_then(|k| uses.get_mut(*k)) else { continue };
+                let Some(Ref::Binding(p)) = res.refs.get(&n.text_range()) else {
+                    continue;
+                };
+                let Some(u) = index.get(p).and_then(|k| uses.get_mut(*k)) else {
+                    continue;
+                };
                 if u.leak {
                     continue;
                 }
@@ -86,7 +106,16 @@ pub(crate) fn compute(root: &SyntaxNode, res: &mut Resolution) {
     }
     let mut masks: HashMap<BindingId, u64> = fns
         .iter()
-        .map(|(id, uses)| (*id, uses.iter().enumerate().take(64).filter(|(_, u)| !u.leak).fold(0u64, |m, (k, _)| m | (1 << k))))
+        .map(|(id, uses)| {
+            (
+                *id,
+                uses.iter()
+                    .enumerate()
+                    .take(64)
+                    .filter(|(_, u)| !u.leak)
+                    .fold(0u64, |m, (k, _)| m | (1 << k)),
+            )
+        })
         .collect();
     loop {
         let mut changed = false;
@@ -94,7 +123,12 @@ pub(crate) fn compute(root: &SyntaxNode, res: &mut Resolution) {
             let before = masks.get(id).copied().unwrap_or(0);
             let mut mask = before;
             for (k, u) in uses.iter().enumerate().take(64) {
-                if mask & (1 << k) != 0 && !u.needs.iter().all(|(g, j)| is_call_only(*g, *j, &masks, res)) {
+                if mask & (1 << k) != 0
+                    && !u
+                        .needs
+                        .iter()
+                        .all(|(g, j)| is_call_only(*g, *j, &masks, res))
+                {
                     mask &= !(1 << k);
                 }
             }
@@ -108,7 +142,11 @@ pub(crate) fn compute(root: &SyntaxNode, res: &mut Resolution) {
         }
     }
     for (id, mask) in masks {
-        if let Some(p) = res.bindings.get_mut(id.0 as usize).and_then(|b| b.params.as_mut()) {
+        if let Some(p) = res
+            .bindings
+            .get_mut(id.0 as usize)
+            .and_then(|b| b.params.as_mut())
+        {
             p.call_only = mask;
         }
     }
@@ -122,7 +160,10 @@ fn is_call_only(g: BindingId, k: usize, masks: &HashMap<BindingId, u64>, res: &R
     }
     let mask = match masks.get(&g) {
         Some(m) => *m,
-        None => res.binding(g).and_then(|b| b.params).map_or(0, |p| p.call_only),
+        None => res
+            .binding(g)
+            .and_then(|b| b.params)
+            .map_or(0, |p| p.call_only),
     };
     mask & (1 << k) != 0
 }
@@ -130,13 +171,17 @@ fn is_call_only(g: BindingId, k: usize, masks: &HashMap<BindingId, u64>, res: &R
 /// The bindings of a function's written parameters, in order; `None` for a
 /// pattern parameter.
 fn written_params(decl: &SyntaxNode, res: &Resolution) -> Vec<Option<BindingId>> {
-    let Some(list) = child(decl, PARAM_LIST) else { return Vec::new() };
+    let Some(list) = child(decl, PARAM_LIST) else {
+        return Vec::new();
+    };
     children(&list, PARAM)
         .map(|p| {
             let pat = pattern_children(&p).next()?;
             let bind = match pat.kind() {
                 BIND_PAT => pat,
-                TYPED_PAT => pattern_children(&pat).next().filter(|b| b.kind() == BIND_PAT)?,
+                TYPED_PAT => pattern_children(&pat)
+                    .next()
+                    .filter(|b| b.kind() == BIND_PAT)?,
                 _ => return None,
             };
             child(&bind, NAME).and_then(|n| res.decls.get(&n.text_range()).copied())
@@ -147,7 +192,12 @@ fn written_params(decl: &SyntaxNode, res: &Resolution) -> Vec<Option<BindingId>>
 /// What one use of a parameter of `f` requires: `None` when the use lets
 /// the value escape or be compared, otherwise the call-only parameters it
 /// depends on.
-fn classify(n: &SyntaxNode, f: &SyntaxNode, kind: BindingKind, res: &Resolution) -> Option<Vec<Needs>> {
+fn classify(
+    n: &SyntaxNode,
+    f: &SyntaxNode,
+    kind: BindingKind,
+    res: &Resolution,
+) -> Option<Vec<Needs>> {
     let mut needs = Vec::new();
     // The function literals between the use and `f` each run only during
     // a call that holds them in a call-only position.
@@ -190,7 +240,9 @@ fn classify(n: &SyntaxNode, f: &SyntaxNode, kind: BindingKind, res: &Resolution)
 /// argument, is passed to, when the callee is a `fn` declaration or an
 /// imported `pub fn` and no spread precedes it.
 fn pass_position(arg: &SyntaxNode, res: &Resolution) -> Option<Needs> {
-    let list = arg.parent().filter(|l| matches!(l.kind(), ARG_LIST | COMMAND_ARGS))?;
+    let list = arg
+        .parent()
+        .filter(|l| matches!(l.kind(), ARG_LIST | COMMAND_ARGS))?;
     let call = list.parent()?;
     let g = callee_fn(&call, res)?;
     let mut k = pipe_offset(&call);
@@ -213,7 +265,9 @@ fn literal_position(lit: &SyntaxNode, res: &Resolution) -> Option<Needs> {
     if matches!(lit.kind(), FN_EXPR | LAMBDA_EXPR) {
         return pass_position(lit, res);
     }
-    let call = lit.parent().filter(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL))?;
+    let call = lit
+        .parent()
+        .filter(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL))?;
     let g = callee_fn(&call, res)?;
     let mut k = pipe_offset(&call);
     if let Some(list) = child(&call, ARG_LIST).or_else(|| child(&call, COMMAND_ARGS)) {
@@ -236,26 +290,35 @@ fn callee_fn(call: &SyntaxNode, res: &Resolution) -> Option<BindingId> {
         return None;
     }
     let callee = expr_child(call).filter(|c| c.kind() == NAME_REF)?;
-    let Ref::Binding(g) = res.refs.get(&callee.text_range())? else { return None };
+    let Ref::Binding(g) = res.refs.get(&callee.text_range())? else {
+        return None;
+    };
     let b = res.binding(*g)?;
-    let is_fn = b.kind == BindingKind::Function && (b.decl == DeclKind::Fn || (b.decl == DeclKind::Import && res.imported.get(g) == Some(&DeclKind::Fn)));
+    let is_fn = b.kind == BindingKind::Function
+        && (b.decl == DeclKind::Fn
+            || (b.decl == DeclKind::Import && res.imported.get(g) == Some(&DeclKind::Fn)));
     is_fn.then_some(*g)
 }
 
 /// One, when the call is the target of a pipe: the piped
 /// value is its first argument.
 fn pipe_offset(call: &SyntaxNode) -> usize {
-    let is_target = call.parent().is_some_and(|p| p.kind() == PIPE_EXPR && expr_children(&p).nth(1).as_ref() == Some(call));
+    let is_target = call
+        .parent()
+        .is_some_and(|p| p.kind() == PIPE_EXPR && expr_children(&p).nth(1).as_ref() == Some(call));
     usize::from(is_target)
 }
 
 /// A use of a variable-kind parameter that only asks whether it is set.
 fn is_test(n: &SyntaxNode, parent: &SyntaxNode) -> bool {
     match parent.kind() {
-        IF_EXPR | UNLESS_EXPR | ELSEIF_CLAUSE | WHILE_STMT | UNTIL_STMT | MODIFIER | WHEN_GUARD | COND_CLAUSE => expr_child(parent).as_ref() == Some(n),
+        IF_EXPR | UNLESS_EXPR | ELSEIF_CLAUSE | WHILE_STMT | UNTIL_STMT | MODIFIER | WHEN_GUARD
+        | COND_CLAUSE => expr_child(parent).as_ref() == Some(n),
         PREFIX_EXPR => has_token(parent, NOT_KW),
         BIN_EXPR => match bin_op(parent).map(|t| t.kind()) {
-            Some(EQ2 | NEQ) => expr_children(parent).any(|e| e.kind() == LITERAL && has_token(&e, NIL_KW)),
+            Some(EQ2 | NEQ) => {
+                expr_children(parent).any(|e| e.kind() == LITERAL && has_token(&e, NIL_KW))
+            }
             Some(AND_KW) => expr_child(parent).as_ref() == Some(n),
             _ => false,
         },

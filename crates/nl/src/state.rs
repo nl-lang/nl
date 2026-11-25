@@ -73,8 +73,9 @@ impl Drop for NlState {
 
 /// The nl data of `lua`, once `nl::open` has run.
 pub(crate) fn nl_state(lua: &Lua) -> Result<mlua::AppDataRef<'_, NlState>> {
-    lua.app_data_ref::<NlState>()
-        .ok_or_else(|| Error::runtime("NL is not open in this state: call nl::open (or make it with nl::new)"))
+    lua.app_data_ref::<NlState>().ok_or_else(|| {
+        Error::runtime("NL is not open in this state: call nl::open (or make it with nl::new)")
+    })
 }
 
 /// One call of the crate that runs script code: the panics
@@ -95,7 +96,9 @@ pub(crate) fn enter(lua: &Lua) -> Scope {
 
 impl Scope {
     pub(crate) fn finish(mut self) {
-        let Some(shared) = self.shared.take() else { return };
+        let Some(shared) = self.shared.take() else {
+            return;
+        };
         let mut parked = shared.leave(self.mark);
         drop(shared);
         match parked.len() {
@@ -252,7 +255,9 @@ impl NlOption {
         let b = |v: bool| i64::from(v);
         let n = |v: usize| i64::try_from(v).unwrap_or(i64::MAX);
         match self {
-            NlOption::Checks(v) | NlOption::Strip(v) | NlOption::Glua(v) | NlOption::Sandbox(v) => b(v),
+            NlOption::Checks(v) | NlOption::Strip(v) | NlOption::Glua(v) | NlOption::Sandbox(v) => {
+                b(v)
+            }
             NlOption::MaxWorkers(v) | NlOption::WorkerMemory(v) => n(v),
             NlOption::Localize(v) => v.level(),
         }
@@ -278,7 +283,8 @@ pub(crate) fn option(lua: &Lua, kind: NlOptionKind) -> Result<NlOption> {
         NlOptionKind::Glua => NlOption::Glua(v != 0),
         NlOptionKind::Sandbox => NlOption::Sandbox(v != 0),
         NlOptionKind::Localize => NlOption::Localize(
-            Localize::from_level(v).ok_or_else(|| Error::runtime(format!("nl_getoption gave NL_OPT_LOCALIZE {v}")))?,
+            Localize::from_level(v)
+                .ok_or_else(|| Error::runtime(format!("nl_getoption gave NL_OPT_LOCALIZE {v}")))?,
         ),
     })
 }
@@ -297,7 +303,9 @@ pub(crate) fn import(lua: &Lua, path: &str) -> Result<Table> {
     let v = crate::exception::values(lua, || raw::import(lua, path))?;
     match v.into_iter().next() {
         Some(Value::Table(t)) => Ok(t),
-        other => Err(Error::runtime(format!("import '{path}' gave {other:?}, not an export table"))),
+        other => Err(Error::runtime(format!(
+            "import '{path}' gave {other:?}, not an export table"
+        ))),
     }
 }
 
@@ -333,7 +341,10 @@ pub(crate) fn unless_frozen(lua: &Lua, what: &str) -> Result<()> {
 
 pub(crate) fn set_loader(lua: &Lua, loader: Box<dyn Loader>) -> Result<()> {
     let st = nl_state(lua)?;
-    let lb = st.keep(Box::new(raw::LoaderBox { loader, owned: Mutex::new(Default::default()) }));
+    let lb = st.keep(Box::new(raw::LoaderBox {
+        loader,
+        owned: Mutex::new(Default::default()),
+    }));
     raw::setloader(lua, Some(lb))
 }
 
@@ -359,7 +370,10 @@ pub struct Diagnostic {
 /// `Diagnostic::code` can be `&'static str`.
 pub(crate) fn intern(code: &str) -> &'static str {
     static CODES: OnceLock<Mutex<BTreeSet<&'static str>>> = OnceLock::new();
-    let mut set = CODES.get_or_init(Default::default).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut set = CODES
+        .get_or_init(Default::default)
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(c) = set.get(code) {
         return c;
     }
@@ -396,6 +410,9 @@ pub(crate) fn set_worker_init(lua: &Lua, f: Box<raw::WorkerInitFn>) -> Result<()
 
 pub(crate) fn set_timer(lua: &Lua, f: Box<raw::TimerFn>) -> Result<()> {
     let st = nl_state(lua)?;
-    let p = st.keep(Box::new(raw::TimerBox { f, shared: st.shared.clone() }));
+    let p = st.keep(Box::new(raw::TimerBox {
+        f,
+        shared: st.shared.clone(),
+    }));
     raw::settimer(lua, p)
 }

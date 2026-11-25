@@ -113,7 +113,9 @@ fn text(v: &Value, key: &str) -> Option<String> {
 }
 
 fn realm(v: &Value) -> Option<String> {
-    text(v, "realm").map(|r| r.trim().to_lowercase()).filter(|r| !r.is_empty())
+    text(v, "realm")
+        .map(|r| r.trim().to_lowercase())
+        .filter(|r| !r.is_empty())
 }
 
 fn deprecated(v: &Value) -> bool {
@@ -133,11 +135,16 @@ fn arg(v: &Value) -> Arg {
 }
 
 fn args(v: Option<&Value>) -> Vec<Arg> {
-    v.and_then(Value::as_array).map(|a| a.iter().map(arg).collect()).unwrap_or_default()
+    v.and_then(Value::as_array)
+        .map(|a| a.iter().map(arg).collect())
+        .unwrap_or_default()
 }
 
 fn callback(v: &Value) -> Callback {
-    Callback { args: args(v.get("arguments")), rets: args(v.get("returns")) }
+    Callback {
+        args: args(v.get("arguments")),
+        rets: args(v.get("returns")),
+    }
 }
 
 impl Api {
@@ -145,20 +152,36 @@ impl Api {
     pub fn load(dir: &Path) -> Result<Api, String> {
         let mut api = Api::default();
         if let Ok(meta) = std::fs::read_to_string(dir.join("__metadata.json")) {
-            let meta: Value = serde_json::from_str(&meta).map_err(|e| format!("__metadata.json: {e}"))?;
+            let meta: Value =
+                serde_json::from_str(&meta).map_err(|e| format!("__metadata.json: {e}"))?;
             api.last_update = text(&meta, "lastUpdate");
         }
-        let mut sections: Vec<_> = std::fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))?.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.is_dir()).collect();
+        let mut sections: Vec<_> = std::fs::read_dir(dir)
+            .map_err(|e| format!("{}: {e}", dir.display()))?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect();
         sections.sort();
         if sections.is_empty() {
-            return Err(format!("{}: no wiki sections; pass the directory the JSON release was unpacked into", dir.display()));
+            return Err(format!(
+                "{}: no wiki sections; pass the directory the JSON release was unpacked into",
+                dir.display()
+            ));
         }
         for section in sections {
-            let mut pages: Vec<_> = std::fs::read_dir(&section).map_err(|e| format!("{}: {e}", section.display()))?.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "json")).collect();
+            let mut pages: Vec<_> = std::fs::read_dir(&section)
+                .map_err(|e| format!("{}: {e}", section.display()))?
+                .filter_map(Result::ok)
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|e| e == "json"))
+                .collect();
             pages.sort();
             for page in pages {
-                let src = std::fs::read_to_string(&page).map_err(|e| format!("{}: {e}", page.display()))?;
-                let json: Value = serde_json::from_str(&src).map_err(|e| format!("{}: {e}", page.display()))?;
+                let src = std::fs::read_to_string(&page)
+                    .map_err(|e| format!("{}: {e}", page.display()))?;
+                let json: Value =
+                    serde_json::from_str(&src).map_err(|e| format!("{}: {e}", page.display()))?;
                 let entries = match json {
                     Value::Array(a) => a,
                     other => vec![other],
@@ -173,8 +196,11 @@ impl Api {
     }
 
     fn sort(&mut self) {
-        self.funcs.sort_by(|a, b| (a.kind, &a.parent, &a.name, &a.address).cmp(&(b.kind, &b.parent, &b.name, &b.address)));
-        self.funcs.dedup_by(|a, b| a.kind == b.kind && a.address == b.address);
+        self.funcs.sort_by(|a, b| {
+            (a.kind, &a.parent, &a.name, &a.address).cmp(&(b.kind, &b.parent, &b.name, &b.address))
+        });
+        self.funcs
+            .dedup_by(|a, b| a.kind == b.kind && a.address == b.address);
         self.enums.sort_by(|a, b| a.name.cmp(&b.name));
     }
 
@@ -185,15 +211,28 @@ impl Api {
     /// (`file.Read` and `File:Read` are both `file/read.json`; every
     /// `math.ease` function is `math/ease.json`). Returns the addresses added.
     pub fn recover_from_lua(&mut self, dir: &Path) -> Result<Vec<String>, String> {
-        let have: BTreeSet<(String, String)> = self.funcs.iter().map(|f| split_name(&f.parent, &f.name)).collect();
-        let mut files: Vec<_> = std::fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))?.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "lua")).collect();
+        let have: BTreeSet<(String, String)> = self
+            .funcs
+            .iter()
+            .map(|f| split_name(&f.parent, &f.name))
+            .collect();
+        let mut files: Vec<_> = std::fs::read_dir(dir)
+            .map_err(|e| format!("{}: {e}", dir.display()))?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "lua"))
+            .collect();
         files.sort();
         if files.is_empty() {
-            return Err(format!("{}: no .lua files; pass the directory the Lua release was unpacked into", dir.display()));
+            return Err(format!(
+                "{}: no .lua files; pass the directory the Lua release was unpacked into",
+                dir.display()
+            ));
         }
         let mut found: BTreeMap<(String, String), Func> = BTreeMap::new();
         for file in files {
-            let src = std::fs::read_to_string(&file).map_err(|e| format!("{}: {e}", file.display()))?;
+            let src =
+                std::fs::read_to_string(&file).map_err(|e| format!("{}: {e}", file.display()))?;
             for f in lua_functions(&src, self) {
                 let key = (f.parent.clone(), f.name.clone());
                 if have.contains(&key) {
@@ -245,7 +284,13 @@ impl Api {
         let address = text(e, "address").unwrap_or_else(|| name.clone());
         match kind.as_str() {
             "library" => {
-                self.libraries.insert(name.clone(), Library { address, deprecated: deprecated(e) });
+                self.libraries.insert(
+                    name.clone(),
+                    Library {
+                        address,
+                        deprecated: deprecated(e),
+                    },
+                );
             }
             "class" | "panel" => {
                 let kind = if kind == "panel" {
@@ -256,7 +301,16 @@ impl Api {
                     ClassKind::Class
                 };
                 let parent = text(e, "parent").filter(|p| !p.is_empty());
-                self.classes.insert(name.clone(), Class { name, address, parent, kind, deprecated: deprecated(e) });
+                self.classes.insert(
+                    name.clone(),
+                    Class {
+                        name,
+                        address,
+                        parent,
+                        kind,
+                        deprecated: deprecated(e),
+                    },
+                );
             }
             "libraryfunc" | "classfunc" | "panelfunc" | "hook" => {
                 let kind = match kind.as_str() {
@@ -265,7 +319,11 @@ impl Api {
                     "panelfunc" => FuncKind::Panel,
                     _ => FuncKind::Hook,
                 };
-                let overloads = e.get("arguments").and_then(Value::as_array).map(|a| a.iter().map(|o| args(o.get("args"))).collect()).unwrap_or_default();
+                let overloads = e
+                    .get("arguments")
+                    .and_then(Value::as_array)
+                    .map(|a| a.iter().map(|o| args(o.get("args"))).collect())
+                    .unwrap_or_default();
                 self.funcs.push(Func {
                     kind,
                     parent: text(e, "parent").unwrap_or_default(),
@@ -281,9 +339,21 @@ impl Api {
                 let items = e
                     .get("items")
                     .and_then(Value::as_array)
-                    .map(|a| a.iter().filter_map(|i| Some(EnumItem { key: text(i, "key")? })).collect())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|i| {
+                                Some(EnumItem {
+                                    key: text(i, "key")?,
+                                })
+                            })
+                            .collect()
+                    })
                     .unwrap_or_default();
-                self.enums.push(Enum { name, realm: realm(e), items });
+                self.enums.push(Enum {
+                    name,
+                    realm: realm(e),
+                    items,
+                });
             }
             "struct" => {
                 self.structs.insert(name, args(e.get("fields")));
@@ -338,10 +408,24 @@ fn lua_functions(src: &str, api: &Api) -> Vec<Func> {
                 Some(n) => (n, true),
                 None => (name, false),
             };
-            let ty = if name == "..." { "vararg".to_string() } else { api.wiki_type(lua_type(rest.trim_start())) };
-            params.push(Arg { name: name.to_string(), ty, optional, callback: None });
+            let ty = if name == "..." {
+                "vararg".to_string()
+            } else {
+                api.wiki_type(lua_type(rest.trim_start()))
+            };
+            params.push(Arg {
+                name: name.to_string(),
+                ty,
+                optional,
+                callback: None,
+            });
         } else if let Some(rest) = line.strip_prefix("---@return ") {
-            rets.push(Arg { name: String::new(), ty: api.wiki_type(lua_type(rest.trim_start())), optional: false, callback: None });
+            rets.push(Arg {
+                name: String::new(),
+                ty: api.wiki_type(lua_type(rest.trim_start())),
+                optional: false,
+                callback: None,
+            });
         } else if let Some(rest) = line.strip_prefix("function ") {
             let path = rest.split('(').next().unwrap_or("").trim();
             let (parent, name, method) = match path.rsplit_once(':') {
@@ -357,7 +441,13 @@ fn lua_functions(src: &str, api: &Api) -> Vec<Func> {
                 Some(ClassKind::Hooks) => FuncKind::Hook,
                 _ => FuncKind::Class,
             };
-            let address = if parent == "_G" { format!("Global.{name}") } else if method { format!("{parent}:{name}") } else { format!("{parent}.{name}") };
+            let address = if parent == "_G" {
+                format!("Global.{name}")
+            } else if method {
+                format!("{parent}:{name}")
+            } else {
+                format!("{parent}.{name}")
+            };
             out.push(Func {
                 kind,
                 parent: parent.to_string(),

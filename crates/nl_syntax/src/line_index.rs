@@ -43,7 +43,11 @@ impl LineIndex {
                 _ => {}
             }
         }
-        LineIndex { starts, wide, len: text.len() }
+        LineIndex {
+            starts,
+            wide,
+            len: text.len(),
+        }
     }
 
     /// The number of lines (at least 1).
@@ -54,7 +58,9 @@ impl LineIndex {
     /// Extra bytes of the multi-byte characters that start before `offset`.
     fn extra_before(&self, offset: usize) -> usize {
         let n = self.wide.partition_point(|&(at, _)| at < offset);
-        n.checked_sub(1).and_then(|i| self.wide.get(i)).map_or(0, |&(_, e)| e)
+        n.checked_sub(1)
+            .and_then(|i| self.wide.get(i))
+            .map_or(0, |&(_, e)| e)
     }
 
     /// The line and column of `offset` in `text`, which must be the text the
@@ -63,7 +69,10 @@ impl LineIndex {
     pub fn line_col(&self, text: &str, offset: TextSize) -> LineCol {
         let _ = text;
         let offset = usize::from(offset).min(self.len);
-        let line = self.starts.partition_point(|&s| s <= offset).saturating_sub(1);
+        let line = self
+            .starts
+            .partition_point(|&s| s <= offset)
+            .saturating_sub(1);
         let start = self.starts.get(line).copied().unwrap_or(0).min(offset);
         let bytes = offset - start;
         let col = bytes - (self.extra_before(offset) - self.extra_before(start));
@@ -98,7 +107,11 @@ mod tests {
         let text = "\u{FEFF})é😀x\nyé";
         let idx = LineIndex::new(text);
         let at = |o: u32| idx.line_col(text, TextSize::new(o));
-        assert_eq!(at(3), LineCol { line: 1, col: 1 }, "the BOM is not a column");
+        assert_eq!(
+            at(3),
+            LineCol { line: 1, col: 1 },
+            "the BOM is not a column"
+        );
         assert_eq!(at(0), LineCol { line: 1, col: 1 });
         assert_eq!(at(4), LineCol { line: 1, col: 2 });
         assert_eq!(at(6), LineCol { line: 1, col: 3 });
@@ -115,7 +128,11 @@ mod tests {
             }
             let line_start = text[..off].rfind(['\n', '\r']).map_or(0, |i| i + 1);
             let col = text[line_start..off].chars().count() + 1;
-            assert_eq!(idx.line_col(text, TextSize::new(off as u32)).col as usize, col, "at {off}");
+            assert_eq!(
+                idx.line_col(text, TextSize::new(off as u32)).col as usize,
+                col,
+                "at {off}"
+            );
         }
     }
 }

@@ -68,7 +68,9 @@ impl Parser<'_> {
                 self.name(NameClass::Lower, "a name");
                 Some((m.complete(self, BIND_PAT), true))
             }
-            NUMBER | STRING | TRUE_KW | FALSE_KW | NIL_KW => Some((self.literal_or_range_pattern(), false)),
+            NUMBER | STRING | TRUE_KW | FALSE_KW | NIL_KW => {
+                Some((self.literal_or_range_pattern(), false))
+            }
             MINUS if self.nth_at(1, NUMBER) => Some((self.literal_or_range_pattern(), false)),
             STR_BEGIN => {
                 self.error("a string in a pattern is a plain string, without interpolation");
@@ -141,7 +143,9 @@ impl Parser<'_> {
             self.literal_pattern();
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected a number as the end of the range, found {found}"));
+            self.error(format!(
+                "expected a number as the end of the range, found {found}"
+            ));
         }
         m.complete(self, RANGE_PAT)
     }
@@ -246,7 +250,9 @@ impl Parser<'_> {
         let f = self.start();
         if self.at(ONAME) {
             let text = self.nth_text(0).to_string();
-            self.error(format!("a key in this style is written as a string: `{{\"{text}\": …}}`"));
+            self.error(format!(
+                "a key in this style is written as a string: `{{\"{text}\": …}}`"
+            ));
         }
         if brace && matches!(self.cur(), TRUE_KW | FALSE_KW | NIL_KW) {
             let word = self.nth_text(0).to_string();
@@ -258,7 +264,11 @@ impl Parser<'_> {
             let value_start = self.pos();
             self.key_value();
             let value = self.text_between(value_start, self.pos());
-            let value = if value.is_empty() { "x".to_string() } else { value };
+            let value = if value.is_empty() {
+                "x".to_string()
+            } else {
+                value
+            };
             self.error_at(key_range, format!("`{word}` is not a key name here: write the key as a string, `{{\"{word}\": {value}}}`"));
             self.pattern_default();
             f.complete(self, PAT_FIELD);
@@ -301,7 +311,10 @@ impl Parser<'_> {
         while self.peek(i).kind == DOT && self.peek(i + 1).kind == CNAME {
             i += 2;
         }
-        !matches!(self.peek(i).kind, LT | QUESTION | QUESTION2 | PIPE | L_CURLY)
+        !matches!(
+            self.peek(i).kind,
+            LT | QUESTION | QUESTION2 | PIPE | L_CURLY
+        )
     }
 
     /// `bracket_pattern = "[" [ bracket_items ] "]"`.

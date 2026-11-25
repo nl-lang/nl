@@ -59,27 +59,44 @@ fn parse(args: &[String], usage: &str, command: &str) -> Result<Args, ExitCode> 
         match a.as_str() {
             "--profile=portable" => profile = Profile::Portable,
             "--profile=gmod-client" => profile = Profile::GmodClient,
-            s if s.starts_with("--profile=") => return usage_error("a bundle runs on stock LuaJIT: the profile is `portable` or `gmod-client`"),
+            s if s.starts_with("--profile=") => {
+                return usage_error(
+                    "a bundle runs on stock LuaJIT: the profile is `portable` or `gmod-client`",
+                );
+            }
             "--unchecked" => compile.checks = false,
             "--no-static-resolution" => compile.static_resolution = false,
             "--no-analyzer" => compile.analyze = false,
             "--minify" => minify = true,
             "--case-tables=unicode" => case_tables = true,
             "--case-tables=ascii" => case_tables = false,
-            s if s.starts_with("--case-tables=") => return usage_error("`--case-tables` is `unicode` or `ascii`"),
-            s if s.starts_with("--part-limit=") => match s.trim_start_matches("--part-limit=").parse::<usize>() {
+            s if s.starts_with("--case-tables=") => {
+                return usage_error("`--case-tables` is `unicode` or `ascii`");
+            }
+            s if s.starts_with("--part-limit=") => match s
+                .trim_start_matches("--part-limit=")
+                .parse::<usize>()
+            {
                 Ok(n) if (MIN_PART_LIMIT..=GMOD_FILE_LIMIT).contains(&n) => part_limit = Some(n),
-                _ => return usage_error(&format!("`--part-limit` is a number of bytes from {MIN_PART_LIMIT} to {GMOD_FILE_LIMIT}")),
+                _ => {
+                    return usage_error(&format!(
+                        "`--part-limit` is a number of bytes from {MIN_PART_LIMIT} to {GMOD_FILE_LIMIT}"
+                    ));
+                }
             },
-            s if s.starts_with("--localize=") => match nl_capi::Localize::from_name(s.trim_start_matches("--localize=")) {
-                Some(l) => compile.localize = l,
-                None => return usage_error("`--localize` is `none`, `std` or `all`"),
-            },
+            s if s.starts_with("--localize=") => {
+                match nl_capi::Localize::from_name(s.trim_start_matches("--localize=")) {
+                    Some(l) => compile.localize = l,
+                    None => return usage_error("`--localize` is `none`, `std` or `all`"),
+                }
+            }
             "--decl" => match it.next() {
                 Some(p) => decls.push(p.clone()),
                 None => return usage_error("`--decl` takes a path"),
             },
-            s if s.starts_with("--decl=") => decls.push(s.trim_start_matches("--decl=").to_string()),
+            s if s.starts_with("--decl=") => {
+                decls.push(s.trim_start_matches("--decl=").to_string())
+            }
             "-o" => match it.next() {
                 Some(p) => output = Some(p.clone()),
                 None => return usage_error("`-o` needs a path"),
@@ -93,9 +110,13 @@ fn parse(args: &[String], usage: &str, command: &str) -> Result<Args, ExitCode> 
                 Some(p) => runtime_include = Some(p.clone()),
                 None => return usage_error("`--runtime-include` needs a Lua path"),
             },
-            s if s.starts_with("--runtime-include=") => runtime_include = Some(s.trim_start_matches("--runtime-include=").to_string()),
+            s if s.starts_with("--runtime-include=") => {
+                runtime_include = Some(s.trim_start_matches("--runtime-include=").to_string())
+            }
             "--include-parts" => include_parts = Some(FROM_OUTPUT.to_owned()),
-            s if s.starts_with("--include-parts=") => include_parts = Some(s.trim_start_matches("--include-parts=").to_string()),
+            s if s.starts_with("--include-parts=") => {
+                include_parts = Some(s.trim_start_matches("--include-parts=").to_string())
+            }
             "--watch" => return usage_error("`--watch` is not available yet"),
             s if s.starts_with('-') => return usage_error(&format!("unknown option `{s}`")),
             s => entries.push(s.to_string()),
@@ -120,7 +141,11 @@ fn parse(args: &[String], usage: &str, command: &str) -> Result<Args, ExitCode> 
     if include_parts.as_deref() == Some(FROM_OUTPUT) {
         match &output {
             Some(o) => include_parts = Some(o.replace('\\', "/")),
-            None => return usage_error("`--include-parts` without a path takes the first file's Lua path from `-o`"),
+            None => {
+                return usage_error(
+                    "`--include-parts` without a path takes the first file's Lua path from `-o`",
+                );
+            }
         }
     }
     Ok(Args {
@@ -188,8 +213,19 @@ fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
         }
         entries.push(files.canonical(Path::new(path)));
     }
-    let default_name = if command == "runtime" { "runtime" } else { "bundle" };
-    let name = a.output.as_deref().and_then(|o| Path::new(o).file_stem()).map_or_else(|| default_name.to_owned(), |s| s.to_string_lossy().into_owned());
+    let default_name = if command == "runtime" {
+        "runtime"
+    } else {
+        "bundle"
+    };
+    let name = a
+        .output
+        .as_deref()
+        .and_then(|o| Path::new(o).file_stem())
+        .map_or_else(
+            || default_name.to_owned(),
+            |s| s.to_string_lossy().into_owned(),
+        );
     let lua = mlua::Lua::new();
     let check = lua_check(&lua);
     let options = BundleOptions {
@@ -205,14 +241,22 @@ fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
         include_parts: a.include_parts.as_deref(),
     };
     let entry_refs: Vec<&str> = entries.iter().map(String::as_str).collect();
-    let out = if command == "runtime" { nl_capi::bundle::runtime(&options) } else { nl_capi::bundle::bundle(&entry_refs, &options, &FilesLoader(&files)) };
+    let out = if command == "runtime" {
+        nl_capi::bundle::runtime(&options)
+    } else {
+        nl_capi::bundle::bundle(&entry_refs, &options, &FilesLoader(&files))
+    };
 
     // Each diagnostic with its snippet (Sources reads each file once).
     let mut sources = Sources::new("", &[]);
     for d in &out.diagnostics {
         report(d, &mut sources);
     }
-    if out.diagnostics.iter().any(|d| d.severity == Severity::Error) {
+    if out
+        .diagnostics
+        .iter()
+        .any(|d| d.severity == Severity::Error)
+    {
         return ExitCode::FAILURE;
     }
 
@@ -228,11 +272,20 @@ fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
     }
     let Some(output) = &a.output else {
         if out.parts.len() > 1 {
-            eprintln!("nlc {command}: error: the bundle is over {} bytes compressed, so it is written as several files: give their path with `-o`", a.part_limit);
+            eprintln!(
+                "nlc {command}: error: the bundle is over {} bytes compressed, so it is written as several files: give their path with `-o`",
+                a.part_limit
+            );
             return ExitCode::FAILURE;
         }
         use std::io::Write as _;
-        let _ = std::io::stdout().write_all(out.parts.iter().map(|p| p.text.as_str()).collect::<String>().as_bytes());
+        let _ = std::io::stdout().write_all(
+            out.parts
+                .iter()
+                .map(|p| p.text.as_str())
+                .collect::<String>()
+                .as_bytes(),
+        );
         return ExitCode::SUCCESS;
     };
     for (path, part) in paths.iter().zip(&out.parts) {
@@ -244,19 +297,39 @@ fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
     remove_stale_parts(Path::new(output), out.parts.len());
     if out.parts.len() > 1 {
         let names: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
-        let place = if a.include_parts.is_some() { "the first includes the others" } else { "put them all in one folder (lua/autorun/client/)" };
-        eprintln!("nlc {command}: the bundle is {} files, each under {} bytes compressed: {}; {place}", out.parts.len(), a.part_limit, names.join(", "));
+        let place = if a.include_parts.is_some() {
+            "the first includes the others"
+        } else {
+            "put them all in one folder (lua/autorun/client/)"
+        };
+        eprintln!(
+            "nlc {command}: the bundle is {} files, each under {} bytes compressed: {}; {place}",
+            out.parts.len(),
+            a.part_limit,
+            names.join(", ")
+        );
     }
     ExitCode::SUCCESS
 }
 
 /// The paths of a bundle's files: `-o` itself, then `<stem>_2.<ext>`, …
 fn part_paths(output: &Path, n: usize) -> Vec<PathBuf> {
-    (1..=n).map(|i| if i == 1 { output.to_path_buf() } else { part_path(output, i) }).collect()
+    (1..=n)
+        .map(|i| {
+            if i == 1 {
+                output.to_path_buf()
+            } else {
+                part_path(output, i)
+            }
+        })
+        .collect()
 }
 
 fn part_path(output: &Path, i: usize) -> PathBuf {
-    let stem = output.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let stem = output
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let name = match output.extension() {
         Some(ext) => format!("{stem}_{i}.{}", ext.to_string_lossy()),
         None => format!("{stem}_{i}"),
@@ -280,13 +353,25 @@ fn remove_stale_parts(output: &Path, n: usize) {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
     #[test]
     fn part_names() {
         let p = part_paths(Path::new("out/client.lua"), 3);
-        assert_eq!(p, [PathBuf::from("out/client.lua"), PathBuf::from("out/client_2.lua"), PathBuf::from("out/client_3.lua")]);
+        assert_eq!(
+            p,
+            [
+                PathBuf::from("out/client.lua"),
+                PathBuf::from("out/client_2.lua"),
+                PathBuf::from("out/client_3.lua")
+            ]
+        );
     }
 }

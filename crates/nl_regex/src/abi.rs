@@ -61,7 +61,12 @@ pub extern "C" fn nlregex_available() -> c_int {
 /// `pat` points at `len` readable bytes (or `len` is 0); `err` is NULL or a
 /// valid out pointer.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nlregex_compile(pat: *const c_char, len: usize, size_limit: usize, err: *mut *mut c_char) -> *mut NlRegex {
+pub unsafe extern "C" fn nlregex_compile(
+    pat: *const c_char,
+    len: usize,
+    size_limit: usize,
+    err: *mut *mut c_char,
+) -> *mut NlRegex {
     // SAFETY: the caller's guarantee.
     let bytes = unsafe { subject(pat, len) };
     let result = catch_unwind(AssertUnwindSafe(|| match std::str::from_utf8(bytes) {
@@ -156,7 +161,11 @@ pub unsafe extern "C" fn nlregex_ngroups(re: *const NlRegex) -> usize {
 ///
 /// `re` is NULL or a live regex; `len` is NULL or a valid out pointer.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nlregex_groupname(re: *const NlRegex, i: usize, len: *mut usize) -> *const c_char {
+pub unsafe extern "C" fn nlregex_groupname(
+    re: *const NlRegex,
+    i: usize,
+    len: *mut usize,
+) -> *const c_char {
     // SAFETY: the caller's guarantee.
     let name = unsafe { with(re, |r| r.group_name(i).map(|n| (n.as_ptr(), n.len())), None) };
     let (p, n) = name.unwrap_or((ptr::null(), 0));
@@ -175,7 +184,13 @@ pub unsafe extern "C" fn nlregex_groupname(re: *const NlRegex, i: usize, len: *m
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn nlregex_pattern(re: *const NlRegex, len: *mut usize) -> *const c_char {
     // SAFETY: the caller's guarantee.
-    let (p, n) = unsafe { with(re, |r| (r.pattern().as_ptr(), r.pattern().len()), (ptr::null(), 0)) };
+    let (p, n) = unsafe {
+        with(
+            re,
+            |r| (r.pattern().as_ptr(), r.pattern().len()),
+            (ptr::null(), 0),
+        )
+    };
     if !len.is_null() {
         // SAFETY: a non-NULL `len` is a valid out pointer.
         unsafe { *len = n };
@@ -204,7 +219,14 @@ pub unsafe extern "C" fn nlregex_test(re: *const NlRegex, s: *const c_char, len:
 /// `re` is NULL or a live regex; `s` points at `len` readable bytes;
 /// `mstart` and `mend` are NULL or valid out pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nlregex_find(re: *const NlRegex, s: *const c_char, len: usize, start: usize, mstart: *mut usize, mend: *mut usize) -> c_int {
+pub unsafe extern "C" fn nlregex_find(
+    re: *const NlRegex,
+    s: *const c_char,
+    len: usize,
+    start: usize,
+    mstart: *mut usize,
+    mend: *mut usize,
+) -> c_int {
     // SAFETY: the caller's guarantees.
     let subject = unsafe { subject(s, len) };
     // SAFETY: the caller's guarantees.
@@ -235,7 +257,14 @@ pub unsafe extern "C" fn nlregex_find(re: *const NlRegex, s: *const c_char, len:
 /// `re` is NULL or a live regex; `s` points at `len` readable bytes;
 /// `spans` points at `nspans` writable `size_t` (or `nspans` is 0).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nlregex_captures(re: *const NlRegex, s: *const c_char, len: usize, start: usize, spans: *mut usize, nspans: usize) -> c_int {
+pub unsafe extern "C" fn nlregex_captures(
+    re: *const NlRegex,
+    s: *const c_char,
+    len: usize,
+    start: usize,
+    spans: *mut usize,
+    nspans: usize,
+) -> c_int {
     // SAFETY: the caller's guarantees.
     let subject = unsafe { subject(s, len) };
     let out: &mut [usize] = if spans.is_null() || nspans == 0 {
@@ -249,7 +278,12 @@ pub unsafe extern "C" fn nlregex_captures(re: *const NlRegex, s: *const c_char, 
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
     use std::ffi::CStr;
@@ -278,17 +312,32 @@ mod tests {
             assert!(nlregex_groupname(re, 2, &mut n).is_null());
             assert_eq!(n, 0);
             let p = nlregex_pattern(re, &mut n);
-            assert_eq!(std::slice::from_raw_parts(p.cast::<u8>(), n), br"(?<y>\d{4})-(\d{2})".as_slice());
+            assert_eq!(
+                std::slice::from_raw_parts(p.cast::<u8>(), n),
+                br"(?<y>\d{4})-(\d{2})".as_slice()
+            );
             let s = b"on 2026-10";
             assert_eq!(nlregex_test(re, s.as_ptr().cast(), s.len()), 1);
             let (mut a, mut b) = (0, 0);
-            assert_eq!(nlregex_find(re, s.as_ptr().cast(), s.len(), 0, &mut a, &mut b), 1);
+            assert_eq!(
+                nlregex_find(re, s.as_ptr().cast(), s.len(), 0, &mut a, &mut b),
+                1
+            );
             assert_eq!((a, b), (3, 10));
-            assert_eq!(nlregex_find(re, s.as_ptr().cast(), s.len(), 4, &mut a, &mut b), 0);
+            assert_eq!(
+                nlregex_find(re, s.as_ptr().cast(), s.len(), 4, &mut a, &mut b),
+                0
+            );
             let mut spans = [0usize; 6];
-            assert_eq!(nlregex_captures(re, s.as_ptr().cast(), s.len(), 0, spans.as_mut_ptr(), 6), 1);
+            assert_eq!(
+                nlregex_captures(re, s.as_ptr().cast(), s.len(), 0, spans.as_mut_ptr(), 6),
+                1
+            );
             assert_eq!(spans, [3, 10, 3, 7, 8, 10]);
-            assert_eq!(nlregex_captures(re, s.as_ptr().cast(), s.len(), 0, ptr::null_mut(), 0), 1);
+            assert_eq!(
+                nlregex_captures(re, s.as_ptr().cast(), s.len(), 0, ptr::null_mut(), 0),
+                1
+            );
             assert!(nlregex_memory(re) > 0);
             nlregex_free(re);
         }

@@ -43,7 +43,10 @@ pub struct Prelude {
 impl Prelude {
     /// Usable as a value.
     pub fn is_value(&self) -> bool {
-        matches!(self.class, PreludeClass::Value | PreludeClass::ValueAndType | PreludeClass::Struct)
+        matches!(
+            self.class,
+            PreludeClass::Value | PreludeClass::ValueAndType | PreludeClass::Struct
+        )
     }
 
     /// Usable as a type.
@@ -166,12 +169,18 @@ pub fn all() -> &'static [Prelude] {
 /// the "undeclared name" message.
 pub fn lua_library_hint(name: &str) -> Option<&'static str> {
     Some(match name {
-        "math" => "`math` is not an NL name; use `Number.floor(x)`, `x.floor` or the Lua path `:math.floor(x)`",
-        "string" => "Lua's `string` is visible in NL files only as the Lua path `:string`; NL's string library is `String`",
+        "math" => {
+            "`math` is not an NL name; use `Number.floor(x)`, `x.floor` or the Lua path `:math.floor(x)`"
+        }
+        "string" => {
+            "Lua's `string` is visible in NL files only as the Lua path `:string`; NL's string library is `String`"
+        }
         "table" => "`table` is not an NL name; use `Table` or the Lua path `:table`",
         "io" => "`io` is not an NL name; use `IO` or the Lua path `:io`",
         "os" => "`os` is not an NL name; use `OS` or the Lua path `:os`",
-        "coroutine" => "`coroutine` is not an NL name; use `Coroutine` or the Lua path `:coroutine`",
+        "coroutine" => {
+            "`coroutine` is not an NL name; use `Coroutine` or the Lua path `:coroutine`"
+        }
         "debug" => "`debug` is not an NL name; use `Debug` or the Lua path `:debug`",
         "bit" => "`bit` is not an NL name; use `Bit` or the Lua path `:bit`",
         "package" => "`package` is not an NL name; use `Package` or the Lua path `:package`",

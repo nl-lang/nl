@@ -200,18 +200,27 @@ impl Op {
     /// True for the opcodes that end a function's control flow: returns
     /// and tail calls.
     pub fn is_ret_or_tail(self) -> bool {
-        matches!(self, Op::RETM | Op::RET | Op::RET0 | Op::RET1 | Op::CALLMT | Op::CALLT)
+        matches!(
+            self,
+            Op::RETM | Op::RET | Op::RET0 | Op::RET1 | Op::CALLMT | Op::CALLT
+        )
     }
 
     /// True for the fork's opcodes (feature level 1).
     pub fn is_nl(self) -> bool {
-        matches!(self, Op::CMPGT | Op::CMPNGT | Op::CMPGE | Op::CMPNGE | Op::KINTR | Op::ISMETH | Op::MSELF)
+        matches!(
+            self,
+            Op::CMPGT | Op::CMPNGT | Op::CMPGE | Op::CMPNGE | Op::KINTR | Op::ISMETH | Op::MSELF
+        )
     }
 
     /// True for the bit operators (`PROTO_BITOP`), which NL emits at
     /// feature level 1 only.
     pub fn is_bitop(self) -> bool {
-        matches!(self, Op::BNOT | Op::BAND | Op::BOR | Op::BXOR | Op::BSHL | Op::BSHR | Op::BSAR)
+        matches!(
+            self,
+            Op::BNOT | Op::BAND | Op::BOR | Op::BXOR | Op::BSHL | Op::BSHR | Op::BSAR
+        )
     }
 
     /// True for an opcode the emitter may write to a dump (no function
@@ -333,7 +342,10 @@ mod tests {
     #[test]
     fn encoding() {
         let i = abc(Op::ADDVV, 1, 2, 3);
-        assert_eq!((op_of(i), a_of(i), b_of(i), c_of(i)), (Op::ADDVV as u8, 1, 2, 3));
+        assert_eq!(
+            (op_of(i), a_of(i), b_of(i), c_of(i)),
+            (Op::ADDVV as u8, 1, 2, 3)
+        );
         let j = aj(Op::JMP, 5, NO_JMP);
         assert_eq!(j_of(j), -1);
         let mut k = ad(Op::KSHORT, 0, 0xffff);

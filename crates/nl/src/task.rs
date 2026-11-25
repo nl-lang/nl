@@ -4,7 +4,9 @@ use std::fmt;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 
-use mlua::{Error, FromLua, FromLuaMulti, IntoLua, IntoLuaMulti, Lua, RegistryKey, Result, Table, Value};
+use mlua::{
+    Error, FromLua, FromLuaMulti, IntoLua, IntoLuaMulti, Lua, RegistryKey, Result, Table, Value,
+};
 
 use crate::exception::{self, Exception, values};
 use crate::raw::{self, Shared};
@@ -13,7 +15,11 @@ use crate::types::lua_of;
 
 // -- Events --------------------------------------------------------------------
 
-pub(crate) fn run_event<R: FromLuaMulti>(lua: &Lua, name: &str, args: impl IntoLuaMulti) -> Result<R> {
+pub(crate) fn run_event<R: FromLuaMulti>(
+    lua: &Lua,
+    name: &str,
+    args: impl IntoLuaMulti,
+) -> Result<R> {
     let args = args.into_lua_multi(lua)?;
     let v = values(lua, || raw::prunevent(lua, name, args))?;
     R::from_lua_multi(v, lua)
@@ -68,9 +74,15 @@ impl Task {
     pub fn resolver(&self) -> Resolver {
         let made = lua_of(self.0.weak_lua()).and_then(|lua| {
             let shared = nl_state(&lua)?.shared.clone();
-            Ok(Resolver { task: Some(lua.create_registry_value(self.0.clone())?), shared })
+            Ok(Resolver {
+                task: Some(lua.create_registry_value(self.0.clone())?),
+                shared,
+            })
         });
-        made.unwrap_or_else(|_| Resolver { task: None, shared: Arc::new(Shared::closed()) })
+        made.unwrap_or_else(|_| Resolver {
+            task: None,
+            shared: Arc::new(Shared::closed()),
+        })
     }
 
     /// The task as NL code holds it.
@@ -86,7 +98,11 @@ impl FromLua for Task {
                 return Ok(Task(t.clone()));
             }
         }
-        Err(Error::FromLuaConversionError { from: value.type_name(), to: "Task".to_owned(), message: None })
+        Err(Error::FromLuaConversionError {
+            from: value.type_name(),
+            to: "Task".to_owned(),
+            message: None,
+        })
     }
 }
 
@@ -113,14 +129,20 @@ impl Resolver {
     /// Resolves the task with `value` at the next pump.
     pub fn resolve<T: IntoLua + Send + 'static>(mut self, value: T) {
         if let Some(key) = self.task.take() {
-            raw::post(&self.shared, Box::new(move |lua| finish(lua, key).and_then(|t| t.resolve(value))));
+            raw::post(
+                &self.shared,
+                Box::new(move |lua| finish(lua, key).and_then(|t| t.resolve(value))),
+            );
         }
     }
 
     /// Rejects the task with `error` at the next pump.
     pub fn reject(mut self, error: impl Into<Error> + Send + 'static) {
         if let Some(key) = self.task.take() {
-            raw::post(&self.shared, Box::new(move |lua| finish(lua, key).and_then(|t| t.reject(error))));
+            raw::post(
+                &self.shared,
+                Box::new(move |lua| finish(lua, key).and_then(|t| t.reject(error))),
+            );
         }
     }
 }
@@ -149,7 +171,9 @@ impl Drop for Resolver {
 
 impl fmt::Debug for Resolver {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Resolver").field("pending", &self.task.is_some()).finish()
+        f.debug_struct("Resolver")
+            .field("pending", &self.task.is_some())
+            .finish()
     }
 }
 
@@ -197,7 +221,11 @@ impl fmt::Debug for Remote {
 }
 
 pub(crate) fn remote(lua: &Lua) -> Remote {
-    Remote(nl_state(lua).map(|s| s.shared.clone()).unwrap_or_else(|_| Arc::new(Shared::closed())))
+    Remote(
+        nl_state(lua)
+            .map(|s| s.shared.clone())
+            .unwrap_or_else(|_| Arc::new(Shared::closed())),
+    )
 }
 
 /// `nl_spawn`: `Worker.run(f, args...)`.

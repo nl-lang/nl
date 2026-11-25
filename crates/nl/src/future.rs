@@ -7,7 +7,10 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::task::{Context, Poll, Waker};
 
-use mlua::{Error, FromLua, FromLuaMulti, Function, IntoLua, Lua, MaybeSend, MultiValue, ObjectLike, Result, Value};
+use mlua::{
+    Error, FromLua, FromLuaMulti, Function, IntoLua, Lua, MaybeSend, MultiValue, ObjectLike,
+    Result, Value,
+};
 
 use crate::exception::{Exception, NlErrorExt, message_of};
 use crate::state::nl_state;
@@ -65,7 +68,9 @@ where
     lua.create_function(move |lua, args: MultiValue| {
         let args = A::from_lua_multi(args, lua)?;
         if nl_state(lua)?.spawner.borrow().is_none() {
-            return Err(Error::runtime("nl: create_task_function needs a spawner (set_spawner)"));
+            return Err(Error::runtime(
+                "nl: create_task_function needs a spawner (set_spawner)",
+            ));
         }
         let task = create_task(lua)?;
         let resolver = task.resolver();
@@ -76,7 +81,9 @@ where
         // ends, also when it panics, unless the host set another one
         // meanwhile.
         let Some(spawn) = nl_state(lua)?.spawner.borrow_mut().take() else {
-            return Err(Error::runtime("nl: the spawner was replaced while a task function started"));
+            return Err(Error::runtime(
+                "nl: the spawner was replaced while a task function started",
+            ));
         };
         struct PutBack<'a> {
             spawn: Option<Box<SpawnFn>>,
@@ -92,7 +99,10 @@ where
                 }
             }
         }
-        let guard = PutBack { lua, spawn: Some(spawn) };
+        let guard = PutBack {
+            lua,
+            spawn: Some(spawn),
+        };
         if let Some(spawn) = guard.spawn.as_ref() {
             spawn(Box::pin(async move {
                 match fut.await {
@@ -111,7 +121,12 @@ impl Task {
     /// completes when the task finishes, which happens during a pump when a
     /// `Resolver` or a posted closure finishes it. Not `Send`.
     pub fn into_future<R: FromLua>(self) -> impl Future<Output = Result<R>> {
-        TaskFuture { task: self, waker: Arc::new(Mutex::new(None)), attached: false, _r: PhantomData }
+        TaskFuture {
+            task: self,
+            waker: Arc::new(Mutex::new(None)),
+            attached: false,
+            _r: PhantomData,
+        }
     }
 }
 
@@ -154,10 +169,13 @@ impl<R: FromLua> Future for TaskFuture<R> {
         }
         match this.task.state::<Value>() {
             Err(e) => Poll::Ready(Err(e)),
-            Ok(TaskState::Done(v)) => Poll::Ready(lua_of(this.task.0.weak_lua()).and_then(|lua| R::from_lua(v, &lua))),
+            Ok(TaskState::Done(v)) => {
+                Poll::Ready(lua_of(this.task.0.weak_lua()).and_then(|lua| R::from_lua(v, &lua)))
+            }
             Ok(TaskState::Failed(e)) => Poll::Ready(Err(e.into())),
             Ok(TaskState::Pending) => {
-                *this.waker.lock().unwrap_or_else(PoisonError::into_inner) = Some(cx.waker().clone());
+                *this.waker.lock().unwrap_or_else(PoisonError::into_inner) =
+                    Some(cx.waker().clone());
                 Poll::Pending
             }
         }

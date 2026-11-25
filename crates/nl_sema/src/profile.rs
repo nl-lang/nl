@@ -115,7 +115,9 @@ fn excluded(name: &str) -> Option<&'static str> {
     Some(match name {
         "Regex" => "the regex engine is a Rust library that stock LuaJIT cannot load",
         "load_nl" => "there is no NL compiler at run time; compile the source ahead of time",
-        "add_path" => "imports are resolved when the program is built, so a search path set at run time changes nothing; give the directory to the build",
+        "add_path" => {
+            "imports are resolved when the program is built, so a search path set at run time changes nothing; give the directory to the build"
+        }
         _ => return None,
     })
 }
@@ -132,7 +134,8 @@ fn excluded(name: &str) -> Option<&'static str> {
 /// client runs LuaJIT 2.0.4, which lacks the 2.1 additions
 /// (`coroutine.isyieldable`; the x86-64 branch has 2.1.0-beta3).
 pub fn gmod_missing(global: &str, field: Option<&str>) -> Option<String> {
-    let removed = |what: &str, instead: &str| Some(format!("Garry's Mod removes `{what}`{instead}"));
+    let removed =
+        |what: &str, instead: &str| Some(format!("Garry's Mod removes `{what}`{instead}"));
     match (global, field) {
         ("io", _) => Some("Garry's Mod has no `io` library; its `file` library (`FileLib`) reads and writes the data folder".to_owned()),
         ("load" | "loadstring", _) => removed(global, "; `CompileString` (`compile_string`) compiles Lua source"),
@@ -186,7 +189,9 @@ pub fn static_condition(cond: &SyntaxNode, res: &Resolution, profile: Profile) -
         },
         LUA_PATH => {
             let first = crate::resolver::lua_path_root(cond)?;
-            if cond.children().next().is_some() || !matches!(res.reference(first.text_range()), Some(Ref::LuaGlobal(_))) {
+            if cond.children().next().is_some()
+                || !matches!(res.reference(first.text_range()), Some(Ref::LuaGlobal(_)))
+            {
                 return None;
             }
             profile.realm_constant(first.text())
@@ -226,13 +231,30 @@ pub fn static_condition(cond: &SyntaxNode, res: &Resolution, profile: Profile) -
 /// decide is taken declares it, or every branch that may run does and
 /// one of them always runs (an `else`). Otherwise the export may be
 /// `nil` ([`crate::ExportInfo::optional`]).
-pub fn defined_on_every_path(construct: &SyntaxNode, clauses: &[usize], res: &Resolution, profile: Profile) -> bool {
+pub fn defined_on_every_path(
+    construct: &SyntaxNode,
+    clauses: &[usize],
+    res: &Resolution,
+    profile: Profile,
+) -> bool {
     // Each branch with what decides whether it runs, when the branches
     // before it did not: `Some(true)` for `else`.
-    let mut owners: Vec<(SyntaxNode, bool)> = vec![(construct.clone(), construct.kind() == UNLESS_EXPR)];
-    owners.extend(construct.children().filter(|c| matches!(c.kind(), ELSEIF_CLAUSE | ELSE_CLAUSE)).map(|c| (c, false)));
+    let mut owners: Vec<(SyntaxNode, bool)> =
+        vec![(construct.clone(), construct.kind() == UNLESS_EXPR)];
+    owners.extend(
+        construct
+            .children()
+            .filter(|c| matches!(c.kind(), ELSEIF_CLAUSE | ELSE_CLAUSE))
+            .map(|c| (c, false)),
+    );
     for (i, (owner, negated)) in owners.iter().enumerate() {
-        let decided = if owner.kind() == ELSE_CLAUSE { Some(true) } else { plain_condition(owner).and_then(|c| static_condition(&c, res, profile)).map(|v| v != *negated) };
+        let decided = if owner.kind() == ELSE_CLAUSE {
+            Some(true)
+        } else {
+            plain_condition(owner)
+                .and_then(|c| static_condition(&c, res, profile))
+                .map(|v| v != *negated)
+        };
         let declares = clauses.contains(&i);
         match decided {
             Some(false) => {}
@@ -278,7 +300,9 @@ pub fn dead_ranges(root: &SyntaxNode, res: &Resolution, profile: Profile) -> Vec
     if profile.realm_constant("SERVER").is_none() {
         return out;
     }
-    let decide = |owner: &SyntaxNode| plain_condition(owner).and_then(|c| static_condition(&c, res, profile));
+    let decide = |owner: &SyntaxNode| {
+        plain_condition(owner).and_then(|c| static_condition(&c, res, profile))
+    };
     for node in root.descendants() {
         match node.kind() {
             IF_EXPR => {
@@ -333,7 +357,12 @@ fn is_dead(range: TextRange, dead: &[TextRange]) -> bool {
 /// the prelude names of the portable profile, and in gmod what its Lua
 /// state lacks and what the realm lacks, through prelude names, declared
 /// names and Lua paths. Members of declared types are [`check_members`]'.
-pub fn check(root: &SyntaxNode, res: &Resolution, decls: &Declarations, profile: Profile) -> Vec<SemaDiagnostic> {
+pub fn check(
+    root: &SyntaxNode,
+    res: &Resolution,
+    decls: &Declarations,
+    profile: Profile,
+) -> Vec<SemaDiagnostic> {
     let mut out = Vec::new();
     if !profile.is_stock() {
         return out;
@@ -342,7 +371,9 @@ pub fn check(root: &SyntaxNode, res: &Resolution, decls: &Declarations, profile:
     let mut lua_paths: Option<HashMap<String, Realm>> = None;
     for node in root.descendants() {
         match node.kind() {
-            NAME_REF if !is_dead(node.text_range(), &dead) => check_name(&node, res, decls, profile, &mut out),
+            NAME_REF if !is_dead(node.text_range(), &dead) => {
+                check_name(&node, res, decls, profile, &mut out)
+            }
             LUA_PATH if profile.is_gmod() && !is_dead(node.text_range(), &dead) => {
                 let index = lua_paths.get_or_insert_with(|| lua_path_realms(decls));
                 check_lua_path(&node, res, index, &mut out);
@@ -353,17 +384,35 @@ pub fn check(root: &SyntaxNode, res: &Resolution, decls: &Declarations, profile:
     out
 }
 
-fn check_name(node: &SyntaxNode, res: &Resolution, decls: &Declarations, profile: Profile, out: &mut Vec<SemaDiagnostic>) {
+fn check_name(
+    node: &SyntaxNode,
+    res: &Resolution,
+    decls: &Declarations,
+    profile: Profile,
+    out: &mut Vec<SemaDiagnostic>,
+) {
     match res.reference(node.text_range()) {
         Some(Ref::Prelude(p)) => {
             if let Some(why) = excluded(p.name) {
-                out.push(error(node, CODE, format!("`{}` is not available in the {} profile: {why}", p.name, profile.name())));
+                out.push(error(
+                    node,
+                    CODE,
+                    format!(
+                        "`{}` is not available in the {} profile: {why}",
+                        p.name,
+                        profile.name()
+                    ),
+                ));
                 return;
             }
             // `Worker.new`: a dedicated worker needs a Lua state of its own.
             // `spawn`, `Worker.run` and `Worker.map` stay: their jobs run in
             // the same state on copies of their arguments.
-            let field_of_parent = || node.parent().filter(|n| n.kind() == FIELD_EXPR).and_then(|parent| field_name(&parent).map(|t| (parent, t.text().to_owned())));
+            let field_of_parent = || {
+                node.parent()
+                    .filter(|n| n.kind() == FIELD_EXPR)
+                    .and_then(|parent| field_name(&parent).map(|t| (parent, t.text().to_owned())))
+            };
             if p.name == "Worker" {
                 if let Some((parent, _)) = field_of_parent().filter(|(_, f)| f == "new") {
                     out.push(error(
@@ -380,7 +429,9 @@ fn check_name(node: &SyntaxNode, res: &Resolution, decls: &Declarations, profile
             if !profile.is_gmod() {
                 return;
             }
-            let crate::prelude::Access::LuaGlobal(global) = p.access else { return };
+            let crate::prelude::Access::LuaGlobal(global) = p.access else {
+                return;
+            };
             if global == "require" {
                 check_require(node, out);
                 return;
@@ -393,17 +444,31 @@ fn check_name(node: &SyntaxNode, res: &Resolution, decls: &Declarations, profile
                     Some((parent, _)) if gmod_missing(global, None).is_none() => parent.clone(),
                     _ => node.clone(),
                 };
-                out.push(error(&at, CODE_GMOD, format!("`{}` does not exist in Garry's Mod: {why}", at.text().to_string().trim())));
+                out.push(error(
+                    &at,
+                    CODE_GMOD,
+                    format!(
+                        "`{}` does not exist in Garry's Mod: {why}",
+                        at.text().to_string().trim()
+                    ),
+                ));
             }
         }
         Some(Ref::Declared(id)) if profile.is_gmod() => {
             let Some(item) = decls.get(*id) else { return };
-            if !matches!(item.kind, DeclItemKind::Fn | DeclItemKind::Let | DeclItemKind::Const) {
+            if !matches!(
+                item.kind,
+                DeclItemKind::Fn | DeclItemKind::Let | DeclItemKind::Const
+            ) {
                 return;
             }
             if let Some(realm) = doc_realm(&item.node) {
                 if !realm.on_client() {
-                    out.push(error(node, CODE_REALM, realm.message(&format!("`{}`", item.name))));
+                    out.push(error(
+                        node,
+                        CODE_REALM,
+                        realm.message(&format!("`{}`", item.name)),
+                    ));
                 }
             }
         }
@@ -416,25 +481,52 @@ fn check_name(node: &SyntaxNode, res: &Resolution, decls: &Declarations, profile
 /// string.
 fn check_require(callee: &SyntaxNode, out: &mut Vec<SemaDiagnostic>) {
     let call = match callee.parent() {
-        Some(p) if matches!(p.kind(), CALL_EXPR | COMMAND_CALL) && p.children().next().as_ref() == Some(callee) => p,
+        Some(p)
+            if matches!(p.kind(), CALL_EXPR | COMMAND_CALL)
+                && p.children().next().as_ref() == Some(callee) =>
+        {
+            p
+        }
         _ => return,
     };
-    let Some(args) = call.children().find(|c| matches!(c.kind(), ARG_LIST | COMMAND_ARGS)) else { return };
+    let Some(args) = call
+        .children()
+        .find(|c| matches!(c.kind(), ARG_LIST | COMMAND_ARGS))
+    else {
+        return;
+    };
     check_require_args(&call, &args, out);
 }
 
 fn check_require_args(at: &SyntaxNode, args: &SyntaxNode, out: &mut Vec<SemaDiagnostic>) {
-    let Some(arg) = args.children().next().filter(|a| a.kind() == LITERAL) else { return };
-    let Some(tok) = arg.first_token().filter(|t| t.kind() == STRING) else { return };
+    let Some(arg) = args.children().next().filter(|a| a.kind() == LITERAL) else {
+        return;
+    };
+    let Some(tok) = arg.first_token().filter(|t| t.kind() == STRING) else {
+        return;
+    };
     let name = crate::resolver::decode_plain_string(&tok);
     if let Some(why) = gmod_missing_module(&name) {
-        out.push(error(at, CODE_GMOD, format!("`require(\"{name}\")` fails in Garry's Mod: {why}")));
+        out.push(error(
+            at,
+            CODE_GMOD,
+            format!("`require(\"{name}\")` fails in Garry's Mod: {why}"),
+        ));
     }
 }
 
-fn check_lua_path(path: &SyntaxNode, res: &Resolution, index: &HashMap<String, Realm>, out: &mut Vec<SemaDiagnostic>) {
-    let Some(first) = crate::resolver::lua_path_root(path) else { return };
-    let Some(Ref::LuaGlobal(global)) = res.reference(first.text_range()) else { return };
+fn check_lua_path(
+    path: &SyntaxNode,
+    res: &Resolution,
+    index: &HashMap<String, Realm>,
+    out: &mut Vec<SemaDiagnostic>,
+) {
+    let Some(first) = crate::resolver::lua_path_root(path) else {
+        return;
+    };
+    let Some(Ref::LuaGlobal(global)) = res.reference(first.text_range()) else {
+        return;
+    };
     // The leading fields: `:util.AddNetworkString` is "util", then
     // "util.AddNetworkString".
     let mut fields = Vec::new();
@@ -458,7 +550,11 @@ fn check_lua_path(path: &SyntaxNode, res: &Resolution, index: &HashMap<String, R
             Some(f) if gmod_missing(global, None).is_none() => format!(":{global}.{f}"),
             _ => format!(":{global}"),
         };
-        out.push(error(path, CODE_GMOD, format!("`{shown}` does not exist in Garry's Mod: {why}")));
+        out.push(error(
+            path,
+            CODE_GMOD,
+            format!("`{shown}` does not exist in Garry's Mod: {why}"),
+        ));
         return;
     }
     let mut key = global.clone();
@@ -481,7 +577,13 @@ fn check_lua_path(path: &SyntaxNode, res: &Resolution, index: &HashMap<String, R
 /// analyzer recorded. The members of gmod's tables of hooks (`GM`,
 /// `ENTITY`, …) are left alone: their realm says where the game calls
 /// them, and a file may define or call one in any realm.
-pub fn check_members(root: &SyntaxNode, res: &Resolution, info: &TypeInfo, decls: &Declarations, profile: Profile) -> Vec<SemaDiagnostic> {
+pub fn check_members(
+    root: &SyntaxNode,
+    res: &Resolution,
+    info: &TypeInfo,
+    decls: &Declarations,
+    profile: Profile,
+) -> Vec<SemaDiagnostic> {
     let mut out = Vec::new();
     if !profile.is_gmod() {
         return out;
@@ -493,31 +595,52 @@ pub fn check_members(root: &SyntaxNode, res: &Resolution, info: &TypeInfo, decls
         if is_dead(*range, &dead) {
             continue;
         }
-        let Some((top, member)) = decl_member(info, decls, *owner, name) else { continue };
+        let Some((top, member)) = decl_member(info, decls, *owner, name) else {
+            continue;
+        };
         if doc_comment_text(&top).is_some_and(|d| d.contains("table of hooks")) {
             continue;
         }
-        let Some(realm) = doc_realm(&member) else { continue };
+        let Some(realm) = doc_realm(&member) else {
+            continue;
+        };
         if realm.on_client() {
             continue;
         }
         let shown = format!("`{}.{name}`", info.types.name(*owner));
-        out.push(SemaDiagnostic { range: *range, code: CODE_REALM, message: realm.message(&shown), error: true, lint: false });
+        out.push(SemaDiagnostic {
+            range: *range,
+            code: CODE_REALM,
+            message: realm.message(&shown),
+            error: true,
+            lint: false,
+        });
     }
     out
 }
 
 /// The declaration of member `name` of `owner` or of one of its parents:
 /// the top-level item it is in, and the member's node.
-fn decl_member(info: &TypeInfo, decls: &Declarations, owner: NamedId, name: &str) -> Option<(SyntaxNode, SyntaxNode)> {
+fn decl_member(
+    info: &TypeInfo,
+    decls: &Declarations,
+    owner: NamedId,
+    name: &str,
+) -> Option<(SyntaxNode, SyntaxNode)> {
     let mut cur = Some(owner);
     for _ in 0..64 {
         let c = cur?;
         if let Some((id, range)) = info.decl_nodes.get(&c) {
             let item = decls.get(*id)?;
-            let node = if item.node.text_range() == *range { Some(item.node.clone()) } else { item.node.descendants().find(|n| n.text_range() == *range) };
+            let node = if item.node.text_range() == *range {
+                Some(item.node.clone())
+            } else {
+                item.node.descendants().find(|n| n.text_range() == *range)
+            };
             if let Some(node) = node {
-                let found = node.children().find(|m| is_member(m) && member_name(m).as_deref() == Some(name));
+                let found = node
+                    .children()
+                    .find(|m| is_member(m) && member_name(m).as_deref() == Some(name));
                 if let Some(m) = found {
                     return Some((item.node.clone(), m));
                 }
@@ -529,7 +652,10 @@ fn decl_member(info: &TypeInfo, decls: &Declarations, owner: NamedId, name: &str
 }
 
 fn is_member(m: &SyntaxNode) -> bool {
-    matches!(m.kind(), DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE)
+    matches!(
+        m.kind(),
+        DECL_FN | DECL_FIELD | DECL_VALUE | DECL_MODULE | DECL_STRUCT | DECL_TYPE
+    )
 }
 
 /// The name a member of a declaration declares.
@@ -571,7 +697,9 @@ fn lua_path_realms(decls: &Declarations) -> HashMap<String, Realm> {
     }
     let mut out = HashMap::new();
     for item in &decls.items {
-        let Some(path) = item.root.as_ref().and_then(path_of) else { continue };
+        let Some(path) = item.root.as_ref().and_then(path_of) else {
+            continue;
+        };
         if let Some(r) = doc_realm(&item.node) {
             out.insert(path.clone(), r);
         }
@@ -604,7 +732,10 @@ impl Realm {
             "menu" => "exists only in the main menu",
             _ => "does not exist on the client",
         };
-        let mut m = format!("{shown} {only} in Garry's Mod (realm: {}), and this file is compiled for the client realm", self.text);
+        let mut m = format!(
+            "{shown} {only} in Garry's Mod (realm: {}), and this file is compiled for the client realm",
+            self.text
+        );
         if self.text.contains("server") {
             m.push_str("; code under `if SERVER` is left out of a client build");
         }
@@ -629,10 +760,19 @@ fn doc_realm(node: &SyntaxNode) -> Option<Realm> {
     if text.is_empty() {
         return None;
     }
-    let url = doc.split_whitespace().find(|w| w.starts_with("https://")).map(|w| w.trim_end_matches(['.', ')']).to_owned());
+    let url = doc
+        .split_whitespace()
+        .find(|w| w.starts_with("https://"))
+        .map(|w| w.trim_end_matches(['.', ')']).to_owned());
     Some(Realm { text, url })
 }
 
 fn error(node: &SyntaxNode, code: &'static str, message: String) -> SemaDiagnostic {
-    SemaDiagnostic { range: node.text_range(), code, message, error: true, lint: false }
+    SemaDiagnostic {
+        range: node.text_range(),
+        code,
+        message,
+        error: true,
+        lint: false,
+    }
 }

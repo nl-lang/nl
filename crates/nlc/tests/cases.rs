@@ -42,7 +42,9 @@ fn cases_dir() -> PathBuf {
 type Finished = (Option<i32>, Vec<u8>, Vec<u8>);
 
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, String> {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
     let mut child = cmd.spawn().map_err(|e| format!("cannot start nlc: {e}"))?;
     let mut so = child.stdout.take();
     let mut se = child.stderr.take();
@@ -80,7 +82,12 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, Str
 
 fn first_line(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
-    text.lines().find(|l| !l.trim().is_empty()).unwrap_or("").chars().take(200).collect()
+    text.lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .chars()
+        .take(200)
+        .collect()
 }
 
 fn first_difference(expected: &[u8], actual: &[u8]) -> String {
@@ -92,15 +99,26 @@ fn first_difference(expected: &[u8], actual: &[u8]) -> String {
         let x = el.get(i).copied();
         let y = al.get(i).copied();
         if x != y {
-            return format!("line {}: expected {:?}, got {:?}", i + 1, x.unwrap_or("<end>"), y.unwrap_or("<end>"));
+            return format!(
+                "line {}: expected {:?}, got {:?}",
+                i + 1,
+                x.unwrap_or("<end>"),
+                y.unwrap_or("<end>")
+            );
         }
     }
     "output differs".to_string()
 }
 
 fn nl_files(dir: &Path) -> Vec<PathBuf> {
-    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
-    let mut paths: Vec<PathBuf> = rd.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "nl")).collect();
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut paths: Vec<PathBuf> = rd
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "nl"))
+        .collect();
     paths.sort();
     paths
 }
@@ -108,20 +126,40 @@ fn nl_files(dir: &Path) -> Vec<PathBuf> {
 /// The backends of a `# backends: a,b` line; `[None]` without one (the
 /// default backend).
 fn backends(src: &str) -> Vec<Option<String>> {
-    match src.lines().find_map(|l| l.trim().strip_prefix("# backends:")) {
-        Some(list) => list.split(',').map(str::trim).filter(|b| !b.is_empty()).map(|b| Some(b.to_string())).collect(),
+    match src
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("# backends:"))
+    {
+        Some(list) => list
+            .split(',')
+            .map(str::trim)
+            .filter(|b| !b.is_empty())
+            .map(|b| Some(b.to_string()))
+            .collect(),
         None => vec![None],
     }
 }
 
 /// The declaration files of the `# decl: path` lines.
 fn decls(src: &str) -> Vec<String> {
-    src.lines().filter_map(|l| l.trim().strip_prefix("# decl:")).map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect()
+    src.lines()
+        .filter_map(|l| l.trim().strip_prefix("# decl:"))
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .collect()
 }
 
 /// Runs one entry program in one mode, on one backend (`None`: the
 /// default); `None` when it passes.
-fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: bool, backend: Option<&str>, decl: &[String]) -> Option<String> {
+fn check_run(
+    nlc: &Path,
+    dir: &Path,
+    rel: &Path,
+    expected: &[u8],
+    unchecked: bool,
+    backend: Option<&str>,
+    decl: &[String],
+) -> Option<String> {
     let mut cmd = Command::new(nlc);
     cmd.current_dir(dir).env_remove("NL_PATH").arg("run");
     for d in decl {
@@ -146,8 +184,16 @@ fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: boo
             if stdout == expected && code == Some(0) {
                 None
             } else if code != Some(0) {
-                let diff = if stdout != expected { format!(" [{}]", first_difference(expected, &stdout)) } else { String::new() };
-                Some(format!("exit {:?}{mode}: {}{diff}", code, first_line(&stderr)))
+                let diff = if stdout != expected {
+                    format!(" [{}]", first_difference(expected, &stdout))
+                } else {
+                    String::new()
+                };
+                Some(format!(
+                    "exit {:?}{mode}: {}{diff}",
+                    code,
+                    first_line(&stderr)
+                ))
             } else {
                 Some(format!("{}{mode}", first_difference(expected, &stdout)))
             }
@@ -157,9 +203,19 @@ fn check_run(nlc: &Path, dir: &Path, rel: &Path, expected: &[u8], unchecked: boo
 
 /// Compiles one rejected program in one mode; `None` when it is rejected
 /// with an error on line `want`.
-fn check_reject(nlc: &Path, dir: &Path, rel: &Path, want: usize, unchecked: bool, decl: &[String]) -> Option<String> {
+fn check_reject(
+    nlc: &Path,
+    dir: &Path,
+    rel: &Path,
+    want: usize,
+    unchecked: bool,
+    decl: &[String],
+) -> Option<String> {
     let mut cmd = Command::new(nlc);
-    cmd.current_dir(dir).env_remove("NL_PATH").arg("build").arg("--emit=lua");
+    cmd.current_dir(dir)
+        .env_remove("NL_PATH")
+        .arg("build")
+        .arg("--emit=lua");
     for d in decl {
         cmd.arg("--decl").arg(d);
     }
@@ -183,12 +239,18 @@ fn check_reject(nlc: &Path, dir: &Path, rel: &Path, want: usize, unchecked: bool
                 })
                 .collect();
             if code == Some(0) {
-                Some(format!("compiled without error{mode} (expected one on line {want})"))
+                Some(format!(
+                    "compiled without error{mode} (expected one on line {want})"
+                ))
             } else if lines.iter().any(|(l, _)| *l == want) {
                 None
             } else {
-                let got = lines.first().map_or_else(|| first_line(&stderr), |(_, l)| l.clone());
-                Some(format!("expected an error on line {want}{mode}; got: {got}"))
+                let got = lines
+                    .first()
+                    .map_or_else(|| first_line(&stderr), |(_, l)| l.clone());
+                Some(format!(
+                    "expected an error on line {want}{mode}; got: {got}"
+                ))
             }
         }
     }
@@ -201,15 +263,23 @@ fn regression_cases() {
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let filters: Vec<String> = std::env::var("NL_CASES_FILTER")
         .ok()
-        .map(|f| f.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+        .map(|f| {
+            f.split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
         .unwrap_or_default();
-    let selected = |name: &str| filters.is_empty() || filters.iter().any(|f| name.contains(f.as_str()));
+    let selected =
+        |name: &str| filters.is_empty() || filters.iter().any(|f| name.contains(f.as_str()));
 
     let mut failures = Vec::new();
     let mut count = 0;
     for path in nl_files(&dir) {
         let out = path.with_extension("out");
-        let Ok(expected) = std::fs::read(&out) else { continue };
+        let Ok(expected) = std::fs::read(&out) else {
+            continue;
+        };
         let rel = path.strip_prefix(&dir).unwrap_or(&path).to_path_buf();
         let name = rel.display().to_string();
         if !selected(&name) {
@@ -220,11 +290,21 @@ fn regression_cases() {
         let checked_only = src.lines().any(|l| l.trim() == "# checked-only");
         let decl = decls(&src);
         for backend in backends(&src) {
-            if let Some(why) = check_run(&nlc, &dir, &rel, &expected, false, backend.as_deref(), &decl) {
+            if let Some(why) = check_run(
+                &nlc,
+                &dir,
+                &rel,
+                &expected,
+                false,
+                backend.as_deref(),
+                &decl,
+            ) {
                 failures.push(format!("{name}: {why}"));
             }
             if !checked_only {
-                if let Some(why) = check_run(&nlc, &dir, &rel, &expected, true, backend.as_deref(), &decl) {
+                if let Some(why) =
+                    check_run(&nlc, &dir, &rel, &expected, true, backend.as_deref(), &decl)
+                {
                     failures.push(format!("{name}: {why}"));
                 }
             }
@@ -238,7 +318,10 @@ fn regression_cases() {
         }
         count += 1;
         let src = std::fs::read_to_string(&path).unwrap_or_default();
-        let Some(marker) = src.lines().position(|l| l.trim_start().starts_with("# expect-error:")) else {
+        let Some(marker) = src
+            .lines()
+            .position(|l| l.trim_start().starts_with("# expect-error:"))
+        else {
             failures.push(format!("{name}: no `# expect-error:` comment"));
             continue;
         };
@@ -249,8 +332,17 @@ fn regression_cases() {
             }
         }
     }
-    assert!(count > 0 || !filters.is_empty(), "no regression programs found in {}", dir.display());
-    assert!(failures.is_empty(), "{} of {count} regression programs failed:\n{}", failures.len(), failures.join("\n"));
+    assert!(
+        count > 0 || !filters.is_empty(),
+        "no regression programs found in {}",
+        dir.display()
+    );
+    assert!(
+        failures.is_empty(),
+        "{} of {count} regression programs failed:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
 }
 
 /// The forms `try` compiles to (crates/nl_ir/src/lower/error.rs and
@@ -263,7 +355,9 @@ fn try_forms() {
     let dir = cases_dir();
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let mut cmd = Command::new(&nlc);
-    cmd.current_dir(&dir).env_remove("NL_PATH").args(["build", "--emit=lua", "lib/try_forms.nl"]);
+    cmd.current_dir(&dir)
+        .env_remove("NL_PATH")
+        .args(["build", "--emit=lua", "lib/try_forms.nl"]);
     let result = run_with_timeout(cmd, Duration::from_secs(30));
     assert!(result.is_ok(), "{result:?}");
     let (code, stdout, stderr) = result.unwrap_or_default();
@@ -286,19 +380,37 @@ fn lambda_same_code() {
     let mut outputs = Vec::new();
     for file in ["lib/lambda_forms.nl", "lib/lambda_forms_fn.nl"] {
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").args(["build", "--emit=lua", file]);
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .args(["build", "--emit=lua", file]);
         let result = run_with_timeout(cmd, Duration::from_secs(30));
         assert!(result.is_ok(), "{result:?}");
         let (code, stdout, stderr) = result.unwrap_or_default();
-        assert_eq!(code, Some(0), "{file}: {}", String::from_utf8_lossy(&stderr));
+        assert_eq!(
+            code,
+            Some(0),
+            "{file}: {}",
+            String::from_utf8_lossy(&stderr)
+        );
         outputs.push(String::from_utf8_lossy(&stdout).replace(file, "FILE"));
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").args(["run", "--backend=bc", file]);
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .args(["run", "--backend=bc", file]);
         let result = run_with_timeout(cmd, Duration::from_secs(30));
         assert!(result.is_ok(), "{result:?}");
         let (code, stdout, stderr) = result.unwrap_or_default();
-        assert_eq!(code, Some(0), "{file}: {}", String::from_utf8_lossy(&stderr));
-        assert_eq!(String::from_utf8_lossy(&stdout), "2\t6\ttrue\t1\t66\t1\n", "{file}");
+        assert_eq!(
+            code,
+            Some(0),
+            "{file}: {}",
+            String::from_utf8_lossy(&stderr)
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&stdout),
+            "2\t6\ttrue\t1\t66\t1\n",
+            "{file}"
+        );
     }
     assert_eq!(outputs.first(), outputs.get(1));
 }
@@ -317,7 +429,9 @@ fn nil_safe_lowering() {
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let file = "lib/nil_safe_forms.nl";
     let mut cmd = Command::new(&nlc);
-    cmd.current_dir(&dir).env_remove("NL_PATH").args(["build", "--emit=lua", file]);
+    cmd.current_dir(&dir)
+        .env_remove("NL_PATH")
+        .args(["build", "--emit=lua", file]);
     let result = run_with_timeout(cmd, Duration::from_secs(30));
     assert!(result.is_ok(), "{result:?}");
     let (code, stdout, stderr) = result.unwrap_or_default();
@@ -341,12 +455,25 @@ fn nil_safe_lowering() {
     }
     for backend in ["lua", "bc"] {
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").arg("run").arg(format!("--backend={backend}")).arg(file);
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .arg("run")
+            .arg(format!("--backend={backend}"))
+            .arg(file);
         let result = run_with_timeout(cmd, Duration::from_secs(30));
         assert!(result.is_ok(), "{result:?}");
         let (code, stdout, stderr) = result.unwrap_or_default();
-        assert_eq!(code, Some(0), "--backend={backend}: {}", String::from_utf8_lossy(&stderr));
-        assert_eq!(String::from_utf8_lossy(&stdout), "nil\t2\tnil\tnil\tnil\t4\nx\t6\n", "--backend={backend}");
+        assert_eq!(
+            code,
+            Some(0),
+            "--backend={backend}: {}",
+            String::from_utf8_lossy(&stderr)
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&stdout),
+            "nil\t2\tnil\tnil\tnil\t4\nx\t6\n",
+            "--backend={backend}"
+        );
     }
 }
 
@@ -360,23 +487,46 @@ fn nil_safe_lowering() {
 fn limits_rt_cache() {
     let dir = cases_dir();
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
-    for (file, moved, output) in [("limits_rt_cache.nl", false, "1595\n1652\n"), ("lib/limits_rt_cache57.nl", true, "1710\n")] {
+    for (file, moved, output) in [
+        ("limits_rt_cache.nl", false, "1595\n1652\n"),
+        ("lib/limits_rt_cache57.nl", true, "1710\n"),
+    ] {
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").args(["build", "--emit=lua", file]);
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .args(["build", "--emit=lua", file]);
         let result = run_with_timeout(cmd, Duration::from_secs(30));
         assert!(result.is_ok(), "{result:?}");
         let (code, stdout, stderr) = result.unwrap_or_default();
-        assert_eq!(code, Some(0), "{file}: {}", String::from_utf8_lossy(&stderr));
+        assert_eq!(
+            code,
+            Some(0),
+            "{file}: {}",
+            String::from_utf8_lossy(&stderr)
+        );
         let lua = String::from_utf8_lossy(&stdout);
         assert_eq!(lua.contains("local file = {}"), moved, "{file}: {lua}");
         for backend in ["lua", "bc"] {
             let mut cmd = Command::new(&nlc);
-            cmd.current_dir(&dir).env_remove("NL_PATH").arg("run").arg(format!("--backend={backend}")).arg(file);
+            cmd.current_dir(&dir)
+                .env_remove("NL_PATH")
+                .arg("run")
+                .arg(format!("--backend={backend}"))
+                .arg(file);
             let result = run_with_timeout(cmd, Duration::from_secs(30));
             assert!(result.is_ok(), "{result:?}");
             let (code, stdout, stderr) = result.unwrap_or_default();
-            assert_eq!(code, Some(0), "{file} --backend={backend}: {}", String::from_utf8_lossy(&stderr));
-            assert_eq!(String::from_utf8_lossy(&stdout), output, "{file} --backend={backend}");
+            assert_eq!(
+                code,
+                Some(0),
+                "{file} --backend={backend}: {}",
+                String::from_utf8_lossy(&stderr)
+            );
+            assert_eq!(
+                String::from_utf8_lossy(&stdout),
+                output,
+                "{file} --backend={backend}"
+            );
         }
     }
 }
@@ -397,13 +547,21 @@ fn uncaught_error_trace() {
                     \tlib/uncaught_trace.nl:14: in main chunk\n";
     for backend in ["lua", "bc"] {
         let mut cmd = Command::new(&nlc);
-        cmd.current_dir(&dir).env_remove("NL_PATH").arg("run").arg(format!("--backend={backend}")).arg("lib/uncaught_trace.nl");
+        cmd.current_dir(&dir)
+            .env_remove("NL_PATH")
+            .arg("run")
+            .arg(format!("--backend={backend}"))
+            .arg("lib/uncaught_trace.nl");
         let result = run_with_timeout(cmd, Duration::from_secs(30));
         assert!(result.is_ok(), "{result:?}");
         let (code, stdout, stderr) = result.unwrap_or_default();
         let stderr = String::from_utf8_lossy(&stderr);
         assert_eq!(code, Some(1), "--backend={backend}: {stderr}");
-        assert_eq!(String::from_utf8_lossy(&stdout), "visiting\n", "--backend={backend}");
+        assert_eq!(
+            String::from_utf8_lossy(&stdout),
+            "visiting\n",
+            "--backend={backend}"
+        );
         assert_eq!(stderr, expected, "--backend={backend}");
     }
 }
@@ -415,7 +573,12 @@ fn nlc_stdout(dir: &Path, args: &[&str]) -> String {
     let result = run_with_timeout(cmd, Duration::from_secs(30));
     assert!(result.is_ok(), "{args:?}: {result:?}");
     let (code, stdout, stderr) = result.unwrap_or_default();
-    assert_eq!(code, Some(0), "{args:?}: {}", String::from_utf8_lossy(&stderr));
+    assert_eq!(
+        code,
+        Some(0),
+        "{args:?}: {}",
+        String::from_utf8_lossy(&stderr)
+    );
     String::from_utf8_lossy(&stdout).into_owned()
 }
 
@@ -434,8 +597,14 @@ fn localize_generated_code() {
     assert_eq!(std, default, "std is the default");
 
     // none: every path is read where it stands.
-    assert!(!none.contains("string_format") && !none.contains("math_pi"), "{none}");
-    assert!(none.contains("return math.pi * r * r") && none.contains("string.format(\"%.1f\""), "{none}");
+    assert!(
+        !none.contains("string_format") && !none.contains("math_pi"),
+        "{none}"
+    );
+    assert!(
+        none.contains("return math.pi * r * r") && none.contains("string.format(\"%.1f\""),
+        "{none}"
+    );
 
     // std: the fields of the libraries the file reads and does not assign,
     // read once after the file's declarations, in the order of first use;
@@ -445,14 +614,32 @@ fn localize_generated_code() {
         "{std}"
     );
     assert_eq!(std.matches("math_pi").count(), 2, "{std}");
-    assert!(std.contains("return math_pi * r * r") && std.contains("return string_upper(s)"), "{std}");
-    assert!(std.contains("string_format(\"%.1f\"") && std.contains("os_getenv(\"NL_SURELY_UNSET_VARIABLE\")"), "{std}");
+    assert!(
+        std.contains("return math_pi * r * r") && std.contains("return string_upper(s)"),
+        "{std}"
+    );
+    assert!(
+        std.contains("string_format(\"%.1f\"")
+            && std.contains("os_getenv(\"NL_SURELY_UNSET_VARIABLE\")"),
+        "{std}"
+    );
     // Assigned by the file (`:math.floor = …`), its root assigned
     // (`:_G.table = …`): read where they stand.
-    assert!(std.contains("print(math.floor(2.5))") && std.contains("math.floor = math.floor") && !std.contains("math_floor"), "{std}");
-    assert!(std.contains("table.concat(") && !std.contains("table_concat"), "{std}");
+    assert!(
+        std.contains("print(math.floor(2.5))")
+            && std.contains("math.floor = math.floor")
+            && !std.contains("math_floor"),
+        "{std}"
+    );
+    assert!(
+        std.contains("table.concat(") && !std.contains("table_concat"),
+        "{std}"
+    );
     // A root alone, an index step: left alone.
-    assert!(std.contains("print(\"printed\")") && std.contains("string.len(\"abc\")"), "{std}");
+    assert!(
+        std.contains("print(\"printed\")") && std.contains("string.len(\"abc\")"),
+        "{std}"
+    );
 
     // all: roots alone too; the file's `global` is a variable.
     assert!(
@@ -461,14 +648,31 @@ fn localize_generated_code() {
         ),
         "{all}"
     );
-    assert!(all.contains("print(_G_math.floor(2.5))") && all.contains("math.floor = _G_math.floor"), "{all}");
-    assert!(all.contains("_G_print(\"printed\")") && all.contains("_G_string.len(\"abc\")"), "{all}");
-    assert!(all.contains("Score = Score + 1") && all.contains("print(Score)"), "{all}");
+    assert!(
+        all.contains("print(_G_math.floor(2.5))") && all.contains("math.floor = _G_math.floor"),
+        "{all}"
+    );
+    assert!(
+        all.contains("_G_print(\"printed\")") && all.contains("_G_string.len(\"abc\")"),
+        "{all}"
+    );
+    assert!(
+        all.contains("Score = Score + 1") && all.contains("print(Score)"),
+        "{all}"
+    );
 
     let expected = "12.6\tA\n2\na,b\nnil\nprinted\n3\n2\n";
     for setting in ["none", "std", "all"] {
         for backend in ["lua", "bc"] {
-            let out = nlc_stdout(&dir, &["run", &format!("--backend={backend}"), &format!("--localize={setting}"), file]);
+            let out = nlc_stdout(
+                &dir,
+                &[
+                    "run",
+                    &format!("--backend={backend}"),
+                    &format!("--localize={setting}"),
+                    file,
+                ],
+            );
             assert_eq!(out, expected, "--localize={setting} --backend={backend}");
         }
     }
@@ -481,9 +685,21 @@ fn localize_generated_code() {
 #[test]
 fn localize_trade() {
     let dir = cases_dir();
-    for (setting, expected) in [("none", "A\tnil\nlate A\t5\n"), ("std", "A\tnil\nA\t5\n"), ("all", "A\tnil\nA\tnil\n")] {
+    for (setting, expected) in [
+        ("none", "A\tnil\nlate A\t5\n"),
+        ("std", "A\tnil\nA\t5\n"),
+        ("all", "A\tnil\nA\tnil\n"),
+    ] {
         for backend in ["lua", "bc"] {
-            let out = nlc_stdout(&dir, &["run", &format!("--backend={backend}"), &format!("--localize={setting}"), "lib/localize_trade.nl"]);
+            let out = nlc_stdout(
+                &dir,
+                &[
+                    "run",
+                    &format!("--backend={backend}"),
+                    &format!("--localize={setting}"),
+                    "lib/localize_trade.nl",
+                ],
+            );
             assert_eq!(out, expected, "--localize={setting} --backend={backend}");
         }
     }
@@ -499,7 +715,9 @@ fn localize_trade() {
 fn localize_limits() {
     let dir = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("localize_limits");
     let _ = std::fs::create_dir_all(&dir);
-    let paths = ["abs", "ceil", "floor", "sqrt", "max", "min", "exp", "log", "sin", "cos"];
+    let paths = [
+        "abs", "ceil", "floor", "sqrt", "max", "min", "exp", "log", "sin", "cos",
+    ];
     let use_paths: Vec<String> = paths.iter().map(|p| format!(":math.{p}(1)")).collect();
     // 50 file-level functions, the 2 values of the keyed-arguments check
     // and 10 paths: 62 upvalues, 6 over.
@@ -508,21 +726,35 @@ fn localize_limits() {
         upvalues.push_str(&format!("fn f{i}(x) x + {i} end\n"));
     }
     let calls: Vec<String> = (1..=50).map(|i| format!("f{i}(n)")).collect();
-    upvalues.push_str(&format!("fn g(n)\n  {} + {}\nend\nprint g(1)\n", calls.join(" + "), use_paths.join(" + ")));
+    upvalues.push_str(&format!(
+        "fn g(n)\n  {} + {}\nend\nprint g(1)\n",
+        calls.join(" + "),
+        use_paths.join(" + ")
+    ));
     // 175 top-level variables and `h`, the 2 values of the inline checks
     // and 10 paths: 188 active locals, 8 over.
     let mut locals = String::new();
     for i in 1..=175 {
         locals.push_str(&format!("let v{i} = {i}\n"));
     }
-    locals.push_str(&format!("fn h(x)\n  x + v1 + v175\nend\nprint h({})\n", use_paths.join(" + ")));
+    locals.push_str(&format!(
+        "fn h(x)\n  x + v1 + v175\nend\nprint h({})\n",
+        use_paths.join(" + ")
+    ));
     for (name, src, dropped) in [("upvalues.nl", &upvalues, 6), ("locals.nl", &locals, 8)] {
         let _ = std::fs::write(dir.join(name), src);
         let lua = nlc_stdout(&dir, &["build", "--emit=lua", name]);
         assert!(!lua.contains("local file = {}"), "{name}: {lua}");
-        let read = paths.iter().filter(|p| lua.contains(&format!("math.{p}(1)"))).count();
+        let read = paths
+            .iter()
+            .filter(|p| lua.contains(&format!("math.{p}(1)")))
+            .count();
         assert_eq!(read, dropped, "{name}: {lua}");
-        assert_eq!(lua.matches("math_").count(), (paths.len() - dropped) * 2, "{name}: {lua}");
+        assert_eq!(
+            lua.matches("math_").count(),
+            (paths.len() - dropped) * 2,
+            "{name}: {lua}"
+        );
         let expected = nlc_stdout(&dir, &["run", "--localize=none", name]);
         for backend in ["lua", "bc"] {
             let out = nlc_stdout(&dir, &["run", &format!("--backend={backend}"), name]);

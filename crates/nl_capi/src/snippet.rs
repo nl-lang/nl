@@ -45,7 +45,10 @@ pub fn header(d: &Diagnostic) -> String {
         Severity::Warning => "warning",
         Severity::Lint => "lint",
     };
-    format!("{}:{}:{}: {severity}: {} [{}]", d.file, d.line, d.column, d.message, d.code)
+    format!(
+        "{}:{}:{}: {severity}: {} [{}]",
+        d.file, d.line, d.column, d.message, d.code
+    )
 }
 
 /// A diagnostic with its snippet: the header line, then the snippet's
@@ -53,14 +56,20 @@ pub fn header(d: &Diagnostic) -> String {
 pub fn render(d: &Diagnostic, source: &str) -> String {
     let header = header(d);
     let s = snippet(source, d.line, d.column, d.end_line, d.end_column);
-    if s.is_empty() { header } else { format!("{header}\n{s}") }
+    if s.is_empty() {
+        header
+    } else {
+        format!("{header}\n{s}")
+    }
 }
 
 /// The snippet of the range from `line`:`column` to `end_line`:`end_column`
 /// of `source` (see the module doc): three lines joined by newlines, or an
 /// empty string when `line` is not in `source`.
 pub fn snippet(source: &str, line: u32, column: u32, end_line: u32, end_column: u32) -> String {
-    let Some(text) = line_text(source, line) else { return String::new() };
+    let Some(text) = line_text(source, line) else {
+        return String::new();
+    };
     let chars: Vec<char> = text.chars().collect();
     let start = (column.max(1) - 1) as usize;
     let end = if end_line > line {
@@ -89,7 +98,11 @@ pub fn snippet(source: &str, line: u32, column: u32, end_line: u32, end_column: 
     }
     at.push(col);
     // A position past the end of the line is a column past its last one.
-    let display = |i: usize| at.get(i).copied().unwrap_or_else(|| col + i.saturating_sub(chars.len()));
+    let display = |i: usize| {
+        at.get(i)
+            .copied()
+            .unwrap_or_else(|| col + i.saturating_sub(chars.len()))
+    };
     let from = display(start);
     let to = display(end).max(from + 1);
 
@@ -129,7 +142,12 @@ fn line_text(source: &str, line: u32) -> Option<&str> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
 
@@ -157,7 +175,10 @@ mod tests {
 
     #[test]
     fn empty_range_and_end_of_line() {
-        assert_eq!(snippet("print(\n", 1, 7, 1, 7), "  |\n1 | print(\n  |       ^");
+        assert_eq!(
+            snippet("print(\n", 1, 7, 1, 7),
+            "  |\n1 | print(\n  |       ^"
+        );
         // Past the last character: the caret follows the line.
         assert_eq!(snippet("ab\n", 1, 3, 1, 3), "  |\n1 | ab\n  |   ^");
         // An end before the start is one caret.
@@ -166,7 +187,10 @@ mod tests {
 
     #[test]
     fn multi_line_range() {
-        assert_eq!(snippet("x = foo(\n  1\n)\n", 1, 5, 3, 2), "  |\n1 | x = foo(\n  |     ^^^^ to line 3");
+        assert_eq!(
+            snippet("x = foo(\n  1\n)\n", 1, 5, 3, 2),
+            "  |\n1 | x = foo(\n  |     ^^^^ to line 3"
+        );
     }
 
     #[test]
@@ -179,7 +203,10 @@ mod tests {
     #[test]
     fn columns_count_characters() {
         // `é` and `€` are one column each, whatever their bytes.
-        assert_eq!(snippet("s = \"é€\" + x", 1, 12, 1, 13), "  |\n1 | s = \"é€\" + x\n  |            ^");
+        assert_eq!(
+            snippet("s = \"é€\" + x", 1, 12, 1, 13),
+            "  |\n1 | s = \"é€\" + x\n  |            ^"
+        );
     }
 
     #[test]
@@ -189,6 +216,9 @@ mod tests {
         assert_eq!(snippet("\u{FEFF}ab", 1, 2, 1, 3), "  |\n1 | ab\n  |  ^");
         assert_eq!(snippet("a\n", 5, 1, 5, 2), "");
         assert_eq!(snippet("a\n", 0, 1, 0, 2), "");
-        assert_eq!(render(&diag(9, 1, 9, 2), "a\n"), "x.nl:9:1: error: undeclared name `foo` [undeclared-name]");
+        assert_eq!(
+            render(&diag(9, 1, 9, 2), "a\n"),
+            "x.nl:9:1: error: undeclared name `foo` [undeclared-name]"
+        );
     }
 }

@@ -39,7 +39,9 @@ enum Dep {
 impl Dep {
     fn bytes(&self) -> usize {
         match self {
-            Dep::Resolve(f, p, r) => f.as_ref().map_or(0, String::len) + p.len() + r.as_ref().map_or(0, String::len),
+            Dep::Resolve(f, p, r) => {
+                f.as_ref().map_or(0, String::len) + p.len() + r.as_ref().map_or(0, String::len)
+            }
             Dep::Read(n, b) => n.len() + b.as_ref().map_or(0, Vec::len),
             Dep::Declarations(list) => list.iter().map(|(n, b)| n.len() + b.len()).sum(),
         }
@@ -94,11 +96,18 @@ pub struct Key {
 
 impl Key {
     pub fn new(chunk_name: &str, source: &[u8], options: &CompileOptions, decls: &[String]) -> Key {
-        Key { chunk_name: chunk_name.to_owned(), source: source.to_vec(), options: OptKey::of(options), decls: decls.to_vec() }
+        Key {
+            chunk_name: chunk_name.to_owned(),
+            source: source.to_vec(),
+            options: OptKey::of(options),
+            decls: decls.to_vec(),
+        }
     }
 
     fn bytes(&self) -> usize {
-        self.chunk_name.len() + self.source.len() + self.decls.iter().map(String::len).sum::<usize>()
+        self.chunk_name.len()
+            + self.source.len()
+            + self.decls.iter().map(String::len).sum::<usize>()
     }
 }
 
@@ -118,12 +127,20 @@ struct Cache {
     misses: u64,
 }
 
-static CACHE: Mutex<Cache> = Mutex::new(Cache { entries: Vec::new(), bytes: 0, clock: 0, hits: 0, misses: 0 });
+static CACHE: Mutex<Cache> = Mutex::new(Cache {
+    entries: Vec::new(),
+    bytes: 0,
+    clock: 0,
+    hits: 0,
+    misses: 0,
+});
 
 fn with_cache<T>(f: impl FnOnce(&mut Cache) -> T) -> T {
     // A panic while the lock was held leaves consistent data (every update
     // is a push or a swap_remove): the poison is ignored.
-    let mut guard = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut guard = CACHE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     f(&mut guard)
 }
 
@@ -136,13 +153,19 @@ struct Recorder<'a> {
 impl Loader for Recorder<'_> {
     fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
         let r = self.inner.resolve(from, path);
-        self.deps.borrow_mut().push(Dep::Resolve(from.map(str::to_owned), path.to_owned(), r.clone()));
+        self.deps.borrow_mut().push(Dep::Resolve(
+            from.map(str::to_owned),
+            path.to_owned(),
+            r.clone(),
+        ));
         r
     }
 
     fn read(&self, name: &str) -> Option<Vec<u8>> {
         let b = self.inner.read(name);
-        self.deps.borrow_mut().push(Dep::Read(name.to_owned(), b.clone()));
+        self.deps
+            .borrow_mut()
+            .push(Dep::Read(name.to_owned(), b.clone()));
         b
     }
 
@@ -166,7 +189,11 @@ pub fn compile_cached(
     keep: impl FnOnce(&CompileOutput) -> bool,
 ) -> CompileOutput {
     let found = with_cache(|c| {
-        c.entries.iter().position(|e| e.key == key).and_then(|i| c.entries.get(i)).map(|e| (e.deps.clone(), e.out.clone()))
+        c.entries
+            .iter()
+            .position(|e| e.key == key)
+            .and_then(|i| c.entries.get(i))
+            .map(|e| (e.deps.clone(), e.out.clone()))
     });
     let mut looked = false;
     if let Some((deps, out)) = found {
@@ -186,17 +213,35 @@ pub fn compile_cached(
     if looked {
         before_compile();
     }
-    let rec = Recorder { inner: loader, deps: RefCell::new(Vec::new()) };
+    let rec = Recorder {
+        inner: loader,
+        deps: RefCell::new(Vec::new()),
+    };
     let out = compile(&rec);
     if keep(&out) {
         let deps = rec.deps.into_inner();
         let bytes = key.bytes()
             + deps.iter().map(Dep::bytes).sum::<usize>()
             + out.chunk.as_ref().map_or(0, Vec::len)
-            + out.diagnostics.iter().map(|d| d.message.len() + d.file.len() + 64).sum::<usize>();
+            + out
+                .diagnostics
+                .iter()
+                .map(|d| d.message.len() + d.file.len() + 64)
+                .sum::<usize>();
         if bytes <= MAX_BYTES / 4 {
             let entry_out = out.clone();
-            with_cache(|c| insert(c, Entry { key, deps, out: entry_out, bytes, used: 0 }));
+            with_cache(|c| {
+                insert(
+                    c,
+                    Entry {
+                        key,
+                        deps,
+                        out: entry_out,
+                        bytes,
+                        used: 0,
+                    },
+                )
+            });
         }
     } else {
         with_cache(|c| c.misses += 1);
@@ -212,8 +257,17 @@ fn insert(c: &mut Cache, mut e: Entry) {
         let old = c.entries.swap_remove(i);
         c.bytes -= old.bytes;
     }
-    while !c.entries.is_empty() && (c.entries.len() >= MAX_ENTRIES || c.bytes + e.bytes > MAX_BYTES) {
-        let Some(oldest) = c.entries.iter().enumerate().min_by_key(|(_, x)| x.used).map(|(i, _)| i) else { break };
+    while !c.entries.is_empty() && (c.entries.len() >= MAX_ENTRIES || c.bytes + e.bytes > MAX_BYTES)
+    {
+        let Some(oldest) = c
+            .entries
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, x)| x.used)
+            .map(|(i, _)| i)
+        else {
+            break;
+        };
         let old = c.entries.swap_remove(oldest);
         c.bytes -= old.bytes;
     }
@@ -274,8 +328,13 @@ mod tests {
 
     #[test]
     fn a_file_is_compiled_once_until_an_import_changes() {
-        let _one = TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let files = Files(RefCell::new(HashMap::from([("b.nl".to_owned(), b"pub fn f end".to_vec())])));
+        let _one = TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let files = Files(RefCell::new(HashMap::from([(
+            "b.nl".to_owned(),
+            b"pub fn f end".to_vec(),
+        )])));
         let compiles = Cell::new(0);
         let opts = CompileOptions::default();
         let name = "@cache_test_a.nl";
@@ -286,7 +345,10 @@ mod tests {
                 || {},
                 |l| {
                     compiles.set(compiles.get() + 1);
-                    let b = l.resolve(Some("a.nl"), "b").and_then(|n| l.read(&n)).unwrap_or_default();
+                    let b = l
+                        .resolve(Some("a.nl"), "b")
+                        .and_then(|n| l.read(&n))
+                        .unwrap_or_default();
                     output(&String::from_utf8_lossy(&b))
                 },
                 |_| true,
@@ -296,13 +358,25 @@ mod tests {
         let second = run(&files);
         assert_eq!(compiles.get(), 1);
         assert_eq!(first, second);
-        files.0.borrow_mut().insert("b.nl".to_owned(), b"pub fn g end".to_vec());
+        files
+            .0
+            .borrow_mut()
+            .insert("b.nl".to_owned(), b"pub fn g end".to_vec());
         let third = run(&files);
         assert_eq!(compiles.get(), 2);
         assert_eq!(third.chunk.as_deref(), Some(&b"pub fn g end"[..]));
         // Other options are another entry.
-        let unchecked = CompileOptions { checks: false, ..CompileOptions::default() };
-        compile_cached(Key::new(name, b"import { f } from 'b'", &unchecked, &[]), &files, || {}, |_| output("u"), |_| true);
+        let unchecked = CompileOptions {
+            checks: false,
+            ..CompileOptions::default()
+        };
+        compile_cached(
+            Key::new(name, b"import { f } from 'b'", &unchecked, &[]),
+            &files,
+            || {},
+            |_| output("u"),
+            |_| true,
+        );
         let again = run(&files);
         assert_eq!(compiles.get(), 2);
         assert_eq!(again, third);
@@ -310,12 +384,20 @@ mod tests {
 
     #[test]
     fn the_cache_is_bounded() {
-        let _one = TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _one = TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let files = Files(RefCell::new(HashMap::new()));
         let opts = CompileOptions::default();
         for i in 0..(MAX_ENTRIES + 10) {
             let name = format!("@cache_bound_{i}.nl");
-            compile_cached(Key::new(&name, b"x", &opts, &[]), &files, || {}, |_| output("x"), |_| true);
+            compile_cached(
+                Key::new(&name, b"x", &opts, &[]),
+                &files,
+                || {},
+                |_| output("x"),
+                |_| true,
+            );
         }
         let (entries, bytes, _, _) = stats();
         assert!(entries <= MAX_ENTRIES);

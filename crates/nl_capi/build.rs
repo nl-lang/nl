@@ -10,7 +10,11 @@ fn main() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../runtime");
     println!("cargo:rerun-if-changed={}", dir.display());
     let mut files: Vec<_> = match std::fs::read_dir(&dir) {
-        Ok(rd) => rd.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "lua")).collect(),
+        Ok(rd) => rd
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "lua"))
+            .collect(),
         Err(e) => {
             println!("cargo:warning=cannot read {}: {e}", dir.display());
             Vec::new()
@@ -18,7 +22,9 @@ fn main() {
     };
     files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
     let mut out = String::new();
-    let mut manifest = String::from("/// The files of the runtime chunk, in order, with the lines each takes.\npub const RUNTIME_FILES: &[(&str, u32)] = &[\n");
+    let mut manifest = String::from(
+        "/// The files of the runtime chunk, in order, with the lines each takes.\npub const RUNTIME_FILES: &[(&str, u32)] = &[\n",
+    );
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
         match std::fs::read_to_string(f) {
@@ -28,8 +34,14 @@ fn main() {
                 if !text.ends_with('\n') {
                     out.push('\n');
                 }
-                let name = f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                manifest.push_str(&format!("    (\"runtime/{name}\", {}),\n", out.matches('\n').count() - before));
+                let name = f
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                manifest.push_str(&format!(
+                    "    (\"runtime/{name}\", {}),\n",
+                    out.matches('\n').count() - before
+                ));
             }
             Err(e) => println!("cargo:warning=cannot read {}: {e}", f.display()),
         }

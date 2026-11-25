@@ -55,7 +55,15 @@
 //! have no call. The bytecode backend writes NL lines directly and never
 //! needs one.
 
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing
+    )
+)]
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
@@ -73,7 +81,11 @@ pub fn print_chunk(chunk: &Chunk) -> String {
     if let Some(o) = chunk.owner {
         p.name_local(o);
         let name = p.local(o).to_string();
-        let _ = write!(p.out, " local {name} = __rt.owner({});", lua_string(chunk.name.as_bytes()));
+        let _ = write!(
+            p.out,
+            " local {name} = __rt.owner({});",
+            lua_string(chunk.name.as_bytes())
+        );
     }
     p.out.push_str(" return function(...)");
     let prologue = p.out.len();
@@ -81,9 +93,17 @@ pub fn print_chunk(chunk: &Chunk) -> String {
     p.out.push_str(" end\n");
     if !p.line_map.is_empty() {
         // On the first line, which keeps every other line where it is.
-        let pairs: Vec<String> = p.line_map.iter().map(|(out, nl)| format!("{out}, {nl}")).collect();
+        let pairs: Vec<String> = p
+            .line_map
+            .iter()
+            .map(|(out, nl)| format!("{out}, {nl}"))
+            .collect();
         // Guarded, so that the chunk still runs on a runtime without it.
-        let call = format!(" if __rt.linemap then __rt.linemap({}, {{{}}}) end;", lua_string(chunk.name.as_bytes()), pairs.join(", "));
+        let call = format!(
+            " if __rt.linemap then __rt.linemap({}, {{{}}}) end;",
+            lua_string(chunk.name.as_bytes()),
+            pairs.join(", ")
+        );
         let at = prologue - " return function(...)".len();
         p.out.insert_str(at, &call);
     }
@@ -101,13 +121,24 @@ pub fn take_line_map(chunk: &str) -> (String, Vec<(u32, u32)>) {
     const START: &str = " if __rt.linemap then __rt.linemap(";
     const END: &str = "}) end;";
     let first_line_end = chunk.find('\n').unwrap_or(chunk.len());
-    let Some(start) = chunk.get(..first_line_end).and_then(|l| l.find(START)) else { return (chunk.to_owned(), Vec::new()) };
-    let Some(len) = chunk.get(start..first_line_end).and_then(|s| s.find(END)) else { return (chunk.to_owned(), Vec::new()) };
+    let Some(start) = chunk.get(..first_line_end).and_then(|l| l.find(START)) else {
+        return (chunk.to_owned(), Vec::new());
+    };
+    let Some(len) = chunk.get(start..first_line_end).and_then(|s| s.find(END)) else {
+        return (chunk.to_owned(), Vec::new());
+    };
     let call = &chunk[start..start + len];
     // The pairs are the numbers after the chunk name's string: `{1, 2, 3, 4`.
-    let Some(open) = call.rfind('{') else { return (chunk.to_owned(), Vec::new()) };
-    let numbers: Option<Vec<u32>> = call[open + 1..].split(',').map(|n| n.trim().parse().ok()).collect();
-    let Some(numbers) = numbers.filter(|n| n.len() % 2 == 0) else { return (chunk.to_owned(), Vec::new()) };
+    let Some(open) = call.rfind('{') else {
+        return (chunk.to_owned(), Vec::new());
+    };
+    let numbers: Option<Vec<u32>> = call[open + 1..]
+        .split(',')
+        .map(|n| n.trim().parse().ok())
+        .collect();
+    let Some(numbers) = numbers.filter(|n| n.len() % 2 == 0) else {
+        return (chunk.to_owned(), Vec::new());
+    };
     let pairs = numbers.chunks(2).filter_map(|p| match p {
         [out, nl] => Some((*out, *nl)),
         _ => None,
@@ -128,12 +159,20 @@ fn runs_code(s: &Stmt) -> bool {
     let plain = |e: &Expr| e.is_constant() || matches!(e, Expr::Local(_));
     match &s.kind {
         StmtKind::Local { values, .. } => !values.iter().all(plain),
-        StmtKind::Assign { targets, values } => targets.iter().any(|t| !matches!(t, Place::Local(_))) || !values.iter().all(plain),
+        StmtKind::Assign { targets, values } => {
+            targets.iter().any(|t| !matches!(t, Place::Local(_))) || !values.iter().all(plain)
+        }
         StmtKind::Expr(_) | StmtKind::GenericFor { .. } => true,
         StmtKind::Return(values) => !values.iter().all(plain),
         StmtKind::If { cond, .. } | StmtKind::While { cond, .. } => !plain(cond),
-        StmtKind::NumericFor { start, limit, step, .. } => !plain(start) || !plain(limit) || step.as_ref().is_some_and(|e| !plain(e)),
-        StmtKind::Do(_) | StmtKind::Break | StmtKind::Goto(_) | StmtKind::Label(_) | StmtKind::Hoist { .. } => false,
+        StmtKind::NumericFor {
+            start, limit, step, ..
+        } => !plain(start) || !plain(limit) || step.as_ref().is_some_and(|e| !plain(e)),
+        StmtKind::Do(_)
+        | StmtKind::Break
+        | StmtKind::Goto(_)
+        | StmtKind::Label(_)
+        | StmtKind::Hoist { .. } => false,
     }
 }
 
@@ -141,8 +180,8 @@ fn runs_code(s: &Stmt) -> bool {
 /// (GLua) reserves too: a local, a global or a field key with one of these
 /// names is spelled another way, so the output parses under both.
 const LUA_KEYWORDS: &[&str] = &[
-    "and", "break", "continue", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local", "nil", "not",
-    "or", "repeat", "return", "then", "true", "until", "while",
+    "and", "break", "continue", "do", "else", "elseif", "end", "false", "for", "function", "goto",
+    "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
 ];
 
 fn is_lua_identifier(s: &str) -> bool {
@@ -210,7 +249,17 @@ impl<'a> Printer<'a> {
         let mut used = HashSet::new();
         used.insert("__rt".to_string());
         used.insert("__G".to_string());
-        Printer { chunk, out: String::new(), line: 1, line_nl: 1, line_map: Vec::new(), names: HashMap::new(), used, suffixes: HashMap::new(), hoist_id: 0 }
+        Printer {
+            chunk,
+            out: String::new(),
+            line: 1,
+            line_nl: 1,
+            line_map: Vec::new(),
+            names: HashMap::new(),
+            used,
+            suffixes: HashMap::new(),
+            hoist_id: 0,
+        }
     }
 
     // ---- names ---------------------------------------------------------------
@@ -220,8 +269,21 @@ impl<'a> Printer<'a> {
             return;
         }
         let hint = self.chunk.hint(id);
-        let base: String = hint.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' }).collect();
-        let base = if is_lua_identifier(&base) && !base.starts_with("__") { base } else { format!("_{base}_") };
+        let base: String = hint
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        let base = if is_lua_identifier(&base) && !base.starts_with("__") {
+            base
+        } else {
+            format!("_{base}_")
+        };
         let mut name = base.clone();
         if self.used.contains(&name) {
             let n = self.suffixes.entry(base.clone()).or_insert(2);
@@ -272,7 +334,11 @@ impl<'a> Printer<'a> {
                 }
                 StmtKind::Expr(e) => self.names_expr(e),
                 StmtKind::Do(b) => self.names_block(b),
-                StmtKind::If { cond, then, otherwise } => {
+                StmtKind::If {
+                    cond,
+                    then,
+                    otherwise,
+                } => {
                     self.names_expr(cond);
                     self.names_block(then);
                     if let Some(o) = otherwise {
@@ -283,7 +349,13 @@ impl<'a> Printer<'a> {
                     self.names_expr(cond);
                     self.names_block(body);
                 }
-                StmtKind::NumericFor { var, start, limit, step, body } => {
+                StmtKind::NumericFor {
+                    var,
+                    start,
+                    limit,
+                    step,
+                    body,
+                } => {
                     self.names_expr(start);
                     self.names_expr(limit);
                     if let Some(s) = step {
@@ -351,14 +423,22 @@ impl<'a> Printer<'a> {
                     }
                 }
             }
-            Expr::MemberCall { receiver, key, args } => {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => {
                 self.names_expr(receiver);
                 self.names_expr(key);
                 for a in args {
                     self.names_expr(a);
                 }
             }
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 self.names_expr(func);
                 self.names_expr(receiver);
                 for a in args {
@@ -369,7 +449,13 @@ impl<'a> Printer<'a> {
                 self.names_expr(receiver);
                 self.names_expr(key);
             }
-            Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Global(_) | Expr::Vararg | Expr::Intrinsic(_) => {}
+            Expr::Nil
+            | Expr::Bool(_)
+            | Expr::Number(_)
+            | Expr::Str(_)
+            | Expr::Global(_)
+            | Expr::Vararg
+            | Expr::Intrinsic(_) => {}
         }
     }
 
@@ -448,7 +534,8 @@ impl<'a> Printer<'a> {
     fn stmt(&mut self, s: &Stmt, indent: usize) {
         match &s.kind {
             StmtKind::Local { locals, values } => {
-                let names: Vec<String> = locals.iter().map(|l| self.local(*l).to_string()).collect();
+                let names: Vec<String> =
+                    locals.iter().map(|l| self.local(*l).to_string()).collect();
                 self.push("local ");
                 self.push(&names.join(", "));
                 if !values.is_empty() {
@@ -477,7 +564,11 @@ impl<'a> Printer<'a> {
             }
             StmtKind::Expr(e) => {
                 match e {
-                    Expr::Call(..) | Expr::MethodCall(..) | Expr::MemberCall { .. } | Expr::MemberApply { .. } | Expr::AutoGet { .. } => self.expr(e, 0),
+                    Expr::Call(..)
+                    | Expr::MethodCall(..)
+                    | Expr::MemberCall { .. }
+                    | Expr::MemberApply { .. }
+                    | Expr::AutoGet { .. } => self.expr(e, 0),
                     _ => {
                         self.push("local _ = ");
                         self.expr(e, 0);
@@ -490,7 +581,11 @@ impl<'a> Printer<'a> {
                 self.block(b, indent + 1);
                 self.push(" end");
             }
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 self.push("if ");
                 self.expr(cond, 0);
                 self.push(" then");
@@ -498,7 +593,18 @@ impl<'a> Printer<'a> {
                 let mut otherwise = otherwise.as_ref();
                 while let Some(o) = otherwise {
                     // `else if` with nothing else in the block is `elseif`.
-                    if let [s @ Stmt { kind: StmtKind::If { cond, then, otherwise: next }, .. }] = o.stmts.as_slice() {
+                    if let [
+                        s @ Stmt {
+                            kind:
+                                StmtKind::If {
+                                    cond,
+                                    then,
+                                    otherwise: next,
+                                },
+                            ..
+                        },
+                    ] = o.stmts.as_slice()
+                    {
                         // On the line of its test, as any statement.
                         self.at_line(s, indent);
                         self.push("elseif ");
@@ -521,7 +627,13 @@ impl<'a> Printer<'a> {
                 self.block(body, indent + 1);
                 self.push(" end");
             }
-            StmtKind::NumericFor { var, start, limit, step, body } => {
+            StmtKind::NumericFor {
+                var,
+                start,
+                limit,
+                step,
+                body,
+            } => {
                 let v = self.local(*var).to_string();
                 self.push("for ");
                 self.push(&v);
@@ -605,7 +717,11 @@ impl<'a> Printer<'a> {
         let mut order: Vec<usize> = (0..n).collect();
         order.sort_by_key(|&i| (defs.stmts.get(i).map_or(0, |s| s.line), i));
         let in_order = order.iter().enumerate().all(|(k, i)| k == *i);
-        let def_lines: Vec<u32> = order.iter().filter_map(|&i| defs.stmts.get(i)).map(|s| s.line).collect();
+        let def_lines: Vec<u32> = order
+            .iter()
+            .filter_map(|&i| defs.stmts.get(i))
+            .map(|s| s.line)
+            .collect();
         let last_def = def_lines.iter().copied().max().unwrap_or(0);
         let interleaved = rest.stmts.iter().any(|s| s.line < last_def);
         if !interleaved && in_order {
@@ -814,7 +930,9 @@ impl<'a> Printer<'a> {
                         TableEntry::Item(v) => self.expr(v, 0),
                         TableEntry::Pair(k, v) => {
                             match k {
-                                Expr::Str(s) if std::str::from_utf8(s).is_ok_and(is_lua_identifier) => {
+                                Expr::Str(s)
+                                    if std::str::from_utf8(s).is_ok_and(is_lua_identifier) =>
+                                {
                                     self.push(std::str::from_utf8(s).unwrap_or("_"));
                                 }
                                 _ => {
@@ -840,7 +958,11 @@ impl<'a> Printer<'a> {
                 self.push("__rt.");
                 self.push(name);
             }
-            Expr::MemberCall { receiver, key, args } => match key.as_ref() {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => match key.as_ref() {
                 // `__rt.member.name(x, args)`: LuaJIT names a library
                 // function that raises "bad argument" after the key it was
                 // read with, so the message names the member, not `mcall`.
@@ -867,7 +989,11 @@ impl<'a> Printer<'a> {
             Expr::AutoGet { receiver, key } => self.intrinsic_call("mget", &[receiver, key]),
             // `__rt.mapply(f, x, args)`: the member-call rule on a member
             // read before.
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 let mut all: Vec<&Expr> = vec![func, receiver];
                 all.extend(args.iter());
                 self.intrinsic_call("mapply", &all);
@@ -876,7 +1002,11 @@ impl<'a> Printer<'a> {
     }
 
     fn function(&mut self, f: &Function) {
-        let mut params: Vec<String> = f.params.iter().map(|p| self.local(*p).to_string()).collect();
+        let mut params: Vec<String> = f
+            .params
+            .iter()
+            .map(|p| self.local(*p).to_string())
+            .collect();
         if f.vararg {
             params.push("...".to_string());
         }
@@ -934,12 +1064,20 @@ fn visit_globals(b: &Block, f: &mut dyn FnMut(&str)) {
                     }
                 }
             }
-            Expr::MemberCall { receiver, key, args } => {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => {
                 expr(receiver, f);
                 expr(key, f);
                 args.iter().for_each(|a| expr(a, f));
             }
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 expr(func, f);
                 expr(receiver, f);
                 args.iter().for_each(|a| expr(a, f));
@@ -969,7 +1107,11 @@ fn visit_globals(b: &Block, f: &mut dyn FnMut(&str)) {
             }
             StmtKind::Expr(e) => expr(e, f),
             StmtKind::Do(b) => visit_globals(b, f),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 expr(cond, f);
                 visit_globals(then, f);
                 if let Some(o) = otherwise {
@@ -980,7 +1122,13 @@ fn visit_globals(b: &Block, f: &mut dyn FnMut(&str)) {
                 expr(cond, f);
                 visit_globals(body, f);
             }
-            StmtKind::NumericFor { start, limit, step, body, .. } => {
+            StmtKind::NumericFor {
+                start,
+                limit,
+                step,
+                body,
+                ..
+            } => {
                 expr(start, f);
                 expr(limit, f);
                 if let Some(s) = step {
@@ -1008,10 +1156,18 @@ pub fn lua_number(n: f64) -> String {
         return "(0/0)".to_string();
     }
     if n.is_infinite() {
-        return if n > 0.0 { "(1/0)".to_string() } else { "(-1/0)".to_string() };
+        return if n > 0.0 {
+            "(1/0)".to_string()
+        } else {
+            "(-1/0)".to_string()
+        };
     }
     let text = if n == 0.0 {
-        if n.is_sign_negative() { "-0".to_string() } else { "0".to_string() }
+        if n.is_sign_negative() {
+            "-0".to_string()
+        } else {
+            "0".to_string()
+        }
     } else if n.fract() == 0.0 && n.abs() < 1e15 {
         format!("{}", n as i64)
     } else if n.abs() >= 1e15 || n.abs() < 1e-5 {
@@ -1019,7 +1175,11 @@ pub fn lua_number(n: f64) -> String {
     } else {
         format!("{n}")
     };
-    if text.starts_with('-') { format!("({text})") } else { text }
+    if text.starts_with('-') {
+        format!("({text})")
+    } else {
+        text
+    }
 }
 
 /// A Lua string literal for `bytes`.
@@ -1039,7 +1199,10 @@ pub fn lua_string(bytes: &[u8]) -> String {
                 // Valid UTF-8 is kept as written; anything else is escaped
                 // as a three-digit decimal escape.
                 let len = bytes.get(i..).and_then(utf8_len);
-                match len.and_then(|l| bytes.get(i..i + l)).and_then(|c| std::str::from_utf8(c).ok()) {
+                match len
+                    .and_then(|l| bytes.get(i..i + l))
+                    .and_then(|c| std::str::from_utf8(c).ok())
+                {
                     Some(ch) if b >= 0x80 => {
                         s.push_str(ch);
                         i += ch.len();
@@ -1085,21 +1248,49 @@ mod tests {
     #[test]
     fn keyword_method_calls() {
         let o = LocalId(0);
-        let call_on = |receiver: Expr| Expr::MethodCall(Box::new(receiver), "end".to_string(), vec![Expr::Number(1.0)]);
+        let call_on = |receiver: Expr| {
+            Expr::MethodCall(
+                Box::new(receiver),
+                "end".to_string(),
+                vec![Expr::Number(1.0)],
+            )
+        };
         let main = Function {
             params: Vec::new(),
             vararg: true,
             body: Block::new(vec![
-                Stmt { line: 1, kind: StmtKind::Local { locals: vec![o], values: vec![Expr::Table(Vec::new())] } },
-                Stmt { line: 1, kind: StmtKind::Expr(call_on(Expr::Local(o))) },
-                Stmt { line: 1, kind: StmtKind::Expr(call_on(Expr::call(Expr::Global("mk".to_string()), Vec::new()))) },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Local {
+                        locals: vec![o],
+                        values: vec![Expr::Table(Vec::new())],
+                    },
+                },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Expr(call_on(Expr::Local(o))),
+                },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Expr(call_on(Expr::call(
+                        Expr::Global("mk".to_string()),
+                        Vec::new(),
+                    ))),
+                },
             ]),
             line: 1,
             name: None,
             method: false,
             transient: false,
         };
-        let chunk = Chunk { locals: vec![LocalInfo { hint: "o".to_string() }], main, name: "=t".to_string(), owner: None };
+        let chunk = Chunk {
+            locals: vec![LocalInfo {
+                hint: "o".to_string(),
+            }],
+            main,
+            name: "=t".to_string(),
+            owner: None,
+        };
         let lua = print_chunk(&chunk);
         assert!(lua.contains(r#"__rt.lmethod["end"](o, 1)"#), "{lua}");
         assert!(lua.contains(r#"__rt.lmethod["end"](mk(), 1)"#), "{lua}");
@@ -1114,28 +1305,69 @@ mod tests {
             params: Vec::new(),
             vararg: true,
             body: Block::new(vec![
-                Stmt { line: 1, kind: StmtKind::Local { locals: vec![o], values: vec![Expr::Table(Vec::new())] } },
-                Stmt { line: 1, kind: StmtKind::Expr(Expr::MethodCall(Box::new(Expr::Local(o)), "continue".to_string(), Vec::new())) },
-                Stmt { line: 1, kind: StmtKind::Expr(Expr::call(Expr::Index(Box::new(Expr::Local(o)), Box::new(Expr::Str(b"continue".to_vec()))), Vec::new())) },
-                Stmt { line: 1, kind: StmtKind::Expr(Expr::call(Expr::Global("continue".to_string()), Vec::new())) },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Local {
+                        locals: vec![o],
+                        values: vec![Expr::Table(Vec::new())],
+                    },
+                },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Expr(Expr::MethodCall(
+                        Box::new(Expr::Local(o)),
+                        "continue".to_string(),
+                        Vec::new(),
+                    )),
+                },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Expr(Expr::call(
+                        Expr::Index(
+                            Box::new(Expr::Local(o)),
+                            Box::new(Expr::Str(b"continue".to_vec())),
+                        ),
+                        Vec::new(),
+                    )),
+                },
+                Stmt {
+                    line: 1,
+                    kind: StmtKind::Expr(Expr::call(
+                        Expr::Global("continue".to_string()),
+                        Vec::new(),
+                    )),
+                },
             ]),
             line: 1,
             name: None,
             method: false,
             transient: false,
         };
-        let chunk = Chunk { locals: vec![LocalInfo { hint: "continue".to_string() }], main, name: "=t".to_string(), owner: None };
+        let chunk = Chunk {
+            locals: vec![LocalInfo {
+                hint: "continue".to_string(),
+            }],
+            main,
+            name: "=t".to_string(),
+            owner: None,
+        };
         let lua = print_chunk(&chunk);
         let bare = lua.replace("\"continue\"", "").replace("_continue_", "");
         assert!(!bare.contains("continue"), "{lua}");
-        assert!(lua.contains(r#"_continue_["continue"]()"#) && lua.contains(r#"__G["continue"]()"#), "{lua}");
+        assert!(
+            lua.contains(r#"_continue_["continue"]()"#) && lua.contains(r#"__G["continue"]()"#),
+            "{lua}"
+        );
     }
 
     /// `take_line_map` gives back the pairs `print_chunk` printed, and the
     /// chunk without the call, with every line where it was.
     #[test]
     fn line_map_taken_out() {
-        let call = |name: &str, line: u32| Stmt { line, kind: StmtKind::Expr(Expr::call(Expr::Global(name.to_string()), Vec::new())) };
+        let call = |name: &str, line: u32| Stmt {
+            line,
+            kind: StmtKind::Expr(Expr::call(Expr::Global(name.to_string()), Vec::new())),
+        };
         let main = Function {
             params: Vec::new(),
             vararg: true,
@@ -1145,13 +1377,25 @@ mod tests {
             method: false,
             transient: false,
         };
-        let chunk = Chunk { locals: Vec::new(), main, name: "@a{b}.nl".to_string(), owner: None };
+        let chunk = Chunk {
+            locals: Vec::new(),
+            main,
+            name: "@a{b}.nl".to_string(),
+            owner: None,
+        };
         let lua = print_chunk(&chunk);
         let (rest, pairs) = take_line_map(&lua);
         assert_eq!(pairs, [(6, 3)], "{lua}");
         assert!(!rest.contains("linemap"), "{rest}");
         assert_eq!(rest.lines().count(), lua.lines().count());
-        assert_eq!(rest, lua.replacen(" if __rt.linemap then __rt.linemap(\"@a{b}.nl\", {6, 3}) end;", "", 1));
+        assert_eq!(
+            rest,
+            lua.replacen(
+                " if __rt.linemap then __rt.linemap(\"@a{b}.nl\", {6, 3}) end;",
+                "",
+                1
+            )
+        );
         // A chunk without a map is left as it is.
         let plain = "local __rt = ...; return function(...) f() end\n";
         assert_eq!(take_line_map(plain), (plain.to_string(), Vec::new()));
@@ -1166,13 +1410,29 @@ mod tests {
         let main = Function {
             params: Vec::new(),
             vararg: true,
-            body: Block::new(vec![Stmt { line: 1, kind: StmtKind::Local { locals: locals.clone(), values: Vec::new() } }]),
+            body: Block::new(vec![Stmt {
+                line: 1,
+                kind: StmtKind::Local {
+                    locals: locals.clone(),
+                    values: Vec::new(),
+                },
+            }]),
             line: 1,
             name: None,
             method: false,
             transient: false,
         };
-        let chunk = Chunk { locals: hints.iter().map(|h| LocalInfo { hint: (*h).to_string() }).collect(), main, name: "=t".to_string(), owner: None };
+        let chunk = Chunk {
+            locals: hints
+                .iter()
+                .map(|h| LocalInfo {
+                    hint: (*h).to_string(),
+                })
+                .collect(),
+            main,
+            name: "=t".to_string(),
+            owner: None,
+        };
         let mut p = Printer::new(&chunk);
         p.assign_names(&chunk.main);
         let names: Vec<&str> = locals.iter().map(|l| p.local(*l)).collect();

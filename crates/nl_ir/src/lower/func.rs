@@ -2,8 +2,8 @@
 //! blocks; parameters with defaults, annotations and patterns; `*args`;
 //! tail values and `return`.
 
-use nl_sema::util::*;
 use nl_sema::BindingId;
+use nl_sema::util::*;
 use nl_syntax::{SyntaxKind, SyntaxNode};
 
 use super::{FnState, Lowerer, Tail};
@@ -48,7 +48,11 @@ impl Lowerer<'_> {
         let text = name_text(&name).unwrap_or_default();
         let module = self.res.binding(id).and_then(|b| b.module_owner);
         let self_binding = self.res.method_self(node.text_range());
-        let spec = FnSpec { name: text.clone(), self_binding, discard_tail: false };
+        let spec = FnSpec {
+            name: text.clone(),
+            self_binding,
+            discard_tail: false,
+        };
         let mut f = self.function_value(node, spec);
         if module.is_some() {
             // A function in a module body is a method of the module.
@@ -77,13 +81,21 @@ impl Lowerer<'_> {
     /// the same function: its parameters are a
     /// `BLOCK_PARAMS` and its body a `BLOCK`, as `function` reads them.
     pub(crate) fn fn_expr(&mut self, node: &SyntaxNode) -> Expr {
-        let spec = FnSpec { name: "anonymous function".to_string(), self_binding: None, discard_tail: false };
+        let spec = FnSpec {
+            name: "anonymous function".to_string(),
+            self_binding: None,
+            discard_tail: false,
+        };
         self.function_value(node, spec)
     }
 
     /// A trailing block `do |…| … end`.
     pub(crate) fn block_fn(&mut self, node: &SyntaxNode) -> Expr {
-        let spec = FnSpec { name: "block".to_string(), self_binding: None, discard_tail: false };
+        let spec = FnSpec {
+            name: "block".to_string(),
+            self_binding: None,
+            discard_tail: false,
+        };
         self.function_value(node, spec)
     }
 
@@ -91,7 +103,11 @@ impl Lowerer<'_> {
     /// says `async`.
     pub(crate) fn function_value(&mut self, node: &SyntaxNode, spec: FnSpec) -> Expr {
         let f = Expr::Function(Box::new(self.function(node, spec)));
-        if has_token(node, ASYNC_KW) { self.wrap_async(f) } else { f }
+        if has_token(node, ASYNC_KW) {
+            self.wrap_async(f)
+        } else {
+            f
+        }
     }
 
     /// Lowers a function-like node (`FN_DECL`, `FN_EXPR`, `LAMBDA_EXPR`,
@@ -102,15 +118,23 @@ impl Lowerer<'_> {
         let saved_line = self.line;
         self.line = line;
         let ret_type = child(node, RETURN_TYPE).and_then(|r| type_child(&r));
-        let nil_return = ret_type.as_ref().is_some_and(|t| t.kind() == NAMED_TYPE && has_token(t, NIL_KW));
+        let nil_return = ret_type
+            .as_ref()
+            .is_some_and(|t| t.kind() == NAMED_TYPE && has_token(t, NIL_KW));
         // `: nil` is checked too: `return 5` there is a TypeError;
         // its tail value is discarded, not returned.
         let ret_check = match &ret_type {
-            Some(t) if self.opts.checks => Some((t.clone(), format!("return value of {}", spec.name))),
+            Some(t) if self.opts.checks => {
+                Some((t.clone(), format!("return value of {}", spec.name)))
+            }
             _ => None,
         };
         let check_fall_off = ret_check.is_some() && !nil_return;
-        self.fns.push(FnState { ret_check, loops: Vec::new(), regions: Vec::new() });
+        self.fns.push(FnState {
+            ret_check,
+            loops: Vec::new(),
+            regions: Vec::new(),
+        });
 
         let mut params = Vec::new();
         if let Some(sb) = spec.self_binding {
@@ -127,22 +151,39 @@ impl Lowerer<'_> {
             for p in list.children() {
                 match p.kind() {
                     PARAM => {
-                        let Some(pat) = pattern_children(&p).next() else { continue };
+                        let Some(pat) = pattern_children(&p).next() else {
+                            continue;
+                        };
                         let default = expr_child(&p);
                         match simple_binding(&pat) {
                             Some((name_node, ty)) => {
-                                let Some(id) = self.res.declaration(name_node.text_range()) else { continue };
+                                let Some(id) = self.res.declaration(name_node.text_range()) else {
+                                    continue;
+                                };
                                 let l = self.local_of(id);
                                 self.mark_predeclared(id);
                                 params.push(l);
                                 let pname = name_text(&name_node).unwrap_or_default();
-                                entry.push(ParamEntry { local: l, default, ty, pattern: None, name: pname });
+                                entry.push(ParamEntry {
+                                    local: l,
+                                    default,
+                                    ty,
+                                    pattern: None,
+                                    name: pname,
+                                });
                             }
                             None => {
                                 let t = self.new_local("arg");
                                 params.push(t);
-                                let what = format!("parameter {} of {}", entry.len() + 1, spec.name);
-                                entry.push(ParamEntry { local: t, default, ty: None, pattern: Some(pat), name: what });
+                                let what =
+                                    format!("parameter {} of {}", entry.len() + 1, spec.name);
+                                entry.push(ParamEntry {
+                                    local: t,
+                                    default,
+                                    ty: None,
+                                    pattern: Some(pat),
+                                    name: what,
+                                });
                             }
                         }
                     }
@@ -151,7 +192,8 @@ impl Lowerer<'_> {
                         if let Some(name) = child(&p, NAME) {
                             if let Some(id) = self.res.declaration(name.text_range()) {
                                 let l = self.local_of(id);
-                                rest = Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
+                                rest =
+                                    Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
                                 rest_id = Some(id);
                             }
                         }
@@ -160,7 +202,8 @@ impl Lowerer<'_> {
                         if let Some(name) = child(&p, NAME) {
                             if let Some(id) = self.res.declaration(name.text_range()) {
                                 let l = self.local_of(id);
-                                keyed = Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
+                                keyed =
+                                    Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
                             }
                         }
                     }
@@ -197,21 +240,43 @@ impl Lowerer<'_> {
             let n = Expr::call(select, vec![Expr::str("#"), Expr::Vararg]);
             let args = Expr::Table(vec![TableEntry::Item(Expr::Vararg)]);
             if keyed.is_some() {
-                self.emit(StmtKind::Local { locals: vec![*l], values: vec![args] });
+                self.emit(StmtKind::Local {
+                    locals: vec![*l],
+                    values: vec![args],
+                });
                 rest_count = Some(n);
             } else {
                 let c = self.new_local("n");
-                self.emit(StmtKind::Local { locals: vec![*l, c], values: vec![args, n] });
+                self.emit(StmtKind::Local {
+                    locals: vec![*l, c],
+                    values: vec![args, n],
+                });
                 rest_count_local = Some(c);
-                match rest_id.filter(|id| !self.res.reassigned(*id) && rest_stays_local(node, self.res, *id)) {
+                match rest_id
+                    .filter(|id| !self.res.reassigned(*id) && rest_stays_local(node, self.res, *id))
+                {
                     Some(id) => {
                         self.rest_counts.insert(id, c);
                     }
                     None => {
-                        let cond = Expr::binary(BinOp::Ne, Expr::Unary(UnOp::Len, Box::new(Expr::Local(*l))), Expr::Local(c));
-                        let record = Expr::intrinsic_call("restcount", vec![Expr::Local(*l), Expr::Local(c)]);
-                        let then = Block::new(vec![Stmt { line: self.line, kind: StmtKind::Expr(record) }]);
-                        self.emit(StmtKind::If { cond, then, otherwise: None });
+                        let cond = Expr::binary(
+                            BinOp::Ne,
+                            Expr::Unary(UnOp::Len, Box::new(Expr::Local(*l))),
+                            Expr::Local(c),
+                        );
+                        let record = Expr::intrinsic_call(
+                            "restcount",
+                            vec![Expr::Local(*l), Expr::Local(c)],
+                        );
+                        let then = Block::new(vec![Stmt {
+                            line: self.line,
+                            kind: StmtKind::Expr(record),
+                        }]);
+                        self.emit(StmtKind::If {
+                            cond,
+                            then,
+                            otherwise: None,
+                        });
                     }
                 }
             }
@@ -223,13 +288,19 @@ impl Lowerer<'_> {
                 // Without `*rest` the function still takes the arguments
                 // beyond its parameters, since the keyed table may be there.
                 let first = match &rest {
-                    Some((r, _, _)) => Expr::intrinsic_call("kwpop", vec![Expr::Local(*r), rest_count.take().unwrap_or(Expr::Nil)]),
+                    Some((r, _, _)) => Expr::intrinsic_call(
+                        "kwpop",
+                        vec![Expr::Local(*r), rest_count.take().unwrap_or(Expr::Nil)],
+                    ),
                     None => {
                         vararg = true;
                         Expr::intrinsic_call("kwlast", vec![Expr::Vararg])
                     }
                 };
-                self.emit(StmtKind::Local { locals: vec![opts], values: vec![first] });
+                self.emit(StmtKind::Local {
+                    locals: vec![opts],
+                    values: vec![first],
+                });
                 // From the last parameter back to the first: `if opts == nil
                 // and rt.iskw(p) then opts = p; p = nil end`.
                 for p in written.iter().rev() {
@@ -239,12 +310,25 @@ impl Lowerer<'_> {
                         Expr::intrinsic_call("iskw", vec![Expr::Local(*p)]),
                     );
                     let then = self.sub_block(|s| {
-                        s.emit(StmtKind::Assign { targets: vec![Place::Local(opts)], values: vec![Expr::Local(*p)] });
-                        s.emit(StmtKind::Assign { targets: vec![Place::Local(*p)], values: vec![Expr::Nil] });
+                        s.emit(StmtKind::Assign {
+                            targets: vec![Place::Local(opts)],
+                            values: vec![Expr::Local(*p)],
+                        });
+                        s.emit(StmtKind::Assign {
+                            targets: vec![Place::Local(*p)],
+                            values: vec![Expr::Nil],
+                        });
                     });
-                    self.emit(StmtKind::If { cond, then, otherwise: None });
+                    self.emit(StmtKind::If {
+                        cond,
+                        then,
+                        otherwise: None,
+                    });
                 }
-                self.emit(StmtKind::Assign { targets: vec![Place::Local(opts)], values: vec![Expr::intrinsic_call("kwtake", vec![Expr::Local(opts)])] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Local(opts)],
+                    values: vec![Expr::intrinsic_call("kwtake", vec![Expr::Local(opts)])],
+                });
             }
             None if self.opts.checks => {
                 let rest_local = rest.as_ref().map(|(r, _, _)| (*r, rest_count_local));
@@ -252,13 +336,27 @@ impl Lowerer<'_> {
             }
             None => {}
         }
-        for ParamEntry { local: l, default, ty, pattern: pat, name: pname } in entry {
+        for ParamEntry {
+            local: l,
+            default,
+            ty,
+            pattern: pat,
+            name: pname,
+        } in entry
+        {
             if let Some(d) = default {
                 let body = self.sub_block(|s| {
                     let v = s.expr1(&d);
-                    s.emit(StmtKind::Assign { targets: vec![Place::Local(l)], values: vec![v] });
+                    s.emit(StmtKind::Assign {
+                        targets: vec![Place::Local(l)],
+                        values: vec![v],
+                    });
                 });
-                self.emit(StmtKind::If { cond: Expr::binary(BinOp::Eq, Expr::Local(l), Expr::Nil), then: body, otherwise: None });
+                self.emit(StmtKind::If {
+                    cond: Expr::binary(BinOp::Eq, Expr::Local(l), Expr::Nil),
+                    then: body,
+                    otherwise: None,
+                });
             }
             if let Some(t) = ty {
                 let ctx = format!("parameter '{pname}' of {}", spec.name);
@@ -278,7 +376,11 @@ impl Lowerer<'_> {
             }
         }
 
-        let tail = if nil_return || spec.discard_tail { Tail::Discard } else { Tail::Return };
+        let tail = if nil_return || spec.discard_tail {
+            Tail::Discard
+        } else {
+            Tail::Return
+        };
         if let Some(b) = block(node) {
             self.lower_block_inline(&b, tail);
         }
@@ -290,7 +392,15 @@ impl Lowerer<'_> {
         self.fns.pop();
         let body = Block::new(std::mem::replace(&mut self.stmts, saved_stmts));
         self.line = saved_line;
-        Function { params, vararg, body, line, name: Some(spec.name), method: spec.self_binding.is_some(), transient: false }
+        Function {
+            params,
+            vararg,
+            body,
+            line,
+            name: Some(spec.name),
+            method: spec.self_binding.is_some(),
+            transient: false,
+        }
     }
 
     /// The entry of a function without `**opts` in a checked build: it
@@ -335,9 +445,24 @@ impl Lowerer<'_> {
     /// ```
     ///
     /// With a rest table the run is empty and `rt.nokwrest` follows.
-    fn refuse_keyed(&mut self, name: &str, entry: &mut [ParamEntry], rest: Option<(LocalId, Option<LocalId>)>) {
-        let (getmetatable, kw) = if entry.is_empty() { (Expr::Nil, Expr::Nil) } else { (self.rt_cached("getmetatable"), self.rt_cached("KW")) };
-        let marked = |l: LocalId| Expr::binary(BinOp::Eq, Expr::call(getmetatable.clone(), vec![Expr::Local(l)]), kw.clone());
+    fn refuse_keyed(
+        &mut self,
+        name: &str,
+        entry: &mut [ParamEntry],
+        rest: Option<(LocalId, Option<LocalId>)>,
+    ) {
+        let (getmetatable, kw) = if entry.is_empty() {
+            (Expr::Nil, Expr::Nil)
+        } else {
+            (self.rt_cached("getmetatable"), self.rt_cached("KW"))
+        };
+        let marked = |l: LocalId| {
+            Expr::binary(
+                BinOp::Eq,
+                Expr::call(getmetatable.clone(), vec![Expr::Local(l)]),
+                kw.clone(),
+            )
+        };
         let mut run = 0;
         let mut conds = Vec::new();
         let mut checks = Vec::new();
@@ -355,7 +480,9 @@ impl Lowerer<'_> {
                     None => None,
                 };
                 if let Some((ty, t)) = typed {
-                    let Some(test) = self.inline_test(&ty) else { break };
+                    let Some(test) = self.inline_test(&ty) else {
+                        break;
+                    };
                     conds.push(self.inline_fails(&test, &v));
                     if let Some(r) = rejects_mark.get_mut(i) {
                         *r = test.excludes_keyed().then(|| test.excludes_nil());
@@ -376,11 +503,16 @@ impl Lowerer<'_> {
             let p = Expr::Local(e.local);
             last = match (last, *rejects) {
                 (_, Some(true)) => None,
-                (before, Some(false)) => before.map(|b| Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, p, Expr::Nil), b)),
+                (before, Some(false)) => before
+                    .map(|b| Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, p, Expr::Nil), b)),
                 (None, None) => Some(marked(e.local)),
                 (Some(b), None) => Some(Expr::binary(
                     BinOp::Or,
-                    Expr::binary(BinOp::And, Expr::binary(BinOp::Ne, p.clone(), Expr::Nil), marked(e.local)),
+                    Expr::binary(
+                        BinOp::And,
+                        Expr::binary(BinOp::Ne, p.clone(), Expr::Nil),
+                        marked(e.local),
+                    ),
                     Expr::binary(BinOp::And, Expr::binary(BinOp::Eq, p, Expr::Nil), b),
                 )),
             };
@@ -392,9 +524,19 @@ impl Lowerer<'_> {
             let mut args = vec![Expr::str(name)];
             args.extend(entry.iter().map(|e| Expr::Local(e.local)));
             let line = self.line;
-            let mut then = vec![Stmt { line, kind: StmtKind::Expr(Expr::intrinsic_call("nokw", args)) }];
-            then.extend(checks.into_iter().map(|c| Stmt { line, kind: StmtKind::Expr(c) }));
-            self.emit(StmtKind::If { cond, then: Block::new(then), otherwise: None });
+            let mut then = vec![Stmt {
+                line,
+                kind: StmtKind::Expr(Expr::intrinsic_call("nokw", args)),
+            }];
+            then.extend(checks.into_iter().map(|c| Stmt {
+                line,
+                kind: StmtKind::Expr(c),
+            }));
+            self.emit(StmtKind::If {
+                cond,
+                then: Block::new(then),
+                otherwise: None,
+            });
         }
         for e in entry.iter_mut().take(run) {
             e.ty = None;
@@ -410,7 +552,9 @@ impl Lowerer<'_> {
 
     /// `return values`.
     pub(crate) fn lower_return(&mut self, node: &SyntaxNode) {
-        let values: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+        let values: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
         let vals = self.value_list(&values);
         self.lower_return_values(node, vals);
     }
@@ -432,7 +576,11 @@ pub(crate) fn can_fall_off(stmts: &[Stmt]) -> bool {
         Some(StmtKind::Return(_)) => false,
         Some(StmtKind::Do(b)) => can_fall_off(&b.stmts),
         Some(StmtKind::Hoist { rest, .. }) => can_fall_off(&rest.stmts),
-        Some(StmtKind::If { then, otherwise: Some(o), .. }) => can_fall_off(&then.stmts) || can_fall_off(&o.stmts),
+        Some(StmtKind::If {
+            then,
+            otherwise: Some(o),
+            ..
+        }) => can_fall_off(&then.stmts) || can_fall_off(&o.stmts),
         _ => true,
     }
 }
@@ -447,18 +595,25 @@ pub(crate) fn can_fall_off(stmts: &[Stmt]) -> bool {
 /// items, since `#args` may stop short of the new item otherwise (an
 /// Unspecified count, nl_40_ops.lua).
 fn rest_stays_local(node: &SyntaxNode, res: &nl_sema::Resolution, id: BindingId) -> bool {
-    node.descendants().filter(|n| n.kind() == NAME_REF && res.reference(n.text_range()) == Some(&nl_sema::Ref::Binding(id))).all(|r| {
-        let Some(p) = r.parent() else { return false };
-        let first = expr_child(&p).is_some_and(|e| e == r);
-        match p.kind() {
-            FIELD_EXPR => first && field_name(&p).is_some_and(|t| t.text() == "len"),
-            INDEX_EXPR => first && !is_store_target(&p),
-            // A spread in a call; in a list it goes through rt.listcat.
-            SPREAD_ARG => p.parent().is_some_and(|a| matches!(a.kind(), ARG_LIST | COMMAND_ARGS)),
-            FOR_STMT => true,
-            _ => false,
-        }
-    })
+    node.descendants()
+        .filter(|n| {
+            n.kind() == NAME_REF
+                && res.reference(n.text_range()) == Some(&nl_sema::Ref::Binding(id))
+        })
+        .all(|r| {
+            let Some(p) = r.parent() else { return false };
+            let first = expr_child(&p).is_some_and(|e| e == r);
+            match p.kind() {
+                FIELD_EXPR => first && field_name(&p).is_some_and(|t| t.text() == "len"),
+                INDEX_EXPR => first && !is_store_target(&p),
+                // A spread in a call; in a list it goes through rt.listcat.
+                SPREAD_ARG => p
+                    .parent()
+                    .is_some_and(|a| matches!(a.kind(), ARG_LIST | COMMAND_ARGS)),
+                FOR_STMT => true,
+                _ => false,
+            }
+        })
 }
 
 /// True when `node` is the target of an assignment (`x = v`, `x += v`,

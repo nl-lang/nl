@@ -18,7 +18,9 @@ pub fn children(node: &SyntaxNode, kind: SyntaxKind) -> impl Iterator<Item = Syn
 
 /// The first child token of `kind`.
 pub fn token(node: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
-    node.children_with_tokens().filter_map(|e| e.into_token()).find(|t| t.kind() == kind)
+    node.children_with_tokens()
+        .filter_map(|e| e.into_token())
+        .find(|t| t.kind() == kind)
 }
 
 /// True when `node` has a child token of `kind`.
@@ -36,12 +38,17 @@ pub fn is_exported(node: &SyntaxNode) -> bool {
 /// True for `global fn`, `global module` and `global struct`: an exported
 /// item that the file also stores in the Lua global of its name.
 pub fn is_global_item(node: &SyntaxNode) -> bool {
-    matches!(node.kind(), SyntaxKind::FN_DECL | SyntaxKind::MODULE_DECL | SyntaxKind::STRUCT_DECL) && has_token(node, SyntaxKind::GLOBAL_KW)
+    matches!(
+        node.kind(),
+        SyntaxKind::FN_DECL | SyntaxKind::MODULE_DECL | SyntaxKind::STRUCT_DECL
+    ) && has_token(node, SyntaxKind::GLOBAL_KW)
 }
 
 /// The non-trivia child tokens of `node`, in order.
 pub fn tokens(node: &SyntaxNode) -> impl Iterator<Item = SyntaxToken> + '_ {
-    node.children_with_tokens().filter_map(|e| e.into_token()).filter(|t| !t.kind().is_trivia())
+    node.children_with_tokens()
+        .filter_map(|e| e.into_token())
+        .filter(|t| !t.kind().is_trivia())
 }
 
 /// The first non-trivia child token, whatever its kind.
@@ -75,7 +82,9 @@ pub fn expr_child(node: &SyntaxNode) -> Option<SyntaxNode> {
 
 /// The statements of a `BLOCK`.
 pub fn statements(block: &SyntaxNode) -> impl Iterator<Item = SyntaxNode> + '_ {
-    block.children().filter(|c| c.kind() != SyntaxKind::ERROR_NODE)
+    block
+        .children()
+        .filter(|c| c.kind() != SyntaxKind::ERROR_NODE)
 }
 
 /// The type child of a node (annotation, return type, …).
@@ -86,20 +95,32 @@ pub fn type_child(node: &SyntaxNode) -> Option<SyntaxNode> {
 /// The segments of a `QUAL_NAME`: its `CNAME` (or `Self`) tokens.
 pub fn qual_segments(node: &SyntaxNode) -> Vec<SyntaxToken> {
     tokens(node)
-        .filter(|t| matches!(t.kind(), SyntaxKind::CNAME | SyntaxKind::SELF_TYPE_KW | SyntaxKind::LNAME))
+        .filter(|t| {
+            matches!(
+                t.kind(),
+                SyntaxKind::CNAME | SyntaxKind::SELF_TYPE_KW | SyntaxKind::LNAME
+            )
+        })
         .collect()
 }
 
 /// The text of a `QUAL_NAME` (`Foo.Bar`).
 pub fn qual_text(node: &SyntaxNode) -> String {
-    qual_segments(node).iter().map(|t| t.text().to_string()).collect::<Vec<_>>().join(".")
+    qual_segments(node)
+        .iter()
+        .map(|t| t.text().to_string())
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// The range of a node without leading or trailing trivia.
 pub fn trimmed_range(node: &SyntaxNode) -> TextRange {
     let mut first = None;
     let mut last = None;
-    for t in node.descendants_with_tokens().filter_map(|e| e.into_token()) {
+    for t in node
+        .descendants_with_tokens()
+        .filter_map(|e| e.into_token())
+    {
         if t.kind().is_trivia() {
             continue;
         }
@@ -157,7 +178,16 @@ pub fn is_type(kind: SyntaxKind) -> bool {
     use SyntaxKind::*;
     matches!(
         kind,
-        NAMED_TYPE | FN_TYPE | UNION_TYPE | NOT_TYPE | OPTIONAL_TYPE | PAREN_TYPE | TUPLE_TYPE | RECORD_TYPE | MAP_TYPE | ARRAY_TYPE
+        NAMED_TYPE
+            | FN_TYPE
+            | UNION_TYPE
+            | NOT_TYPE
+            | OPTIONAL_TYPE
+            | PAREN_TYPE
+            | TUPLE_TYPE
+            | RECORD_TYPE
+            | MAP_TYPE
+            | ARRAY_TYPE
     )
 }
 
@@ -224,31 +254,43 @@ pub fn is_safe_step(node: &SyntaxNode) -> bool {
 /// command call, the function of `f!`.
 fn is_chain_kind(kind: SyntaxKind) -> bool {
     use SyntaxKind::*;
-    matches!(kind, FIELD_EXPR | INDEX_EXPR | CALL_EXPR | COMMAND_CALL | METHOD_CALL | BANG_EXPR)
+    matches!(
+        kind,
+        FIELD_EXPR | INDEX_EXPR | CALL_EXPR | COMMAND_CALL | METHOD_CALL | BANG_EXPR
+    )
 }
 
 /// The operand a postfix step applies to (see [`is_chain_kind`]).
 pub fn chain_receiver(node: &SyntaxNode) -> Option<SyntaxNode> {
-    if is_chain_kind(node.kind()) { expr_child(node) } else { None }
+    if is_chain_kind(node.kind()) {
+        expr_child(node)
+    } else {
+        None
+    }
 }
 
 /// True when the parent of `node` is a postfix step applied to it, so that
 /// the chain goes on above `node`. Parentheses end a chain.
 pub fn continues_chain(node: &SyntaxNode) -> bool {
-    node.parent().is_some_and(|p| chain_receiver(&p).as_ref() == Some(node))
+    node.parent()
+        .is_some_and(|p| chain_receiver(&p).as_ref() == Some(node))
 }
 
 /// True when `node` is the operand of a nil-safe step: the value that step
 /// tests for `nil`.
 pub fn is_safe_receiver(node: &SyntaxNode) -> bool {
-    node.parent().is_some_and(|p| is_safe_step(&p) && chain_receiver(&p).as_ref() == Some(node))
+    node.parent()
+        .is_some_and(|p| is_safe_step(&p) && chain_receiver(&p).as_ref() == Some(node))
 }
 
 /// One nil-safe step of a chain.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SafeStep {
     /// A postfix step (`step`) and the operand it tests (`receiver`).
-    Postfix { step: SyntaxNode, receiver: SyntaxNode },
+    Postfix {
+        step: SyntaxNode,
+        receiver: SyntaxNode,
+    },
     /// A step of a Lua path, which tests the value of the path before it.
     Lua { path: SyntaxNode, step: SyntaxNode },
 }
@@ -262,13 +304,25 @@ pub fn safe_steps(top: &SyntaxNode) -> Vec<SafeStep> {
     let mut cur = top.clone();
     loop {
         if cur.kind() == SyntaxKind::LUA_PATH {
-            let lua: Vec<SafeStep> = cur.children().filter(is_safe_step).map(|step| SafeStep::Lua { path: cur.clone(), step }).collect();
+            let lua: Vec<SafeStep> = cur
+                .children()
+                .filter(is_safe_step)
+                .map(|step| SafeStep::Lua {
+                    path: cur.clone(),
+                    step,
+                })
+                .collect();
             out.extend(lua.into_iter().rev());
             break;
         }
-        let Some(receiver) = chain_receiver(&cur) else { break };
+        let Some(receiver) = chain_receiver(&cur) else {
+            break;
+        };
         if is_safe_step(&cur) {
-            out.push(SafeStep::Postfix { step: cur.clone(), receiver: receiver.clone() });
+            out.push(SafeStep::Postfix {
+                step: cur.clone(),
+                receiver: receiver.clone(),
+            });
         }
         cur = receiver;
     }
@@ -289,7 +343,9 @@ pub fn has_safe_step(node: &SyntaxNode) -> bool {
         if cur.kind() == SyntaxKind::LUA_PATH {
             return cur.children().any(|s| is_safe_step(&s));
         }
-        let Some(receiver) = chain_receiver(&cur) else { return false };
+        let Some(receiver) = chain_receiver(&cur) else {
+            return false;
+        };
         if is_safe_step(&cur) {
             return true;
         }
@@ -300,8 +356,12 @@ pub fn has_safe_step(node: &SyntaxNode) -> bool {
 /// True when `node` is the target of an assignment or compound assignment
 /// (the first expression of the statement), not of a multiple assignment.
 pub fn is_single_target(node: &SyntaxNode) -> bool {
-    node.parent()
-        .is_some_and(|p| matches!(p.kind(), SyntaxKind::ASSIGN_STMT | SyntaxKind::COMPOUND_ASSIGN_STMT) && expr_child(&p).as_ref() == Some(node))
+    node.parent().is_some_and(|p| {
+        matches!(
+            p.kind(),
+            SyntaxKind::ASSIGN_STMT | SyntaxKind::COMPOUND_ASSIGN_STMT
+        ) && expr_child(&p).as_ref() == Some(node)
+    })
 }
 
 /// The modifier of a simple statement, if any.

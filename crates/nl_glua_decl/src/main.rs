@@ -24,7 +24,8 @@ mod types;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const USAGE: &str = "usage: glua-decl <json-dir> [--lua <lua-dir>] [-o <file>] [--realm server|client|menu]
+const USAGE: &str =
+    "usage: glua-decl <json-dir> [--lua <lua-dir>] [-o <file>] [--realm server|client|menu]
 
   <json-dir>       the unpacked <date>.json.zip of a glua-api-snippets release
   --lua <lua-dir>  the unpacked <date>.lua.zip of the same release
@@ -73,7 +74,12 @@ fn usage() -> ExitCode {
     ExitCode::from(2)
 }
 
-fn run(data: &std::path::Path, lua: Option<&std::path::Path>, out: Option<&PathBuf>, side: Option<emit::Side>) -> Result<(), String> {
+fn run(
+    data: &std::path::Path,
+    lua: Option<&std::path::Path>,
+    out: Option<&PathBuf>,
+    side: Option<emit::Side>,
+) -> Result<(), String> {
     let mut api = source::Api::load(data)?;
     let recovered = match lua {
         Some(dir) => api.recover_from_lua(dir)?,
@@ -95,7 +101,9 @@ fn run(data: &std::path::Path, lua: Option<&std::path::Path>, out: Option<&PathB
         }
     };
     match out {
-        Some(path) => std::fs::write(path, &text).map_err(|e| format!("{}: {e}", path.display()))?,
+        Some(path) => {
+            std::fs::write(path, &text).map_err(|e| format!("{}: {e}", path.display()))?
+        }
         None => print!("{text}"),
     }
     let s = &generated.stats;
@@ -117,13 +125,24 @@ fn run(data: &std::path::Path, lua: Option<&std::path::Path>, out: Option<&PathB
         text.lines().count()
     );
     if !recovered.is_empty() {
-        eprintln!("glua-decl: {} functions from the Lua annotations: {}", recovered.len(), recovered.join(", "));
+        eprintln!(
+            "glua-decl: {} functions from the Lua annotations: {}",
+            recovered.len(),
+            recovered.join(", ")
+        );
     }
     for skipped in &s.skipped {
         eprintln!("glua-decl: left out: {skipped}");
     }
     if !s.unknown_types.is_empty() {
-        eprintln!("glua-decl: wiki types with no declaration, typed `any`: {}", s.unknown_types.iter().cloned().collect::<Vec<_>>().join(", "));
+        eprintln!(
+            "glua-decl: wiki types with no declaration, typed `any`: {}",
+            s.unknown_types
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
     Ok(())
 }
@@ -132,24 +151,46 @@ fn run(data: &std::path::Path, lua: Option<&std::path::Path>, out: Option<&PathB
 fn check(text: &str) -> Result<String, String> {
     let parse = nl_syntax::parse_decl_file(text);
     if !parse.diagnostics().is_empty() {
-        return Err(format!("the output does not parse:\n{}", nl_syntax::dump_diagnostics(text, parse.diagnostics())));
+        return Err(format!(
+            "the output does not parse:\n{}",
+            nl_syntax::dump_diagnostics(text, parse.diagnostics())
+        ));
     }
-    let formatted = nl_syntax::format_decl(text, nl_syntax::FormatOptions::default()).map_err(|d| format!("the output cannot be formatted: {d:?}"))?.text;
+    let formatted = nl_syntax::format_decl(text, nl_syntax::FormatOptions::default())
+        .map_err(|d| format!("the output cannot be formatted: {d:?}"))?
+        .text;
     let mut files = nl_sema::decl::prelude_files();
-    files.push(("decl/glua.d.nl".to_string(), nl_syntax::parse_decl_file(&formatted).syntax()));
+    files.push((
+        "decl/glua.d.nl".to_string(),
+        nl_syntax::parse_decl_file(&formatted).syntax(),
+    ));
     let (decls, diags) = nl_sema::Declarations::load(&files);
     if let Some((file, d)) = diags.first() {
-        return Err(format!("{file}: {} ({} diagnostics)", d.message, diags.len()));
+        return Err(format!(
+            "{file}: {} ({} diagnostics)",
+            d.message,
+            diags.len()
+        ));
     }
     // The analyzer takes a type name it does not know for `any`; every one
     // the generator writes must be declared.
     let builtin: Vec<&str> = nl_sema::prelude::all().iter().map(|p| p.name).collect();
     let root = files.last().map(|(_, r)| r.clone());
-    for n in root.iter().flat_map(|r| r.descendants()).filter(|n| n.kind() == nl_syntax::SyntaxKind::NAMED_TYPE) {
+    for n in root
+        .iter()
+        .flat_map(|r| r.descendants())
+        .filter(|n| n.kind() == nl_syntax::SyntaxKind::NAMED_TYPE)
+    {
         let name = n.text().to_string();
         let name = name.trim();
-        if name.starts_with(|c: char| c.is_ascii_uppercase()) && name != "Self" && decls.lookup(name).is_none() && !builtin.contains(&name) {
-            return Err(format!("the output names the type `{name}`, which nothing declares"));
+        if name.starts_with(|c: char| c.is_ascii_uppercase())
+            && name != "Self"
+            && decls.lookup(name).is_none()
+            && !builtin.contains(&name)
+        {
+            return Err(format!(
+                "the output names the type `{name}`, which nothing declares"
+            ));
         }
     }
     Ok(formatted)

@@ -63,9 +63,20 @@ impl Record {
     /// The one-line summary printed for it.
     pub fn line(&self) -> String {
         let first = self.findings.first();
-        let more = if self.findings.len() > 1 { format!(" (+{} more)", self.findings.len() - 1) } else { String::new() };
+        let more = if self.findings.len() > 1 {
+            format!(" (+{} more)", self.findings.len() - 1)
+        } else {
+            String::new()
+        };
         match first {
-            Some(f) => format!("{}: {} [{}] {}{more} -> {}", self.id, f.kind, f.run, f.detail, self.dir.display()),
+            Some(f) => format!(
+                "{}: {} [{}] {}{more} -> {}",
+                self.id,
+                f.kind,
+                f.run,
+                f.detail,
+                self.dir.display()
+            ),
             None => format!("{}: no finding", self.id),
         }
     }
@@ -83,7 +94,10 @@ pub struct Summary {
 /// Runs the campaign; `log` gets one line per finding as it is found.
 pub fn run(opts: &Options, log: &(dyn Fn(&str) + Sync)) -> Summary {
     let start = Instant::now();
-    let nlc = Nlc { path: opts.nlc.clone(), timeout: opts.timeout };
+    let nlc = Nlc {
+        path: opts.nlc.clone(),
+        timeout: opts.timeout,
+    };
     let next = AtomicU64::new(0);
     let programs = AtomicU64::new(0);
     let mutants = AtomicU64::new(0);
@@ -93,7 +107,8 @@ pub fn run(opts: &Options, log: &(dyn Fn(&str) + Sync)) -> Summary {
     let jobs = opts.jobs.max(1);
     std::thread::scope(|scope| {
         for w in 0..jobs {
-            let (nlc, next, programs, mutants, runs, records, seen) = (&nlc, &next, &programs, &mutants, &runs, &records, &seen);
+            let (nlc, next, programs, mutants, runs, records, seen) =
+                (&nlc, &next, &programs, &mutants, &runs, &records, &seen);
             scope.spawn(move || {
                 let work = opts.out.join("work").join(w.to_string());
                 if std::fs::create_dir_all(&work).is_err() {
@@ -106,11 +121,21 @@ pub fn run(opts: &Options, log: &(dyn Fn(&str) + Sync)) -> Summary {
                         break;
                     }
                     let seed = opts.seed.wrapping_add(i);
-                    let counters = Counters { programs, mutants, runs, seen };
+                    let counters = Counters {
+                        programs,
+                        mutants,
+                        runs,
+                        seen,
+                    };
                     let found = one_seed(opts, nlc, &work, seed, &counters);
                     // Each index is claimed once, so each mark is logged once.
                     if (i + 1) % 500 == 0 {
-                        log(&format!("progress: program {} of {} done, {} mutants so far", i + 1, opts.count, mutants.load(Ordering::Relaxed)));
+                        log(&format!(
+                            "progress: program {} of {} done, {} mutants so far",
+                            i + 1,
+                            opts.count,
+                            mutants.load(Ordering::Relaxed)
+                        ));
                     }
                     for r in found {
                         log(&r.line());
@@ -124,7 +149,13 @@ pub fn run(opts: &Options, log: &(dyn Fn(&str) + Sync)) -> Summary {
     });
     let mut records = records.into_inner().unwrap_or_default();
     records.sort_by(|a, b| a.id.cmp(&b.id));
-    Summary { programs: programs.into_inner(), mutants: mutants.into_inner(), runs: runs.into_inner(), records, elapsed: start.elapsed() }
+    Summary {
+        programs: programs.into_inner(),
+        mutants: mutants.into_inner(),
+        runs: runs.into_inner(),
+        records,
+        elapsed: start.elapsed(),
+    }
 }
 
 /// How often each kind of finding has been minimized, by signature.
@@ -157,7 +188,9 @@ fn signature(f: &Finding) -> String {
 /// not keep the campaign minimizing.
 fn worth_minimizing(seen: &Seen, f: Option<&Finding>) -> bool {
     let Some(f) = f else { return false };
-    let Ok(mut map) = seen.lock() else { return true };
+    let Ok(mut map) = seen.lock() else {
+        return true;
+    };
     // The total is kept under an empty key.
     if map.get("").copied().unwrap_or(0) >= MAX_MINIMIZED {
         return false;
@@ -186,11 +219,21 @@ fn one_seed(opts: &Options, nlc: &Nlc, work: &Path, seed: u64, c: &Counters<'_>)
     runs.fetch_add(report.outcomes.len() as u64, Ordering::Relaxed);
     if !report.findings.is_empty() {
         let dir = opts.out.join("findings").join(seed.to_string());
-        save(&dir, "program.nl", program.source.as_bytes(), &report, &program_commands(&configs, &report));
+        save(
+            &dir,
+            "program.nl",
+            program.source.as_bytes(),
+            &report,
+            &program_commands(&configs, &report),
+        );
         if opts.minimize && worth_minimizing(c.seen, report.findings.first()) {
             minimize_program(nlc, work, &dir, &program, &report);
         }
-        out.push(Record { id: seed.to_string(), findings: report.findings.clone(), dir });
+        out.push(Record {
+            id: seed.to_string(),
+            findings: report.findings.clone(),
+            dir,
+        });
     } else if opts.keep_passing {
         let dir = opts.out.join("passing");
         let _ = std::fs::create_dir_all(&dir);
@@ -222,7 +265,11 @@ fn one_seed(opts: &Options, nlc: &Nlc, work: &Path, seed: u64, c: &Counters<'_>)
             if opts.minimize && worth_minimizing(c.seen, report.findings.first()) {
                 minimize_mutant(nlc, work, &dir, &m, &report);
             }
-            out.push(Record { id, findings: report.findings.clone(), dir });
+            out.push(Record {
+                id,
+                findings: report.findings.clone(),
+                dir,
+            });
         }
     }
     out
@@ -235,7 +282,8 @@ pub fn mutant_seed(seed: u64, k: u64) -> u64 {
 }
 
 fn program_commands(configs: &[Config], report: &Report) -> String {
-    let mut s = String::from("# run from this directory, with NL_PATH unset\nnlc check program.nl\n");
+    let mut s =
+        String::from("# run from this directory, with NL_PATH unset\nnlc check program.nl\n");
     for c in configs {
         if report.findings.iter().any(|f| f.run == c.label()) || *c == runner::ORACLE {
             s.push_str(&format!("nlc {} program.nl\n", c.args().join(" ")));
@@ -269,7 +317,9 @@ fn write_outcome(dir: &Path, label: &str, o: &Outcome) {
 
 /// The configuration of a run label.
 fn config_of(label: &str) -> Option<Config> {
-    runner::configs(false).into_iter().find(|c| c.label() == label)
+    runner::configs(false)
+        .into_iter()
+        .find(|c| c.label() == label)
 }
 
 /// The arguments of the command behind a run label.
@@ -285,8 +335,16 @@ fn args_of(label: &str) -> Option<Vec<&'static str>> {
 
 /// Shrinks a program while its first finding stays the same, and saves
 /// `min.nl` with the outputs that show it.
-fn minimize_program(nlc: &Nlc, work: &Path, dir: &Path, program: &generator::Program, report: &Report) {
-    let Some(f) = report.findings.first().cloned() else { return };
+fn minimize_program(
+    nlc: &Nlc,
+    work: &Path,
+    dir: &Path,
+    program: &generator::Program,
+    report: &Report,
+) {
+    let Some(f) = report.findings.first().cloned() else {
+        return;
+    };
     // A timeout costs the whole timeout per test; a failure to start is
     // not about the program.
     if f.kind == Kind::Timeout || f.kind == Kind::NotStarted {
@@ -295,14 +353,30 @@ fn minimize_program(nlc: &Nlc, work: &Path, dir: &Path, program: &generator::Pro
     let file = work.join("min.nl");
     let name = Path::new("min.nl");
     let oracle_args = runner::ORACLE.args();
-    let original_error = report.outcomes.iter().find(|(l, _)| *l == f.run).map(|(_, o)| runner::first_error(&o.stderr)).unwrap_or_default();
-    let Some(run_args) = args_of(&f.run) else { return };
+    let original_error = report
+        .outcomes
+        .iter()
+        .find(|(l, _)| *l == f.run)
+        .map(|(_, o)| runner::first_error(&o.stderr))
+        .unwrap_or_default();
+    let Some(run_args) = args_of(&f.run) else {
+        return;
+    };
     // A compiler panic shows in `nlc build` already, which is faster than
     // a run; the options that change code generation are kept.
     let compile_panic = f.kind == Kind::Crash && f.detail.contains("panicked");
     let args: Vec<&str> = match config_of(&f.run) {
         Some(c) if compile_panic => {
-            let mut a = vec!["build", if c.backend == runner::Backend::Bc { "--emit=bc" } else { "--emit=lua" }, "-o", "min.out"];
+            let mut a = vec![
+                "build",
+                if c.backend == runner::Backend::Bc {
+                    "--emit=bc"
+                } else {
+                    "--emit=lua"
+                },
+                "-o",
+                "min.out",
+            ];
             if !c.checked {
                 a.push("--unchecked");
             }
@@ -320,11 +394,15 @@ fn minimize_program(nlc: &Nlc, work: &Path, dir: &Path, program: &generator::Pro
         match f.kind {
             Kind::Rejected => {
                 let o = nlc.run(&args, name, work);
-                o.status == Status::Exited(1) && !o.crashed() && runner::first_error(&o.stderr) == original_error
+                o.status == Status::Exited(1)
+                    && !o.crashed()
+                    && runner::first_error(&o.stderr) == original_error
             }
             Kind::OracleFailed => {
                 let o = nlc.run(&args, name, work);
-                matches!(o.status, Status::Exited(1)) && !o.crashed() && runner::first_error(&o.stderr) == original_error
+                matches!(o.status, Status::Exited(1))
+                    && !o.crashed()
+                    && runner::first_error(&o.stderr) == original_error
             }
             Kind::Mismatch => {
                 let o = nlc.run(&oracle_args, name, work);
@@ -332,14 +410,20 @@ fn minimize_program(nlc: &Nlc, work: &Path, dir: &Path, program: &generator::Pro
                     return false;
                 }
                 let x = nlc.run(&args, name, work);
-                !x.crashed() && x.status != Status::Timeout && (x.stdout != o.stdout || x.status != o.status)
+                !x.crashed()
+                    && x.status != Status::Timeout
+                    && (x.stdout != o.stdout || x.status != o.status)
             }
             Kind::Crash => nlc.run(&args, name, work).crashed(),
             Kind::Timeout | Kind::NotStarted => false,
         }
     };
     // Runs of a whole program cost more than compiles.
-    let budget = if f.kind == Kind::Mismatch || f.kind == Kind::OracleFailed { 600 } else { 3000 };
+    let budget = if f.kind == Kind::Mismatch || f.kind == Kind::OracleFailed {
+        600
+    } else {
+        3000
+    };
     let min = minimize(&program.source, budget, still);
     let _ = std::fs::write(dir.join("min.nl"), &min);
     if std::fs::write(&file, &min).is_ok() {
@@ -354,15 +438,26 @@ fn minimize_program(nlc: &Nlc, work: &Path, dir: &Path, program: &generator::Pro
 
 /// Shrinks a mutant while the same command still crashes.
 fn minimize_mutant(nlc: &Nlc, work: &Path, dir: &Path, source: &[u8], report: &Report) {
-    let Some(f) = report.findings.iter().find(|f| f.kind == Kind::Crash).cloned() else { return };
+    let Some(f) = report
+        .findings
+        .iter()
+        .find(|f| f.kind == Kind::Crash)
+        .cloned()
+    else {
+        return;
+    };
     let crashes = |o: &Outcome| o.crashed();
     let Some(args) = args_of(&f.run) else { return };
     // Lines of a mutant may not be valid UTF-8; such a mutant is kept
     // whole.
-    let Ok(text) = std::str::from_utf8(source) else { return };
+    let Ok(text) = std::str::from_utf8(source) else {
+        return;
+    };
     let file = work.join("min.nl");
     let name = Path::new("min.nl");
-    let still = |src: &str| -> bool { std::fs::write(&file, src).is_ok() && crashes(&nlc.run(&args, name, work)) };
+    let still = |src: &str| -> bool {
+        std::fs::write(&file, src).is_ok() && crashes(&nlc.run(&args, name, work))
+    };
     let min = minimize(text, 3000, still);
     let _ = std::fs::write(dir.join("min.nl"), &min);
 }

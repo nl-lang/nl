@@ -61,13 +61,13 @@ use std::rc::Rc;
 
 use nl_syntax::{SyntaxKind, SyntaxNode, TextRange};
 
+use crate::ImportProvider;
 use crate::binding::*;
 use crate::decl::{DeclId, Declarations};
 use crate::hints::*;
 use crate::prelude::{self, Prelude};
 use crate::types::*;
 use crate::util::*;
-use crate::ImportProvider;
 
 use SyntaxKind::*;
 
@@ -94,7 +94,13 @@ impl Default for AnalyzeOptions<'_> {
     /// Static resolution and lints on, no declaration files, no imports,
     /// nothing recorded: `AnalyzeOptions { decls: Some(&decls), ..Default::default() }`.
     fn default() -> Self {
-        AnalyzeOptions { static_resolution: true, decls: None, lints: true, imports: None, record: false }
+        AnalyzeOptions {
+            static_resolution: true,
+            decls: None,
+            lints: true,
+            imports: None,
+            record: false,
+        }
     }
 }
 
@@ -173,7 +179,11 @@ pub fn analyze(root: &SyntaxNode, res: &Resolution, opts: &AnalyzeOptions<'_>) -
     let mut diagnostics = a.diags;
     diagnostics.sort_by_key(|d| (!d.error, d.range.start()));
     diagnostics.dedup();
-    Analysis { diagnostics, hints: a.hints, info }
+    Analysis {
+        diagnostics,
+        hints: a.hints,
+        info,
+    }
 }
 
 /// A type with whether the runtime guarantees it (module docs).
@@ -194,7 +204,10 @@ impl Ty {
         Ty { t, certain: false }
     }
     pub(crate) fn any() -> Ty {
-        Ty { t: Type::Any, certain: false }
+        Ty {
+            t: Type::Any,
+            certain: false,
+        }
     }
 }
 
@@ -390,12 +403,19 @@ impl<'a> Analyzer<'a> {
             let id = BindingId(u32::try_from(i).unwrap_or(u32::MAX));
             let t = match self.binding_fn_type(id) {
                 Some(sig) => Type::Fn(sig),
-                None => self.binding_types.get(&id).map(|t| t.t.clone()).unwrap_or(Type::Any),
+                None => self
+                    .binding_types
+                    .get(&id)
+                    .map(|t| t.t.clone())
+                    .unwrap_or(Type::Any),
             };
             binding_types.insert(id, t);
         }
         let mut fn_types = HashMap::new();
-        for n in root.descendants().filter(|n| self.fn_sigs.contains_key(&n.text_range())) {
+        for n in root
+            .descendants()
+            .filter(|n| self.fn_sigs.contains_key(&n.text_range()))
+        {
             fn_types.insert(n.text_range(), self.fn_type(&n));
         }
         TypeInfo {
@@ -414,22 +434,50 @@ impl<'a> Analyzer<'a> {
 
     // ---- diagnostics -----------------------------------------------------------
 
-    pub(crate) fn report(&mut self, range: TextRange, code: &'static str, message: impl Into<String>, error: bool, lint: bool) {
+    pub(crate) fn report(
+        &mut self,
+        range: TextRange,
+        code: &'static str,
+        message: impl Into<String>,
+        error: bool,
+        lint: bool,
+    ) {
         if self.pass != 2 {
             return;
         }
-        self.diags.push(SemaDiagnostic { range, code, message: message.into(), error, lint });
+        self.diags.push(SemaDiagnostic {
+            range,
+            code,
+            message: message.into(),
+            error,
+            lint,
+        });
     }
 
-    pub(crate) fn error(&mut self, range: TextRange, code: &'static str, message: impl Into<String>) {
+    pub(crate) fn error(
+        &mut self,
+        range: TextRange,
+        code: &'static str,
+        message: impl Into<String>,
+    ) {
         self.report(range, code, message, true, false);
     }
 
-    pub(crate) fn warn(&mut self, range: TextRange, code: &'static str, message: impl Into<String>) {
+    pub(crate) fn warn(
+        &mut self,
+        range: TextRange,
+        code: &'static str,
+        message: impl Into<String>,
+    ) {
         self.report(range, code, message, false, false);
     }
 
-    pub(crate) fn lint(&mut self, range: TextRange, code: &'static str, message: impl Into<String>) {
+    pub(crate) fn lint(
+        &mut self,
+        range: TextRange,
+        code: &'static str,
+        message: impl Into<String>,
+    ) {
         if self.opts.lints {
             self.report(range, code, message, false, true);
         }
@@ -494,11 +542,21 @@ impl<'a> Analyzer<'a> {
 
     pub(crate) fn current_fn(&mut self) -> &mut FnCtx {
         if self.fns.is_empty() {
-            self.fns.push(FnCtx { node: None, declared_ret: None, nil_ret: false, returns: Vec::new(), self_type: None, spawn_block: false, loop_depth: 0 });
+            self.fns.push(FnCtx {
+                node: None,
+                declared_ret: None,
+                nil_ret: false,
+                returns: Vec::new(),
+                self_type: None,
+                spawn_block: false,
+                loop_depth: 0,
+            });
         }
         let last = self.fns.len() - 1;
         // The vector is not empty here.
-        self.fns.get_mut(last).unwrap_or_else(|| unreachable!("a function context was just pushed"))
+        self.fns
+            .get_mut(last)
+            .unwrap_or_else(|| unreachable!("a function context was just pushed"))
     }
 
     pub(crate) fn self_type(&self) -> Option<Type> {
@@ -522,34 +580,66 @@ impl<'a> Analyzer<'a> {
         for n in root.descendants() {
             match n.kind() {
                 STRUCT_DECL | ENUM_DECL | INTERFACE_DECL | TYPE_DECL => {
-                    let Some(name) = child(&n, NAME) else { continue };
-                    let Some(id) = self.res.declaration(name.text_range()) else { continue };
+                    let Some(name) = child(&n, NAME) else {
+                        continue;
+                    };
+                    let Some(id) = self.res.declaration(name.text_range()) else {
+                        continue;
+                    };
                     let text = name_text(&name).unwrap_or_default();
                     let kind = match n.kind() {
-                        STRUCT_DECL => NamedKind::Struct { parent: None, fields: Vec::new(), methods: HashMap::new(), operators: HashMap::new(), interfaces: Vec::new(), type_params: Vec::new(), to: Vec::new(), from: Vec::new() },
-                        ENUM_DECL => NamedKind::Enum { variants: Vec::new() },
-                        INTERFACE_DECL => NamedKind::Interface { methods: HashMap::new(), fields: Vec::new(), type_params: Vec::new() },
+                        STRUCT_DECL => NamedKind::Struct {
+                            parent: None,
+                            fields: Vec::new(),
+                            methods: HashMap::new(),
+                            operators: HashMap::new(),
+                            interfaces: Vec::new(),
+                            type_params: Vec::new(),
+                            to: Vec::new(),
+                            from: Vec::new(),
+                        },
+                        ENUM_DECL => NamedKind::Enum {
+                            variants: Vec::new(),
+                        },
+                        INTERFACE_DECL => NamedKind::Interface {
+                            methods: HashMap::new(),
+                            fields: Vec::new(),
+                            type_params: Vec::new(),
+                        },
                         _ => NamedKind::Alias(Type::Any),
                     };
                     let nid = self.types.add(&text, kind);
                     self.named_of.insert(id, nid);
                 }
                 MODULE_DECL => {
-                    let Some((id, _reopen)) = self.res.module(n.text_range()) else { continue };
+                    let Some((id, _reopen)) = self.res.module(n.text_range()) else {
+                        continue;
+                    };
                     if self.named_of.contains_key(&id) {
                         continue;
                     }
                     let text = self.binding(id).map(|b| b.name.clone()).unwrap_or_default();
-                    let nid = self.types.add(&text, NamedKind::Module { members: HashMap::new() });
+                    let nid = self.types.add(
+                        &text,
+                        NamedKind::Module {
+                            members: HashMap::new(),
+                        },
+                    );
                     self.named_of.insert(id, nid);
                 }
                 IMPORT_DECL => {
                     for name in n.descendants().filter(|d| d.kind() == NAME) {
-                        let Some(id) = self.res.declaration(name.text_range()) else { continue };
-                        let Some(b) = self.binding(id).cloned() else { continue };
+                        let Some(id) = self.res.declaration(name.text_range()) else {
+                            continue;
+                        };
+                        let Some(b) = self.binding(id).cloned() else {
+                            continue;
+                        };
                         if b.kind == BindingKind::TypeLevel {
                             let kind = match self.res.declared_as(id) {
-                                Some(DeclKind::Module | DeclKind::Import) => NamedKind::Module { members: HashMap::new() },
+                                Some(DeclKind::Module | DeclKind::Import) => NamedKind::Module {
+                                    members: HashMap::new(),
+                                },
                                 _ => NamedKind::Opaque,
                             };
                             let nid = self.types.add(&b.name, kind);
@@ -587,33 +677,109 @@ impl<'a> Analyzer<'a> {
     }
 
     fn collect_prelude(&mut self) {
-        let exception = self.types.add("Exception", NamedKind::Struct {
-            parent: None,
-            fields: vec![
-                Field { name: "message".into(), ty: Type::String, has_default: true },
-                Field { name: "trace".into(), ty: optional(&self.types, &Type::String), has_default: true },
-            ],
-            methods: HashMap::new(),
-            operators: HashMap::new(),
-            interfaces: Vec::new(),
-            type_params: Vec::new(),
-            to: Vec::new(),
-            from: Vec::new(),
-        });
+        let exception = self.types.add(
+            "Exception",
+            NamedKind::Struct {
+                parent: None,
+                fields: vec![
+                    Field {
+                        name: "message".into(),
+                        ty: Type::String,
+                        has_default: true,
+                    },
+                    Field {
+                        name: "trace".into(),
+                        ty: optional(&self.types, &Type::String),
+                        has_default: true,
+                    },
+                ],
+                methods: HashMap::new(),
+                operators: HashMap::new(),
+                interfaces: Vec::new(),
+                type_params: Vec::new(),
+                to: Vec::new(),
+                from: Vec::new(),
+            },
+        );
         self.prelude_named.insert("Exception", exception);
-        for name in ["LuaError", "TypeError", "MatchError", "ConversionError", "RegexError", "EncodingError", "KeyError", "SendError", "WorkerError"] {
-            let fields = if name == "LuaError" { vec![Field { name: "value".into(), ty: Type::Any, has_default: true }] } else { Vec::new() };
-            let id = self.types.add(name, NamedKind::Struct { parent: Some(exception), fields, methods: HashMap::new(), operators: HashMap::new(), interfaces: Vec::new(), type_params: Vec::new(), to: Vec::new(), from: Vec::new() });
+        for name in [
+            "LuaError",
+            "TypeError",
+            "MatchError",
+            "ConversionError",
+            "RegexError",
+            "EncodingError",
+            "KeyError",
+            "SendError",
+            "WorkerError",
+        ] {
+            let fields = if name == "LuaError" {
+                vec![Field {
+                    name: "value".into(),
+                    ty: Type::Any,
+                    has_default: true,
+                }]
+            } else {
+                Vec::new()
+            };
+            let id = self.types.add(
+                name,
+                NamedKind::Struct {
+                    parent: Some(exception),
+                    fields,
+                    methods: HashMap::new(),
+                    operators: HashMap::new(),
+                    interfaces: Vec::new(),
+                    type_params: Vec::new(),
+                    to: Vec::new(),
+                    from: Vec::new(),
+                },
+            );
             self.prelude_named.insert(name, id);
         }
-        let to = self.types.add("To", NamedKind::Interface { methods: HashMap::new(), fields: Vec::new(), type_params: vec!["T".into()] });
+        let to = self.types.add(
+            "To",
+            NamedKind::Interface {
+                methods: HashMap::new(),
+                fields: Vec::new(),
+                type_params: vec!["T".into()],
+            },
+        );
         self.prelude_named.insert("To", to);
-        let from = self.types.add("From", NamedKind::Interface { methods: HashMap::new(), fields: Vec::new(), type_params: vec!["T".into()] });
+        let from = self.types.add(
+            "From",
+            NamedKind::Interface {
+                methods: HashMap::new(),
+                fields: Vec::new(),
+                type_params: vec!["T".into()],
+            },
+        );
         self.prelude_named.insert("From", from);
         // The library tables and the prelude functions: their members
         // come from the built-in declaration files.
-        for name in ["Number", "String", "Table", "IO", "OS", "Coroutine", "Debug", "Bit", "Package", "Jit", "Event", "Worker", "Task", "Regex", "Bool"] {
-            let id = self.types.add(name, NamedKind::Module { members: HashMap::new() });
+        for name in [
+            "Number",
+            "String",
+            "Table",
+            "IO",
+            "OS",
+            "Coroutine",
+            "Debug",
+            "Bit",
+            "Package",
+            "Jit",
+            "Event",
+            "Worker",
+            "Task",
+            "Regex",
+            "Bool",
+        ] {
+            let id = self.types.add(
+                name,
+                NamedKind::Module {
+                    members: HashMap::new(),
+                },
+            );
             self.prelude_named.insert(name, id);
         }
         // Library tables whose values are instances over tables, checked
@@ -621,7 +787,13 @@ impl<'a> Analyzer<'a> {
         // `Time.at(…)` is a function of the library and `t.year` a method
         // of the instance, both from decl/nl.d.nl.
         for name in ["Time", "Duration"] {
-            let id = self.types.add(name, NamedKind::LuaClass { fields: Vec::new(), members: HashMap::new() });
+            let id = self.types.add(
+                name,
+                NamedKind::LuaClass {
+                    fields: Vec::new(),
+                    members: HashMap::new(),
+                },
+            );
             self.prelude_named.insert(name, id);
         }
     }
@@ -642,9 +814,17 @@ impl<'a> Analyzer<'a> {
                 continue;
             }
             let kind = match item.kind {
-                crate::decl::DeclItemKind::Module => NamedKind::Module { members: HashMap::new() },
-                crate::decl::DeclItemKind::Struct => NamedKind::LuaClass { fields: Vec::new(), members: HashMap::new() },
-                crate::decl::DeclItemKind::HostType => NamedKind::HostType { parent: None, members: HashMap::new() },
+                crate::decl::DeclItemKind::Module => NamedKind::Module {
+                    members: HashMap::new(),
+                },
+                crate::decl::DeclItemKind::Struct => NamedKind::LuaClass {
+                    fields: Vec::new(),
+                    members: HashMap::new(),
+                },
+                crate::decl::DeclItemKind::HostType => NamedKind::HostType {
+                    parent: None,
+                    members: HashMap::new(),
+                },
                 _ => continue,
             };
             let nid = self.types.add(&item.name, kind);
@@ -671,8 +851,22 @@ impl<'a> Analyzer<'a> {
     /// with parameters of type `any`.
     fn collect_imported_extensions(&mut self) {
         for e in self.res.extensions.iter().filter(|e| e.origin.is_some()) {
-            let Some(nid) = self.decls.lookup(&e.owner).and_then(|id| self.decl_named.get(&id).copied()) else { continue };
-            let params = e.params.iter().map(|(name, optional)| Param { name: name.clone(), ty: Type::Any, optional: *optional }).collect();
+            let Some(nid) = self
+                .decls
+                .lookup(&e.owner)
+                .and_then(|id| self.decl_named.get(&id).copied())
+            else {
+                continue;
+            };
+            let params = e
+                .params
+                .iter()
+                .map(|(name, optional)| Param {
+                    name: name.clone(),
+                    ty: Type::Any,
+                    optional: *optional,
+                })
+                .collect();
             let sig = FnType {
                 params,
                 rest: e.rest.then_some(Type::Any),
@@ -694,12 +888,22 @@ impl<'a> Analyzer<'a> {
     fn collect_decl_nested(&mut self, node: &SyntaxNode, parent: NamedId, top: DeclId) {
         for c in node.children() {
             let kind = match c.kind() {
-                DECL_MODULE => NamedKind::Module { members: HashMap::new() },
-                DECL_STRUCT => NamedKind::LuaClass { fields: Vec::new(), members: HashMap::new() },
-                DECL_TYPE => NamedKind::HostType { parent: None, members: HashMap::new() },
+                DECL_MODULE => NamedKind::Module {
+                    members: HashMap::new(),
+                },
+                DECL_STRUCT => NamedKind::LuaClass {
+                    fields: Vec::new(),
+                    members: HashMap::new(),
+                },
+                DECL_TYPE => NamedKind::HostType {
+                    parent: None,
+                    members: HashMap::new(),
+                },
                 _ => continue,
             };
-            let name = child(&c, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
+            let name = child(&c, NAME)
+                .and_then(|n| name_text(&n))
+                .unwrap_or_default();
             let nid = self.types.add(&name, kind);
             self.decl_nested.insert(c.text_range(), nid);
             self.decl_types.insert(nid);
@@ -715,7 +919,9 @@ impl<'a> Analyzer<'a> {
     pub(crate) fn add_member(&mut self, owner: NamedId, name: &str, member: Member) {
         if let Some(n) = self.types.get_mut(owner) {
             match &mut n.kind {
-                NamedKind::Module { members } | NamedKind::HostType { members, .. } | NamedKind::LuaClass { members, .. } => {
+                NamedKind::Module { members }
+                | NamedKind::HostType { members, .. }
+                | NamedKind::LuaClass { members, .. } => {
                     members.insert(name.to_string(), member);
                 }
                 NamedKind::Struct { methods, .. } | NamedKind::Interface { methods, .. } => {
@@ -734,10 +940,15 @@ impl<'a> Analyzer<'a> {
     /// no checked parameters. A definition of this file, collected later,
     /// replaces one of the same name.
     fn collect_imported_prim_methods(&mut self, root: &SyntaxNode) {
-        let Some(imports) = self.opts.imports else { return };
+        let Some(imports) = self.opts.imports else {
+            return;
+        };
         let Some(b) = block(root) else { return };
         for s in statements(&b).filter(|s| s.kind() == IMPORT_DECL) {
-            let Some(path) = token(&s, STRING).map(|t| crate::resolver::decode_plain_string(&t)) else { continue };
+            let Some(path) = token(&s, STRING).map(|t| crate::resolver::decode_plain_string(&t))
+            else {
+                continue;
+            };
             for m in imports.primitive_methods(&path) {
                 let ret = match m.ret {
                     Some("Number") => Type::Number,
@@ -745,9 +956,22 @@ impl<'a> Analyzer<'a> {
                     Some("Bool") => Type::Bool,
                     _ => Type::Any,
                 };
-                let sig = FnType { params: Vec::new(), rest: Some(Type::Any), keyed: Some(None), ret, is_method: true, is_async: false, named: true, declared: true };
+                let sig = FnType {
+                    params: Vec::new(),
+                    rest: Some(Type::Any),
+                    keyed: Some(None),
+                    ret,
+                    is_method: true,
+                    is_async: false,
+                    named: true,
+                    declared: true,
+                };
                 self.imported_prim_methods.insert((m.owner, m.name.clone()));
-                self.prim_methods.entry(m.owner).or_default().entry(m.name).or_insert_with(|| Rc::new(sig));
+                self.prim_methods
+                    .entry(m.owner)
+                    .or_default()
+                    .entry(m.name)
+                    .or_insert_with(|| Rc::new(sig));
             }
         }
     }
@@ -755,8 +979,16 @@ impl<'a> Analyzer<'a> {
     /// For each declaring name, the function node it belongs to.
     fn collect_binding_fns(&mut self, root: &SyntaxNode) {
         for n in root.descendants() {
-            let Some(id) = self.res.declaration(n.text_range()) else { continue };
-            let owner = n.ancestors().skip(1).find(|a| is_function_node(a.kind()) && (a.kind() != SPAWN_EXPR || has_token(a, DO_KW))).map(|a| a.text_range());
+            let Some(id) = self.res.declaration(n.text_range()) else {
+                continue;
+            };
+            let owner = n
+                .ancestors()
+                .skip(1)
+                .find(|a| {
+                    is_function_node(a.kind()) && (a.kind() != SPAWN_EXPR || has_token(a, DO_KW))
+                })
+                .map(|a| a.text_range());
             self.binding_fn.insert(id, owner);
         }
         // Hidden `self` bindings belong to their method.
@@ -772,10 +1004,12 @@ impl<'a> Analyzer<'a> {
     fn collect_assigned(&mut self, root: &SyntaxNode) {
         for n in root.descendants() {
             let targets: Vec<SyntaxNode> = match n.kind() {
-                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT => match child(&n, TARGET_LIST) {
-                    Some(list) => expr_children(&list).collect(),
-                    None => expr_children(&n).take(1).collect(),
-                },
+                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT => {
+                    match child(&n, TARGET_LIST) {
+                        Some(list) => expr_children(&list).collect(),
+                        None => expr_children(&n).take(1).collect(),
+                    }
+                }
                 _ => continue,
             };
             for t in targets {
@@ -795,27 +1029,58 @@ impl<'a> Analyzer<'a> {
     }
 
     fn collect_struct(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
-        let Some(id) = self.res.declaration(name.text_range()) else { return };
-        let Some(&nid) = self.named_of.get(&id) else { return };
-        let parent = child(node, STRUCT_PARENT).and_then(|p| type_child(&p)).and_then(|t| {
-            let ty = self.type_of(&t);
-            match self.types.expand(&ty) {
-                Type::Named(p) => Some(p),
-                _ => None,
-            }
-        });
-        let type_params: Vec<String> = child(node, TYPE_PARAMS).map(|tp| children(&tp, TYPE_PARAM).filter_map(|p| child(&p, NAME)).filter_map(|n| name_text(&n)).collect()).unwrap_or_default();
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
+        let Some(id) = self.res.declaration(name.text_range()) else {
+            return;
+        };
+        let Some(&nid) = self.named_of.get(&id) else {
+            return;
+        };
+        let parent = child(node, STRUCT_PARENT)
+            .and_then(|p| type_child(&p))
+            .and_then(|t| {
+                let ty = self.type_of(&t);
+                match self.types.expand(&ty) {
+                    Type::Named(p) => Some(p),
+                    _ => None,
+                }
+            });
+        let type_params: Vec<String> = child(node, TYPE_PARAMS)
+            .map(|tp| {
+                children(&tp, TYPE_PARAM)
+                    .filter_map(|p| child(&p, NAME))
+                    .filter_map(|n| name_text(&n))
+                    .collect()
+            })
+            .unwrap_or_default();
         let mut fields = Vec::new();
         for f in children(node, FIELD_DECL) {
-            let Some(fname_node) = child(&f, NAME) else { continue };
-            let Some(fname) = name_text(&fname_node) else { continue };
-            let ty = type_child(&f).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+            let Some(fname_node) = child(&f, NAME) else {
+                continue;
+            };
+            let Some(fname) = name_text(&fname_node) else {
+                continue;
+            };
+            let ty = type_child(&f)
+                .map(|t| self.type_of(&t))
+                .unwrap_or(Type::Any);
             self.record_member_decl(nid, &fname, fname_node.text_range());
-            fields.push(Field { name: fname, ty, has_default: expr_child(&f).is_some() });
+            fields.push(Field {
+                name: fname,
+                ty,
+                has_default: expr_child(&f).is_some(),
+            });
         }
         if let Some(n) = self.types.get_mut(nid) {
-            if let NamedKind::Struct { parent: p, fields: fs, type_params: tps, .. } = &mut n.kind {
+            if let NamedKind::Struct {
+                parent: p,
+                fields: fs,
+                type_params: tps,
+                ..
+            } = &mut n.kind
+            {
                 *p = parent;
                 *fs = fields;
                 *tps = type_params;
@@ -824,17 +1089,31 @@ impl<'a> Analyzer<'a> {
     }
 
     fn collect_enum(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
-        let Some(id) = self.res.declaration(name.text_range()) else { return };
-        let Some(&nid) = self.named_of.get(&id) else { return };
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
+        let Some(id) = self.res.declaration(name.text_range()) else {
+            return;
+        };
+        let Some(&nid) = self.named_of.get(&id) else {
+            return;
+        };
         let mut variants = Vec::new();
         for v in children(node, VARIANT) {
-            let Some(vname_node) = child(&v, NAME) else { continue };
-            let Some(vname) = name_text(&vname_node) else { continue };
+            let Some(vname_node) = child(&v, NAME) else {
+                continue;
+            };
+            let Some(vname) = name_text(&vname_node) else {
+                continue;
+            };
             self.record_member_decl(nid, &vname, vname_node.text_range());
             let ty = match expr_child(&v) {
                 Some(e) => {
-                    let lit = if e.kind() == PREFIX_EXPR { expr_child(&e) } else { Some(e) };
+                    let lit = if e.kind() == PREFIX_EXPR {
+                        expr_child(&e)
+                    } else {
+                        Some(e)
+                    };
                     match lit.and_then(|l| first_token(&l)).map(|t| t.kind()) {
                         Some(NUMBER) => Type::Number,
                         _ => Type::String,
@@ -850,41 +1129,79 @@ impl<'a> Analyzer<'a> {
             }
         }
         // An enum of a module body is a member of the module: `M.Inner.X`.
-        let module = node.parent().and_then(|b| b.parent()).filter(|m| m.kind() == MODULE_DECL);
-        if let Some(m) = module.and_then(|m| self.res.module(m.text_range())).and_then(|(mid, _)| self.named_of.get(&mid).copied()) {
+        let module = node
+            .parent()
+            .and_then(|b| b.parent())
+            .filter(|m| m.kind() == MODULE_DECL);
+        if let Some(m) = module
+            .and_then(|m| self.res.module(m.text_range()))
+            .and_then(|(mid, _)| self.named_of.get(&mid).copied())
+        {
             let text = name_text(&name).unwrap_or_default();
             self.add_member(m, &text, Member::Value(Type::Static(nid)));
         }
     }
 
     fn collect_interface(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
-        let Some(id) = self.res.declaration(name.text_range()) else { return };
-        let Some(&nid) = self.named_of.get(&id) else { return };
-        let type_params: Vec<String> = child(node, TYPE_PARAMS).map(|tp| children(&tp, TYPE_PARAM).filter_map(|p| child(&p, NAME)).filter_map(|n| name_text(&n)).collect()).unwrap_or_default();
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
+        let Some(id) = self.res.declaration(name.text_range()) else {
+            return;
+        };
+        let Some(&nid) = self.named_of.get(&id) else {
+            return;
+        };
+        let type_params: Vec<String> = child(node, TYPE_PARAMS)
+            .map(|tp| {
+                children(&tp, TYPE_PARAM)
+                    .filter_map(|p| child(&p, NAME))
+                    .filter_map(|n| name_text(&n))
+                    .collect()
+            })
+            .unwrap_or_default();
         let mut methods = HashMap::new();
         let mut fields = Vec::new();
         for m in node.children() {
             match m.kind() {
                 IFACE_METHOD => {
-                    let Some(mname_node) = child(&m, NAME) else { continue };
-                    let Some(mname) = name_text(&mname_node) else { continue };
+                    let Some(mname_node) = child(&m, NAME) else {
+                        continue;
+                    };
+                    let Some(mname) = name_text(&mname_node) else {
+                        continue;
+                    };
                     let sig = self.signature_of(&m, true, true, Some(Type::Named(nid)));
                     self.record_member_decl(nid, &mname, mname_node.text_range());
                     methods.insert(mname, Rc::new(sig));
                 }
                 IFACE_FIELD => {
-                    let Some(fname_node) = child(&m, NAME) else { continue };
-                    let Some(fname) = name_text(&fname_node) else { continue };
-                    let ty = type_child(&m).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+                    let Some(fname_node) = child(&m, NAME) else {
+                        continue;
+                    };
+                    let Some(fname) = name_text(&fname_node) else {
+                        continue;
+                    };
+                    let ty = type_child(&m)
+                        .map(|t| self.type_of(&t))
+                        .unwrap_or(Type::Any);
                     self.record_member_decl(nid, &fname, fname_node.text_range());
-                    fields.push(Field { name: fname, ty, has_default: false });
+                    fields.push(Field {
+                        name: fname,
+                        ty,
+                        has_default: false,
+                    });
                 }
                 _ => {}
             }
         }
         if let Some(n) = self.types.get_mut(nid) {
-            if let NamedKind::Interface { methods: ms, fields: fs, type_params: tps } = &mut n.kind {
+            if let NamedKind::Interface {
+                methods: ms,
+                fields: fs,
+                type_params: tps,
+            } = &mut n.kind
+            {
                 *ms = methods;
                 *fs = fields;
                 *tps = type_params;
@@ -893,10 +1210,18 @@ impl<'a> Analyzer<'a> {
     }
 
     fn collect_alias(&mut self, node: &SyntaxNode) {
-        let Some(name) = child(node, NAME) else { return };
-        let Some(id) = self.res.declaration(name.text_range()) else { return };
-        let Some(&nid) = self.named_of.get(&id) else { return };
-        let ty = type_child(node).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
+        let Some(id) = self.res.declaration(name.text_range()) else {
+            return;
+        };
+        let Some(&nid) = self.named_of.get(&id) else {
+            return;
+        };
+        let ty = type_child(node)
+            .map(|t| self.type_of(&t))
+            .unwrap_or(Type::Any);
         if let Some(n) = self.types.get_mut(nid) {
             n.kind = NamedKind::Alias(ty);
         }
@@ -908,8 +1233,16 @@ impl<'a> Analyzer<'a> {
     /// lattice, which is bounded, gives no answer about it that depends
     /// on where the bound fell.
     fn cut_alias_cycles(&mut self) {
-        let aliases: Vec<NamedId> = self.named_of.values().copied().filter(|n| matches!(self.types.kind(*n), Some(NamedKind::Alias(_)))).collect();
-        let cyclic: Vec<NamedId> = aliases.into_iter().filter(|a| self.alias_reaches(&Type::Named(*a), *a, &mut Vec::new())).collect();
+        let aliases: Vec<NamedId> = self
+            .named_of
+            .values()
+            .copied()
+            .filter(|n| matches!(self.types.kind(*n), Some(NamedKind::Alias(_))))
+            .collect();
+        let cyclic: Vec<NamedId> = aliases
+            .into_iter()
+            .filter(|a| self.alias_reaches(&Type::Named(*a), *a, &mut Vec::new()))
+            .collect();
         for a in cyclic {
             if let Some(n) = self.types.get_mut(a) {
                 n.kind = NamedKind::Alias(Type::Any);
@@ -933,10 +1266,19 @@ impl<'a> Analyzer<'a> {
                 }
                 _ => false,
             },
-            Type::Union(m) | Type::And(m) | Type::Tuple(m) => m.iter().any(|x| self.alias_reaches(x, target, path)),
+            Type::Union(m) | Type::And(m) | Type::Tuple(m) => {
+                m.iter().any(|x| self.alias_reaches(x, target, path))
+            }
             Type::Not(x) | Type::Array(x) | Type::Task(x) => self.alias_reaches(x, target, path),
-            Type::Map(k, v) => self.alias_reaches(k, target, path) || self.alias_reaches(v, target, path),
-            Type::Fn(f) => f.params.iter().any(|p| self.alias_reaches(&p.ty, target, path)) || self.alias_reaches(&f.ret, target, path),
+            Type::Map(k, v) => {
+                self.alias_reaches(k, target, path) || self.alias_reaches(v, target, path)
+            }
+            Type::Fn(f) => {
+                f.params
+                    .iter()
+                    .any(|p| self.alias_reaches(&p.ty, target, path))
+                    || self.alias_reaches(&f.ret, target, path)
+            }
             _ => false,
         }
     }
@@ -944,7 +1286,13 @@ impl<'a> Analyzer<'a> {
     /// The signature of a function-like node from its annotations:
     /// `PARAM_LIST`/`BLOCK_PARAMS`, `REST_PARAM`, `KEYED_PARAM`,
     /// `RETURN_TYPE`. `self_ty` is the type `Self` stands for.
-    pub(crate) fn signature_of(&mut self, node: &SyntaxNode, is_method: bool, named: bool, self_ty: Option<Type>) -> FnType {
+    pub(crate) fn signature_of(
+        &mut self,
+        node: &SyntaxNode,
+        is_method: bool,
+        named: bool,
+        self_ty: Option<Type>,
+    ) -> FnType {
         let mut params = Vec::new();
         let mut rest = None;
         let mut keyed = None;
@@ -962,7 +1310,11 @@ impl<'a> Analyzer<'a> {
                     }
                     SELF_PARAM => {}
                     REST_PARAM => {
-                        rest = Some(type_child(&p).map(|t| self.type_of(&t)).unwrap_or(Type::Any));
+                        rest = Some(
+                            type_child(&p)
+                                .map(|t| self.type_of(&t))
+                                .unwrap_or(Type::Any),
+                        );
                     }
                     KEYED_PARAM => {
                         keyed = Some(type_child(&p).map(|t| self.type_of(&t)));
@@ -976,7 +1328,16 @@ impl<'a> Analyzer<'a> {
             Some(t) => self.type_of_with_self(&t, self_ty),
             None => Type::Any,
         };
-        FnType { params, rest, keyed, ret, is_method, is_async, named, declared: false }
+        FnType {
+            params,
+            rest,
+            keyed,
+            ret,
+            is_method,
+            is_async,
+            named,
+            declared: false,
+        }
     }
 
     /// The name and declared type of a parameter pattern: `name`, `name:
@@ -984,18 +1345,34 @@ impl<'a> Analyzer<'a> {
     /// not the whole), `{…} as name: T`.
     fn param_pattern_type(&mut self, pat: &SyntaxNode) -> (String, Type) {
         match pat.kind() {
-            BIND_PAT => (child(pat, NAME).and_then(|n| name_text(&n)).unwrap_or_default(), Type::Any),
+            BIND_PAT => (
+                child(pat, NAME)
+                    .and_then(|n| name_text(&n))
+                    .unwrap_or_default(),
+                Type::Any,
+            ),
             TYPED_PAT => {
-                let ty = type_child(pat).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+                let ty = type_child(pat)
+                    .map(|t| self.type_of(&t))
+                    .unwrap_or(Type::Any);
                 let inner = pattern_children(pat).next();
                 let name = match &inner {
-                    Some(i) if i.kind() == BIND_PAT => child(i, NAME).and_then(|n| name_text(&n)).unwrap_or_default(),
-                    Some(i) if i.kind() == AS_PAT => child(i, NAME).and_then(|n| name_text(&n)).unwrap_or_default(),
+                    Some(i) if i.kind() == BIND_PAT => child(i, NAME)
+                        .and_then(|n| name_text(&n))
+                        .unwrap_or_default(),
+                    Some(i) if i.kind() == AS_PAT => child(i, NAME)
+                        .and_then(|n| name_text(&n))
+                        .unwrap_or_default(),
                     _ => String::new(),
                 };
                 (name, ty)
             }
-            AS_PAT => (child(pat, NAME).and_then(|n| name_text(&n)).unwrap_or_default(), Type::Any),
+            AS_PAT => (
+                child(pat, NAME)
+                    .and_then(|n| name_text(&n))
+                    .unwrap_or_default(),
+                Type::Any,
+            ),
             _ => (String::new(), Type::Any),
         }
     }
@@ -1008,24 +1385,40 @@ impl<'a> Analyzer<'a> {
         if let Some(owner) = child(node, QUAL_NAME) {
             // `fn Owner.name`: a method, or an operator.
             let name = child(node, NAME).and_then(|n| name_text(&n));
-            let op = child(node, OP_NAME).map(|o| o.text().to_string().split_whitespace().collect::<String>());
+            let op = child(node, OP_NAME)
+                .map(|o| o.text().to_string().split_whitespace().collect::<String>());
             let owner_ty = self.method_owner_type(node, &owner);
             // A function added to a declared module is a plain function;
             // one added to a declared module or type has no name in the
             // registry of named functions (spawn.rs).
             let declared = match self.res.method_owner(node.text_range()) {
-                Some(MethodOwner::Declared(id)) => Some(self.decls.get(*id).is_some_and(|i| i.kind == crate::decl::DeclItemKind::Module)),
+                Some(MethodOwner::Declared(id)) => Some(
+                    self.decls
+                        .get(*id)
+                        .is_some_and(|i| i.kind == crate::decl::DeclItemKind::Module),
+                ),
                 _ => None,
             };
-            let sig = self.signature_of(node, declared != Some(true), declared.is_none(), owner_ty.clone());
+            let sig = self.signature_of(
+                node,
+                declared != Some(true),
+                declared.is_none(),
+                owner_ty.clone(),
+            );
             let sig = Rc::new(sig);
             self.fn_sigs.insert(node.text_range(), sig.clone());
-            let name_range = child(node, NAME).map(|n| n.text_range()).unwrap_or(node.text_range());
+            let name_range = child(node, NAME)
+                .map(|n| n.text_range())
+                .unwrap_or(node.text_range());
             match (owner_ty, name, op) {
                 (Some(Type::Named(nid)), Some(name), _) => {
                     if self.own_method(nid, &name) {
                         // The second definition replaces the first.
-                        self.pending_replacements.push((name_range, name.clone(), self.types.name(nid).to_string()));
+                        self.pending_replacements.push((
+                            name_range,
+                            name.clone(),
+                            self.types.name(nid).to_string(),
+                        ));
                     }
                     self.record_member_decl(nid, &name, name_range);
                     self.add_member(nid, &name, Member::Function(sig));
@@ -1041,7 +1434,11 @@ impl<'a> Analyzer<'a> {
                     self.record_member_decl(nid, &name, name_range);
                     self.add_member(nid, &name, Member::Function(sig));
                 }
-                (Some(prim @ (Type::Number | Type::String | Type::Bool | Type::Table)), name, op) => {
+                (
+                    Some(prim @ (Type::Number | Type::String | Type::Bool | Type::Table)),
+                    name,
+                    op,
+                ) => {
                     let key = match prim {
                         Type::Number => "Number",
                         Type::String => "String",
@@ -1057,22 +1454,32 @@ impl<'a> Analyzer<'a> {
                     if let Some(lib) = self.prelude_type_id(key) {
                         self.record_member_decl(lib, &member, name_range);
                     }
-                    self.prim_methods.entry(key).or_default().insert(member, sig);
+                    self.prim_methods
+                        .entry(key)
+                        .or_default()
+                        .insert(member, sig);
                 }
                 _ => {}
             }
             return;
         }
-        let Some(name) = child(node, NAME) else { return };
-        let Some(id) = self.res.declaration(name.text_range()) else { return };
+        let Some(name) = child(node, NAME) else {
+            return;
+        };
+        let Some(id) = self.res.declaration(name.text_range()) else {
+            return;
+        };
         let b = self.binding(id).cloned();
         let module_owner = b.as_ref().and_then(|b| b.module_owner);
-        let self_ty = module_owner.and_then(|m| self.named_of.get(&m).copied()).map(Type::Static);
+        let self_ty = module_owner
+            .and_then(|m| self.named_of.get(&m).copied())
+            .map(Type::Static);
         let is_method = module_owner.is_some();
         let named = b.as_ref().is_some_and(|b| b.named);
         let sig = Rc::new(self.signature_of(node, is_method, named, self_ty));
         self.fn_sigs.insert(node.text_range(), sig.clone());
-        self.binding_sigs.insert(id, (node.text_range(), sig.clone()));
+        self.binding_sigs
+            .insert(id, (node.text_range(), sig.clone()));
         if let Some(m) = module_owner.and_then(|m| self.named_of.get(&m).copied()) {
             self.module_of_binding.insert(id, m);
             let text = name_text(&name).unwrap_or_default();
@@ -1101,8 +1508,16 @@ impl<'a> Analyzer<'a> {
                 // A nested module: find the hidden module binding by its
                 // qualified text.
                 let text = qual_text(owner);
-                let hidden = self.res.bindings.iter().enumerate().find(|(_, b)| b.decl == DeclKind::Module && b.name == text).map(|(i, _)| BindingId(u32::try_from(i).unwrap_or(u32::MAX)));
-                hidden.and_then(|h| self.named_of.get(&h).copied()).map(Type::Static)
+                let hidden = self
+                    .res
+                    .bindings
+                    .iter()
+                    .enumerate()
+                    .find(|(_, b)| b.decl == DeclKind::Module && b.name == text)
+                    .map(|(i, _)| BindingId(u32::try_from(i).unwrap_or(u32::MAX)));
+                hidden
+                    .and_then(|h| self.named_of.get(&h).copied())
+                    .map(Type::Static)
             }
             MethodOwner::Primitive(p) => Some(match p.name {
                 "Number" => Type::Number,
@@ -1123,7 +1538,9 @@ impl<'a> Analyzer<'a> {
 
     fn collect_impl(&mut self, node: &SyntaxNode) {
         let types: Vec<SyntaxNode> = node.children().filter(|c| is_type(c.kind())).collect();
-        let (Some(iface_node), Some(target_node)) = (types.first(), types.get(1)) else { return };
+        let (Some(iface_node), Some(target_node)) = (types.first(), types.get(1)) else {
+            return;
+        };
         let target = self.type_of(target_node);
         let iface = self.type_of(iface_node);
         let iface_id = match &iface {
@@ -1131,12 +1548,18 @@ impl<'a> Analyzer<'a> {
             _ => None,
         };
         // `To<T>` and `From<S>` keep their argument.
-        let arg = child(iface_node, TYPE_ARGS).and_then(|a| a.children().find(|c| is_type(c.kind()))).map(|t| self.type_of(&t));
-        let iface_name = iface_id.map(|i| self.types.name(i).to_string()).unwrap_or_default();
+        let arg = child(iface_node, TYPE_ARGS)
+            .and_then(|a| a.children().find(|c| is_type(c.kind())))
+            .map(|t| self.type_of(&t));
+        let iface_name = iface_id
+            .map(|i| self.types.name(i).to_string())
+            .unwrap_or_default();
         let self_ty = Some(target.clone());
         let mut methods: Vec<(String, Rc<FnType>, TextRange)> = Vec::new();
         for f in children(node, FN_DECL) {
-            let Some(name) = child(&f, NAME) else { continue };
+            let Some(name) = child(&f, NAME) else {
+                continue;
+            };
             let text = name_text(&name).unwrap_or_default();
             let sig = Rc::new(self.signature_of(&f, true, true, self_ty.clone()));
             self.fn_sigs.insert(f.text_range(), sig.clone());
@@ -1155,15 +1578,29 @@ impl<'a> Analyzer<'a> {
                         _ => false,
                     });
                 for (name, sig, range) in methods {
-                    let replaces = if conversion { same_again } else { self.own_method(nid, &name) };
+                    let replaces = if conversion {
+                        same_again
+                    } else {
+                        self.own_method(nid, &name)
+                    };
                     if replaces {
-                        self.pending_replacements.push((range, name.clone(), self.types.name(nid).to_string()));
+                        self.pending_replacements.push((
+                            range,
+                            name.clone(),
+                            self.types.name(nid).to_string(),
+                        ));
                     }
                     self.record_member_decl(nid, &name, range);
                     self.add_member(nid, &name, Member::Function(sig));
                 }
                 if let Some(n) = self.types.get_mut(nid) {
-                    if let NamedKind::Struct { interfaces, to, from, .. } = &mut n.kind {
+                    if let NamedKind::Struct {
+                        interfaces,
+                        to,
+                        from,
+                        ..
+                    } = &mut n.kind
+                    {
                         if let Some(i) = iface_id {
                             if !interfaces.contains(&i) {
                                 interfaces.push(i);
@@ -1216,20 +1653,28 @@ impl<'a> Analyzer<'a> {
         let in_library = self.prelude_type_id(key).is_some_and(|lib| matches!(self.types.kind(lib), Some(NamedKind::Module { members }) if members.contains_key(name)));
         if in_library {
             self.pending_errors.push((at, "library-method-redefined", format!("`{key}.{name}` is already defined by the standard library, and a method of {key} cannot be redefined: give this one another name")));
-        } else if self.imported_prim_methods.contains(&(key, name.to_string())) {
+        } else if self
+            .imported_prim_methods
+            .contains(&(key, name.to_string()))
+        {
             self.pending_errors.push((at, "library-method-redefined", format!("`{key}.{name}` is already defined by a file this one imports, and a method of {key} cannot be redefined: give this one another name")));
         }
     }
 
     /// `let f = fn … end`: the binding has the function's signature.
     fn collect_fn_lets(&mut self, node: &SyntaxNode) {
-        let values: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+        let values: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
         for (i, pat) in pattern_children(node).enumerate() {
             let Some(v) = values.get(i) else { continue };
             if !matches!(v.kind(), FN_EXPR | LAMBDA_EXPR) || pat.kind() != BIND_PAT {
                 continue;
             }
-            let Some(id) = child(&pat, NAME).and_then(|n| self.res.declaration(n.text_range())) else { continue };
+            let Some(id) = child(&pat, NAME).and_then(|n| self.res.declaration(n.text_range()))
+            else {
+                continue;
+            };
             let sig = Rc::new(self.signature_of(v, false, false, None));
             self.fn_sigs.insert(v.text_range(), sig.clone());
             self.binding_sigs.insert(id, (v.text_range(), sig));
@@ -1277,7 +1722,15 @@ impl<'a> Analyzer<'a> {
 
     fn run(&mut self, root: &SyntaxNode) {
         self.fns.clear();
-        self.fns.push(FnCtx { node: None, declared_ret: None, nil_ret: false, returns: Vec::new(), self_type: None, spawn_block: false, loop_depth: 0 });
+        self.fns.push(FnCtx {
+            node: None,
+            declared_ret: None,
+            nil_ret: false,
+            returns: Vec::new(),
+            self_type: None,
+            spawn_block: false,
+            loop_depth: 0,
+        });
         self.diverges = false;
         if let Some(b) = block(root) {
             self.block(&b, true);
@@ -1285,7 +1738,11 @@ impl<'a> Analyzer<'a> {
         if self.pass == 2 {
             let pending = std::mem::take(&mut self.pending_replacements);
             for (range, name, owner) in pending {
-                self.warn(range, "method-replaced", format!("`{name}` replaces a method of the same name on `{owner}`"));
+                self.warn(
+                    range,
+                    "method-replaced",
+                    format!("`{name}` replaces a method of the same name on `{owner}`"),
+                );
             }
             for (range, code, message) in std::mem::take(&mut self.pending_errors) {
                 self.error(range, code, message);
@@ -1309,24 +1766,39 @@ impl<'a> Analyzer<'a> {
             "Thread" => Type::Thread,
             "Task" => Type::Task(Rc::new(Type::Any)),
             "Regex" => Type::Regex,
-            other => self.prelude_type_id(other).map(Type::Named).unwrap_or(Type::Any),
+            other => self
+                .prelude_type_id(other)
+                .map(Type::Named)
+                .unwrap_or(Type::Any),
         }
     }
 
     /// The value of a prelude name.
     pub(crate) fn prelude_value(&self, p: &Prelude) -> Ty {
         match p.class {
-            prelude::PreludeClass::Value | prelude::PreludeClass::ValueAndType => match self.prelude_type_id(p.name) {
-                Some(id) if matches!(self.types.kind(id), Some(NamedKind::Module { .. } | NamedKind::LuaClass { .. })) => Ty::certain(Type::Static(id)),
-                _ => {
-                    // A prelude function: its declaration gives the type.
-                    match self.decl_fn_type(p.name) {
-                        Some(f) => Ty::certain(Type::Fn(f)),
-                        None => Ty::any(),
+            prelude::PreludeClass::Value | prelude::PreludeClass::ValueAndType => {
+                match self.prelude_type_id(p.name) {
+                    Some(id)
+                        if matches!(
+                            self.types.kind(id),
+                            Some(NamedKind::Module { .. } | NamedKind::LuaClass { .. })
+                        ) =>
+                    {
+                        Ty::certain(Type::Static(id))
+                    }
+                    _ => {
+                        // A prelude function: its declaration gives the type.
+                        match self.decl_fn_type(p.name) {
+                            Some(f) => Ty::certain(Type::Fn(f)),
+                            None => Ty::any(),
+                        }
                     }
                 }
-            },
-            prelude::PreludeClass::Struct => self.prelude_type_id(p.name).map(|id| Ty::certain(Type::Static(id))).unwrap_or_else(Ty::any),
+            }
+            prelude::PreludeClass::Struct => self
+                .prelude_type_id(p.name)
+                .map(|id| Ty::certain(Type::Static(id)))
+                .unwrap_or_else(Ty::any),
             _ => Ty::any(),
         }
     }
@@ -1339,5 +1811,8 @@ impl<'a> Analyzer<'a> {
 
 /// Function-like nodes: those that open a function scope.
 pub(crate) fn is_function_node(k: SyntaxKind) -> bool {
-    matches!(k, FN_DECL | FN_EXPR | LAMBDA_EXPR | TRAILING_BLOCK | ON_EXPR | SPAWN_EXPR)
+    matches!(
+        k,
+        FN_DECL | FN_EXPR | LAMBDA_EXPR | TRAILING_BLOCK | ON_EXPR | SPAWN_EXPR
+    )
 }

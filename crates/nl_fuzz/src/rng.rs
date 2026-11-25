@@ -70,7 +70,10 @@ impl Rng {
 
     /// One item of a slice; the default value when it is empty.
     pub fn pick<T: Clone + Default>(&mut self, items: &[T]) -> T {
-        items.get(self.below(items.len())).cloned().unwrap_or_default()
+        items
+            .get(self.below(items.len()))
+            .cloned()
+            .unwrap_or_default()
     }
 }
 

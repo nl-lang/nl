@@ -44,7 +44,10 @@ pub struct MinifyOptions {
 impl MinifyOptions {
     /// For the Lua the compiler writes: read as gmod reads it, strings
     /// kept as written.
-    pub const COMPILED: MinifyOptions = MinifyOptions { glua: true, escape_gmod_macro: true };
+    pub const COMPILED: MinifyOptions = MinifyOptions {
+        glua: true,
+        escape_gmod_macro: true,
+    };
 }
 
 /// The name gmod replaces in every script it loads, before compiling it
@@ -56,7 +59,10 @@ pub const GMOD_MACRO: &str = "DEFINE_BASECLASS";
 pub fn minify(src: &str, options: MinifyOptions) -> Result<String, String> {
     // Every token is copied whole and what is dropped is whole too, so the
     // minified text of UTF-8 is UTF-8.
-    minify_bytes(src.as_bytes(), options).map(|out| String::from_utf8(out).unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()))
+    minify_bytes(src.as_bytes(), options).map(|out| {
+        String::from_utf8(out)
+            .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned())
+    })
 }
 
 /// `src` minified (module docs), or why it does not lex. Lua source is
@@ -88,8 +94,16 @@ pub fn minify_bytes(src: &[u8], options: MinifyOptions) -> Result<Vec<u8>, Strin
                         out.push(b' ');
                     }
                 }
-                if options.escape_gmod_macro && t.kind == Kind::Quoted && find(t.text, GMOD_MACRO.as_bytes(), 0).is_some() {
-                    replace_into(&mut out, t.text, GMOD_MACRO.as_bytes(), b"DEFINE_\\066ASECLASS");
+                if options.escape_gmod_macro
+                    && t.kind == Kind::Quoted
+                    && find(t.text, GMOD_MACRO.as_bytes(), 0).is_some()
+                {
+                    replace_into(
+                        &mut out,
+                        t.text,
+                        GMOD_MACRO.as_bytes(),
+                        b"DEFINE_\\066ASECLASS",
+                    );
                 } else {
                     out.extend_from_slice(t.text);
                 }
@@ -134,7 +148,10 @@ fn count_breaks(text: &[u8]) -> usize {
 
 /// The first `needle` in `hay` at or after `from`.
 fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
-    hay.get(from..)?.windows(needle.len()).position(|w| w == needle).map(|k| from + k)
+    hay.get(from..)?
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|k| from + k)
 }
 
 /// `text` with every `from` replaced by `to`, appended to `out`.
@@ -173,7 +190,9 @@ fn is_ident(b: u8) -> bool {
 
 /// Whether two tokens written together would lex as something else.
 fn needs_space(p: &Token, n: &Token) -> bool {
-    let (Some(&last), Some(&first)) = (p.text.last(), n.text.first()) else { return false };
+    let (Some(&last), Some(&first)) = (p.text.last(), n.text.first()) else {
+        return false;
+    };
     if is_ident(last) && is_ident(first) {
         return true;
     }
@@ -186,7 +205,14 @@ fn needs_space(p: &Token, n: &Token) -> bool {
     // `&&`, `||`, `!=` (gmod reads the bundles with its own lexer).
     matches!(
         (last, first),
-        (b'-', b'-') | (b'.', b'.') | (b'=' | b'~' | b'<' | b'>' | b'!', b'=') | (b':', b':') | (b'[', b'[' | b'=') | (b'/', b'/' | b'*') | (b'&', b'&') | (b'|', b'|')
+        (b'-', b'-')
+            | (b'.', b'.')
+            | (b'=' | b'~' | b'<' | b'>' | b'!', b'=')
+            | (b':', b':')
+            | (b'[', b'[' | b'=')
+            | (b'/', b'/' | b'*')
+            | (b'&', b'&')
+            | (b'|', b'|')
     )
 }
 
@@ -227,7 +253,11 @@ fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
             }
             b'-' if b.get(i + 1) == Some(&b'-') => {
                 match long_level(b, i + 2) {
-                    Some(level) => i = long_end(src, i + 2 + level + 2, level).ok_or_else(|| format!("line {}: unfinished long comment", line_at(start)))?,
+                    Some(level) => {
+                        i = long_end(src, i + 2 + level + 2, level).ok_or_else(|| {
+                            format!("line {}: unfinished long comment", line_at(start))
+                        })?
+                    }
                     None => i = line_end(i),
                 }
                 Kind::Comment
@@ -246,12 +276,17 @@ fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
                 i += 1;
                 loop {
                     match b.get(i) {
-                        None | Some(b'\n') => return Err(format!("line {}: unfinished string", line_at(start))),
+                        None | Some(b'\n') => {
+                            return Err(format!("line {}: unfinished string", line_at(start)));
+                        }
                         // `\z` skips the white space after it, line
                         // breaks included, which the token keeps.
                         Some(b'\\') if b.get(i + 1) == Some(&b'z') => {
                             i += 2;
-                            while b.get(i).is_some_and(|&c| matches!(c, b' ' | b'\t' | b'\n' | 0x0b | 0x0c)) {
+                            while b
+                                .get(i)
+                                .is_some_and(|&c| matches!(c, b' ' | b'\t' | b'\n' | 0x0b | 0x0c))
+                            {
                                 i += 1;
                             }
                         }
@@ -267,7 +302,8 @@ fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
             }
             b'[' if long_level(b, i).is_some() => {
                 let level = long_level(b, i).unwrap_or(0);
-                i = long_end(src, i + level + 2, level).ok_or_else(|| format!("line {}: unfinished long string", line_at(start)))?;
+                i = long_end(src, i + level + 2, level)
+                    .ok_or_else(|| format!("line {}: unfinished long string", line_at(start)))?;
                 Kind::Long
             }
             b'0'..=b'9' => {
@@ -286,8 +322,15 @@ fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
             }
             _ => {
                 let rest = b.get(i..).unwrap_or_default();
-                let ops: &[&str] = if glua { &["...", "..", "==", "~=", "<=", ">=", "::", "!=", "&&", "||"] } else { &["...", "..", "==", "~=", "<=", ">=", "::"] };
-                i += ops.iter().find(|op| rest.starts_with(op.as_bytes())).map_or(1, |op| op.len());
+                let ops: &[&str] = if glua {
+                    &["...", "..", "==", "~=", "<=", ">=", "::", "!=", "&&", "||"]
+                } else {
+                    &["...", "..", "==", "~=", "<=", ">=", "::"]
+                };
+                i += ops
+                    .iter()
+                    .find(|op| rest.starts_with(op.as_bytes()))
+                    .map_or(1, |op| op.len());
                 Kind::Op
             }
         };
@@ -303,7 +346,11 @@ fn lex(src: &[u8], glua: bool) -> Result<Vec<Token<'_>>, String> {
 fn number_end(b: &[u8], mut i: usize) -> usize {
     let hex = b.get(i) == Some(&b'0') && matches!(b.get(i + 1), Some(b'x' | b'X'));
     while let Some(&c) = b.get(i) {
-        let exponent = if hex { matches!(c, b'p' | b'P') } else { matches!(c, b'e' | b'E') };
+        let exponent = if hex {
+            matches!(c, b'p' | b'P')
+        } else {
+            matches!(c, b'e' | b'E')
+        };
         if exponent && matches!(b.get(i + 1), Some(b'+' | b'-')) {
             i += 2;
         } else if is_ident(c) || c == b'.' {
@@ -320,23 +367,41 @@ fn number_end(b: &[u8], mut i: usize) -> usize {
 mod tests {
     use super::*;
 
-    const LUA: MinifyOptions = MinifyOptions { glua: false, escape_gmod_macro: false };
+    const LUA: MinifyOptions = MinifyOptions {
+        glua: false,
+        escape_gmod_macro: false,
+    };
 
     #[test]
     fn keeps_lines_and_drops_comments() {
         let src = "-- header\nlocal  x = 1 -- one\n\n  --[[ a\nlong\ncomment ]] local y = { a = 1,\n\tb = 2 }\nreturn x+y\n";
-        assert_eq!(minify(src, LUA).unwrap(), "\nlocal x=1\n\n\n\nlocal y={a=1,\nb=2}\nreturn x+y\n");
+        assert_eq!(
+            minify(src, LUA).unwrap(),
+            "\nlocal x=1\n\n\n\nlocal y={a=1,\nb=2}\nreturn x+y\n"
+        );
     }
 
     #[test]
     fn spaces_that_change_the_tokens_stay() {
         assert_eq!(minify("a = b - -c", LUA).unwrap(), "a=b- -c");
-        assert_eq!(minify("x = 1 .. y .. 2 .. .5", LUA).unwrap(), "x=1 ..y..2 .. .5");
+        assert_eq!(
+            minify("x = 1 .. y .. 2 .. .5", LUA).unwrap(),
+            "x=1 ..y..2 .. .5"
+        );
         assert_eq!(minify("x = a.b .. 3", LUA).unwrap(), "x=a.b..3");
-        assert_eq!(minify("t[ [[s]] ] = t[ [=[q]=] ]", LUA).unwrap(), "t[ [[s]]]=t[ [=[q]=]]");
-        assert_eq!(minify("if a == b and not c then return end", LUA).unwrap(), "if a==b and not c then return end");
+        assert_eq!(
+            minify("t[ [[s]] ] = t[ [=[q]=] ]", LUA).unwrap(),
+            "t[ [[s]]]=t[ [=[q]=]]"
+        );
+        assert_eq!(
+            minify("if a == b and not c then return end", LUA).unwrap(),
+            "if a==b and not c then return end"
+        );
         assert_eq!(minify("x = a < = b", LUA).unwrap(), "x=a< =b");
-        assert_eq!(minify("x = 0x1p+4 + 1e-3 - 2", LUA).unwrap(), "x=0x1p+4+1e-3-2");
+        assert_eq!(
+            minify("x = 0x1p+4 + 1e-3 - 2", LUA).unwrap(),
+            "x=0x1p+4+1e-3-2"
+        );
         assert_eq!(minify("goto l ::l::", LUA).unwrap(), "goto l::l::");
         assert_eq!(minify("a = b / / c", LUA).unwrap(), "a=b/ /c");
     }
@@ -344,29 +409,51 @@ mod tests {
     #[test]
     fn strings_keep_their_text() {
         let src = "s = 'a  -- b' .. \"c\\\"  d\" .. [==[\n x ]] y\n]==] .. \"e\\\nf\"\nz = 1";
-        assert_eq!(minify(src, LUA).unwrap(), "s='a  -- b'..\"c\\\"  d\"..[==[\n x ]] y\n]==]..\"e\\\nf\"\nz=1");
+        assert_eq!(
+            minify(src, LUA).unwrap(),
+            "s='a  -- b'..\"c\\\"  d\"..[==[\n x ]] y\n]==]..\"e\\\nf\"\nz=1"
+        );
     }
 
     #[test]
     fn line_breaks_are_normalized() {
-        assert_eq!(minify("a = 1\r\nb = 2\rc = 3\n\rd = [[x\r\ny]]", LUA).unwrap(), "a=1\nb=2\nc=3\nd=[[x\ny]]");
+        assert_eq!(
+            minify("a = 1\r\nb = 2\rc = 3\n\rd = [[x\r\ny]]", LUA).unwrap(),
+            "a=1\nb=2\nc=3\nd=[[x\ny]]"
+        );
     }
 
     #[test]
     fn gmods_macro_is_escaped_in_quoted_strings() {
         let o = MinifyOptions::COMPILED;
-        assert_eq!(minify("print('DEFINE_BASECLASS x')", o).unwrap(), "print('DEFINE_\\066ASECLASS x')");
+        assert_eq!(
+            minify("print('DEFINE_BASECLASS x')", o).unwrap(),
+            "print('DEFINE_\\066ASECLASS x')"
+        );
         // Elsewhere it stays, for the caller to report.
-        assert!(minify("DEFINE_BASECLASS('x')", o).unwrap().contains(GMOD_MACRO));
+        assert!(
+            minify("DEFINE_BASECLASS('x')", o)
+                .unwrap()
+                .contains(GMOD_MACRO)
+        );
         // A GLua script keeps it, as gmod's replacement is what it expects.
-        assert_eq!(minify("print('DEFINE_BASECLASS x')", LUA).unwrap(), "print('DEFINE_BASECLASS x')");
+        assert_eq!(
+            minify("print('DEFINE_BASECLASS x')", LUA).unwrap(),
+            "print('DEFINE_BASECLASS x')"
+        );
     }
 
     #[test]
     fn glua() {
-        let g = MinifyOptions { glua: true, escape_gmod_macro: false };
+        let g = MinifyOptions {
+            glua: true,
+            escape_gmod_macro: false,
+        };
         let src = "local a = 1 // one\nif a != 2 && !b || c then /* x\ny */ print('//', \"/*\") end\n/* open\nto the end";
-        assert_eq!(minify(src, g).unwrap(), "local a=1\nif a!=2&&!b||c then\nprint('//',\"/*\")end\n\n");
+        assert_eq!(
+            minify(src, g).unwrap(),
+            "local a=1\nif a!=2&&!b||c then\nprint('//',\"/*\")end\n\n"
+        );
         // Division stays division.
         assert_eq!(minify("x = a / b / c", g).unwrap(), "x=a/b/c");
         // Without GLua, `//` is two operators (and no valid Lua).
@@ -379,17 +466,30 @@ mod tests {
     fn bytes_that_are_not_utf8_are_kept() {
         // A Latin-1 script: two locals whose names differ in a byte from
         // 0x80 up, and a string with such a byte; each stays as written.
-        let src: &[u8] = b"local \xe9 = 1 -- \xff\nlocal \xe8 = 2\r\nprint(\xe9, 'caf\xe9', [[\xe8]])\n";
-        assert_eq!(minify_bytes(src, LUA).unwrap(), b"local \xe9=1\nlocal \xe8=2\nprint(\xe9,'caf\xe9',[[\xe8]])\n");
-        let g = MinifyOptions { glua: true, escape_gmod_macro: true };
-        assert_eq!(minify_bytes(b"x = '\x80DEFINE_BASECLASS\x81' // \xfe\n", g).unwrap(), b"x='\x80DEFINE_\\066ASECLASS\x81'\n");
+        let src: &[u8] =
+            b"local \xe9 = 1 -- \xff\nlocal \xe8 = 2\r\nprint(\xe9, 'caf\xe9', [[\xe8]])\n";
+        assert_eq!(
+            minify_bytes(src, LUA).unwrap(),
+            b"local \xe9=1\nlocal \xe8=2\nprint(\xe9,'caf\xe9',[[\xe8]])\n"
+        );
+        let g = MinifyOptions {
+            glua: true,
+            escape_gmod_macro: true,
+        };
+        assert_eq!(
+            minify_bytes(b"x = '\x80DEFINE_BASECLASS\x81' // \xfe\n", g).unwrap(),
+            b"x='\x80DEFINE_\\066ASECLASS\x81'\n"
+        );
     }
 
     #[test]
     fn z_escapes_skip_line_breaks() {
         // `\z` and the white space after it are part of the string, line
         // breaks included, which stay.
-        assert_eq!(minify("s = \"a\\z\n   b\" .. c\nd = 1", LUA).unwrap(), "s=\"a\\z\n   b\"..c\nd=1");
+        assert_eq!(
+            minify("s = \"a\\z\n   b\" .. c\nd = 1", LUA).unwrap(),
+            "s=\"a\\z\n   b\"..c\nd=1"
+        );
         assert_eq!(minify("s = 'a\\z  b'", LUA).unwrap(), "s='a\\z  b'");
         assert!(minify("s = 'a\\z", LUA).is_err());
     }

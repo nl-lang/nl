@@ -91,7 +91,10 @@ impl Shared {
     pub(crate) fn closed() -> Shared {
         Shared {
             state: StatePtr(ptr::null_mut()),
-            inbox: Mutex::new(InboxState { closed: true, active: 0 }),
+            inbox: Mutex::new(InboxState {
+                closed: true,
+                active: 0,
+            }),
             idle: Condvar::new(),
             parked: Mutex::new(HashMap::new()),
             worker: AtomicBool::new(false),
@@ -109,7 +112,11 @@ impl Shared {
             drop(payload);
             return;
         }
-        lock(&self.parked).entry(std::thread::current().id()).or_default().panics.push(payload);
+        lock(&self.parked)
+            .entry(std::thread::current().id())
+            .or_default()
+            .panics
+            .push(payload);
     }
 
     /// A call of the crate begins on this thread: returns how many panics
@@ -123,7 +130,11 @@ impl Shared {
             let mut parked = lock(&self.parked);
             let p = parked.entry(id).or_default();
             p.depth += 1;
-            let old = if p.depth == 1 { std::mem::take(&mut p.panics) } else { Vec::new() };
+            let old = if p.depth == 1 {
+                std::mem::take(&mut p.panics)
+            } else {
+                Vec::new()
+            };
             (old, p.panics.len())
         };
         drop(old);
@@ -136,7 +147,9 @@ impl Shared {
     pub(crate) fn leave(&self, mark: usize) -> Vec<Box<dyn Any + Send>> {
         let mut parked = lock(&self.parked);
         let id = std::thread::current().id();
-        let Some(p) = parked.get_mut(&id) else { return Vec::new() };
+        let Some(p) = parked.get_mut(&id) else {
+            return Vec::new();
+        };
         p.depth = p.depth.saturating_sub(1);
         let mine = p.panics.split_off(mark.min(p.panics.len()));
         if p.depth == 0 && p.panics.is_empty() {
@@ -189,7 +202,10 @@ struct PostBox {
 /// Queues `f` for the next pump. False when the state has closed; `f` is
 /// dropped then.
 pub(crate) fn post(shared: &Arc<Shared>, f: PostFn) -> bool {
-    let data = Box::into_raw(Box::new(PostBox { f, shared: shared.clone() }));
+    let data = Box::into_raw(Box::new(PostBox {
+        f,
+        shared: shared.clone(),
+    }));
     if shared.post_raw(post_cb, data.cast()) {
         true
     } else {
@@ -221,7 +237,10 @@ unsafe extern "C-unwind" fn post_cb(l: *mut lua::lua_State, data: *mut c_void) {
         // alive past this call.
         let pb = unsafe { &*data };
         pb.shared.current_post.store(data.cast(), Ordering::SeqCst);
-        (pb.shared.runner_ref.load(Ordering::SeqCst), &pb.shared.current_post as *const AtomicPtr<c_void>)
+        (
+            pb.shared.runner_ref.load(Ordering::SeqCst),
+            &pb.shared.current_post as *const AtomicPtr<c_void>,
+        )
     };
     // SAFETY: called by nl_pump inside a protected call on the state's
     // thread. The runner runs under a protected call of its own, so that a
@@ -272,7 +291,10 @@ pub(crate) fn new_shared(lua: &Lua) -> Result<Arc<Shared>> {
     }
     let shared = Arc::new(Shared {
         state: StatePtr(thread),
-        inbox: Mutex::new(InboxState { closed: false, active: 0 }),
+        inbox: Mutex::new(InboxState {
+            closed: false,
+            active: 0,
+        }),
         idle: Condvar::new(),
         parked: Mutex::new(HashMap::new()),
         worker: AtomicBool::new(isworker(lua)?),
@@ -322,7 +344,9 @@ pub(crate) fn open_nl(lua: &Lua) -> Result<bool> {
 /// Whether `luaopen_nl` has run in this state: only then does
 /// `nl_gettype` know the built-in types.
 pub(crate) fn nl_is_open(lua: &Lua) -> bool {
-    gettype(lua, "Exception").map(|v| !v.is_nil()).unwrap_or(false)
+    gettype(lua, "Exception")
+        .map(|v| !v.is_nil())
+        .unwrap_or(false)
 }
 
 /// `nl_settranslator`: pops the function.
@@ -467,10 +491,19 @@ unsafe extern "C-unwind" fn c_reject(l: *mut lua::lua_State) -> c_int {
 }
 
 pub(crate) fn import(lua: &Lua, path: &str) -> Result<Outcome> {
-    pcall_c(lua, c_import, MultiValue::from_vec(vec![Value::String(lua.create_string(path)?)]))
+    pcall_c(
+        lua,
+        c_import,
+        MultiValue::from_vec(vec![Value::String(lua.create_string(path)?)]),
+    )
 }
 
-pub(crate) fn callmember(lua: &Lua, name: &str, receiver: Value, args: MultiValue) -> Result<Outcome> {
+pub(crate) fn callmember(
+    lua: &Lua,
+    name: &str,
+    receiver: Value,
+    args: MultiValue,
+) -> Result<Outcome> {
     let mut all = args;
     all.push_front(receiver);
     all.push_front(Value::String(lua.create_string(name)?));
@@ -478,7 +511,11 @@ pub(crate) fn callmember(lua: &Lua, name: &str, receiver: Value, args: MultiValu
 }
 
 pub(crate) fn new_instance(lua: &Lua, ty: &Table, fields: Value) -> Result<Outcome> {
-    pcall_c(lua, c_new, MultiValue::from_vec(vec![Value::Table(ty.clone()), fields]))
+    pcall_c(
+        lua,
+        c_new,
+        MultiValue::from_vec(vec![Value::Table(ty.clone()), fields]),
+    )
 }
 
 pub(crate) fn keyed(lua: &Lua, opts: Table) -> Result<Outcome> {
@@ -491,11 +528,19 @@ pub(crate) fn settype(lua: &Lua, name: &str, ud: Value) -> Result<Outcome> {
 }
 
 pub(crate) fn resolve(lua: &Lua, task: &Table, value: Value) -> Result<Outcome> {
-    pcall_c(lua, c_resolve, MultiValue::from_vec(vec![Value::Table(task.clone()), value]))
+    pcall_c(
+        lua,
+        c_resolve,
+        MultiValue::from_vec(vec![Value::Table(task.clone()), value]),
+    )
 }
 
 pub(crate) fn reject(lua: &Lua, task: &Table, error: Value) -> Result<Outcome> {
-    pcall_c(lua, c_reject, MultiValue::from_vec(vec![Value::Table(task.clone()), error]))
+    pcall_c(
+        lua,
+        c_reject,
+        MultiValue::from_vec(vec![Value::Table(task.clone()), error]),
+    )
 }
 
 // -- Calls that raise nothing, or only memory errors -------------------------
@@ -515,7 +560,10 @@ pub(crate) fn path_cstring(p: &std::path::Path) -> Result<CString> {
     {
         match p.to_str() {
             Some(s) => cstring(s),
-            None => Err(Error::runtime(format!("nl: a path is not UTF-8: {}", p.display()))),
+            None => Err(Error::runtime(format!(
+                "nl: a path is not UTF-8: {}",
+                p.display()
+            ))),
         }
     }
 }
@@ -531,7 +579,10 @@ fn load_result(status: c_int, v: Value) -> Result<Function> {
                 other => format!("{other:?}"),
             };
             Err(match st {
-                lua::LUA_ERRSYNTAX => Error::SyntaxError { message, incomplete_input: false },
+                lua::LUA_ERRSYNTAX => Error::SyntaxError {
+                    message,
+                    incomplete_input: false,
+                },
                 lua::LUA_ERRMEM => Error::MemoryError(message),
                 _ => Error::RuntimeError(message),
             })
@@ -808,7 +859,11 @@ unsafe extern "C-unwind" fn timer_cb(
     // state closes (crate::state::Kept).
     let tb = unsafe { &*data.cast::<TimerBox>() };
     let delay = Duration::try_from_secs_f64(seconds).unwrap_or(Duration::ZERO);
-    let w = Wake { wake, arg, shared: tb.shared.clone() };
+    let w = Wake {
+        wake,
+        arg,
+        shared: tb.shared.clone(),
+    };
     if let Err(p) = catch_unwind(AssertUnwindSafe(|| (tb.f)(delay, w))) {
         // Parking may drop the payload (in a worker): its Drop runs here.
         abort_on_panic(|| tb.shared.park(p));
@@ -818,7 +873,11 @@ unsafe extern "C-unwind" fn timer_cb(
 pub(crate) fn settimer(lua: &Lua, tb: *const TimerBox) -> Result<()> {
     // SAFETY: nl_settimer raises nothing; tb stays alive until the state
     // closes.
-    unsafe { lua.exec_raw::<()>((), |l| nl::nl_settimer(l, Some(timer_cb), tb as *mut c_void)) }
+    unsafe {
+        lua.exec_raw::<()>((), |l| {
+            nl::nl_settimer(l, Some(timer_cb), tb as *mut c_void)
+        })
+    }
 }
 
 // -- The pump and the wakeup ---------------------------------------------------
@@ -851,7 +910,11 @@ unsafe extern "C" fn wakeup_cb(data: *mut c_void) {
 pub(crate) fn setwakeup(lua: &Lua, f: *const Box<WakeupFn>) -> Result<()> {
     // SAFETY: nl_setwakeup raises nothing; f stays alive until replaced or
     // the state closes.
-    unsafe { lua.exec_raw::<()>((), |l| nl::nl_setwakeup(l, Some(wakeup_cb), f as *mut c_void)) }
+    unsafe {
+        lua.exec_raw::<()>((), |l| {
+            nl::nl_setwakeup(l, Some(wakeup_cb), f as *mut c_void)
+        })
+    }
 }
 
 // -- Loader and reporter ---------------------------------------------------------
@@ -893,9 +956,12 @@ unsafe extern "C" fn loader_resolve(
     abort_on_panic(|| {
         // SAFETY: data is the LoaderBox given to nl_setloader; the strings
         // are NULL or NUL-terminated (nl.h, nl_Loader).
-        let (lb, from, path) = unsafe { (&*data.cast::<LoaderBox>(), opt_str(from), opt_str(path)) };
+        let (lb, from, path) =
+            unsafe { (&*data.cast::<LoaderBox>(), opt_str(from), opt_str(path)) };
         let Some(path) = path else { return 0 };
-        let Some(name) = lb.loader.resolve(from.as_deref(), &path) else { return 0 };
+        let Some(name) = lb.loader.resolve(from.as_deref(), &path) else {
+            return 0;
+        };
         let bytes = name.as_bytes();
         if bytes.contains(&0) || bytes.len() + 1 > size {
             return 0;
@@ -909,7 +975,11 @@ unsafe extern "C" fn loader_resolve(
     })
 }
 
-unsafe extern "C" fn loader_read(data: *mut c_void, name: *const c_char, size: *mut usize) -> *const c_char {
+unsafe extern "C" fn loader_read(
+    data: *mut c_void,
+    name: *const c_char,
+    size: *mut usize,
+) -> *const c_char {
     abort_on_panic(|| {
         // SAFETY: as in loader_resolve.
         let (lb, name) = unsafe { (&*data.cast::<LoaderBox>(), opt_str(name)) };
@@ -949,7 +1019,11 @@ pub(crate) fn setloader(lua: &Lua, lb: Option<*const LoaderBox>) -> Result<()> {
     };
     // SAFETY: nl_setloader copies the struct and raises nothing; the box
     // stays alive until the state closes.
-    unsafe { lua.exec_raw::<()>((), |s| nl::nl_setloader(s, if lb.is_some() { &l } else { ptr::null() })) }
+    unsafe {
+        lua.exec_raw::<()>((), |s| {
+            nl::nl_setloader(s, if lb.is_some() { &l } else { ptr::null() })
+        })
+    }
 }
 
 pub(crate) type ReporterFn = dyn Fn(&Diagnostic) + Send + Sync;
@@ -960,7 +1034,11 @@ unsafe extern "C" fn reporter_cb(data: *mut c_void, d: *const nl::nl_Diagnostic)
         // diagnostic valid for the call, with NUL-terminated strings.
         let (f, d) = unsafe { (&*data.cast::<Box<ReporterFn>>(), &*d) };
         // SAFETY: as above.
-        let text = |s| unsafe { opt_str(s) }.map(Cow::into_owned).unwrap_or_default();
+        let text = |s| {
+            unsafe { opt_str(s) }
+                .map(Cow::into_owned)
+                .unwrap_or_default()
+        };
         let diag = Diagnostic {
             severity: match d.severity {
                 nl::NL_DIAG_WARNING => crate::Severity::Warning,
@@ -982,7 +1060,11 @@ unsafe extern "C" fn reporter_cb(data: *mut c_void, d: *const nl::nl_Diagnostic)
 pub(crate) fn setreporter(lua: &Lua, f: *const Box<ReporterFn>) -> Result<()> {
     // SAFETY: nl_setreporter raises nothing; f stays alive until the state
     // closes.
-    unsafe { lua.exec_raw::<()>((), |l| nl::nl_setreporter(l, Some(reporter_cb), f as *mut c_void)) }
+    unsafe {
+        lua.exec_raw::<()>((), |l| {
+            nl::nl_setreporter(l, Some(reporter_cb), f as *mut c_void)
+        })
+    }
 }
 
 // -- Workers -------------------------------------------------------------------
@@ -1062,7 +1144,11 @@ unsafe extern "C-unwind" fn worker_init_cb(l: *mut lua::lua_State) -> c_int {
 pub(crate) fn setworkerinit(lua: &Lua, f: *const Box<WorkerInitFn>) -> Result<()> {
     // SAFETY: nl_setworkerinit raises nothing; f stays alive until the main
     // state closes, after its workers.
-    unsafe { lua.exec_raw::<()>((), |l| nl::nl_setworkerinit(l, Some(worker_init_cb), f as *mut c_void)) }
+    unsafe {
+        lua.exec_raw::<()>((), |l| {
+            nl::nl_setworkerinit(l, Some(worker_init_cb), f as *mut c_void)
+        })
+    }
 }
 
 unsafe extern "C-unwind" fn c_spawn(l: *mut lua::lua_State) -> c_int {
@@ -1089,7 +1175,16 @@ pub(crate) fn spawn(lua: &Lua, f: &Function, args: MultiValue) -> Result<Outcome
     pcall_c(lua, c_spawn, all)
 }
 
-pub(crate) fn settransfer(lua: &Lua, name: &str, encode: Function, decode: Function) -> Result<Outcome> {
+pub(crate) fn settransfer(
+    lua: &Lua,
+    name: &str,
+    encode: Function,
+    decode: Function,
+) -> Result<Outcome> {
     let name = Value::String(lua.create_string(name)?);
-    pcall_c(lua, c_settransfer, MultiValue::from_vec(vec![name, Value::Function(encode), Value::Function(decode)]))
+    pcall_c(
+        lua,
+        c_settransfer,
+        MultiValue::from_vec(vec![name, Value::Function(encode), Value::Function(decode)]),
+    )
 }

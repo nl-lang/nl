@@ -127,25 +127,96 @@ pub const STD_LIBRARIES: &[&str] = &["string", "math", "table", "bit", "coroutin
 /// versions or of LuaJIT 2.1's extensions (`table.move`, `table.new`):
 /// a file may install those (a polyfill, `require("table.new")`).
 pub const LUA_LIBRARY_FIELDS: &[(&str, &[&str])] = &[
-    ("string", &["byte", "char", "dump", "find", "format", "gmatch", "gsub", "len", "lower", "match", "rep", "reverse", "sub", "upper"]),
-    ("table", &["concat", "foreach", "foreachi", "getn", "insert", "maxn", "remove", "sort"]),
+    (
+        "string",
+        &[
+            "byte", "char", "dump", "find", "format", "gmatch", "gsub", "len", "lower", "match",
+            "rep", "reverse", "sub", "upper",
+        ],
+    ),
+    (
+        "table",
+        &[
+            "concat", "foreach", "foreachi", "getn", "insert", "maxn", "remove", "sort",
+        ],
+    ),
     (
         "math",
         &[
-            "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "cosh", "deg", "exp", "floor", "fmod", "frexp", "huge", "ldexp", "log", "log10", "max", "min", "modf",
-            "pi", "pow", "rad", "random", "randomseed", "sin", "sinh", "sqrt", "tan", "tanh",
+            "abs",
+            "acos",
+            "asin",
+            "atan",
+            "atan2",
+            "ceil",
+            "cos",
+            "cosh",
+            "deg",
+            "exp",
+            "floor",
+            "fmod",
+            "frexp",
+            "huge",
+            "ldexp",
+            "log",
+            "log10",
+            "max",
+            "min",
+            "modf",
+            "pi",
+            "pow",
+            "rad",
+            "random",
+            "randomseed",
+            "sin",
+            "sinh",
+            "sqrt",
+            "tan",
+            "tanh",
         ],
     ),
-    ("bit", &["arshift", "band", "bnot", "bor", "bswap", "bxor", "lshift", "rol", "ror", "rshift", "tobit", "tohex"]),
-    ("coroutine", &["create", "resume", "running", "status", "wrap", "yield"]),
-    ("os", &["clock", "date", "difftime", "execute", "exit", "getenv", "remove", "rename", "setlocale", "time", "tmpname"]),
-    ("io", &["close", "flush", "input", "lines", "open", "output", "popen", "read", "stderr", "stdin", "stdout", "tmpfile", "type", "write"]),
+    (
+        "bit",
+        &[
+            "arshift", "band", "bnot", "bor", "bswap", "bxor", "lshift", "rol", "ror", "rshift",
+            "tobit", "tohex",
+        ],
+    ),
+    (
+        "coroutine",
+        &["create", "resume", "running", "status", "wrap", "yield"],
+    ),
+    (
+        "os",
+        &[
+            "clock",
+            "date",
+            "difftime",
+            "execute",
+            "exit",
+            "getenv",
+            "remove",
+            "rename",
+            "setlocale",
+            "time",
+            "tmpname",
+        ],
+    ),
+    (
+        "io",
+        &[
+            "close", "flush", "input", "lines", "open", "output", "popen", "read", "stderr",
+            "stdin", "stdout", "tmpfile", "type", "write",
+        ],
+    ),
 ];
 
 /// Whether `root.name` is one of Lua's own library fields
 /// ([`LUA_LIBRARY_FIELDS`]).
 fn lua_library_field(root: &str, name: &str) -> bool {
-    LUA_LIBRARY_FIELDS.iter().any(|(lib, fields)| *lib == root && fields.contains(&name))
+    LUA_LIBRARY_FIELDS
+        .iter()
+        .any(|(lib, fields)| *lib == root && fields.contains(&name))
 }
 
 /// The setting a file's `#!localize <setting>` directive names (see the
@@ -154,11 +225,16 @@ fn lua_library_field(root: &str, name: &str) -> bool {
 /// Only the comments before the first statement count.
 pub fn directive(root: &SyntaxNode) -> Result<Option<Localize>, nl_syntax::TextRange> {
     let mut found = None;
-    for tok in root.descendants_with_tokens().filter_map(|e| e.into_token()) {
+    for tok in root
+        .descendants_with_tokens()
+        .filter_map(|e| e.into_token())
+    {
         match tok.kind() {
             WHITESPACE | NEWLINE | DOC_COMMENT => {}
             COMMENT => {
-                let Some(rest) = tok.text().strip_prefix("#!localize") else { continue };
+                let Some(rest) = tok.text().strip_prefix("#!localize") else {
+                    continue;
+                };
                 if !rest.is_empty() && !rest.starts_with([' ', '\t']) {
                     continue;
                 }
@@ -211,7 +287,10 @@ impl Plan {
 /// ([`super::LowerOptions::imported_globals`]).
 pub fn declared_globals(root: &SyntaxNode) -> Vec<String> {
     let mut out = Vec::new();
-    for g in root.descendants().filter(|n| n.kind() == GLOBAL_DECL || is_global_item(n)) {
+    for g in root
+        .descendants()
+        .filter(|n| n.kind() == GLOBAL_DECL || is_global_item(n))
+    {
         let name = match g.kind() {
             MODULE_DECL => child(&g, QUAL_NAME).map(|q| qual_text(&q)),
             _ => child(&g, NAME).and_then(|n| name_text(&n)),
@@ -227,7 +306,9 @@ pub fn declared_globals(root: &SyntaxNode) -> Vec<String> {
 
 /// The steps of a `LUA_PATH`.
 pub(crate) fn path_steps(node: &SyntaxNode) -> Vec<SyntaxNode> {
-    node.children().filter(|c| matches!(c.kind(), LUA_FIELD | LUA_INDEX | LUA_CALL | LUA_METHOD)).collect()
+    node.children()
+        .filter(|c| matches!(c.kind(), LUA_FIELD | LUA_INDEX | LUA_CALL | LUA_METHOD))
+        .collect()
 }
 
 /// The name of a `LUA_FIELD` step.
@@ -241,10 +322,14 @@ pub(crate) fn field_step_name(step: &SyntaxNode) -> Option<String> {
 /// True when a `LUA_PATH` is the target of an assignment (`=`, a compound
 /// assignment, or one target of a multiple assignment).
 fn is_target(node: &SyntaxNode) -> bool {
-    let Some(parent) = node.parent() else { return false };
+    let Some(parent) = node.parent() else {
+        return false;
+    };
     match parent.kind() {
         TARGET_LIST => true,
-        ASSIGN_STMT | COMPOUND_ASSIGN_STMT => parent.children().next().is_some_and(|first| first == *node),
+        ASSIGN_STMT | COMPOUND_ASSIGN_STMT => {
+            parent.children().next().is_some_and(|first| first == *node)
+        }
         _ => false,
     }
 }
@@ -261,7 +346,13 @@ fn global_root(node: &SyntaxNode, res: &Resolution) -> Option<String> {
 /// Decides what a file localizes (see the module documentation).
 /// `imported_globals` are the `global` names of the files it imports,
 /// `library_fields` the library fields the declarations list.
-pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported_globals: &[String], library_fields: &HashSet<(String, String)>) -> Plan {
+pub(crate) fn plan(
+    root: &SyntaxNode,
+    res: &Resolution,
+    mode: Localize,
+    imported_globals: &[String],
+    library_fields: &HashSet<(String, String)>,
+) -> Plan {
     let mut plan = Plan::default();
     if mode == Localize::None {
         return plan;
@@ -273,7 +364,9 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
     // a field.
     let mut reads: Vec<(String, Option<String>)> = Vec::new();
     for node in root.descendants().filter(|n| n.kind() == LUA_PATH) {
-        let Some(global) = global_root(&node, res) else { continue };
+        let Some(global) = global_root(&node, res) else {
+            continue;
+        };
         let steps = path_steps(&node);
         let first = steps.first().and_then(field_step_name);
         if is_target(&node) {
@@ -298,10 +391,14 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
     // and the prelude): `math` for Number, `String` and the `string` it is
     // behind for String, `Table` for Table. Bool's has no global.
     for f in root.descendants().filter(|n| n.kind() == FN_DECL) {
-        let Some(name) = child(&f, NAME).and_then(|n| name_text(&n)) else { continue };
+        let Some(name) = child(&f, NAME).and_then(|n| name_text(&n)) else {
+            continue;
+        };
         match res.method_owner(f.text_range()) {
             Some(MethodOwner::Declared(id)) => {
-                let Some(path) = res.declared_path(*id) else { continue };
+                let Some(path) = res.declared_path(*id) else {
+                    continue;
+                };
                 if path.steps.is_empty() {
                     assigned_paths.insert((path.global.clone(), name));
                 }
@@ -328,8 +425,13 @@ pub(crate) fn plan(root: &SyntaxNode, res: &Resolution, mode: Localize, imported
         match mode {
             Localize::None => {}
             Localize::Std => {
-                let known = |n: &String| lua_library_field(&global, n) || library_fields.contains(&(global.clone(), n.clone()));
-                if let Some(name) = first.filter(|n| STD_LIBRARIES.contains(&global.as_str()) && path_ok(n) && known(n)) {
+                let known = |n: &String| {
+                    lua_library_field(&global, n)
+                        || library_fields.contains(&(global.clone(), n.clone()))
+                };
+                if let Some(name) = first
+                    .filter(|n| STD_LIBRARIES.contains(&global.as_str()) && path_ok(n) && known(n))
+                {
                     plan.paths.insert((global, name));
                 }
             }
@@ -389,11 +491,16 @@ impl super::Lowerer<'_> {
     /// for `name` `None`), made on first use; the main function declares
     /// it ([`Plan`], module documentation).
     pub(crate) fn localized_path(&mut self, root: &str, name: Option<&str>) -> Expr {
-        if let Some((l, _, _)) = self.localized.iter().find(|(_, r, n)| r == root && n.as_deref() == name) {
+        if let Some((l, _, _)) = self
+            .localized
+            .iter()
+            .find(|(_, r, n)| r == root && n.as_deref() == name)
+        {
             return Expr::Local(*l);
         }
         let l = self.new_local(&hint(root, name));
-        self.localized.push((l, root.to_string(), name.map(str::to_string)));
+        self.localized
+            .push((l, root.to_string(), name.map(str::to_string)));
         Expr::Local(l)
     }
 }

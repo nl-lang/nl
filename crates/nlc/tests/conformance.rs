@@ -113,7 +113,11 @@ struct Outcome {
 /// The mode column: the backend and JIT mode, `-sr` without static
 /// resolution, and the localize setting when it is not the default.
 fn mode_label(mode: Mode, sr: bool, localize: Option<&str>) -> String {
-    let mut label = if sr { mode.label().to_owned() } else { format!("{} -sr", mode.label()) };
+    let mut label = if sr {
+        mode.label().to_owned()
+    } else {
+        format!("{} -sr", mode.label())
+    };
     if let Some(l) = localize {
         label.push_str(&format!(" loc={l}"));
     }
@@ -122,7 +126,12 @@ fn mode_label(mode: Mode, sr: bool, localize: Option<&str>) -> String {
 
 /// The localize settings other than the default, and the modes each runs
 /// in (see the module documentation).
-const LOCALIZE_RUNS: [(&str, Mode); 4] = [("none", Mode::Lua), ("none", Mode::BcJitHot), ("all", Mode::Lua), ("all", Mode::BcJitHot)];
+const LOCALIZE_RUNS: [(&str, Mode); 4] = [
+    ("none", Mode::Lua),
+    ("none", Mode::BcJitHot),
+    ("all", Mode::Lua),
+    ("all", Mode::BcJitHot),
+];
 
 /// The declaration files every program is compiled with: those of
 /// `tests/run/decl/` (README, "Running a program").
@@ -143,14 +152,19 @@ fn excluded_reject(_name: &str) -> bool {
 fn cases(dir: &Path) -> Vec<Case> {
     let mut out = Vec::new();
     let mut add = |sub: &Path, kind: Kind| {
-        let Ok(rd) = std::fs::read_dir(sub) else { return };
+        let Ok(rd) = std::fs::read_dir(sub) else {
+            return;
+        };
         let mut paths: Vec<PathBuf> = rd.filter_map(Result::ok).map(|e| e.path()).collect();
         paths.sort();
         for p in paths {
             if p.extension().is_none_or(|e| e != "nl") {
                 continue;
             }
-            let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            let stem = p
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
             match kind {
                 Kind::Run => {
                     if !p.with_extension("out").exists() || excluded_run(&stem) {
@@ -158,11 +172,25 @@ fn cases(dir: &Path) -> Vec<Case> {
                     }
                     for mode in Mode::RUN {
                         for sr in [true, false] {
-                            out.push(Case { name: stem.clone(), path: p.clone(), kind: Kind::Run, mode, sr, localize: None });
+                            out.push(Case {
+                                name: stem.clone(),
+                                path: p.clone(),
+                                kind: Kind::Run,
+                                mode,
+                                sr,
+                                localize: None,
+                            });
                         }
                     }
                     for (localize, mode) in LOCALIZE_RUNS {
-                        out.push(Case { name: stem.clone(), path: p.clone(), kind: Kind::Run, mode, sr: true, localize: Some(localize) });
+                        out.push(Case {
+                            name: stem.clone(),
+                            path: p.clone(),
+                            kind: Kind::Run,
+                            mode,
+                            sr: true,
+                            localize: Some(localize),
+                        });
                     }
                 }
                 Kind::Reject => {
@@ -170,7 +198,14 @@ fn cases(dir: &Path) -> Vec<Case> {
                         continue;
                     }
                     for mode in Mode::REJECT {
-                        out.push(Case { name: format!("reject/{stem}"), path: p.clone(), kind: Kind::Reject, mode, sr: true, localize: None });
+                        out.push(Case {
+                            name: format!("reject/{stem}"),
+                            path: p.clone(),
+                            kind: Kind::Reject,
+                            mode,
+                            sr: true,
+                            localize: None,
+                        });
                     }
                 }
             }
@@ -187,7 +222,9 @@ fn cases(dir: &Path) -> Vec<Case> {
 type Finished = (Option<i32>, Vec<u8>, Vec<u8>);
 
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, String> {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
     let mut child = cmd.spawn().map_err(|e| format!("cannot start nlc: {e}"))?;
     let mut so = child.stdout.take();
     let mut se = child.stderr.take();
@@ -225,8 +262,19 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, Str
 
 fn first_line(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
-    let line = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("").to_string();
-    if line.len() > 160 { format!("{}…", &line[..line.char_indices().nth(160).map_or(line.len(), |(i, _)| i)]) } else { line }
+    let line = text
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .to_string();
+    if line.len() > 160 {
+        format!(
+            "{}…",
+            &line[..line.char_indices().nth(160).map_or(line.len(), |(i, _)| i)]
+        )
+    } else {
+        line
+    }
 }
 
 /// Where the expected output and the actual one first differ.
@@ -239,18 +287,43 @@ fn first_difference(expected: &[u8], actual: &[u8]) -> String {
         let x = el.get(i).copied();
         let y = al.get(i).copied();
         if x != y {
-            return format!("line {}: expected {:?}, got {:?}", i + 1, x.unwrap_or("<end>"), y.unwrap_or("<end>"));
+            return format!(
+                "line {}: expected {:?}, got {:?}",
+                i + 1,
+                x.unwrap_or("<end>"),
+                y.unwrap_or("<end>")
+            );
         }
     }
     "output differs".to_string()
 }
 
 fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
-    let rel = case.path.strip_prefix(dir).unwrap_or(&case.path).to_path_buf();
+    let rel = case
+        .path
+        .strip_prefix(dir)
+        .unwrap_or(&case.path)
+        .to_path_buf();
     let mut cmd = Command::new(nlc);
     cmd.current_dir(dir).env_remove("NL_PATH");
-    let fail = |detail: String| Outcome { name: case.name.clone(), kind: case.kind, mode: case.mode, sr: case.sr, localize: case.localize, pass: false, detail };
-    let pass = || Outcome { name: case.name.clone(), kind: case.kind, mode: case.mode, sr: case.sr, localize: case.localize, pass: true, detail: String::new() };
+    let fail = |detail: String| Outcome {
+        name: case.name.clone(),
+        kind: case.kind,
+        mode: case.mode,
+        sr: case.sr,
+        localize: case.localize,
+        pass: false,
+        detail,
+    };
+    let pass = || Outcome {
+        name: case.name.clone(),
+        kind: case.kind,
+        mode: case.mode,
+        sr: case.sr,
+        localize: case.localize,
+        pass: true,
+        detail: String::new(),
+    };
     match case.kind {
         Kind::Run => {
             cmd.arg("run").args(case.mode.run_args()).args(DECL_ARGS);
@@ -269,8 +342,15 @@ fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
                         pass()
                     } else if code != Some(0) {
                         let why = first_line(&stderr);
-                        let diff = if stdout != expected { format!(" [{}]", first_difference(&expected, &stdout)) } else { String::new() };
-                        fail(format!("exit {}: {why}{diff}", code.map_or("signal".to_string(), |c| c.to_string())))
+                        let diff = if stdout != expected {
+                            format!(" [{}]", first_difference(&expected, &stdout))
+                        } else {
+                            String::new()
+                        };
+                        fail(format!(
+                            "exit {}: {why}{diff}",
+                            code.map_or("signal".to_string(), |c| c.to_string())
+                        ))
                     } else {
                         fail(first_difference(&expected, &stdout))
                     }
@@ -279,11 +359,17 @@ fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
         }
         Kind::Reject => {
             let src = std::fs::read_to_string(&case.path).unwrap_or_default();
-            let Some(marker) = src.lines().position(|l| l.trim_start().starts_with("# expect-error:")) else {
+            let Some(marker) = src
+                .lines()
+                .position(|l| l.trim_start().starts_with("# expect-error:"))
+            else {
                 return fail("no `# expect-error:` comment".to_string());
             };
             let want = marker + 2;
-            cmd.arg("build").arg(case.mode.emit_arg()).args(DECL_ARGS).arg(&rel);
+            cmd.arg("build")
+                .arg(case.mode.emit_arg())
+                .args(DECL_ARGS)
+                .arg(&rel);
             match run_with_timeout(cmd, timeout) {
                 Err(e) => fail(e),
                 Ok((code, _stdout, stderr)) => {
@@ -302,12 +388,18 @@ fn run_case(nlc: &Path, dir: &Path, case: &Case, timeout: Duration) -> Outcome {
                         })
                         .collect();
                     if code == Some(0) {
-                        fail(format!("compiled without error (expected one on line {want})"))
+                        fail(format!(
+                            "compiled without error (expected one on line {want})"
+                        ))
                     } else if lines.iter().any(|(f, l, _)| *l == want && *f == own) {
                         pass()
                     } else {
-                        let got = lines.first().map_or_else(|| first_line(&stderr), |(_, _, l)| l.clone());
-                        fail(format!("expected an error in {own} on line {want}; got: {got}"))
+                        let got = lines
+                            .first()
+                            .map_or_else(|| first_line(&stderr), |(_, _, l)| l.clone());
+                        fail(format!(
+                            "expected an error in {own} on line {want}; got: {got}"
+                        ))
                     }
                 }
             }
@@ -319,34 +411,62 @@ fn main() {
     let dir = run_dir();
     let dir = std::fs::canonicalize(&dir).unwrap_or(dir);
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
-    let timeout = Duration::from_secs(std::env::var("NL_CONFORMANCE_TIMEOUT").ok().and_then(|s| s.parse().ok()).unwrap_or(20));
+    let timeout = Duration::from_secs(
+        std::env::var("NL_CONFORMANCE_TIMEOUT")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(20),
+    );
     let filters: Vec<String> = std::env::var("NL_CONFORMANCE_FILTER")
         .ok()
-        .map(|f| f.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+        .map(|f| {
+            f.split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
         .unwrap_or_default();
     let all = cases(&dir);
-    let selected: Vec<&Case> = all.iter().filter(|c| filters.is_empty() || filters.iter().any(|f| c.name.contains(f.as_str()))).collect();
+    let selected: Vec<&Case> = all
+        .iter()
+        .filter(|c| filters.is_empty() || filters.iter().any(|f| c.name.contains(f.as_str())))
+        .collect();
 
     let next = AtomicUsize::new(0);
-    let results: Mutex<Vec<Option<Outcome>>> = Mutex::new((0..selected.len()).map(|_| None).collect());
-    let workers = std::thread::available_parallelism().map_or(4, |n| n.get()).min(8);
+    let results: Mutex<Vec<Option<Outcome>>> =
+        Mutex::new((0..selected.len()).map(|_| None).collect());
+    let workers = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(8);
     std::thread::scope(|s| {
         for _ in 0..workers {
-            s.spawn(|| loop {
-                let i = next.fetch_add(1, Ordering::SeqCst);
-                let Some(case) = selected.get(i) else { break };
-                let o = run_case(&nlc, &dir, case, timeout);
-                if let Ok(mut r) = results.lock() {
-                    if let Some(slot) = r.get_mut(i) {
-                        *slot = Some(o);
+            s.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, Ordering::SeqCst);
+                    let Some(case) = selected.get(i) else { break };
+                    let o = run_case(&nlc, &dir, case, timeout);
+                    if let Ok(mut r) = results.lock() {
+                        if let Some(slot) = r.get_mut(i) {
+                            *slot = Some(o);
+                        }
                     }
                 }
             });
         }
     });
-    let results: Vec<Outcome> = results.into_inner().unwrap_or_default().into_iter().flatten().collect();
+    let results: Vec<Outcome> = results
+        .into_inner()
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .collect();
 
-    let width = results.iter().map(|r| r.name.len()).max().unwrap_or(10).max(10);
+    let width = results
+        .iter()
+        .map(|r| r.name.len())
+        .max()
+        .unwrap_or(10)
+        .max(10);
     println!("{:<width$}  {:<19}  result  detail", "program", "mode");
     println!("{:-<width$}  -------------------  ------  ------", "");
     let mut failed = 0;
@@ -354,11 +474,19 @@ fn main() {
         if !r.pass {
             failed += 1;
         }
-        println!("{:<width$}  {:<19}  {}  {}", r.name, mode_label(r.mode, r.sr, r.localize), if r.pass { "pass  " } else { "FAIL  " }, r.detail);
+        println!(
+            "{:<width$}  {:<19}  {}  {}",
+            r.name,
+            mode_label(r.mode, r.sr, r.localize),
+            if r.pass { "pass  " } else { "FAIL  " },
+            r.detail
+        );
     }
     let passed = results.len() - failed;
-    let programs: std::collections::BTreeSet<&str> = selected.iter().map(|c| c.name.as_str()).collect();
-    let all_programs: std::collections::BTreeSet<&str> = all.iter().map(|c| c.name.as_str()).collect();
+    let programs: std::collections::BTreeSet<&str> =
+        selected.iter().map(|c| c.name.as_str()).collect();
+    let all_programs: std::collections::BTreeSet<&str> =
+        all.iter().map(|c| c.name.as_str()).collect();
     println!(
         "\n{passed} passed, {failed} failed: {} runs of {} programs selected of {} ({} excluded by the README)",
         results.len(),
@@ -374,14 +502,28 @@ fn main() {
     };
     for mode in Mode::RUN {
         for sr in [true, false] {
-            summarize(&mode_label(mode, sr, None), results.iter().filter(|r| r.kind == Kind::Run && r.mode == mode && r.sr == sr && r.localize.is_none()).collect());
+            summarize(
+                &mode_label(mode, sr, None),
+                results
+                    .iter()
+                    .filter(|r| {
+                        r.kind == Kind::Run && r.mode == mode && r.sr == sr && r.localize.is_none()
+                    })
+                    .collect(),
+            );
         }
     }
     for (localize, mode) in LOCALIZE_RUNS {
-        let runs = results.iter().filter(|r| r.kind == Kind::Run && r.mode == mode && r.localize == Some(localize)).collect();
+        let runs = results
+            .iter()
+            .filter(|r| r.kind == Kind::Run && r.mode == mode && r.localize == Some(localize))
+            .collect();
         summarize(&mode_label(mode, true, Some(localize)), runs);
     }
-    summarize("reject", results.iter().filter(|r| r.kind == Kind::Reject).collect());
+    summarize(
+        "reject",
+        results.iter().filter(|r| r.kind == Kind::Reject).collect(),
+    );
     if failed > 0 {
         std::process::exit(1);
     }
@@ -390,13 +532,18 @@ fn main() {
 fn count_excluded(dir: &Path) -> usize {
     let mut n = 0;
     for (sub, reject) in [(dir.to_path_buf(), false), (dir.join("reject"), true)] {
-        let Ok(rd) = std::fs::read_dir(&sub) else { continue };
+        let Ok(rd) = std::fs::read_dir(&sub) else {
+            continue;
+        };
         for e in rd.filter_map(Result::ok) {
             let p = e.path();
             if p.extension().is_none_or(|x| x != "nl") {
                 continue;
             }
-            let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            let stem = p
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
             if reject {
                 n += usize::from(excluded_reject(&stem));
             } else if p.with_extension("out").exists() {

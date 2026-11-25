@@ -22,7 +22,10 @@ pub fn hover(files: &Files, doc: &Doc, offset: TextSize) -> Option<Hover> {
         value.push_str(&d);
     }
     Some(Hover {
-        contents: HoverContents::Markup(MarkupContent { kind: MarkupKind::Markdown, value }),
+        contents: HoverContents::Markup(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value,
+        }),
         range: Some(doc.lines.range(&doc.text, tok.text_range())),
     })
 }
@@ -73,10 +76,13 @@ fn binding(doc: &Doc, id: BindingId) -> Option<(String, Option<String>)> {
         DeclKind::Enum => format!("enum {name}"),
         DeclKind::Interface => format!("interface {name}"),
         DeclKind::TypeAlias => {
-            let target = info.and_then(|i| i.named_of.get(&id)).and_then(|nid| info.and_then(|i| i.types.kind(*nid))).and_then(|k| match k {
-                NamedKind::Alias(t) => Some(show(t)),
-                _ => None,
-            });
+            let target = info
+                .and_then(|i| i.named_of.get(&id))
+                .and_then(|nid| info.and_then(|i| i.types.kind(*nid)))
+                .and_then(|k| match k {
+                    NamedKind::Alias(t) => Some(show(t)),
+                    _ => None,
+                });
             match target {
                 Some(t) => format!("type {name} = {t}"),
                 None => format!("type {name}"),
@@ -115,7 +121,11 @@ pub fn render_fn(types: &TypeTable, name: &str, sig: &FnType) -> String {
     s.push('(');
     let mut parts = Vec::new();
     for p in &sig.params {
-        let mut t = if p.name.is_empty() { types.show(&p.ty) } else { format!("{}: {}", p.name, types.show(&p.ty)) };
+        let mut t = if p.name.is_empty() {
+            types.show(&p.ty)
+        } else {
+            format!("{}: {}", p.name, types.show(&p.ty))
+        };
         if p.optional {
             t.push_str(" = …");
         }
@@ -160,7 +170,10 @@ fn member(doc: &Doc, owner: NamedId, name: &str) -> Option<(String, Option<Strin
         .own_member_decl(owner, name)
         .and_then(|r| doc.declaration_node(r))
         .and_then(|n| doc_comment(&n))
-        .or_else(|| doc.decl_member_node(owner, name).and_then(|(_, m)| doc_comment(&m)));
+        .or_else(|| {
+            doc.decl_member_node(owner, name)
+                .and_then(|(_, m)| doc_comment(&m))
+        });
     Some((header, docs))
 }
 
@@ -183,11 +196,16 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
         let c = cur?;
         let cname = types.name(c).to_string();
         let full = format!("{cname}.{name}");
-        if let Some(sig) = prim_key(&cname).and_then(|k| info.prim_methods.get(k)).and_then(|ms| ms.get(name)) {
+        if let Some(sig) = prim_key(&cname)
+            .and_then(|k| info.prim_methods.get(k))
+            .and_then(|ms| ms.get(name))
+        {
             return Some(render_fn(types, &full, sig));
         }
         match types.kind(c)? {
-            NamedKind::Struct { fields, methods, .. } => {
+            NamedKind::Struct {
+                fields, methods, ..
+            } => {
                 if let Some(f) = fields.iter().find(|f| f.name == name) {
                     return Some(format!("{full}: {}", types.show(&f.ty)));
                 }
@@ -195,7 +213,9 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
                     return Some(render_fn(types, &full, m));
                 }
             }
-            NamedKind::Interface { methods, fields, .. } => {
+            NamedKind::Interface {
+                methods, fields, ..
+            } => {
                 if let Some(f) = fields.iter().find(|f| f.name == name) {
                     return Some(format!("{full}: {}", types.show(&f.ty)));
                 }
@@ -213,7 +233,9 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
                     _ => {}
                 }
             }
-            NamedKind::Module { members } | NamedKind::HostType { members, .. } | NamedKind::LuaClass { members, .. } => {
+            NamedKind::Module { members }
+            | NamedKind::HostType { members, .. }
+            | NamedKind::LuaClass { members, .. } => {
                 if let NamedKind::LuaClass { fields, .. } = types.kind(c)? {
                     if let Some(f) = fields.iter().find(|f| f.name == name) {
                         return Some(format!("{full}: {}", types.show(&f.ty)));
@@ -222,7 +244,9 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
                 match members.get(name) {
                     Some(Member::Function(f)) => return Some(render_fn(types, &full, f)),
                     Some(Member::Value(t)) => return Some(format!("{full}: {}", types.show(t))),
-                    Some(Member::Const(t)) => return Some(format!("const {full}: {}", types.show(t))),
+                    Some(Member::Const(t)) => {
+                        return Some(format!("const {full}: {}", types.show(t)));
+                    }
                     None => {}
                 }
             }

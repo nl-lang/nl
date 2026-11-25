@@ -1,8 +1,8 @@
 //! Types, values, methods and member calls.
 
 use mlua::{
-    AnyUserData, Error, FromLua, FromLuaMulti, Function, IntoLua, IntoLuaMulti, Lua, MaybeSend, MaybeSync, Result,
-    Table, UserData, Value, WeakLua,
+    AnyUserData, Error, FromLua, FromLuaMulti, Function, IntoLua, IntoLuaMulti, Lua, MaybeSend,
+    MaybeSync, Result, Table, UserData, Value, WeakLua,
 };
 
 use crate::exception::{convert, values};
@@ -10,7 +10,8 @@ use crate::raw;
 
 /// The `Lua` a value belongs to.
 pub(crate) fn lua_of(weak: &WeakLua) -> Result<Lua> {
-    weak.try_upgrade().ok_or_else(|| Error::runtime("nl: the Lua state of this value has been closed"))
+    weak.try_upgrade()
+        .ok_or_else(|| Error::runtime("nl: the Lua state of this value has been closed"))
 }
 
 /// A struct, interface, enum or host type: a type value, as
@@ -25,12 +26,15 @@ impl Type {
     /// any other table).
     pub fn name(&self) -> Result<String> {
         let lua = lua_of(self.0.weak_lua())?;
-        raw::typename(&lua, &self.0)?.ok_or_else(|| Error::runtime("nl: this table is not a type, so it has no name"))
+        raw::typename(&lua, &self.0)?
+            .ok_or_else(|| Error::runtime("nl: this table is not a type, so it has no name"))
     }
 
     /// `value is T`. An enum's values are its strings or numbers.
     pub fn has(&self, value: &Value) -> bool {
-        lua_of(self.0.weak_lua()).and_then(|lua| raw::isa(&lua, value.clone(), &self.0)).unwrap_or(false)
+        lua_of(self.0.weak_lua())
+            .and_then(|lua| raw::isa(&lua, value.clone(), &self.0))
+            .unwrap_or(false)
     }
 
     /// `Name { ... }`: the instance, with defaults filled in and field types
@@ -69,9 +73,14 @@ impl IntoLua for Type {
 
 /// `nl_new`, without resuming a parked panic (`Type::new` does).
 pub(crate) fn instantiate(lua: &Lua, ty: &Table, fields: Value) -> Result<Table> {
-    match convert(lua, raw::new_instance(lua, ty, fields)?)?.into_iter().next() {
+    match convert(lua, raw::new_instance(lua, ty, fields)?)?
+        .into_iter()
+        .next()
+    {
         Some(Value::Table(t)) => Ok(t),
-        other => Err(Error::runtime(format!("nl_new gave {other:?}, not an instance"))),
+        other => Err(Error::runtime(format!(
+            "nl_new gave {other:?}, not an instance"
+        ))),
     }
 }
 
@@ -95,7 +104,9 @@ where
     let ud = lua.create_userdata(value)?;
     values(lua, || raw::settype(lua, name, Value::UserData(ud.clone())))?;
     if let Some(st) = lua.app_data_ref::<crate::state::NlState>() {
-        st.types.borrow_mut().insert(std::any::TypeId::of::<T>(), name.to_owned());
+        st.types
+            .borrow_mut()
+            .insert(std::any::TypeId::of::<T>(), name.to_owned());
     }
     Ok(ud)
 }
@@ -110,7 +121,11 @@ pub trait Transfer: UserData + MaybeSend + MaybeSync + Sized + 'static {
 
 /// `nl_settransfer` for the name `register_type` gave `T` in this state.
 pub(crate) fn register_transfer<T: Transfer>(lua: &Lua) -> Result<()> {
-    let name = crate::state::nl_state(lua)?.types.borrow().get(&std::any::TypeId::of::<T>()).cloned();
+    let name = crate::state::nl_state(lua)?
+        .types
+        .borrow()
+        .get(&std::any::TypeId::of::<T>())
+        .cloned();
     let Some(name) = name else {
         return Err(Error::runtime(format!(
             "register_transfer: {} is not a host type of this state (register_type first)",
@@ -123,7 +138,10 @@ pub(crate) fn register_transfer<T: Transfer>(lua: &Lua) -> Result<()> {
 }
 
 pub(crate) fn keyed(lua: &Lua, opts: Table) -> Result<Value> {
-    Ok(values(lua, || raw::keyed(lua, opts))?.into_iter().next().unwrap_or(Value::Nil))
+    Ok(values(lua, || raw::keyed(lua, opts))?
+        .into_iter()
+        .next()
+        .unwrap_or(Value::Nil))
 }
 
 /// A range, `a..b` or `a...b` (`nl_pushrange`, `nl_torange`). Rust's
@@ -137,13 +155,21 @@ pub struct Range {
 
 impl From<std::ops::RangeInclusive<f64>> for Range {
     fn from(r: std::ops::RangeInclusive<f64>) -> Range {
-        Range { first: *r.start(), last: *r.end(), exclusive: false }
+        Range {
+            first: *r.start(),
+            last: *r.end(),
+            exclusive: false,
+        }
     }
 }
 
 impl From<std::ops::Range<f64>> for Range {
     fn from(r: std::ops::Range<f64>) -> Range {
-        Range { first: r.start, last: r.end, exclusive: true }
+        Range {
+            first: r.start,
+            last: r.end,
+            exclusive: true,
+        }
     }
 }
 
@@ -151,8 +177,16 @@ impl FromLua for Range {
     fn from_lua(value: Value, lua: &Lua) -> Result<Self> {
         let from = value.type_name();
         match raw::torange(lua, value)? {
-            Some((first, last, exclusive)) => Ok(Range { first, last, exclusive }),
-            None => Err(Error::FromLuaConversionError { from, to: "Range".to_owned(), message: None }),
+            Some((first, last, exclusive)) => Ok(Range {
+                first,
+                last,
+                exclusive,
+            }),
+            None => Err(Error::FromLuaConversionError {
+                from,
+                to: "Range".to_owned(),
+                message: None,
+            }),
         }
     }
 }
@@ -181,7 +215,9 @@ impl NlFunctionExt for Function {
     }
 
     fn is_method(&self) -> bool {
-        lua_of(self.weak_lua()).and_then(|lua| raw::ismethod(&lua, self)).unwrap_or(false)
+        lua_of(self.weak_lua())
+            .and_then(|lua| raw::ismethod(&lua, self))
+            .unwrap_or(false)
     }
 
     fn try_call<R: FromLuaMulti>(&self, args: impl IntoLuaMulti) -> Result<R> {
@@ -199,7 +235,12 @@ pub trait NlObjectExt {
     fn call_member<R: FromLuaMulti>(&self, name: &str, args: impl IntoLuaMulti) -> Result<R>;
 }
 
-fn call_member<R: FromLuaMulti>(weak: &WeakLua, recv: Value, name: &str, args: impl IntoLuaMulti) -> Result<R> {
+fn call_member<R: FromLuaMulti>(
+    weak: &WeakLua,
+    recv: Value,
+    name: &str,
+    args: impl IntoLuaMulti,
+) -> Result<R> {
     let lua = lua_of(weak)?;
     let args = args.into_lua_multi(&lua)?;
     let v = values(&lua, || raw::callmember(&lua, name, recv, args))?;

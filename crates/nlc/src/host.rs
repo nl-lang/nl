@@ -25,9 +25,15 @@ pub struct Files {
 
 impl Files {
     pub fn new() -> Self {
-        let search = std::env::var_os("NL_PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
+        let search = std::env::var_os("NL_PATH")
+            .map(|p| std::env::split_paths(&p).collect())
+            .unwrap_or_default();
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        Files { search: RefCell::new(search), cwd, decls: RefCell::new(Vec::new()) }
+        Files {
+            search: RefCell::new(search),
+            cwd,
+            decls: RefCell::new(Vec::new()),
+        }
     }
 
     /// A `--decl` path: a `.d.nl` file, or a directory whose
@@ -44,7 +50,10 @@ impl Files {
         let mut dirs: Vec<PathBuf> = self.search.borrow().clone();
         dirs.extend(decl_dirs);
         let names = search::decl_files(&dirs, &files, &search::dir_files, &|p| self.canonical(p));
-        names.into_iter().filter_map(|name| std::fs::read(&name).ok().map(|bytes| (name, bytes))).collect()
+        names
+            .into_iter()
+            .filter_map(|name| std::fs::read(&name).ok().map(|bytes| (name, bytes)))
+            .collect()
     }
 
     /// A relative directory is taken relative to the working
@@ -63,7 +72,10 @@ impl Files {
     }
 
     pub fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
-        search::candidates(from, path, &self.cwd, &self.search.borrow()).into_iter().find(|c| c.is_file()).map(|c| self.canonical(&c))
+        search::candidates(from, path, &self.cwd, &self.search.borrow())
+            .into_iter()
+            .find(|c| c.is_file())
+            .map(|c| self.canonical(&c))
     }
 
     pub fn read(&self, name: &str) -> Option<Vec<u8>> {
@@ -113,7 +125,12 @@ impl Loader for FilesLoader<'_> {
 /// Compiles NL source with the files' search order; the chunk, or the
 /// first error as `file:line:column: message`, followed by how many more
 /// errors there are.
-pub fn compile(files: &Files, source: &[u8], chunk_name: &str, options: &CompileOptions) -> Result<Vec<u8>, String> {
+pub fn compile(
+    files: &Files,
+    source: &[u8],
+    chunk_name: &str,
+    options: &CompileOptions,
+) -> Result<Vec<u8>, String> {
     let out = nl_capi::compile(source, chunk_name, options, &FilesLoader(files));
     out.chunk.ok_or_else(|| error_message(&out.diagnostics))
 }
@@ -156,7 +173,9 @@ pub fn host_table(lua: &Lua, files: Rc<Files>, options: CompileOptions) -> mlua:
     let f = files.clone();
     host.set(
         "resolve",
-        lua.create_function(move |_, (from, path): (Option<String>, String)| Ok(f.resolve(from.as_deref(), &path)))?,
+        lua.create_function(move |_, (from, path): (Option<String>, String)| {
+            Ok(f.resolve(from.as_deref(), &path))
+        })?,
     )?;
     let f = files.clone();
     host.set(
@@ -167,7 +186,10 @@ pub fn host_table(lua: &Lua, files: Rc<Files>, options: CompileOptions) -> mlua:
         })?,
     )?;
     let f = files.clone();
-    host.set("canonical", lua.create_function(move |_, path: String| Ok(f.canonical_file(&path)))?)?;
+    host.set(
+        "canonical",
+        lua.create_function(move |_, path: String| Ok(f.canonical_file(&path)))?,
+    )?;
     host.set("case_tables", case_tables(lua)?)?;
     let f = files;
     host.set(
@@ -186,7 +208,13 @@ pub fn host_table(lua: &Lua, files: Rc<Files>, options: CompileOptions) -> mlua:
 fn case_tables(lua: &Lua) -> mlua::Result<Table> {
     let t = nl_capi::nl_text::case_tables::case_tables();
     let out = lua.create_table()?;
-    for (k, v) in [("up", t.up), ("upx", t.upx), ("down", t.down), ("downx", t.downx), ("swapx", t.swapx)] {
+    for (k, v) in [
+        ("up", t.up),
+        ("upx", t.upx),
+        ("down", t.down),
+        ("downx", t.downx),
+        ("swapx", t.swapx),
+    ] {
         out.set(k, v)?;
     }
     Ok(out)
@@ -239,7 +267,12 @@ pub fn install_debug_standin(lua: &Lua) -> mlua::Result<()> {
              end",
         )
         .set_name("=nl host debug stand-in")
-        .call((raw_table_metatable, globals.get::<Function>("getmetatable")?, globals.get::<Function>("rawget")?, globals.get::<Function>("type")?))?;
+        .call((
+            raw_table_metatable,
+            globals.get::<Function>("getmetatable")?,
+            globals.get::<Function>("rawget")?,
+            globals.get::<Function>("type")?,
+        ))?;
     debug.set("getmetatable", getmetatable)?;
     debug.set(
         "setmetatable",
@@ -292,7 +325,9 @@ fn getinfo(lua: &Lua, (target, what): (Value, Option<mlua::LuaString>)) -> mlua:
                 Value::Number(n) if n >= 0.0 => Some(n as usize),
                 _ => None,
             };
-            let Some(level) = level else { return Ok(Value::Nil) };
+            let Some(level) = level else {
+                return Ok(Value::Nil);
+            };
             let found = lua.inspect_stack(level, |d| -> mlua::Result<()> {
                 if has(b'S') {
                     let src = d.source();
@@ -319,7 +354,12 @@ fn getinfo(lua: &Lua, (target, what): (Value, Option<mlua::LuaString>)) -> mlua:
                 None => return Ok(Value::Nil),
             }
         }
-        other => return Err(mlua::Error::runtime(format!("bad argument #1 to 'getinfo' (number or function expected, got {})", other.type_name()))),
+        other => {
+            return Err(mlua::Error::runtime(format!(
+                "bad argument #1 to 'getinfo' (number or function expected, got {})",
+                other.type_name()
+            )));
+        }
     }
     Ok(Value::Table(t))
 }
@@ -347,10 +387,12 @@ fn traceback(lua: &Lua, args: MultiValue) -> mlua::Result<Value> {
     };
     let mut text = match message {
         Value::Nil => String::new(),
-        Value::String(_) | Value::Integer(_) | Value::Number(_) => match lua.coerce_string(message)? {
-            Some(s) => format!("{}\n", s.to_string_lossy()),
-            None => String::new(),
-        },
+        Value::String(_) | Value::Integer(_) | Value::Number(_) => {
+            match lua.coerce_string(message)? {
+                Some(s) => format!("{}\n", s.to_string_lossy()),
+                None => String::new(),
+            }
+        }
         other => return Ok(other),
     };
     text.push_str("stack traceback:");
@@ -361,8 +403,15 @@ fn traceback(lua: &Lua, args: MultiValue) -> mlua::Result<Value> {
     for level in level..level + TRACEBACK_FRAMES {
         let line = lua.inspect_stack(level, |d| {
             let src = d.source();
-            let short = src.short_src.map(|s| s.to_string()).unwrap_or_else(|| "?".to_string());
-            let name = d.names().name.map(|n| format!("function '{n}'")).unwrap_or_else(|| "?".to_string());
+            let short = src
+                .short_src
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "?".to_string());
+            let name = d
+                .names()
+                .name
+                .map(|n| format!("function '{n}'"))
+                .unwrap_or_else(|| "?".to_string());
             match d.current_line() {
                 Some(l) => format!("\n\t{short}:{l}: in {name}"),
                 None => format!("\n\t{short}: in {name}"),

@@ -177,16 +177,26 @@ impl Facts {
                 self.stack.pop();
             }
             fn decl(&mut self, id: LocalId) {
-                self.decl.insert(id, self.stack.last().copied().unwrap_or(0));
+                self.decl
+                    .insert(id, self.stack.last().copied().unwrap_or(0));
             }
             fn used(&mut self, _id: LocalId) {}
             fn assigned(&mut self, id: LocalId) {
-                self.assigns.push((id, self.stack.last().copied().unwrap_or(0)));
+                self.assigns
+                    .push((id, self.stack.last().copied().unwrap_or(0)));
             }
         }
-        let mut v = V { next: 0, stack: Vec::new(), decl: HashMap::new(), assigns: Vec::new() };
+        let mut v = V {
+            next: 0,
+            stack: Vec::new(),
+            decl: HashMap::new(),
+            assigns: Vec::new(),
+        };
         visit_fn(main, &mut v);
-        let mut facts = Facts { assigned: HashSet::new(), assigned_elsewhere: HashSet::new() };
+        let mut facts = Facts {
+            assigned: HashSet::new(),
+            assigned_elsewhere: HashSet::new(),
+        };
         for (id, f) in v.assigns {
             facts.assigned.insert(id);
             if v.decl.get(&id) != Some(&f) {
@@ -236,7 +246,15 @@ fn free_vars(f: &Function, out: &mut HashMap<LocalId, bool>) {
             self.used(id);
         }
     }
-    visit_fn(f, &mut V { depth: 0, active: Vec::new(), marks: Vec::new(), out });
+    visit_fn(
+        f,
+        &mut V {
+            depth: 0,
+            active: Vec::new(),
+            marks: Vec::new(),
+            out,
+        },
+    );
 }
 
 /// What the read-only walks of this module see.
@@ -289,7 +307,11 @@ fn visit_stmts(b: &Block, v: &mut dyn Visitor) {
             }
             StmtKind::Expr(e) => visit_expr(e, v),
             StmtKind::Do(b) => visit_block(b, v),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 visit_expr(cond, v);
                 visit_block(then, v);
                 if let Some(o) = otherwise {
@@ -300,7 +322,13 @@ fn visit_stmts(b: &Block, v: &mut dyn Visitor) {
                 visit_expr(cond, v);
                 visit_block(body, v);
             }
-            StmtKind::NumericFor { var, start, limit, step, body } => {
+            StmtKind::NumericFor {
+                var,
+                start,
+                limit,
+                step,
+                body,
+            } => {
                 visit_expr(start, v);
                 visit_expr(limit, v);
                 if let Some(st) = step {
@@ -357,12 +385,20 @@ fn visit_expr(e: &Expr, v: &mut dyn Visitor) {
                 }
             }
         }
-        Expr::MemberCall { receiver, key, args } => {
+        Expr::MemberCall {
+            receiver,
+            key,
+            args,
+        } => {
             visit_expr(receiver, v);
             visit_expr(key, v);
             args.iter().for_each(|a| visit_expr(a, v));
         }
-        Expr::MemberApply { func, receiver, args } => {
+        Expr::MemberApply {
+            func,
+            receiver,
+            args,
+        } => {
             visit_expr(func, v);
             visit_expr(receiver, v);
             args.iter().for_each(|a| visit_expr(a, v));
@@ -371,7 +407,13 @@ fn visit_expr(e: &Expr, v: &mut dyn Visitor) {
             visit_expr(receiver, v);
             visit_expr(key, v);
         }
-        Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Global(_) | Expr::Vararg | Expr::Intrinsic(_) => {}
+        Expr::Nil
+        | Expr::Bool(_)
+        | Expr::Number(_)
+        | Expr::Str(_)
+        | Expr::Global(_)
+        | Expr::Vararg
+        | Expr::Intrinsic(_) => {}
     }
 }
 
@@ -502,7 +544,8 @@ impl Lifter<'_> {
         // The main function runs once per load, and so does a closure of a
         // `try` written where a block runs once (error.rs calls it once).
         let try_closure = std::mem::take(&mut self.try_closure);
-        let once = self.fns.is_empty() || (try_closure.is_some() && self.frames.last().is_some_and(|fr| fr.once));
+        let once = self.fns.is_empty()
+            || (try_closure.is_some() && self.frames.last().is_some_and(|fr| fr.once));
         let catch = try_closure == Some(true);
         self.fns.push(FnInfo {
             base_locals: max_active(&f.body, f.params.len()),
@@ -520,7 +563,16 @@ impl Lifter<'_> {
         self.block(&mut f.body, false, &params, f.line, true);
         if let Some(t) = self.fns.pop().and_then(|i| i.table) {
             // Made when the function starts, before anything that fills it.
-            f.body.stmts.insert(0, Stmt { line: f.line, kind: StmtKind::Local { locals: vec![t], values: vec![Expr::Table(Vec::new())] } });
+            f.body.stmts.insert(
+                0,
+                Stmt {
+                    line: f.line,
+                    kind: StmtKind::Local {
+                        locals: vec![t],
+                        values: vec![Expr::Table(Vec::new())],
+                    },
+                },
+            );
         }
     }
 
@@ -528,19 +580,40 @@ impl Lifter<'_> {
     /// variables), then applies the insertions it collected. `repeats`:
     /// the block runs more than once for one run of the enclosing block (a
     /// loop or function body).
-    fn block(&mut self, b: &mut Block, hoist_part: bool, vars: &[LocalId], line: u32, repeats: bool) {
+    fn block(
+        &mut self,
+        b: &mut Block,
+        hoist_part: bool,
+        vars: &[LocalId],
+        line: u32,
+        repeats: bool,
+    ) {
         self.block_in(b, hoist_part, vars, line, repeats, false);
     }
 
     /// [`Self::block`], for a branch of a conditional when `branch`.
-    fn block_in(&mut self, b: &mut Block, hoist_part: bool, vars: &[LocalId], line: u32, repeats: bool, branch: bool) {
+    fn block_in(
+        &mut self,
+        b: &mut Block,
+        hoist_part: bool,
+        vars: &[LocalId],
+        line: u32,
+        repeats: bool,
+        branch: bool,
+    ) {
         let iter = self.frames.last().map_or(0, |f| f.iter) + usize::from(repeats);
         let parent = self.frames.last();
         // A function's body (the first frame of its function) runs once
         // when the function does; a loop body does not.
         let fn_body = parent.is_none_or(|p| p.fn_depth != self.fns.len());
-        let once = if fn_body { self.fns.last().is_some_and(|i| i.once) } else { !repeats && parent.is_some_and(|p| p.once) };
-        let branch = branch || parent.is_some_and(|p| p.branch) || (fn_body && self.fns.last().is_some_and(|i| i.catch));
+        let once = if fn_body {
+            self.fns.last().is_some_and(|i| i.once)
+        } else {
+            !repeats && parent.is_some_and(|p| p.once)
+        };
+        let branch = branch
+            || parent.is_some_and(|p| p.branch)
+            || (fn_body && self.fns.last().is_some_and(|i| i.catch));
         self.frames.push(Frame {
             fn_depth: self.fns.len(),
             hoist_part,
@@ -570,7 +643,9 @@ impl Lifter<'_> {
                 }
             }
         }
-        let Some(frame) = self.frames.pop() else { return };
+        let Some(frame) = self.frames.pop() else {
+            return;
+        };
         for l in &frame.declared {
             self.scope.remove(l);
         }
@@ -582,7 +657,11 @@ impl Lifter<'_> {
             }
         }
         for (at, list) in defs {
-            if let Some(Stmt { kind: StmtKind::Hoist { defs, .. }, .. }) = b.stmts.get_mut(at) {
+            if let Some(Stmt {
+                kind: StmtKind::Hoist { defs, .. },
+                ..
+            }) = b.stmts.get_mut(at)
+            {
                 defs.stmts.splice(0..0, list);
             }
         }
@@ -615,7 +694,11 @@ impl Lifter<'_> {
             }
             StmtKind::Expr(e) => self.expr(e),
             StmtKind::Do(b) => self.block(b, false, &[], s.line, false),
-            StmtKind::If { cond, then, otherwise } => {
+            StmtKind::If {
+                cond,
+                then,
+                otherwise,
+            } => {
                 self.expr(cond);
                 self.block_in(then, false, &[], s.line, false, true);
                 if let Some(o) = otherwise {
@@ -628,7 +711,13 @@ impl Lifter<'_> {
                 self.cond_depth -= 1;
                 self.block(body, false, &[], s.line, true);
             }
-            StmtKind::NumericFor { var, start, limit, step, body } => {
+            StmtKind::NumericFor {
+                var,
+                start,
+                limit,
+                step,
+                body,
+            } => {
                 self.expr(start);
                 self.expr(limit);
                 if let Some(st) = step {
@@ -666,15 +755,24 @@ impl Lifter<'_> {
                 // The closures of `try` (error.rs): the first argument of
                 // `rt.xpcall`, the first three of `rt.try`.
                 let group: &[usize] = match callee.as_ref() {
-                    Expr::Intrinsic("xpcall") if matches!(args.first(), Some(Expr::Function(_))) => &[0],
+                    Expr::Intrinsic("xpcall")
+                        if matches!(args.first(), Some(Expr::Function(_))) =>
+                    {
+                        &[0]
+                    }
                     Expr::Intrinsic("try") => &[0, 1, 2],
                     _ => &[],
                 };
-                let spawn_block = matches!(callee.as_ref(), Expr::Intrinsic("spawn")) && matches!((args.first(), args.get(1)), (Some(Expr::Table(_)), Some(Expr::Function(_))));
+                let spawn_block = matches!(callee.as_ref(), Expr::Intrinsic("spawn"))
+                    && matches!(
+                        (args.first(), args.get(1)),
+                        (Some(Expr::Table(_)), Some(Expr::Function(_)))
+                    );
                 self.expr(callee);
                 for (i, a) in args.iter_mut().enumerate() {
                     let catch = matches!(callee.as_ref(), Expr::Intrinsic("try")) && i == 1;
-                    self.try_closure = (group.contains(&i) && matches!(a, Expr::Function(_))).then_some(catch);
+                    self.try_closure =
+                        (group.contains(&i) && matches!(a, Expr::Function(_))).then_some(catch);
                     self.expr(a);
                     self.try_closure = None;
                 }
@@ -705,12 +803,20 @@ impl Lifter<'_> {
                     }
                 }
             }
-            Expr::MemberCall { receiver, key, args } => {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => {
                 self.expr(receiver);
                 self.expr(key);
                 args.iter_mut().for_each(|a| self.expr(a));
             }
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 self.expr(func);
                 self.expr(receiver);
                 args.iter_mut().for_each(|a| self.expr(a));
@@ -719,7 +825,14 @@ impl Lifter<'_> {
                 self.expr(receiver);
                 self.expr(key);
             }
-            Expr::Nil | Expr::Bool(_) | Expr::Number(_) | Expr::Str(_) | Expr::Local(_) | Expr::Global(_) | Expr::Vararg | Expr::Intrinsic(_) => {}
+            Expr::Nil
+            | Expr::Bool(_)
+            | Expr::Number(_)
+            | Expr::Str(_)
+            | Expr::Local(_)
+            | Expr::Global(_)
+            | Expr::Vararg
+            | Expr::Intrinsic(_) => {}
         }
     }
 
@@ -734,7 +847,10 @@ impl Lifter<'_> {
         }
         // In scope everywhere in the main function: its table, declared
         // first in it, and the chunk's owner, declared before it.
-        for t in [self.fns.first().and_then(|f| f.table), self.owner].into_iter().flatten() {
+        for t in [self.fns.first().and_then(|f| f.table), self.owner]
+            .into_iter()
+            .flatten()
+        {
             free.remove(&t);
         }
         let depth = self.fns.len();
@@ -747,8 +863,12 @@ impl Lifter<'_> {
             // A top-level local of the main function never constrains
             // where the closure is made: it stays an upvalue.
             let top = decl.is_some_and(|d| d.frame == 0);
-            let own = decl.and_then(|d| self.frames.get(d.frame)).is_some_and(|f| f.fn_depth == depth);
-            let pass = !top && !self.facts.assigned_elsewhere.contains(&x) && (!self.facts.assigned.contains(&x) || (own && !nested));
+            let own = decl
+                .and_then(|d| self.frames.get(d.frame))
+                .is_some_and(|f| f.fn_depth == depth);
+            let pass = !top
+                && !self.facts.assigned_elsewhere.contains(&x)
+                && (!self.facts.assigned.contains(&x) || (own && !nested));
             if pass {
                 passed.push(x);
             } else {
@@ -759,7 +879,9 @@ impl Lifter<'_> {
         // top-level locals of the main function.
         let mut place: Option<Decl> = None;
         for x in &kept {
-            let Some(d) = self.scope.get(x).copied() else { return };
+            let Some(d) = self.scope.get(x).copied() else {
+                return;
+            };
             if self.frames.get(d.frame).is_none_or(|f| f.hoist_part) {
                 return;
             }
@@ -767,21 +889,40 @@ impl Lifter<'_> {
                 place = Some(d);
             }
         }
-        let count = group.iter().filter(|&&g| matches!(args.get(g), Some(Expr::Function(_)))).count();
+        let count = group
+            .iter()
+            .filter(|&&g| matches!(args.get(g), Some(Expr::Function(_))))
+            .count();
         // Where the closures go: before the top-level statement of the
         // main function being walked, or after the latest declaration.
         let at = match place {
             Some(p) => p,
-            None => Decl { frame: 0, pos: self.frames.first().map_or(0, |f| f.cur), line: 0 },
+            None => Decl {
+                frame: 0,
+                pos: self.frames.first().map_or(0, |f| f.cur),
+                line: 0,
+            },
         };
-        let Some(owner) = self.frames.get(at.frame).map(|f| f.fn_depth.saturating_sub(1)) else { return };
-        let Some(store) = self.store(owner, place.is_some(), count, false) else { return };
+        let Some(owner) = self
+            .frames
+            .get(at.frame)
+            .map(|f| f.fn_depth.saturating_sub(1))
+        else {
+            return;
+        };
+        let Some(store) = self.store(owner, place.is_some(), count, false) else {
+            return;
+        };
         for &g in group {
-            let Some(slot) = args.get_mut(g) else { continue };
+            let Some(slot) = args.get_mut(g) else {
+                continue;
+            };
             if !matches!(slot, Expr::Function(_)) {
                 continue;
             }
-            let Expr::Function(mut f) = std::mem::replace(slot, Expr::Nil) else { continue };
+            let Expr::Function(mut f) = std::mem::replace(slot, Expr::Nil) else {
+                continue;
+            };
             // The passed variables become parameters of the same ids,
             // which the uses in the closure then mean (and which keep the
             // names that error messages show).
@@ -806,12 +947,21 @@ impl Lifter<'_> {
     /// branches of conditionals; anything else is an error (`errors`).
     /// Over LuaJIT's limits the table is fitted by limits.rs.
     fn lift_spawn(&mut self, args: &mut [Expr]) {
-        let (Some(Expr::Table(info)), Some(Expr::Function(f))) = (args.first(), args.get(1)) else { return };
-        let (Some(TableEntry::Item(file)), Some(TableEntry::Item(name))) = (info.first(), info.get(1)) else { return };
+        let (Some(Expr::Table(info)), Some(Expr::Function(f))) = (args.first(), args.get(1)) else {
+            return;
+        };
+        let (Some(TableEntry::Item(file)), Some(TableEntry::Item(name))) =
+            (info.first(), info.get(1))
+        else {
+            return;
+        };
         let (file, name, line) = (file.clone(), name.clone(), f.line);
         let mut free: HashMap<LocalId, bool> = HashMap::new();
         free_vars(f, &mut free);
-        for t in [self.fns.first().and_then(|f| f.table), self.owner].into_iter().flatten() {
+        for t in [self.fns.first().and_then(|f| f.table), self.owner]
+            .into_iter()
+            .flatten()
+        {
             free.remove(&t);
         }
         // Made when the file loads: right after the latest declaration of
@@ -824,14 +974,26 @@ impl Lifter<'_> {
         // The latest declaration first: an error names what the block's
         // code names (`sib`, not the module `M` passed as its `self`).
         let mut free: Vec<LocalId> = free.into_keys().collect();
-        free.sort_unstable_by_key(|x| (self.scope.get(x).map(|d| std::cmp::Reverse((d.frame, d.pos))), *x));
+        free.sort_unstable_by_key(|x| {
+            (
+                self.scope
+                    .get(x)
+                    .map(|d| std::cmp::Reverse((d.frame, d.pos))),
+                *x,
+            )
+        });
         for x in &free {
-            let what = self.locals.get(x.0 as usize).map_or_else(|| "a variable".to_string(), |l| format!("`{}`", l.hint));
+            let what = self
+                .locals
+                .get(x.0 as usize)
+                .map_or_else(|| "a variable".to_string(), |l| format!("`{}`", l.hint));
             let Some(d) = self.scope.get(x).copied() else {
                 self.errors.push((line, format!("this `spawn do` block reads {what}, which the compiler cannot place where the file loads")));
                 return;
             };
-            let Some(frame) = self.frames.get(d.frame) else { return };
+            let Some(frame) = self.frames.get(d.frame) else {
+                return;
+            };
             if frame.branch && frame.once && !frame.hoist_part {
                 // A state that loads the file may take another branch (the
                 // `unless Worker.parent` guard): the block would be missing
@@ -860,15 +1022,25 @@ impl Lifter<'_> {
         let at = match place {
             Some(p) => p,
             None => {
-                let Some(cur) = self.frames.first().map(|f| f.cur) else { return };
-                Decl { frame: 0, pos: cur, line: 0 }
+                let Some(cur) = self.frames.first().map(|f| f.cur) else {
+                    return;
+                };
+                Decl {
+                    frame: 0,
+                    pos: cur,
+                    line: 0,
+                }
             }
         };
         // Over the upvalue budget, limits.rs fits the file as it does any
         // other (the table is one of its top-level locals).
-        let Some(Store::Table(t)) = self.store(0, false, 1, true) else { return };
+        let Some(Store::Table(t)) = self.store(0, false, 1, true) else {
+            return;
+        };
         let Some(slot) = args.get_mut(1) else { return };
-        let Expr::Function(f) = std::mem::replace(slot, Expr::Nil) else { return };
+        let Expr::Function(f) = std::mem::replace(slot, Expr::Nil) else {
+            return;
+        };
         let value = Expr::intrinsic_call("register", vec![file, name, Expr::Function(f)]);
         *slot = self.make_in_table(value, line, t, at);
     }
@@ -881,20 +1053,31 @@ impl Lifter<'_> {
         let Expr::Function(f) = e else { return };
         let mut free: HashMap<LocalId, bool> = HashMap::new();
         free_vars(f, &mut free);
-        for t in [self.fns.first().and_then(|f| f.table), self.owner].into_iter().flatten() {
+        for t in [self.fns.first().and_then(|f| f.table), self.owner]
+            .into_iter()
+            .flatten()
+        {
             free.remove(&t);
         }
-        let Some(call_iter) = self.frames.last().map(|fr| fr.iter) else { return };
+        let Some(call_iter) = self.frames.last().map(|fr| fr.iter) else {
+            return;
+        };
         // The nearest enclosing function that is not a transient block,
         // and the frame of its body: the copies live there or deeper.
-        let Some(home) = self.fns.iter().rposition(|i| !i.transient) else { return };
-        let Some(home_frame) = self.frames.iter().position(|fr| fr.fn_depth == home + 1) else { return };
+        let Some(home) = self.fns.iter().rposition(|i| !i.transient) else {
+            return;
+        };
+        let Some(home_frame) = self.frames.iter().position(|fr| fr.fn_depth == home + 1) else {
+            return;
+        };
         // The variables the block captures, by declaration, latest first.
         // A top-level local of the main function never constrains where
         // the closure is made.
         let mut vars: Vec<(LocalId, bool, Decl)> = Vec::new();
         for (x, nested) in free {
-            let Some(d) = self.scope.get(&x).copied() else { return };
+            let Some(d) = self.scope.get(&x).copied() else {
+                return;
+            };
             if d.frame == 0 {
                 continue;
             }
@@ -912,12 +1095,20 @@ impl Lifter<'_> {
         let mut rebinds: Vec<LocalId> = Vec::new();
         let mut place: Option<Decl> = None;
         for (x, nested, d) in &vars {
-            let Some(frame) = self.frames.get(d.frame) else { return };
+            let Some(frame) = self.frames.get(d.frame) else {
+                return;
+            };
             // Exact only when nothing can assign `x` during the call: it
             // is never assigned, or its function is suspended in the call.
             let suspended = frame.fn_depth.saturating_sub(1) >= home;
-            let exact = !self.facts.assigned_elsewhere.contains(x) && (!self.facts.assigned.contains(x) || suspended);
-            if frame.iter <= home_iter || *nested || self.cond_depth > 0 || self.made.contains(x) || !exact {
+            let exact = !self.facts.assigned_elsewhere.contains(x)
+                && (!self.facts.assigned.contains(x) || suspended);
+            if frame.iter <= home_iter
+                || *nested
+                || self.cond_depth > 0
+                || self.made.contains(x)
+                || !exact
+            {
                 place = Some(*d);
                 break;
             }
@@ -926,7 +1117,13 @@ impl Lifter<'_> {
         let line = f.line;
         // Before the statement of a function's body that holds the block,
         // on that statement's line.
-        let before_cur = |frames: &[Frame], frame: usize| frames.get(frame).map(|fr| Decl { frame, pos: fr.cur, line: fr.cur_line });
+        let before_cur = |frames: &[Frame], frame: usize| {
+            frames.get(frame).map(|fr| Decl {
+                frame,
+                pos: fr.cur,
+                line: fr.cur_line,
+            })
+        };
         let Some(mut at) = (match place {
             Some(p) => Some(p),
             None if rebinds.is_empty() => before_cur(&self.frames, 0),
@@ -936,10 +1133,14 @@ impl Lifter<'_> {
         };
         // The copies cannot go above the function that holds the block.
         if !rebinds.is_empty() && at.frame < home_frame {
-            let Some(d) = before_cur(&self.frames, home_frame) else { return };
+            let Some(d) = before_cur(&self.frames, home_frame) else {
+                return;
+            };
             at = d;
         }
-        let Some(at_frame) = self.frames.get(at.frame) else { return };
+        let Some(at_frame) = self.frames.get(at.frame) else {
+            return;
+        };
         if at_frame.iter >= call_iter {
             return;
         }
@@ -947,14 +1148,21 @@ impl Lifter<'_> {
         // The copies are locals of `owner` and upvalues of every function
         // between it and this one; the closure costs one more of each.
         let more = rebinds.len() + 1;
-        if !self.fns.get(owner).is_some_and(|i| i.locals_fit(more)) || !self.upvalues_fit(owner, &[], more) {
+        if !self.fns.get(owner).is_some_and(|i| i.locals_fit(more))
+            || !self.upvalues_fit(owner, &[], more)
+        {
             return;
         }
-        let Some(store) = self.store(owner, true, 1, false) else { return };
+        let Some(store) = self.store(owner, true, 1, false) else {
+            return;
+        };
         if !rebinds.is_empty() {
             let mut copies = Vec::new();
             for x in &rebinds {
-                let hint = self.locals.get(x.0 as usize).map_or_else(|| "v".to_string(), |l| l.hint.clone());
+                let hint = self
+                    .locals
+                    .get(x.0 as usize)
+                    .map_or_else(|| "v".to_string(), |l| l.hint.clone());
                 let h = self.new_local(&hint);
                 self.made_local(h, at);
                 self.facts.assigned.insert(h);
@@ -966,17 +1174,36 @@ impl Lifter<'_> {
             }
             self.add_upvalues(owner, &copies);
             // Declared where the closure is made, before it.
-            let decl = Stmt { line: at.line, kind: StmtKind::Local { locals: copies.clone(), values: Vec::new() } };
+            let decl = Stmt {
+                line: at.line,
+                kind: StmtKind::Local {
+                    locals: copies.clone(),
+                    values: Vec::new(),
+                },
+            };
             if let Some(frame) = self.frames.get_mut(at.frame) {
                 frame.inserts.push((at.pos, decl));
             }
             // Inside the block, the variables mean their copies.
-            let map: HashMap<LocalId, LocalId> = rebinds.iter().copied().zip(copies.iter().copied()).collect();
+            let map: HashMap<LocalId, LocalId> = rebinds
+                .iter()
+                .copied()
+                .zip(copies.iter().copied())
+                .collect();
             rewrite_block(&mut f.body, &|l| map.get(l).map(|h| Expr::Local(*h)), false);
             // Assigned right before the statement that holds the block.
-            let copy = StmtKind::Assign { targets: copies.iter().map(|h| Place::Local(*h)).collect(), values: rebinds.iter().map(|x| Expr::Local(*x)).collect() };
+            let copy = StmtKind::Assign {
+                targets: copies.iter().map(|h| Place::Local(*h)).collect(),
+                values: rebinds.iter().map(|x| Expr::Local(*x)).collect(),
+            };
             if let Some(frame) = self.frames.last_mut() {
-                frame.inserts.push((frame.cur, Stmt { line: frame.cur_line, kind: copy }));
+                frame.inserts.push((
+                    frame.cur,
+                    Stmt {
+                        line: frame.cur_line,
+                        kind: copy,
+                    },
+                ));
             }
         }
         let value = std::mem::replace(e, Expr::Nil);
@@ -996,7 +1223,10 @@ impl Lifter<'_> {
     /// file's other top-level locals).
     fn store(&mut self, owner: usize, own: bool, count: usize, force: bool) -> Option<Store> {
         let info = self.fns.get(owner)?;
-        let own = own && info.own_locals + count <= OWN_LOCALS && info.locals_fit(count) && self.upvalues_fit(owner, &[], count);
+        let own = own
+            && info.own_locals + count <= OWN_LOCALS
+            && info.locals_fit(count)
+            && self.upvalues_fit(owner, &[], count);
         let store = if own {
             Store::Own
         } else {
@@ -1021,7 +1251,14 @@ impl Lifter<'_> {
                 }
                 // Declared first in the body of that function (`function`).
                 if let Some(frame) = self.frames.iter().position(|f| f.fn_depth == t + 1) {
-                    self.made_local(id, Decl { frame, pos: 0, line: 0 });
+                    self.made_local(
+                        id,
+                        Decl {
+                            frame,
+                            pos: 0,
+                            line: 0,
+                        },
+                    );
                 }
             }
             let id = self.fns.get(t).and_then(|i| i.table);
@@ -1045,7 +1282,11 @@ impl Lifter<'_> {
     /// locals of `owner` as upvalues.
     fn upvalues_fit(&self, owner: usize, known: &[LocalId], new: usize) -> bool {
         self.fns.iter().skip(owner + 1).all(|f| {
-            let more = known.iter().filter(|l| !f.added_upvalues.contains(l)).count() + new;
+            let more = known
+                .iter()
+                .filter(|l| !f.added_upvalues.contains(l))
+                .count()
+                + new;
             f.upvalues + f.added_upvalues.len() + more <= UPVALUES_BUDGET
         })
     }
@@ -1059,11 +1300,21 @@ impl Lifter<'_> {
     /// Stores a closure in the table of the function at index `t` of
     /// [`Self::fns`], at `at`; returns the expression that reads it.
     fn make_in_table(&mut self, value: Expr, line: u32, t: usize, at: Decl) -> Expr {
-        let Some(info) = self.fns.get_mut(t) else { return value };
-        let Some(table) = info.table else { return value };
+        let Some(info) = self.fns.get_mut(t) else {
+            return value;
+        };
+        let Some(table) = info.table else {
+            return value;
+        };
         info.slots += 1;
         let key = Expr::Number(info.slots as f64);
-        let stmt = Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Index(Expr::Local(table), key.clone())], values: vec![value] } };
+        let stmt = Stmt {
+            line,
+            kind: StmtKind::Assign {
+                targets: vec![Place::Index(Expr::Local(table), key.clone())],
+                values: vec![value],
+            },
+        };
         if let Some(frame) = self.frames.get_mut(at.frame) {
             if frame.cur_is_hoist {
                 frame.defs_inserts.push((frame.cur, stmt));
@@ -1078,7 +1329,11 @@ impl Lifter<'_> {
     /// [`Self::fns`], declared at `at`; returns the expression that reads
     /// it.
     fn make_in_local(&mut self, value: Expr, line: u32, owner: usize, at: Decl) -> Expr {
-        let hint = if matches!(&value, Expr::Function(f) if f.transient) { "block" } else { "try" };
+        let hint = if matches!(&value, Expr::Function(f) if f.transient) {
+            "block"
+        } else {
+            "try"
+        };
         let h = self.new_local(hint);
         if let Some(info) = self.fns.get_mut(owner) {
             info.own_locals += 1;
@@ -1088,12 +1343,33 @@ impl Lifter<'_> {
         self.made_local(h, at);
         if let Some(frame) = self.frames.get_mut(at.frame) {
             if frame.cur_is_hoist {
-                let decl = Stmt { line: at.line, kind: StmtKind::Local { locals: vec![h], values: Vec::new() } };
+                let decl = Stmt {
+                    line: at.line,
+                    kind: StmtKind::Local {
+                        locals: vec![h],
+                        values: Vec::new(),
+                    },
+                };
                 frame.inserts.push((at.pos, decl));
-                let def = Stmt { line, kind: StmtKind::Assign { targets: vec![Place::Local(h)], values: vec![value] } };
+                let def = Stmt {
+                    line,
+                    kind: StmtKind::Assign {
+                        targets: vec![Place::Local(h)],
+                        values: vec![value],
+                    },
+                };
                 frame.defs_inserts.push((frame.cur, def));
             } else {
-                frame.inserts.push((at.pos, Stmt { line, kind: StmtKind::Local { locals: vec![h], values: vec![value] } }));
+                frame.inserts.push((
+                    at.pos,
+                    Stmt {
+                        line,
+                        kind: StmtKind::Local {
+                            locals: vec![h],
+                            values: vec![value],
+                        },
+                    },
+                ));
             }
         }
         Expr::Local(h)

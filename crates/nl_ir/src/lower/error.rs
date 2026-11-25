@@ -71,7 +71,11 @@ impl Lowerer<'_> {
     /// True when the innermost loop is outside the innermost region, so
     /// that `break` and `continue` must leave the region by status code.
     pub(crate) fn loop_outside_region(&self) -> bool {
-        self.fns.last().is_some_and(|f| f.regions.last().is_some_and(|r| f.loops.len() <= r.loop_base))
+        self.fns.last().is_some_and(|f| {
+            f.regions
+                .last()
+                .is_some_and(|r| f.loops.len() <= r.loop_base)
+        })
     }
 
     fn region_mut(&mut self) -> Option<&mut Region> {
@@ -107,7 +111,15 @@ impl Lowerer<'_> {
         let saved = std::mem::take(&mut self.stmts);
         f(self);
         let stmts = std::mem::replace(&mut self.stmts, saved);
-        Expr::Function(Box::new(Function { params, vararg: false, body: Block::new(stmts), line, name: Some("try".to_string()), method: false, transient: false }))
+        Expr::Function(Box::new(Function {
+            params,
+            vararg: false,
+            body: Block::new(stmts),
+            line,
+            name: Some("try".to_string()),
+            method: false,
+            transient: false,
+        }))
     }
 
     /// A block of the region that yields the construct's value: `return
@@ -125,7 +137,10 @@ impl Lowerer<'_> {
             }
         } else if value_used {
             let v = self.new_local("value");
-            self.emit(StmtKind::Local { locals: vec![v], values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals: vec![v],
+                values: Vec::new(),
+            });
             if let Some(b) = &block {
                 let inner = self.lower_block(b, Tail::Assign(v));
                 self.emit(StmtKind::Do(inner));
@@ -146,10 +161,17 @@ impl Lowerer<'_> {
         let all_values = matches!(tail, Tail::Return | Tail::Yield);
         let loop_base = self.fns.last().map_or(0, |f| f.loops.len());
         if let Some(f) = self.fns.last_mut() {
-            f.regions.push(Region { loop_base, has_return: false, has_break: false, has_continue: false });
+            f.regions.push(Region {
+                loop_base,
+                has_return: false,
+                has_break: false,
+                has_continue: false,
+            });
         }
 
-        let body = self.region_closure(Vec::new(), |l| l.region_block(block(node), value_used, all_values));
+        let body = self.region_closure(Vec::new(), |l| {
+            l.region_block(block(node), value_used, all_values)
+        });
 
         let catches: Vec<SyntaxNode> = children(node, CATCH_CLAUSE).collect();
         let catch = if catches.is_empty() {
@@ -173,7 +195,11 @@ impl Lowerer<'_> {
                         }
                         l.region_block(block(c), value_used, all_values);
                     });
-                    l.emit(StmtKind::If { cond: test, then: clause, otherwise: None });
+                    l.emit(StmtKind::If {
+                        cond: test,
+                        then: clause,
+                        otherwise: None,
+                    });
                 }
                 l.emit(StmtKind::Return(vec![Expr::str("u")]));
             }))
@@ -187,19 +213,46 @@ impl Lowerer<'_> {
             None => None,
         };
 
-        let region = self.fns.last_mut().and_then(|f| f.regions.pop()).unwrap_or(Region {
-            loop_base,
-            has_return: false,
-            has_break: false,
-            has_continue: false,
-        });
+        let region = self
+            .fns
+            .last_mut()
+            .and_then(|f| f.regions.pop())
+            .unwrap_or(Region {
+                loop_base,
+                has_return: false,
+                has_break: false,
+                has_continue: false,
+            });
         // The calls carry the line of the `try` (the catch clauses moved
         // `self.line` on).
         self.line = try_line;
-        let arity = if self.packed_try { None } else { Arity::of(&[Some(&body), catch.as_ref()], finally.as_ref()) };
+        let arity = if self.packed_try {
+            None
+        } else {
+            Arity::of(&[Some(&body), catch.as_ref()], finally.as_ref())
+        };
         match arity {
-            Some(arity) => self.try_inline(node, tail, &region, arity, [body, catch.unwrap_or(Expr::Nil), finally.unwrap_or(Expr::Nil)]),
-            None => self.try_packed(node, tail, &region, [body, catch.unwrap_or(Expr::Nil), finally.unwrap_or(Expr::Nil)]),
+            Some(arity) => self.try_inline(
+                node,
+                tail,
+                &region,
+                arity,
+                [
+                    body,
+                    catch.unwrap_or(Expr::Nil),
+                    finally.unwrap_or(Expr::Nil),
+                ],
+            ),
+            None => self.try_packed(
+                node,
+                tail,
+                &region,
+                [
+                    body,
+                    catch.unwrap_or(Expr::Nil),
+                    finally.unwrap_or(Expr::Nil),
+                ],
+            ),
         }
     }
 
@@ -215,11 +268,20 @@ impl Lowerer<'_> {
     /// status code: the outcome stays in locals (see the module
     /// documentation). `closures` are the body, the catch function and
     /// the `finally` function, the last two possibly nil.
-    fn try_inline(&mut self, node: &SyntaxNode, tail: Tail, region: &Region, arity: Arity, closures: [Expr; 3]) {
+    fn try_inline(
+        &mut self,
+        node: &SyntaxNode,
+        tail: Tail,
+        region: &Region,
+        arity: Arity,
+        closures: [Expr; 3],
+    ) {
         let [body, catch, finally] = closures;
         let ok = self.new_local("ok");
         let code = self.new_local("code");
-        let vals: Vec<LocalId> = (0..arity.n.max(arity.r)).map(|_| self.new_local("v")).collect();
+        let vals: Vec<LocalId> = (0..arity.n.max(arity.r))
+            .map(|_| self.new_local("v"))
+            .collect();
         let outcome = |count: usize| -> Vec<Place> {
             let mut t = vec![Place::Local(ok), Place::Local(code)];
             t.extend(vals.iter().map(|v| Place::Local(*v)));
@@ -229,39 +291,74 @@ impl Lowerer<'_> {
         let mut locals = vec![ok, code];
         locals.extend(vals.iter().copied());
         let outcome_values = || -> Vec<Expr> { locals.iter().map(|l| Expr::Local(*l)).collect() };
-        self.emit(StmtKind::Local { locals: locals.clone(), values: vec![Self::protected_call(body, Vec::new())] });
+        self.emit(StmtKind::Local {
+            locals: locals.clone(),
+            values: vec![Self::protected_call(body, Vec::new())],
+        });
         if let Expr::Function(mut c) = catch {
             // No clause matched: the error goes on, raised again.
             if let (Some(&e), Some(last)) = (c.params.first(), c.body.stmts.last_mut()) {
-                if matches!(&last.kind, StmtKind::Return(v) if matches!(v.as_slice(), [Expr::Str(s)] if s.as_slice() == b"u")) {
-                    last.kind = StmtKind::Expr(Expr::intrinsic_call("rethrow", vec![Expr::Local(e)]));
+                if matches!(&last.kind, StmtKind::Return(v) if matches!(v.as_slice(), [Expr::Str(s)] if s.as_slice() == b"u"))
+                {
+                    last.kind =
+                        StmtKind::Expr(Expr::intrinsic_call("rethrow", vec![Expr::Local(e)]));
                 }
             }
             let then = self.sub_block(|l| {
                 let call = Self::protected_call(Expr::Function(c), vec![Expr::Local(code)]);
-                l.emit(StmtKind::Assign { targets: outcome(usize::MAX), values: vec![call] });
+                l.emit(StmtKind::Assign {
+                    targets: outcome(usize::MAX),
+                    values: vec![call],
+                });
             });
-            self.emit(StmtKind::If { cond: Expr::lnot(Expr::Local(ok)), then, otherwise: None });
+            self.emit(StmtKind::If {
+                cond: Expr::lnot(Expr::Local(ok)),
+                then,
+                otherwise: None,
+            });
         }
         if let Expr::Function(mut f) = finally {
             // The closure is given the outcome and returns it when it ends
             // normally, raising a pending error again.
-            let hints: Vec<String> = locals.iter().map(|l| self.locals.get(l.0 as usize).map_or_else(String::new, |i| i.hint.clone())).collect();
+            let hints: Vec<String> = locals
+                .iter()
+                .map(|l| {
+                    self.locals
+                        .get(l.0 as usize)
+                        .map_or_else(String::new, |i| i.hint.clone())
+                })
+                .collect();
             let params: Vec<LocalId> = hints.iter().map(|h| self.new_local(h)).collect();
             pass_outcome(&mut f.body, &params);
             f.params = params;
             let call = Self::protected_call(Expr::Function(f), outcome_values());
-            self.emit(StmtKind::Assign { targets: outcome(usize::MAX), values: vec![call] });
+            self.emit(StmtKind::Assign {
+                targets: outcome(usize::MAX),
+                values: vec![call],
+            });
         }
-        let raise = self.sub_block(|l| l.emit(StmtKind::Expr(Expr::intrinsic_call("rethrow", vec![Expr::Local(code)]))));
-        self.emit(StmtKind::If { cond: Expr::lnot(Expr::Local(ok)), then: raise, otherwise: None });
+        let raise = self.sub_block(|l| {
+            l.emit(StmtKind::Expr(Expr::intrinsic_call(
+                "rethrow",
+                vec![Expr::Local(code)],
+            )))
+        });
+        self.emit(StmtKind::If {
+            cond: Expr::lnot(Expr::Local(ok)),
+            then: raise,
+            otherwise: None,
+        });
 
-        let values = |k: usize| -> Vec<Expr> { vals.iter().take(k).map(|v| Expr::Local(*v)).collect() };
+        let values =
+            |k: usize| -> Vec<Expr> { vals.iter().take(k).map(|v| Expr::Local(*v)).collect() };
         let code_is = |c: &str| Expr::binary(BinOp::Eq, Expr::Local(code), Expr::str(c));
         self.carry_out(node, region, code_is, || values(arity.r));
         match tail {
             Tail::Discard => {}
-            Tail::Assign(t) => self.emit(StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![values(1).pop().unwrap_or(Expr::Nil)] }),
+            Tail::Assign(t) => self.emit(StmtKind::Assign {
+                targets: vec![Place::Local(t)],
+                values: vec![values(1).pop().unwrap_or(Expr::Nil)],
+            }),
             Tail::Return => self.emit_return(values(arity.n)),
             Tail::Yield => {
                 let mut all = vec![Expr::str("n")];
@@ -276,13 +373,25 @@ impl Lowerer<'_> {
     fn try_packed(&mut self, node: &SyntaxNode, tail: Tail, region: &Region, closures: [Expr; 3]) {
         let r = self.fresh_temp(Expr::intrinsic_call("try", closures.into()), "result");
         let code = Expr::index(Expr::Local(r), Expr::Number(2.0));
-        let values = || Expr::intrinsic_call("unpack", vec![Expr::Local(r), Expr::Number(3.0), Expr::index(Expr::Local(r), Expr::str("n"))]);
+        let values = || {
+            Expr::intrinsic_call(
+                "unpack",
+                vec![
+                    Expr::Local(r),
+                    Expr::Number(3.0),
+                    Expr::index(Expr::Local(r), Expr::str("n")),
+                ],
+            )
+        };
         let code_is = |c: &str| Expr::binary(BinOp::Eq, code.clone(), Expr::str(c));
         self.carry_out(node, region, code_is, || vec![values()]);
         let value = Expr::index(Expr::Local(r), Expr::Number(3.0));
         match tail {
             Tail::Discard => {}
-            Tail::Assign(t) => self.emit(StmtKind::Assign { targets: vec![Place::Local(t)], values: vec![value] }),
+            Tail::Assign(t) => self.emit(StmtKind::Assign {
+                targets: vec![Place::Local(t)],
+                values: vec![value],
+            }),
             Tail::Return => self.emit_return(vec![values()]),
             Tail::Yield => self.emit(StmtKind::Return(vec![Expr::str("n"), values()])),
         }
@@ -290,18 +399,36 @@ impl Lowerer<'_> {
 
     /// Carries out a `return`, `break` or `continue` that left the region,
     /// by its status code.
-    fn carry_out(&mut self, node: &SyntaxNode, region: &Region, code_is: impl Fn(&str) -> Expr, returned: impl Fn() -> Vec<Expr>) {
+    fn carry_out(
+        &mut self,
+        node: &SyntaxNode,
+        region: &Region,
+        code_is: impl Fn(&str) -> Expr,
+        returned: impl Fn() -> Vec<Expr>,
+    ) {
         if region.has_return {
             let then = self.sub_block(|l| l.lower_return_values(node, returned()));
-            self.emit(StmtKind::If { cond: code_is("r"), then, otherwise: None });
+            self.emit(StmtKind::If {
+                cond: code_is("r"),
+                then,
+                otherwise: None,
+            });
         }
         if region.has_break {
             let then = self.sub_block(|l| l.lower_break(node));
-            self.emit(StmtKind::If { cond: code_is("b"), then, otherwise: None });
+            self.emit(StmtKind::If {
+                cond: code_is("b"),
+                then,
+                otherwise: None,
+            });
         }
         if region.has_continue {
             let then = self.sub_block(|l| l.lower_continue(node));
-            self.emit(StmtKind::If { cond: code_is("c"), then, otherwise: None });
+            self.emit(StmtKind::If {
+                cond: code_is("c"),
+                then,
+                otherwise: None,
+            });
         }
     }
 }
@@ -324,7 +451,11 @@ impl Arity {
         let mut n: Option<usize> = None;
         let mut r: Option<usize> = None;
         let mut fixed = true;
-        let all = closures.iter().flatten().map(|c| (*c, false)).chain(finally.map(|f| (f, true)));
+        let all = closures
+            .iter()
+            .flatten()
+            .map(|c| (*c, false))
+            .chain(finally.map(|f| (f, true)));
         for (c, is_finally) in all {
             let Expr::Function(f) = c else { return None };
             returns(&f.body, &mut |vals| {
@@ -344,7 +475,10 @@ impl Arity {
                 }
             });
         }
-        fixed.then(|| Arity { n: n.unwrap_or(0), r: r.unwrap_or(0) })
+        fixed.then(|| Arity {
+            n: n.unwrap_or(0),
+            r: r.unwrap_or(0),
+        })
     }
 }
 
@@ -352,7 +486,9 @@ impl Arity {
 /// last one can give any number.
 fn value_count(vals: &[Expr]) -> Option<usize> {
     match vals.last() {
-        Some(Expr::Call(f, _)) if matches!(f.as_ref(), Expr::Intrinsic(name) if SINGLE_RESULT_INTRINSICS.contains(name)) => Some(vals.len()),
+        Some(Expr::Call(f, _)) if matches!(f.as_ref(), Expr::Intrinsic(name) if SINGLE_RESULT_INTRINSICS.contains(name)) => {
+            Some(vals.len())
+        }
         Some(e) if e.is_multi() => None,
         _ => Some(vals.len()),
     }
@@ -366,17 +502,39 @@ fn pass_outcome(b: &mut Block, params: &[LocalId]) {
     for s in &mut b.stmts {
         let line = s.line;
         match &mut s.kind {
-            StmtKind::Return(vals) if matches!(vals.as_slice(), [Expr::Str(c)] if c.as_slice() == b"n") => {
+            StmtKind::Return(vals) if matches!(vals.as_slice(), [Expr::Str(c)] if c.as_slice() == b"n") =>
+            {
                 let mut stmts = Vec::new();
                 if let Some((&ok, rest)) = params.split_first() {
-                    let raise = Block::new(vec![Stmt { line, kind: StmtKind::Expr(Expr::intrinsic_call("rethrow", rest.first().map(|c| Expr::Local(*c)).into_iter().collect())) }]);
-                    stmts.push(Stmt { line, kind: StmtKind::If { cond: Expr::lnot(Expr::Local(ok)), then: raise, otherwise: None } });
-                    stmts.push(Stmt { line, kind: StmtKind::Return(rest.iter().map(|p| Expr::Local(*p)).collect()) });
+                    let raise = Block::new(vec![Stmt {
+                        line,
+                        kind: StmtKind::Expr(Expr::intrinsic_call(
+                            "rethrow",
+                            rest.first().map(|c| Expr::Local(*c)).into_iter().collect(),
+                        )),
+                    }]);
+                    stmts.push(Stmt {
+                        line,
+                        kind: StmtKind::If {
+                            cond: Expr::lnot(Expr::Local(ok)),
+                            then: raise,
+                            otherwise: None,
+                        },
+                    });
+                    stmts.push(Stmt {
+                        line,
+                        kind: StmtKind::Return(rest.iter().map(|p| Expr::Local(*p)).collect()),
+                    });
                 }
                 s.kind = StmtKind::Do(Block::new(stmts));
             }
-            StmtKind::Do(b) | StmtKind::While { body: b, .. } | StmtKind::NumericFor { body: b, .. } | StmtKind::GenericFor { body: b, .. } => pass_outcome(b, params),
-            StmtKind::If { then, otherwise, .. } => {
+            StmtKind::Do(b)
+            | StmtKind::While { body: b, .. }
+            | StmtKind::NumericFor { body: b, .. }
+            | StmtKind::GenericFor { body: b, .. } => pass_outcome(b, params),
+            StmtKind::If {
+                then, otherwise, ..
+            } => {
                 pass_outcome(then, params);
                 if let Some(o) = otherwise {
                     pass_outcome(o, params);
@@ -397,8 +555,13 @@ fn returns(b: &Block, f: &mut dyn FnMut(&[Expr])) {
     for s in &b.stmts {
         match &s.kind {
             StmtKind::Return(vals) => f(vals),
-            StmtKind::Do(b) | StmtKind::While { body: b, .. } | StmtKind::NumericFor { body: b, .. } | StmtKind::GenericFor { body: b, .. } => returns(b, f),
-            StmtKind::If { then, otherwise, .. } => {
+            StmtKind::Do(b)
+            | StmtKind::While { body: b, .. }
+            | StmtKind::NumericFor { body: b, .. }
+            | StmtKind::GenericFor { body: b, .. } => returns(b, f),
+            StmtKind::If {
+                then, otherwise, ..
+            } => {
                 returns(then, f);
                 if let Some(o) = otherwise {
                     returns(o, f);
@@ -408,7 +571,12 @@ fn returns(b: &Block, f: &mut dyn FnMut(&[Expr])) {
                 returns(defs, f);
                 returns(rest, f);
             }
-            StmtKind::Local { .. } | StmtKind::Assign { .. } | StmtKind::Expr(_) | StmtKind::Break | StmtKind::Goto(_) | StmtKind::Label(_) => {}
+            StmtKind::Local { .. }
+            | StmtKind::Assign { .. }
+            | StmtKind::Expr(_)
+            | StmtKind::Break
+            | StmtKind::Goto(_)
+            | StmtKind::Label(_) => {}
         }
     }
 }

@@ -650,7 +650,10 @@ impl SyntaxKind {
 
     /// `LNAME`, `CNAME` or `ONAME`.
     pub const fn is_name(self) -> bool {
-        matches!(self, SyntaxKind::LNAME | SyntaxKind::CNAME | SyntaxKind::ONAME)
+        matches!(
+            self,
+            SyntaxKind::LNAME | SyntaxKind::CNAME | SyntaxKind::ONAME
+        )
     }
 
     /// `STRING`, `STR_BEGIN`, `STR_MID` or `STR_END`.

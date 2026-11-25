@@ -30,12 +30,18 @@ pub fn locate(files: &Files, doc: &Doc, sym: &Symbol) -> Option<Location> {
                     return Some(loc);
                 }
             }
-            Some(Location::new(doc.uri()?, doc.lines.range(&doc.text, b.range)))
+            Some(Location::new(
+                doc.uri()?,
+                doc.lines.range(&doc.text, b.range),
+            ))
         }
         Symbol::Export { import, name } => {
             let (other, id) = export_target(files, doc, *import, name)?;
             let b = other.res.binding(id)?;
-            Some(Location::new(other.uri()?, other.lines.range(&other.text, b.range)))
+            Some(Location::new(
+                other.uri()?,
+                other.lines.range(&other.text, b.range),
+            ))
         }
         Symbol::Declared(id) => decl_location(files, doc, *id, None),
         Symbol::Member { owner, name } => {
@@ -43,7 +49,10 @@ pub fn locate(files: &Files, doc: &Doc, sym: &Symbol) -> Option<Location> {
                 return Some(Location::new(doc.uri()?, doc.lines.range(&doc.text, r)));
             }
             let (id, m) = doc.decl_member_node(*owner, name)?;
-            let range = child(&m, NAME).or_else(|| child(&m, OP_NAME)).map(|n| n.text_range()).unwrap_or_else(|| trimmed_range(&m));
+            let range = child(&m, NAME)
+                .or_else(|| child(&m, OP_NAME))
+                .map(|n| n.text_range())
+                .unwrap_or_else(|| trimmed_range(&m));
             decl_location(files, doc, id, Some(range))
         }
         Symbol::Prelude(p) => {
@@ -55,13 +64,21 @@ pub fn locate(files: &Files, doc: &Doc, sym: &Symbol) -> Option<Location> {
 
 /// A location in the declaration file of item `id`: the given range, or
 /// the item's declaring name.
-fn decl_location(files: &Files, doc: &Doc, id: DeclId, range: Option<TextRange>) -> Option<Location> {
+fn decl_location(
+    files: &Files,
+    doc: &Doc,
+    id: DeclId,
+    range: Option<TextRange>,
+) -> Option<Location> {
     let item = doc.decls.get(id)?;
     // The one place a copy of an embedded declaration file is written.
     let path = decl_file_path(files, &item.file, true)?;
     let text = doc.decl_texts.get(&item.file)?;
     let lines = LineMap::new(text);
-    Some(Location::new(path_to_uri(&path)?, lines.range(text, range.unwrap_or(item.range))))
+    Some(Location::new(
+        path_to_uri(&path)?,
+        lines.range(text, range.unwrap_or(item.range)),
+    ))
 }
 
 /// The export an import binding takes its name from, in the exporting

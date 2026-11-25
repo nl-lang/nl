@@ -16,7 +16,12 @@
 //! The rejected programs are covered by `conformance.rs` and by the
 //! resolver's and analyzer's own tests (`crates/nl_sema/src/tests.rs`).
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -33,10 +38,25 @@ fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
     let table: &[(&str, &[&str])] = &[
         // `typeof(label)` calls `label` with nothing, on purpose there.
         ("call_autocall_argument", &["autocall-argument"]),
-        ("conv_builtin", &["unused-binding", "unused-binding", "unused-binding"]),
+        (
+            "conv_builtin",
+            &["unused-binding", "unused-binding", "unused-binding"],
+        ),
         ("conv_custom", &["unused-binding"]),
-        ("ctrl_if_let", &["unused-binding", "unused-binding", "unused-binding"]),
-        ("err_builtin", &["unused-binding", "unused-binding", "unused-binding", "unused-binding", "unused-binding"]),
+        (
+            "ctrl_if_let",
+            &["unused-binding", "unused-binding", "unused-binding"],
+        ),
+        (
+            "err_builtin",
+            &[
+                "unused-binding",
+                "unused-binding",
+                "unused-binding",
+                "unused-binding",
+                "unused-binding",
+            ],
+        ),
         ("expr_compare_logic", &["unused-binding", "unused-binding"]),
         ("expr_ranges", &["unused-binding", "unused-binding"]),
         ("fn_return", &["unused-binding"]),
@@ -61,17 +81,29 @@ fn expected() -> BTreeMap<&'static str, Vec<&'static str>> {
         // A top-level `try` is a statement the worker runs again.
         ("worker_try_decls", &["spawn-loads-file"; 3]),
     ];
-    table.iter().map(|(name, codes)| (*name, codes.to_vec())).collect()
+    table
+        .iter()
+        .map(|(name, codes)| (*name, codes.to_vec()))
+        .collect()
 }
 
 /// The diagnostics `nlc check` printed for one file: (severity, code).
 fn check(nlc: &Path, dir: &Path, rel: &Path) -> Vec<(String, String)> {
-    let out = Command::new(nlc).current_dir(dir).env_remove("NL_PATH").args(["check", "--decl", "decl"]).arg(rel).output().expect("cannot start nlc");
+    let out = Command::new(nlc)
+        .current_dir(dir)
+        .env_remove("NL_PATH")
+        .args(["check", "--decl", "decl"])
+        .arg(rel)
+        .output()
+        .expect("cannot start nlc");
     let text = String::from_utf8_lossy(&out.stderr);
     text.lines()
         // The snippet under each diagnostic (`  |`, `12 | source`, `   |   ^^^`)
         // is not a diagnostic: its gutter is a line number or nothing.
-        .filter(|l| !l.split_once(" |").is_some_and(|(gutter, _)| gutter.trim().chars().all(|c| c.is_ascii_digit())))
+        .filter(|l| {
+            !l.split_once(" |")
+                .is_some_and(|(gutter, _)| gutter.trim().chars().all(|c| c.is_ascii_digit()))
+        })
         .filter_map(|l| {
             // `file:line:col: severity: message [code]`
             let rest = l.splitn(4, ':').nth(3)?.trim_start();
@@ -87,9 +119,18 @@ fn conformance_programs_check_as_expected() {
     let dir = std::fs::canonicalize(run_dir()).unwrap();
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
     let expected = expected();
-    let mut programs: Vec<PathBuf> = std::fs::read_dir(&dir).unwrap().filter_map(Result::ok).map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "nl") && p.with_extension("out").exists()).collect();
+    let mut programs: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "nl") && p.with_extension("out").exists())
+        .collect();
     programs.sort();
-    assert!(programs.len() >= 100, "expected the conformance corpus under {}", dir.display());
+    assert!(
+        programs.len() >= 100,
+        "expected the conformance corpus under {}",
+        dir.display()
+    );
     let mut failures = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
     for path in &programs {
@@ -113,10 +154,17 @@ fn conformance_programs_check_as_expected() {
     }
     for name in expected.keys() {
         if !seen.contains(*name) {
-            failures.push(format!("{name}: listed as expected to warn, but there is no such program"));
+            failures.push(format!(
+                "{name}: listed as expected to warn, but there is no such program"
+            ));
         }
     }
-    assert!(failures.is_empty(), "{} program(s) differ from the expected diagnostics:\n{}", failures.len(), failures.join("\n"));
+    assert!(
+        failures.is_empty(),
+        "{} program(s) differ from the expected diagnostics:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
 }
 
 /// Each diagnostic of `nlc check` is its one-line form, then the source
@@ -128,18 +176,59 @@ fn conformance_programs_check_as_expected() {
 fn diagnostics_show_snippets() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cases");
     let nlc = PathBuf::from(env!("CARGO_BIN_EXE_nlc"));
-    let out = Command::new(&nlc).current_dir(&dir).env_remove("NL_PATH").args(["check", "lib/snippet_errors.nl"]).output().expect("cannot start nlc");
+    let out = Command::new(&nlc)
+        .current_dir(&dir)
+        .env_remove("NL_PATH")
+        .args(["check", "lib/snippet_errors.nl"])
+        .output()
+        .expect("cannot start nlc");
     let text = String::from_utf8_lossy(&out.stderr);
     let lines: Vec<&str> = text.lines().collect();
     assert_eq!(lines.len(), 8, "{text}");
-    assert!(lines[0].starts_with("lib/snippet_errors.nl:4:13: error: `missing` is not declared") && lines[0].ends_with(" [undeclared-name]"), "{text}");
-    assert_eq!(lines[1..4], ["  |", "4 | print(  \"é\", missing)", "  |              ^^^^^^^"], "{text}");
-    assert!(lines[4].starts_with("lib/snippet_errors.nl:6:3: error: `also_missing` is not declared"), "{text}");
-    assert_eq!(lines[5..8], ["  |", "6 |   also_missing", "  |   ^^^^^^^^^^^^"], "{text}");
+    assert!(
+        lines[0].starts_with("lib/snippet_errors.nl:4:13: error: `missing` is not declared")
+            && lines[0].ends_with(" [undeclared-name]"),
+        "{text}"
+    );
+    assert_eq!(
+        lines[1..4],
+        [
+            "  |",
+            "4 | print(  \"é\", missing)",
+            "  |              ^^^^^^^"
+        ],
+        "{text}"
+    );
+    assert!(
+        lines[4].starts_with("lib/snippet_errors.nl:6:3: error: `also_missing` is not declared"),
+        "{text}"
+    );
+    assert_eq!(
+        lines[5..8],
+        ["  |", "6 |   also_missing", "  |   ^^^^^^^^^^^^"],
+        "{text}"
+    );
 
-    let out = Command::new(&nlc).current_dir(&dir).env_remove("NL_PATH").args(["run", "lib/snippet_errors.nl"]).output().expect("cannot start nlc");
+    let out = Command::new(&nlc)
+        .current_dir(&dir)
+        .env_remove("NL_PATH")
+        .args(["run", "lib/snippet_errors.nl"])
+        .output()
+        .expect("cannot start nlc");
     let text = String::from_utf8_lossy(&out.stderr);
     let lines: Vec<&str> = text.lines().collect();
-    assert!(lines[0].starts_with("lib/snippet_errors.nl:4:13: `missing` is not declared") && lines[0].ends_with("(and 1 more error)"), "{text}");
-    assert_eq!(lines[1..], ["  |", "4 | print(  \"é\", missing)", "  |              ^^^^^^^"], "{text}");
+    assert!(
+        lines[0].starts_with("lib/snippet_errors.nl:4:13: `missing` is not declared")
+            && lines[0].ends_with("(and 1 more error)"),
+        "{text}"
+    );
+    assert_eq!(
+        lines[1..],
+        [
+            "  |",
+            "4 | print(  \"é\", missing)",
+            "  |              ^^^^^^^"
+        ],
+        "{text}"
+    );
 }

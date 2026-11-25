@@ -13,10 +13,32 @@ use crate::proto::{KTabValue, KTable};
 /// backend decides (`nl_luagen`).
 fn is_lua_identifier(s: &[u8]) -> bool {
     const KEYWORDS: &[&[u8]] = &[
-        b"and", b"break", b"do", b"else", b"elseif", b"end", b"false", b"for", b"function", b"goto", b"if", b"in", b"local",
-        b"nil", b"not", b"or", b"repeat", b"return", b"then", b"true", b"until", b"while",
+        b"and",
+        b"break",
+        b"do",
+        b"else",
+        b"elseif",
+        b"end",
+        b"false",
+        b"for",
+        b"function",
+        b"goto",
+        b"if",
+        b"in",
+        b"local",
+        b"nil",
+        b"not",
+        b"or",
+        b"repeat",
+        b"return",
+        b"then",
+        b"true",
+        b"until",
+        b"while",
     ];
-    let Some((first, rest)) = s.split_first() else { return false };
+    let Some((first, rest)) = s.split_first() else {
+        return false;
+    };
     (first.is_ascii_alphabetic() || *first == b'_')
         && rest.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_')
         && !KEYWORDS.contains(&s)
@@ -24,7 +46,11 @@ fn is_lua_identifier(s: &[u8]) -> bool {
 
 /// The integer a number literal fits in `KSHORT`.
 fn short_int(n: f64) -> Option<i16> {
-    if n.fract() == 0.0 && n >= f64::from(i16::MIN) && n <= f64::from(i16::MAX) && !(n == 0.0 && n.is_sign_negative()) {
+    if n.fract() == 0.0
+        && n >= f64::from(i16::MIN)
+        && n <= f64::from(i16::MAX)
+        && !(n == 0.0 && n.is_sign_negative())
+    {
         Some(n as i16)
     } else {
         None
@@ -33,7 +59,11 @@ fn short_int(n: f64) -> Option<i16> {
 
 /// `checku8` on an integral number.
 fn byte_int(n: f64) -> Option<u8> {
-    if n.fract() == 0.0 && (0.0..=255.0).contains(&n) && !(n == 0.0 && n.is_sign_negative()) { Some(n as u8) } else { None }
+    if n.fract() == 0.0 && (0.0..=255.0).contains(&n) && !(n == 0.0 && n.is_sign_negative()) {
+        Some(n as u8)
+    } else {
+        None
+    }
 }
 
 /// `lj_vm_foldarith` for the operators the parser folds.
@@ -48,7 +78,11 @@ fn fold_arith(op: BinOp, x: f64, y: f64) -> Option<f64> {
         _ => return None,
     };
     // NaN and -0 are never constants.
-    if r.is_nan() || (r == 0.0 && r.is_sign_negative()) { None } else { Some(r) }
+    if r.is_nan() || (r == 0.0 && r.is_sign_negative()) {
+        None
+    } else {
+        Some(r)
+    }
 }
 
 /// The bit operator that a numeric intrinsic of nl_ir is at level 1:
@@ -231,7 +265,11 @@ impl Gen<'_> {
             let mut jfalse = NO_JMP;
             let mut jtrue = NO_JMP;
             if self.jmp_novalue(e.t) || self.jmp_novalue(e.f) {
-                let jval = if matches!(e.k, Kind::Jmp(_)) { NO_JMP } else { self.emit_jmp()? };
+                let jval = if matches!(e.k, Kind::Jmp(_)) {
+                    NO_JMP
+                } else {
+                    self.emit_jmp()?
+                };
                 jfalse = self.emit_ad(Op::KPRI, reg, bc::PRI_FALSE)?;
                 let a = self.fs().freereg;
                 self.emit_aj(Op::JMP, a, 1)?;
@@ -346,7 +384,11 @@ impl Gen<'_> {
             },
             Kind::Str(s) => {
                 let idx = self.const_str(s)?;
-                if idx <= bc::BCMAX_ABC { Key::Str(idx) } else { Key::Reg(self.toanyreg(key)?) }
+                if idx <= bc::BCMAX_ABC {
+                    Key::Str(idx)
+                } else {
+                    Key::Reg(self.toanyreg(key)?)
+                }
             }
             _ => Key::Reg(self.toanyreg(key)?),
         };
@@ -370,7 +412,10 @@ impl Gen<'_> {
         if let Kind::Reloc(pc) = e.k {
             let ip = self.ins_at(pc);
             if Op::from_ins(ip) == Some(Op::NOT) {
-                self.set_ins(pc, bc::ad(if cond { Op::ISF } else { Op::IST }, 0, bc::d_of(ip)));
+                self.set_ins(
+                    pc,
+                    bc::ad(if cond { Op::ISF } else { Op::IST }, 0, bc::d_of(ip)),
+                );
                 return self.emit_jmp();
             }
         }
@@ -546,7 +591,11 @@ impl Gen<'_> {
         let (mut a, mut b) = (e1, e2);
         let swapped;
         let ins: Ins = if matches!(op, BinOp::Eq | BinOp::Ne) {
-            let base = if op == BinOp::Eq { Op::ISEQV } else { Op::ISNEV } as u32;
+            let base = if op == BinOp::Eq {
+                Op::ISEQV
+            } else {
+                Op::ISNEV
+            } as u32;
             if a.is_k() {
                 std::mem::swap(&mut a, &mut b);
                 swapped = true;
@@ -556,7 +605,11 @@ impl Gen<'_> {
             let ra = self.toanyreg(a)?;
             self.toval(b)?;
             match &b.k {
-                Kind::Nil | Kind::False | Kind::True => bc::ad(Op::from_u8((base + 6) as u8).unwrap_or(Op::ISEQP), ra, b.pri()),
+                Kind::Nil | Kind::False | Kind::True => bc::ad(
+                    Op::from_u8((base + 6) as u8).unwrap_or(Op::ISEQP),
+                    ra,
+                    b.pri(),
+                ),
                 Kind::Str(s) => {
                     let k = self.const_str(s)?;
                     bc::ad(Op::from_u8((base + 2) as u8).unwrap_or(Op::ISEQS), ra, k)
@@ -660,7 +713,11 @@ impl Gen<'_> {
                 let merged = match e2.k {
                     Kind::Reloc(pc) => {
                         let ip = self.ins_at(pc);
-                        if Op::from_ins(ip) == Some(Op::CAT) { Some((pc, ip)) } else { None }
+                        if Op::from_ins(ip) == Some(Op::CAT) {
+                            Some((pc, ip))
+                        } else {
+                            None
+                        }
                     }
                     _ => None,
                 };
@@ -684,7 +741,9 @@ impl Gen<'_> {
                 }
                 Ok(())
             }
-            BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => self.comp(op, e1, e2),
+            BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
+                self.comp(op, e1, e2)
+            }
         }
     }
 
@@ -771,7 +830,9 @@ impl Gen<'_> {
                 }
                 self.call(f, &args.iter().collect::<Vec<_>>())
             }
-            Expr::MethodCall(o, name, args) if self.level >= 1 => self.lua_method_call(o, name, args),
+            Expr::MethodCall(o, name, args) if self.level >= 1 => {
+                self.lua_method_call(o, name, args)
+            }
             Expr::MethodCall(o, name, args) => {
                 // `rt.lmethod.name(o, args)` (nl_luagen).
                 let callee = Expr::index(Expr::Intrinsic("lmethod"), Expr::str(name));
@@ -821,8 +882,16 @@ impl Gen<'_> {
                 self.index(&mut t, &mut key)?;
                 Ok(t)
             }
-            Expr::MemberCall { receiver, key, args } if self.level >= 1 => self.member_call(receiver, key, args),
-            Expr::MemberCall { receiver, key, args } => match key.as_ref() {
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } if self.level >= 1 => self.member_call(receiver, key, args),
+            Expr::MemberCall {
+                receiver,
+                key,
+                args,
+            } => match key.as_ref() {
                 Expr::Str(k) if is_lua_identifier(k) => {
                     let callee = Expr::index(Expr::Intrinsic("member"), Expr::Str(k.clone()));
                     let mut all: Vec<&Expr> = vec![receiver];
@@ -835,10 +904,22 @@ impl Gen<'_> {
                     self.call(&Expr::Intrinsic("mcall"), &all)
                 }
             },
-            Expr::AutoGet { receiver, key } if self.level >= 1 && !multi => self.auto_get(receiver, key),
-            Expr::AutoGet { receiver, key } => self.call(&Expr::Intrinsic("mget"), &[receiver, key]),
-            Expr::MemberApply { func, receiver, args } if self.level >= 1 => self.member_apply(func, receiver, args),
-            Expr::MemberApply { func, receiver, args } => {
+            Expr::AutoGet { receiver, key } if self.level >= 1 && !multi => {
+                self.auto_get(receiver, key)
+            }
+            Expr::AutoGet { receiver, key } => {
+                self.call(&Expr::Intrinsic("mget"), &[receiver, key])
+            }
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } if self.level >= 1 => self.member_apply(func, receiver, args),
+            Expr::MemberApply {
+                func,
+                receiver,
+                args,
+            } => {
                 // `rt.mapply(f, x, args)` (nl_luagen).
                 let mut all: Vec<&Expr> = vec![func, receiver];
                 all.extend(args.iter());
@@ -976,7 +1057,11 @@ impl Gen<'_> {
     /// prints them (`0/0`, `1/0`, `-0`).
     fn number(&mut self, n: f64) -> R<Exp> {
         if n.is_nan() || n.is_infinite() {
-            let (a, b) = if n.is_nan() { (0.0, 0.0) } else { (if n > 0.0 { 1.0 } else { -1.0 }, 0.0) };
+            let (a, b) = if n.is_nan() {
+                (0.0, 0.0)
+            } else {
+                (if n > 0.0 { 1.0 } else { -1.0 }, 0.0)
+            };
             let mut e1 = Exp::new(Kind::Num(a));
             self.binop_left(BinOp::Div, &mut e1)?;
             let mut e2 = Exp::new(Kind::Num(b));
@@ -1087,7 +1172,9 @@ impl Gen<'_> {
             };
             self.want_multi = vcall && i + 1 == nentries;
             let mut val = self.expr(val_expr)?;
-            let const_entry = key.is_k() && key.k != Kind::Nil && (matches!(key.k, Kind::Str(_)) || val.is_k_nojump());
+            let const_entry = key.is_k()
+                && key.k != Kind::Nil
+                && (matches!(key.k, Kind::Str(_)) || val.is_k_nojump());
             if const_entry {
                 let idx = match template {
                     Some(i) => i,
@@ -1100,7 +1187,11 @@ impl Gen<'_> {
                 };
                 vcall = false;
                 let kv = kvalue(&key);
-                let vv = if val.is_k_nojump() { kvalue(&val) } else { KTabValue::Nil };
+                let vv = if val.is_k_nojump() {
+                    kvalue(&val)
+                } else {
+                    KTabValue::Nil
+                };
                 if let Some(t) = self.ktable_mut(idx) {
                     ktable_set(t, kv, vv, if needarr { narr } else { 0 });
                 }

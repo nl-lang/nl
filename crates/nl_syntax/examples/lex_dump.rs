@@ -22,7 +22,11 @@ fn main() {
     };
     let lexed = nl_syntax::lex(source);
     for t in &lexed.tokens {
-        let flags = format!("{}{}", if t.nl_before { "^" } else { " " }, if t.sp_before { "_" } else { " " });
+        let flags = format!(
+            "{}{}",
+            if t.nl_before { "^" } else { " " },
+            if t.sp_before { "_" } else { " " }
+        );
         if t.kind.is_trivia() {
             println!("   [{:?} {:?}]", t.kind, t.text(source));
         } else {

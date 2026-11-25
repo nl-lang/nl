@@ -82,7 +82,10 @@
 
 use rowan::{TextRange, TextSize};
 
-use crate::{Diagnostic, LineIndex, Parse, StringForm, SyntaxKind, SyntaxNode, SyntaxToken, parse, parse_decl_file, string_form};
+use crate::{
+    Diagnostic, LineIndex, Parse, StringForm, SyntaxKind, SyntaxNode, SyntaxToken, parse,
+    parse_decl_file, string_form,
+};
 
 use SyntaxKind::*;
 
@@ -134,7 +137,11 @@ pub fn format_decl(source: &str, options: FormatOptions) -> Result<Formatted, Ve
     format_parse(source, &parse_decl_file(source), options)
 }
 
-fn format_parse(source: &str, parse: &Parse, options: FormatOptions) -> Result<Formatted, Vec<Diagnostic>> {
+fn format_parse(
+    source: &str,
+    parse: &Parse,
+    options: FormatOptions,
+) -> Result<Formatted, Vec<Diagnostic>> {
     if parse.has_errors() {
         return Err(parse.diagnostics().to_vec());
     }
@@ -208,7 +215,10 @@ impl<'a> Formatter<'a> {
             }
             self.out.push_str(self.newline);
         }
-        Formatted { text: self.out, continued: self.continued }
+        Formatted {
+            text: self.out,
+            continued: self.continued,
+        }
     }
 
     // ---- Positions -----------------------------------------------------------
@@ -233,14 +243,21 @@ impl<'a> Formatter<'a> {
     /// first token has not been printed is treated as indented like the
     /// token printed before it (a line that starts inside a heredoc token).
     fn line_indent_of(&self, t: &SyntaxToken) -> usize {
-        self.line_indent.get(self.line_of(t)).copied().flatten().unwrap_or(0)
+        self.line_indent
+            .get(self.line_of(t))
+            .copied()
+            .flatten()
+            .unwrap_or(0)
     }
 
     /// The column the next character will be printed at.
     fn column(&self) -> usize {
         // A byte-order mark on the first line is not a column (as in
         // `LineIndex`).
-        self.out.rsplit(['\n', '\r']).next().map_or(0, |l| l.trim_start_matches('\u{FEFF}').chars().count())
+        self.out
+            .rsplit(['\n', '\r'])
+            .next()
+            .map_or(0, |l| l.trim_start_matches('\u{FEFF}').chars().count())
     }
 
     // ---- Printing ------------------------------------------------------------
@@ -348,7 +365,11 @@ impl<'a> Formatter<'a> {
         let in_interpolation = lit.ancestors().skip(1).any(|n| n.kind() == INTERP_STRING);
         let fixed = self.fix && !in_interpolation;
         if matches!(t.kind(), STRING | STR_BEGIN) {
-            self.continued.push(Continued { range: lit.text_range(), in_interpolation, fixed });
+            self.continued.push(Continued {
+                range: lit.text_range(),
+                in_interpolation,
+                fixed,
+            });
         }
         if fixed {
             let part = heredoc_part(t, self.newline);
@@ -445,14 +466,26 @@ impl<'a> Formatter<'a> {
         let opener = self.brackets.last()?;
         let pair = matches!(
             (opener.kind(), t.kind()),
-            (L_PAREN, R_PAREN) | (L_BRACK, R_BRACK) | (L_CURLY, R_CURLY) | (LT, GT) | (PIPE, PIPE) | (STR_BEGIN | STR_MID, STR_MID | STR_END)
+            (L_PAREN, R_PAREN)
+                | (L_BRACK, R_BRACK)
+                | (L_CURLY, R_CURLY)
+                | (LT, GT)
+                | (PIPE, PIPE)
+                | (STR_BEGIN | STR_MID, STR_MID | STR_END)
         );
-        if pair && opener.parent() == t.parent() { Some(opener.clone()) } else { None }
+        if pair && opener.parent() == t.parent() {
+            Some(opener.clone())
+        } else {
+            None
+        }
     }
 
     /// The innermost open bracket, when it is a direct child of `node`.
     fn open_bracket_of(&self, node: &SyntaxNode) -> Option<SyntaxToken> {
-        self.brackets.last().filter(|o| o.parent().as_ref() == Some(node)).cloned()
+        self.brackets
+            .last()
+            .filter(|o| o.parent().as_ref() == Some(node))
+            .cloned()
     }
 
     /// The indentation of a comment on a line of its own.
@@ -497,14 +530,18 @@ impl<'a> Formatter<'a> {
 
 /// The first non-trivia token inside the node.
 fn first_significant(node: &SyntaxNode) -> Option<SyntaxToken> {
-    node.descendants_with_tokens().filter_map(|e| e.into_token()).find(|t| !t.kind().is_trivia())
+    node.descendants_with_tokens()
+        .filter_map(|e| e.into_token())
+        .find(|t| !t.kind().is_trivia())
 }
 
 /// A statement of a block or a declaration file, or a member of a
 /// `struct`, `interface`, `enum` or declaration body: what starts a line
 /// of its own at the body's indentation.
 fn is_statement(node: &SyntaxNode) -> bool {
-    let Some(parent) = node.parent() else { return false };
+    let Some(parent) = node.parent() else {
+        return false;
+    };
     match parent.kind() {
         BLOCK => true,
         SOURCE_FILE => node.kind() != BLOCK,
@@ -527,16 +564,31 @@ fn is_statement(node: &SyntaxNode) -> bool {
 
 /// A construct whose members are not in a `BLOCK`.
 fn is_member_holder(kind: SyntaxKind) -> bool {
-    matches!(kind, STRUCT_DECL | INTERFACE_DECL | INTERFACE_IMPL | ENUM_DECL | DECL_MODULE | DECL_STRUCT | DECL_TYPE)
+    matches!(
+        kind,
+        STRUCT_DECL
+            | INTERFACE_DECL
+            | INTERFACE_IMPL
+            | ENUM_DECL
+            | DECL_MODULE
+            | DECL_STRUCT
+            | DECL_TYPE
+    )
 }
 
 /// A construct with clauses (`else`, `when`, `catch`, …) at its own level.
 fn is_clause_holder(kind: SyntaxKind) -> bool {
-    matches!(kind, IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR)
+    matches!(
+        kind,
+        IF_EXPR | UNLESS_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR
+    )
 }
 
 fn is_clause(kind: SyntaxKind) -> bool {
-    matches!(kind, ELSEIF_CLAUSE | ELSE_CLAUSE | WHEN_CLAUSE | COND_CLAUSE | CATCH_CLAUSE | FINALLY_CLAUSE)
+    matches!(
+        kind,
+        ELSEIF_CLAUSE | ELSE_CLAUSE | WHEN_CLAUSE | COND_CLAUSE | CATCH_CLAUSE | FINALLY_CLAUSE
+    )
 }
 
 /// The `|` that opens block parameters (the first `|` of a
@@ -586,10 +638,14 @@ fn bracket_step(stack: &mut Vec<SyntaxToken>, tok: &SyntaxToken, parent: SyntaxK
 /// The token lies inside an interpolation of a heredoc (not counting the
 /// heredoc's own opening part).
 fn in_heredoc_interpolation(t: &SyntaxToken) -> bool {
-    let Some(parent) = t.parent() else { return false };
+    let Some(parent) = t.parent() else {
+        return false;
+    };
     let skip = usize::from(t.kind() == STR_BEGIN);
     parent.ancestors().skip(skip).any(|n| {
-        n.kind() == INTERP_STRING && n.first_token().is_some_and(|f| f.text().starts_with("\"\"\""))
+        n.kind() == INTERP_STRING
+            && n.first_token()
+                .is_some_and(|f| f.text().starts_with("\"\"\""))
     })
 }
 
@@ -649,11 +705,18 @@ fn space_between(prev: &SyntaxToken, cur: &SyntaxToken) -> bool {
     if pk == MINUS && ck == MINUS {
         return true;
     }
-    if matches!(pk, MINUS | TILDE | BANG | BANG_POSTFIX) && matches!(pp, Some(PREFIX_EXPR | NOT_TYPE | LITERAL_PAT)) {
+    if matches!(pk, MINUS | TILDE | BANG | BANG_POSTFIX)
+        && matches!(pp, Some(PREFIX_EXPR | NOT_TYPE | LITERAL_PAT))
+    {
         return false;
     }
     if matches!(pk, STAR | STAR2)
-        && matches!(pp, Some(SPREAD_ARG | KEYED_SPREAD_ARG | REST_PARAM | KEYED_PARAM | REST_PAT | FN_TYPE_PARAM))
+        && matches!(
+            pp,
+            Some(
+                SPREAD_ARG | KEYED_SPREAD_ARG | REST_PARAM | KEYED_PARAM | REST_PAT | FN_TYPE_PARAM
+            )
+        )
     {
         return false;
     }
@@ -690,12 +753,20 @@ fn continued_literal(t: &SyntaxToken) -> Option<SyntaxNode> {
         return None;
     }
     let lit = t.parent()?;
-    let parts: Vec<SyntaxToken> = lit.children_with_tokens().filter_map(|e| e.into_token()).filter(|t| t.kind().is_string_part()).collect();
+    let parts: Vec<SyntaxToken> = lit
+        .children_with_tokens()
+        .filter_map(|e| e.into_token())
+        .filter(|t| t.kind().is_string_part())
+        .collect();
     let first = parts.first()?;
     if string_form(first.text()) != Some(StringForm::Quoted) {
         return None;
     }
-    if parts.iter().any(|p| has_continuation(p.text())) { Some(lit) } else { None }
+    if parts.iter().any(|p| has_continuation(p.text())) {
+        Some(lit)
+    } else {
+        None
+    }
 }
 
 /// A backslash directly before a line break in the text of a `"…"` part
@@ -755,7 +826,10 @@ fn content_lines(body: &str, at_line_start: bool) -> String {
             // content line of the rewrite can start with `"""`.
             line_start = false;
             let rest = b.get(i..).unwrap_or(&[]);
-            let blanks = rest.iter().take_while(|&&x| x == b' ' || x == b'\t').count();
+            let blanks = rest
+                .iter()
+                .take_while(|&&x| x == b' ' || x == b'\t')
+                .count();
             if rest.get(blanks..).is_some_and(|r| r.starts_with(b"\"\"\"")) {
                 out.extend_from_slice(rest.get(..blanks).unwrap_or(&[]));
                 out.push(b'\\');

@@ -41,8 +41,17 @@ impl Analyzer<'_> {
     /// A type expression other than a name (a signature, a union, a
     /// record, …), its parts read by `part`: the file's and the
     /// declaration files' types differ only in what a name resolves to.
-    fn compound_type(&mut self, ty: &SyntaxNode, part: &mut dyn FnMut(&mut Self, &SyntaxNode) -> Type) -> Type {
-        let mut parts = |a: &mut Self| -> Vec<Type> { ty.children().filter(|c| is_type(c.kind())).map(|c| part(a, &c)).collect() };
+    fn compound_type(
+        &mut self,
+        ty: &SyntaxNode,
+        part: &mut dyn FnMut(&mut Self, &SyntaxNode) -> Type,
+    ) -> Type {
+        let mut parts = |a: &mut Self| -> Vec<Type> {
+            ty.children()
+                .filter(|c| is_type(c.kind()))
+                .map(|c| part(a, &c))
+                .collect()
+        };
         match ty.kind() {
             FN_TYPE => {
                 let mut params = Vec::new();
@@ -51,19 +60,38 @@ impl Analyzer<'_> {
                 if let Some(list) = child(ty, FN_TYPE_PARAMS) {
                     for p in children(&list, FN_TYPE_PARAM) {
                         let t = type_child(&p).map(|t| part(self, &t)).unwrap_or(Type::Any);
-                        let name = tokens(&p).find(|t| t.kind() == LNAME).map(|t| t.text().to_string()).unwrap_or_default();
+                        let name = tokens(&p)
+                            .find(|t| t.kind() == LNAME)
+                            .map(|t| t.text().to_string())
+                            .unwrap_or_default();
                         if has_token(&p, STAR2) {
                             keyed = Some(Some(t));
                         } else if has_token(&p, STAR) {
                             rest = Some(t);
                         } else {
                             let optional = self.types.may_be_nil(&t) && t != Type::Any;
-                            params.push(Param { name, ty: t, optional });
+                            params.push(Param {
+                                name,
+                                ty: t,
+                                optional,
+                            });
                         }
                     }
                 }
-                let ret = child(ty, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| part(self, &t)).unwrap_or(Type::Any);
-                Type::Fn(Rc::new(FnType { params, rest, keyed, ret, is_method: false, is_async: false, named: false, declared: false }))
+                let ret = child(ty, RETURN_TYPE)
+                    .and_then(|r| type_child(&r))
+                    .map(|t| part(self, &t))
+                    .unwrap_or(Type::Any);
+                Type::Fn(Rc::new(FnType {
+                    params,
+                    rest,
+                    keyed,
+                    ret,
+                    is_method: false,
+                    is_async: false,
+                    named: false,
+                    declared: false,
+                }))
             }
             UNION_TYPE => {
                 let members = parts(self);
@@ -126,7 +154,14 @@ impl Analyzer<'_> {
         if segs.first().is_some_and(|s| s.kind() == SELF_TYPE_KW) {
             return self.self_type_at(q.text_range(), self_ty);
         }
-        let args: Vec<Type> = child(ty, TYPE_ARGS).map(|a| a.children().filter(|c| is_type(c.kind())).map(|c| self.type_of_with_self(&c, self_ty.clone())).collect()).unwrap_or_default();
+        let args: Vec<Type> = child(ty, TYPE_ARGS)
+            .map(|a| {
+                a.children()
+                    .filter(|c| is_type(c.kind()))
+                    .map(|c| self.type_of_with_self(&c, self_ty.clone()))
+                    .collect()
+            })
+            .unwrap_or_default();
         match self.res.type_ref(q.text_range()).cloned() {
             Some(Ref::Binding(id)) => {
                 if segs.len() > 1 {
@@ -151,7 +186,11 @@ impl Analyzer<'_> {
                     _ => self.prelude_type(p),
                 }
             }
-            Some(Ref::Declared(id)) => self.decl_named.get(&id).map(|n| Type::Named(*n)).unwrap_or(Type::Any),
+            Some(Ref::Declared(id)) => self
+                .decl_named
+                .get(&id)
+                .map(|n| Type::Named(*n))
+                .unwrap_or(Type::Any),
             _ => Type::Any,
         }
     }
@@ -202,19 +241,33 @@ impl Analyzer<'_> {
             };
         };
         let segs = qual_segments(&q);
-        let Some(first) = segs.first() else { return Type::Any };
+        let Some(first) = segs.first() else {
+            return Type::Any;
+        };
         if first.kind() == SELF_TYPE_KW {
             return ctx.self_named.map(Type::Named).unwrap_or(Type::Any);
         }
         let name = first.text().to_string();
         if segs.len() > 1 {
             // `Module.Type`: a nested declared type.
-            return self.decl_nested_type(&segs.iter().map(|s| s.text().to_string()).collect::<Vec<_>>());
+            return self.decl_nested_type(
+                &segs
+                    .iter()
+                    .map(|s| s.text().to_string())
+                    .collect::<Vec<_>>(),
+            );
         }
         if ctx.type_params.contains(&name) {
             return Type::Any;
         }
-        let args: Vec<Type> = child(ty, TYPE_ARGS).map(|a| a.children().filter(|c| is_type(c.kind())).map(|c| self.decl_type_of(&c, ctx)).collect()).unwrap_or_default();
+        let args: Vec<Type> = child(ty, TYPE_ARGS)
+            .map(|a| {
+                a.children()
+                    .filter(|c| is_type(c.kind()))
+                    .map(|c| self.decl_type_of(&c, ctx))
+                    .collect()
+            })
+            .unwrap_or_default();
         if let Some(p) = crate::prelude::lookup(&name).filter(|p| p.is_type()) {
             return match p.name {
                 "Task" => Type::Task(Rc::new(args.first().cloned().unwrap_or(Type::Any))),
@@ -222,15 +275,27 @@ impl Analyzer<'_> {
             };
         }
         match self.decls.lookup(&name) {
-            Some(id) if self.decls.is_type(id) => self.decl_named.get(&id).map(|n| Type::Named(*n)).unwrap_or(Type::Any),
+            Some(id) if self.decls.is_type(id) => self
+                .decl_named
+                .get(&id)
+                .map(|n| Type::Named(*n))
+                .unwrap_or(Type::Any),
             _ => Type::Any,
         }
     }
 
     /// `Module.Type` in a declaration: the nested declared type.
     fn decl_nested_type(&self, segs: &[String]) -> Type {
-        let Some(first) = segs.first() else { return Type::Any };
-        let Some(mut cur) = self.decls.lookup(first).and_then(|id| self.decl_named.get(&id).copied()) else { return Type::Any };
+        let Some(first) = segs.first() else {
+            return Type::Any;
+        };
+        let Some(mut cur) = self
+            .decls
+            .lookup(first)
+            .and_then(|id| self.decl_named.get(&id).copied())
+        else {
+            return Type::Any;
+        };
         for s in segs.iter().skip(1) {
             let next = match self.types.kind(cur) {
                 Some(NamedKind::Module { members }) => match members.get(s) {
@@ -254,7 +319,11 @@ impl Analyzer<'_> {
     pub(crate) fn decl_fn_sig(&mut self, node: &SyntaxNode, ctx: &DeclCtx) -> FnType {
         let mut ctx = ctx.clone();
         if let Some(tp) = child(node, TYPE_PARAMS) {
-            ctx.type_params.extend(children(&tp, TYPE_PARAM).filter_map(|p| child(&p, NAME)).filter_map(|n| name_text(&n)));
+            ctx.type_params.extend(
+                children(&tp, TYPE_PARAM)
+                    .filter_map(|p| child(&p, NAME))
+                    .filter_map(|n| name_text(&n)),
+            );
         }
         let mut params = Vec::new();
         let mut rest = None;
@@ -267,33 +336,71 @@ impl Analyzer<'_> {
                     PARAM => {
                         let (name, t) = match pattern_children(&p).next() {
                             Some(pat) if pat.kind() == TYPED_PAT => {
-                                let name = pattern_children(&pat).next().and_then(|b| child(&b, NAME)).and_then(|n| name_text(&n)).unwrap_or_default();
-                                let t = type_child(&pat).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Any);
+                                let name = pattern_children(&pat)
+                                    .next()
+                                    .and_then(|b| child(&b, NAME))
+                                    .and_then(|n| name_text(&n))
+                                    .unwrap_or_default();
+                                let t = type_child(&pat)
+                                    .map(|t| self.decl_type_of(&t, &ctx))
+                                    .unwrap_or(Type::Any);
                                 (name, t)
                             }
-                            Some(pat) => (child(&pat, NAME).and_then(|n| name_text(&n)).unwrap_or_default(), Type::Any),
+                            Some(pat) => (
+                                child(&pat, NAME)
+                                    .and_then(|n| name_text(&n))
+                                    .unwrap_or_default(),
+                                Type::Any,
+                            ),
                             None => (String::new(), Type::Any),
                         };
                         // An optional parameter is typed `T?`.
                         let optional = self.types.may_be_nil(&t) && t != Type::Any;
-                        params.push(Param { name, ty: t, optional });
+                        params.push(Param {
+                            name,
+                            ty: t,
+                            optional,
+                        });
                     }
-                    REST_PARAM => rest = Some(type_child(&p).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Any)),
-                    KEYED_PARAM => keyed = Some(type_child(&p).map(|t| self.decl_type_of(&t, &ctx))),
+                    REST_PARAM => {
+                        rest = Some(
+                            type_child(&p)
+                                .map(|t| self.decl_type_of(&t, &ctx))
+                                .unwrap_or(Type::Any),
+                        )
+                    }
+                    KEYED_PARAM => {
+                        keyed = Some(type_child(&p).map(|t| self.decl_type_of(&t, &ctx)))
+                    }
                     _ => {}
                 }
             }
         }
         // An omitted return type is `nil`.
-        let ret = child(node, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Nil);
-        FnType { params, rest, keyed, ret, is_method, is_async: false, named: false, declared: true }
+        let ret = child(node, RETURN_TYPE)
+            .and_then(|r| type_child(&r))
+            .map(|t| self.decl_type_of(&t, &ctx))
+            .unwrap_or(Type::Nil);
+        FnType {
+            params,
+            rest,
+            keyed,
+            ret,
+            is_method,
+            is_async: false,
+            named: false,
+            declared: true,
+        }
     }
 
     /// Fills the members of a declared module, struct or type from its
     /// node, and records the Lua key of each.
     pub(crate) fn fill_decl_members(&mut self, node: &SyntaxNode, nid: NamedId) {
         let is_type = matches!(node.kind(), DECL_STRUCT | DECL_TYPE);
-        let ctx = DeclCtx { self_named: is_type.then_some(nid), type_params: Vec::new() };
+        let ctx = DeclCtx {
+            self_named: is_type.then_some(nid),
+            type_params: Vec::new(),
+        };
         // A host type's parent.
         if node.kind() == DECL_TYPE {
             if let Some(parent) = child(node, STRUCT_PARENT).and_then(|p| type_child(&p)) {
@@ -308,14 +415,20 @@ impl Analyzer<'_> {
         }
         if node.kind() == DECL_FN {
             // A top-level `declare fn`.
-            let name = child(node, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
+            let name = child(node, NAME)
+                .and_then(|n| name_text(&n))
+                .unwrap_or_default();
             let sig = self.decl_fn_sig(node, &ctx);
             self.decl_fn_sigs.insert(name, Rc::new(sig));
             return;
         }
         if node.kind() == DECL_VALUE {
-            let name = child(node, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
-            let t = type_child(node).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Any);
+            let name = child(node, NAME)
+                .and_then(|n| name_text(&n))
+                .unwrap_or_default();
+            let t = type_child(node)
+                .map(|t| self.decl_type_of(&t, &ctx))
+                .unwrap_or(Type::Any);
             self.decl_value_types.insert(name, t);
             return;
         }
@@ -323,18 +436,30 @@ impl Analyzer<'_> {
         for m in node.children() {
             match m.kind() {
                 DECL_FIELD => {
-                    let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else { continue };
-                    let t = type_child(&m).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Any);
+                    let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else {
+                        continue;
+                    };
+                    let t = type_child(&m)
+                        .map(|t| self.decl_type_of(&t, &ctx))
+                        .unwrap_or(Type::Any);
                     let key = lua_key(&m).unwrap_or_else(|| name.clone());
                     self.decl_keys.insert((nid, name.clone()), key);
                     if is_type && node.kind() == DECL_STRUCT {
-                        fields.push(Field { name: name.clone(), ty: t.clone(), has_default: true });
+                        fields.push(Field {
+                            name: name.clone(),
+                            ty: t.clone(),
+                            has_default: true,
+                        });
                     }
                     self.add_member(nid, &name, Member::Value(t));
                 }
                 DECL_VALUE => {
-                    let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else { continue };
-                    let t = type_child(&m).map(|t| self.decl_type_of(&t, &ctx)).unwrap_or(Type::Any);
+                    let Some(name) = child(&m, NAME).and_then(|n| name_text(&n)) else {
+                        continue;
+                    };
+                    let t = type_child(&m)
+                        .map(|t| self.decl_type_of(&t, &ctx))
+                        .unwrap_or(Type::Any);
                     let key = lua_key(&m).unwrap_or_else(|| name.clone());
                     self.decl_keys.insert((nid, name.clone()), key);
                     self.add_member(nid, &name, Member::Const(t));
@@ -342,21 +467,28 @@ impl Analyzer<'_> {
                 DECL_FN => {
                     let name = match child(&m, NAME) {
                         Some(n) => name_text(&n).unwrap_or_default(),
-                        None => child(&m, OP_NAME).map(|o| o.text().to_string().split_whitespace().collect::<String>()).unwrap_or_default(),
+                        None => child(&m, OP_NAME)
+                            .map(|o| o.text().to_string().split_whitespace().collect::<String>())
+                            .unwrap_or_default(),
                     };
                     let sig = self.decl_fn_sig(&m, &ctx);
                     let key = lua_key(&m).unwrap_or_else(|| name.clone());
                     self.decl_keys.insert((nid, name.clone()), key);
                     if child(&m, OP_NAME).is_some() {
                         // Operators of a Lua class: the metamethods' types.
-                        self.decl_operators.entry(nid).or_default().insert(name, Rc::new(sig));
+                        self.decl_operators
+                            .entry(nid)
+                            .or_default()
+                            .insert(name, Rc::new(sig));
                     } else {
                         self.add_member(nid, &name, Member::Function(Rc::new(sig)));
                     }
                 }
                 DECL_MODULE | DECL_STRUCT | DECL_TYPE => {
                     if let Some(&inner) = self.decl_nested.get(&m.text_range()) {
-                        let name = child(&m, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
+                        let name = child(&m, NAME)
+                            .and_then(|n| name_text(&n))
+                            .unwrap_or_default();
                         let key = lua_key(&m).unwrap_or_else(|| name.clone());
                         self.decl_keys.insert((nid, name), key);
                         self.fill_decl_members(&m, inner);
@@ -400,12 +532,28 @@ impl Analyzer<'_> {
 
     /// The nominal type a declared name stands for, as a value.
     pub(crate) fn declared_value(&self, id: DeclId) -> Ty {
-        let Some(item) = self.decls.get(id) else { return Ty::any() };
+        let Some(item) = self.decls.get(id) else {
+            return Ty::any();
+        };
         match item.kind {
-            crate::decl::DeclItemKind::Module => self.decl_named.get(&id).map(|n| Ty::certain(Type::Static(*n))).unwrap_or_else(Ty::any),
-            crate::decl::DeclItemKind::Struct | crate::decl::DeclItemKind::HostType => self.decl_named.get(&id).map(|n| Ty::certain(Type::Static(*n))).unwrap_or_else(Ty::any),
-            crate::decl::DeclItemKind::Fn => self.decl_fn_type(&item.name).map(|f| Ty::uncertain(Type::Fn(f))).unwrap_or_else(Ty::any),
-            crate::decl::DeclItemKind::Let | crate::decl::DeclItemKind::Const => self.decl_value_type(&item.name).map(Ty::uncertain).unwrap_or_else(Ty::any),
+            crate::decl::DeclItemKind::Module => self
+                .decl_named
+                .get(&id)
+                .map(|n| Ty::certain(Type::Static(*n)))
+                .unwrap_or_else(Ty::any),
+            crate::decl::DeclItemKind::Struct | crate::decl::DeclItemKind::HostType => self
+                .decl_named
+                .get(&id)
+                .map(|n| Ty::certain(Type::Static(*n)))
+                .unwrap_or_else(Ty::any),
+            crate::decl::DeclItemKind::Fn => self
+                .decl_fn_type(&item.name)
+                .map(|f| Ty::uncertain(Type::Fn(f)))
+                .unwrap_or_else(Ty::any),
+            crate::decl::DeclItemKind::Let | crate::decl::DeclItemKind::Const => self
+                .decl_value_type(&item.name)
+                .map(Ty::uncertain)
+                .unwrap_or_else(Ty::any),
         }
     }
 }

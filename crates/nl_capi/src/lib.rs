@@ -17,11 +17,11 @@ pub mod cache;
 pub mod driver;
 /// The Lua and GLua minifier (`nlb_minify`).
 pub mod minify;
-/// Bundle sourcemaps and the remapping of positions (`nlb_sourcemap_*`).
-pub mod sourcemap;
 pub mod search;
 /// Source snippets under diagnostics.
 pub mod snippet;
+/// Bundle sourcemaps and the remapping of positions (`nlb_sourcemap_*`).
+pub mod sourcemap;
 
 // The regex and text libraries. Re-exported so that
 // the crates are linked and their `nlregex_*` and `nltext_*` C ABI symbols
@@ -37,4 +37,6 @@ pub mod capi;
 #[allow(unsafe_code)]
 pub mod capi_bundle;
 
-pub use driver::{CompileOptions, CompileOutput, Diagnostic, Emit, Loader, Localize, Profile, Severity, compile};
+pub use driver::{
+    CompileOptions, CompileOutput, Diagnostic, Emit, Loader, Localize, Profile, Severity, compile,
+};

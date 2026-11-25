@@ -45,7 +45,9 @@ pub struct FileScan {
 }
 
 fn primitive(name: &str) -> Option<&'static str> {
-    ["Number", "String", "Bool", "Table"].into_iter().find(|p| *p == name)
+    ["Number", "String", "Bool", "Table"]
+        .into_iter()
+        .find(|p| *p == name)
 }
 
 /// The primitive methods a parsed file defines, and the paths it imports.
@@ -59,15 +61,24 @@ pub fn scan_file(root: &SyntaxNode) -> FileScan {
                 }
             }
             FN_DECL if n.parent().is_none_or(|p| p.kind() != INTERFACE_IMPL) => {
-                let Some(q) = child(&n, QUAL_NAME) else { continue };
+                let Some(q) = child(&n, QUAL_NAME) else {
+                    continue;
+                };
                 let segs = qual_segments(&q);
                 let [seg] = segs.as_slice() else { continue };
-                let Some(owner) = primitive(seg.text()) else { continue };
+                let Some(owner) = primitive(seg.text()) else {
+                    continue;
+                };
                 out.methods.extend(method(&n, owner));
             }
             INTERFACE_IMPL => {
                 let target = n.children().filter(|c| is_type(c.kind())).nth(1);
-                let Some(owner) = target.filter(|t| t.kind() == NAMED_TYPE).and_then(|t| primitive(t.text().to_string().trim())) else { continue };
+                let Some(owner) = target
+                    .filter(|t| t.kind() == NAMED_TYPE)
+                    .and_then(|t| primitive(t.text().to_string().trim()))
+                else {
+                    continue;
+                };
                 if owner == "Table" {
                     continue;
                 }
@@ -84,9 +95,17 @@ pub fn scan_file(root: &SyntaxNode) -> FileScan {
 fn method(f: &SyntaxNode, owner: &'static str) -> Option<PrimMethod> {
     let name = match child(f, NAME) {
         Some(n) => name_text(&n)?,
-        None => child(f, OP_NAME)?.text().to_string().split_whitespace().collect(),
+        None => child(f, OP_NAME)?
+            .text()
+            .to_string()
+            .split_whitespace()
+            .collect(),
     };
-    let ret = child(f, RETURN_TYPE).and_then(|r| type_child(&r)).filter(|t| t.kind() == NAMED_TYPE).and_then(|t| primitive(t.text().to_string().trim())).filter(|p| *p != "Table");
+    let ret = child(f, RETURN_TYPE)
+        .and_then(|r| type_child(&r))
+        .filter(|t| t.kind() == NAMED_TYPE)
+        .and_then(|t| primitive(t.text().to_string().trim()))
+        .filter(|p| *p != "Table");
     Some(PrimMethod { owner, name, ret })
 }
 
@@ -95,7 +114,12 @@ fn method(f: &SyntaxNode, owner: &'static str) -> Option<PrimMethod> {
 /// finds a file as `import` does (its canonical name); `scan` gives
 /// [`scan_file`] of a canonical name, `None` when it cannot be read or
 /// parsed. Each file is scanned once, so a cycle ends.
-pub fn primitive_methods_through(from: Option<&str>, path: &str, resolve: &dyn Fn(Option<&str>, &str) -> Option<String>, scan: &dyn Fn(&str) -> Option<FileScan>) -> Vec<PrimMethod> {
+pub fn primitive_methods_through(
+    from: Option<&str>,
+    path: &str,
+    resolve: &dyn Fn(Option<&str>, &str) -> Option<String>,
+    scan: &dyn Fn(&str) -> Option<FileScan>,
+) -> Vec<PrimMethod> {
     let mut out: Vec<PrimMethod> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
     let mut queue: Vec<String> = resolve(from, path).into_iter().collect();

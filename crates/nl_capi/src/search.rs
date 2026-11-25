@@ -19,7 +19,12 @@ use std::path::{Path, PathBuf};
 /// tried: the directory of `from` (the canonical name of the importing
 /// file, if any), `cwd`, then each directory of `search_path`. The first
 /// one that exists is the file.
-pub fn candidates(from: Option<&str>, path: &str, cwd: &Path, search_path: &[PathBuf]) -> Vec<PathBuf> {
+pub fn candidates(
+    from: Option<&str>,
+    path: &str,
+    cwd: &Path,
+    search_path: &[PathBuf],
+) -> Vec<PathBuf> {
     let file = format!("{path}.nl");
     let mut out = Vec::with_capacity(search_path.len() + 2);
     if let Some(dir) = from.and_then(|f| Path::new(f).parent()) {
@@ -45,7 +50,11 @@ pub fn is_decl_name(p: &Path) -> bool {
 /// The files on disk in `dir`, unsorted; none when it cannot be read.
 pub fn dir_files(dir: &Path) -> Vec<PathBuf> {
     match std::fs::read_dir(dir) {
-        Ok(rd) => rd.filter_map(Result::ok).map(|e| e.path()).filter(|p| p.is_file()).collect(),
+        Ok(rd) => rd
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.is_file())
+            .collect(),
         Err(_) => Vec::new(),
     }
 }
@@ -56,13 +65,25 @@ pub fn dir_files(dir: &Path) -> Vec<PathBuf> {
 /// the files of a directory ([`dir_files`], plus whatever else the caller
 /// knows of); `canonical` names a file. Each name is given once, at its
 /// first place.
-pub fn decl_files(dirs: &[PathBuf], files: &[PathBuf], entries: &dyn Fn(&Path) -> Vec<PathBuf>, canonical: &dyn Fn(&Path) -> String) -> Vec<String> {
+pub fn decl_files(
+    dirs: &[PathBuf],
+    files: &[PathBuf],
+    entries: &dyn Fn(&Path) -> Vec<PathBuf>,
+    canonical: &dyn Fn(&Path) -> String,
+) -> Vec<String> {
     let mut paths: Vec<PathBuf> = files.to_vec();
     for dir in dirs {
-        let mut found: Vec<PathBuf> = entries(dir).into_iter().filter(|p| is_decl_name(p)).collect();
+        let mut found: Vec<PathBuf> = entries(dir)
+            .into_iter()
+            .filter(|p| is_decl_name(p))
+            .collect();
         found.sort();
         paths.extend(found);
     }
     let mut seen = HashSet::new();
-    paths.iter().map(|p| canonical(p)).filter(|name| seen.insert(name.clone())).collect()
+    paths
+        .iter()
+        .map(|p| canonical(p))
+        .filter(|name| seen.insert(name.clone()))
+        .collect()
 }

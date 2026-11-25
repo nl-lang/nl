@@ -8,7 +8,12 @@
 //! `std::thread::spawn`, like the parser's robustness tests: the compiler
 //! is called from host threads.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -27,17 +32,43 @@ impl Loader for NoFiles {
 
 fn check(src: &str) {
     for emit in [Emit::Lua, Emit::Bytecode] {
-        let out = compile(src.as_bytes(), "=test", &CompileOptions { emit, ..CompileOptions::default() }, &NoFiles);
-        let has_error = out.diagnostics.iter().any(|d| d.severity == Severity::Error);
+        let out = compile(
+            src.as_bytes(),
+            "=test",
+            &CompileOptions {
+                emit,
+                ..CompileOptions::default()
+            },
+            &NoFiles,
+        );
+        let has_error = out
+            .diagnostics
+            .iter()
+            .any(|d| d.severity == Severity::Error);
         let head: String = src.chars().take(80).collect();
-        assert!(out.chunk.is_some() || has_error, "no chunk and no error for {head:?} ({emit:?})");
-        assert!(out.chunk.is_none() || !has_error, "a chunk despite an error ({emit:?})");
-        assert!(!out.diagnostics.iter().any(|d| d.code == "internal-error"), "the compiler panicked on {head:?} ({emit:?}): {:?}", out.diagnostics);
+        assert!(
+            out.chunk.is_some() || has_error,
+            "no chunk and no error for {head:?} ({emit:?})"
+        );
+        assert!(
+            out.chunk.is_none() || !has_error,
+            "a chunk despite an error ({emit:?})"
+        );
+        assert!(
+            !out.diagnostics.iter().any(|d| d.code == "internal-error"),
+            "the compiler panicked on {head:?} ({emit:?}): {:?}",
+            out.diagnostics
+        );
     }
 }
 
 fn on_small_stack(src: String) {
-    std::thread::Builder::new().stack_size(2 << 20).spawn(move || check(&src)).unwrap().join().unwrap();
+    std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || check(&src))
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 fn nl_files() -> Vec<PathBuf> {
@@ -63,7 +94,10 @@ fn every_program() {
     for p in nl_files() {
         check(&std::fs::read_to_string(&p).unwrap());
     }
-    check(&std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../example.nl")).unwrap());
+    check(
+        &std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../example.nl"))
+            .unwrap(),
+    );
 }
 
 #[test]
@@ -90,19 +124,47 @@ fn prefixes_and_deleted_lines() {
 #[test]
 fn deep_inputs() {
     let only = std::env::var("DEEP").ok();
-    let on_small_stack = |s: String, tag: &str| { if only.as_deref().is_none_or(|o| o == tag) { on_small_stack(s) } };
+    let on_small_stack = |s: String, tag: &str| {
+        if only.as_deref().is_none_or(|o| o == tag) {
+            on_small_stack(s)
+        }
+    };
     let n = 120;
     on_small_stack(format!("{}1{}\n", "(".repeat(n), ")".repeat(n)), "paren");
-    on_small_stack(format!("{}print 1\n{}", "if true\n".repeat(n), "end\n".repeat(n)), "ifs");
-    on_small_stack(format!("let f = {}1{}\n", "fn() ".repeat(n), " end".repeat(n)), "fns");
-    on_small_stack(format!("let t = {}1{}\n", "{".repeat(n), "}".repeat(n)), "tables");
+    on_small_stack(
+        format!("{}print 1\n{}", "if true\n".repeat(n), "end\n".repeat(n)),
+        "ifs",
+    );
+    on_small_stack(
+        format!("let f = {}1{}\n", "fn() ".repeat(n), " end".repeat(n)),
+        "fns",
+    );
+    on_small_stack(
+        format!("let t = {}1{}\n", "{".repeat(n), "}".repeat(n)),
+        "tables",
+    );
     on_small_stack(format!("let x = {}\n", vec!["1"; 990].join(" + ")), "plus");
-    on_small_stack(format!("let x = {}\n", vec!["\"a\""; 990].join(" <> ")), "concat");
-    on_small_stack(format!("let x = 1\nlet y = x{}\n", ".a".repeat(990)), "field");
-    on_small_stack(format!("let x = {}\n", vec!["true"; 990].join(" and ")), "and");
-    on_small_stack(format!("fn f(x) x end\nlet y = f{}\n", "(1)".repeat(990)), "calls");
+    on_small_stack(
+        format!("let x = {}\n", vec!["\"a\""; 990].join(" <> ")),
+        "concat",
+    );
+    on_small_stack(
+        format!("let x = 1\nlet y = x{}\n", ".a".repeat(990)),
+        "field",
+    );
+    on_small_stack(
+        format!("let x = {}\n", vec!["true"; 990].join(" and ")),
+        "and",
+    );
+    on_small_stack(
+        format!("fn f(x) x end\nlet y = f{}\n", "(1)".repeat(990)),
+        "calls",
+    );
     on_small_stack(format!("let x = {}\n", "-".repeat(500) + "1"), "neg");
-    on_small_stack(format!("let t = {{}}\nlet y = t{}\n", "[1]".repeat(990)), "index");
+    on_small_stack(
+        format!("let t = {{}}\nlet y = t{}\n", "[1]".repeat(990)),
+        "index",
+    );
 }
 
 #[test]

@@ -34,7 +34,9 @@ pub fn minimize(source: &str, max_tests: usize, mut fails: impl FnMut(&str) -> b
             if tests >= max_tests {
                 return join(&lines);
             }
-            let (Some(first), Some(last)) = (chunk.first(), chunk.last()) else { continue };
+            let (Some(first), Some(last)) = (chunk.first(), chunk.last()) else {
+                continue;
+            };
             let mut candidate = lines.clone();
             candidate.drain(first.0..last.1);
             tests += 1;
@@ -106,7 +108,8 @@ fn indent_of(line: &str) -> usize {
 /// The line starts with `word` as a whole word.
 fn starts_with_word(line: &str, word: &str) -> bool {
     let t = line.trim_start();
-    t.strip_prefix(word).is_some_and(|rest| !rest.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_'))
+    t.strip_prefix(word)
+        .is_some_and(|rest| !rest.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '_'))
 }
 
 /// One past the last line of the unit that starts at line `i`.

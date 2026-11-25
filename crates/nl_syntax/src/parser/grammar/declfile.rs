@@ -120,7 +120,9 @@ impl Parser<'_> {
             self.lua_path();
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected a Lua path after `=` (`= :name`, `= :require('mod')`), found {found}"));
+            self.error(format!(
+                "expected a Lua path after `=` (`= :name`, `= :require('mod')`), found {found}"
+            ));
         }
         r.complete(self, LUA_ROOT);
     }
@@ -139,7 +141,9 @@ impl Parser<'_> {
             self.interp_string();
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected a string after `as` (the member's Lua key), found {found}"));
+            self.error(format!(
+                "expected a string after `as` (the member's Lua key), found {found}"
+            ));
         }
         k.complete(self, LUA_KEY);
     }
@@ -188,7 +192,9 @@ impl Parser<'_> {
                 let m = self.start();
                 self.decl_container(m, DECL_TYPE, false);
             }
-            _ if (is_word(k) || k == ONAME) && self.nth_at(1, COLON) && !self.nth_raw_nl(1) => self.decl_field(),
+            _ if (is_word(k) || k == ONAME) && self.nth_at(1, COLON) && !self.nth_raw_nl(1) => {
+                self.decl_field()
+            }
             _ if is_word(k) || k == ONAME => {
                 let text = self.nth_text(0).to_string();
                 self.error(format!("a field needs a type: `{text}: Type`"));
@@ -299,7 +305,14 @@ impl Parser<'_> {
                 let keyed = k == STAR2;
                 let m = self.start();
                 self.bump();
-                self.name(NameClass::Lower, if keyed { "the name of the keyed parameter" } else { "the name of the rest parameter" });
+                self.name(
+                    NameClass::Lower,
+                    if keyed {
+                        "the name of the keyed parameter"
+                    } else {
+                        "the name of the rest parameter"
+                    },
+                );
                 if self.eat(COLON) {
                     self.type_expected("after `:`");
                 } else {
@@ -349,16 +362,27 @@ impl Parser<'_> {
             self.bump();
             n.complete(self, NAME);
         } else {
-            self.name(NameClass::Lower, if is_const { "a constant name" } else { "a variable name" });
+            self.name(
+                NameClass::Lower,
+                if is_const {
+                    "a constant name"
+                } else {
+                    "a variable name"
+                },
+            );
         }
         if self.eat(COLON) {
             self.type_expected("after `:`");
         } else {
             let what = if is_const { "const" } else { "let" };
-            self.error(format!("a declared `{what}` is annotated: `{what} name: Type`"));
+            self.error(format!(
+                "a declared `{what}` is annotated: `{what} name: Type`"
+            ));
         }
         if self.at(EQ) && !self.nl() && !self.nth_at(1, COLON) {
-            self.error("a declaration holds no value; `=` names the Lua value with a path: `= :name`");
+            self.error(
+                "a declaration holds no value; `=` names the Lua value with a path: `= :name`",
+            );
             let e = self.start();
             self.bump();
             self.expr();

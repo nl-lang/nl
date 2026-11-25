@@ -42,7 +42,11 @@ pub(crate) enum Lookup {
 /// that may be `nil` (`T?`) is checked as `T`: the member is read from it
 /// before the call, which fails on `nil`.
 fn receiver_ty(types: &TypeTable, recv: &Ty, table_fn: bool) -> Ty {
-    if table_fn { Ty::uncertain(Type::Table) } else { Ty::new(types.non_nil(&recv.t), recv.certain) }
+    if table_fn {
+        Ty::uncertain(Type::Table)
+    } else {
+        Ty::new(types.non_nil(&recv.t), recv.certain)
+    }
 }
 
 /// A receiver as a diagnostic writes it: its text when it is short and
@@ -202,10 +206,25 @@ impl Analyzer<'_> {
     /// A name whose value is used: a function-kind name is called.
     fn name_value(&mut self, node: &SyntaxNode) -> Ty {
         if let Some(Ref::Binding(id)) = self.res.reference(node.text_range()) {
-            if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Function) {
+            if self
+                .binding(*id)
+                .is_some_and(|b| b.kind == BindingKind::Function)
+            {
                 self.used.insert(*id);
-                let sig = self.binding_fn_type(*id).unwrap_or_else(|| Rc::new(FnType::unknown()));
-                self.check_call(&sig, &self.binding(*id).map(|b| b.name.clone()).unwrap_or_default(), &[], None, node.text_range(), true);
+                let sig = self
+                    .binding_fn_type(*id)
+                    .unwrap_or_else(|| Rc::new(FnType::unknown()));
+                self.check_call(
+                    &sig,
+                    &self
+                        .binding(*id)
+                        .map(|b| b.name.clone())
+                        .unwrap_or_default(),
+                    &[],
+                    None,
+                    node.text_range(),
+                    true,
+                );
                 return self.call_of(&sig, self.checked_fn_name(node));
             }
         }
@@ -213,7 +232,11 @@ impl Analyzer<'_> {
             if self.decls.binding_kind(id) == BindingKind::Function {
                 let v = self.declared_value(id);
                 if let Type::Fn(sig) = &v.t {
-                    let name = self.decls.get(id).map(|i| i.name.clone()).unwrap_or_default();
+                    let name = self
+                        .decls
+                        .get(id)
+                        .map(|i| i.name.clone())
+                        .unwrap_or_default();
                     self.check_call(sig, &name, &[], None, node.text_range(), true);
                     return self.call_result(sig);
                 }
@@ -229,12 +252,28 @@ impl Analyzer<'_> {
     fn self_expr(&mut self, node: &SyntaxNode) -> Ty {
         if has_token(node, SELF_TYPE_KW) {
             return match self.res.self_target(node.text_range()).cloned() {
-                Some(SelfTarget::Binding(id)) => self.named_of.get(&id).map(|n| Ty::certain(Type::Static(*n))).unwrap_or_else(Ty::any),
+                Some(SelfTarget::Binding(id)) => self
+                    .named_of
+                    .get(&id)
+                    .map(|n| Ty::certain(Type::Static(*n)))
+                    .unwrap_or_else(Ty::any),
                 Some(SelfTarget::Member { id, path }) => {
                     let text = self.binding(id).map(|b| b.name.clone()).unwrap_or_default();
-                    let full = std::iter::once(text).chain(path).collect::<Vec<_>>().join(".");
-                    let hidden = self.res.bindings.iter().enumerate().find(|(_, b)| b.decl == DeclKind::Module && b.name == full).map(|(i, _)| BindingId(u32::try_from(i).unwrap_or(u32::MAX)));
-                    hidden.and_then(|h| self.named_of.get(&h).copied()).map(|n| Ty::certain(Type::Static(n))).unwrap_or_else(Ty::any)
+                    let full = std::iter::once(text)
+                        .chain(path)
+                        .collect::<Vec<_>>()
+                        .join(".");
+                    let hidden = self
+                        .res
+                        .bindings
+                        .iter()
+                        .enumerate()
+                        .find(|(_, b)| b.decl == DeclKind::Module && b.name == full)
+                        .map(|(i, _)| BindingId(u32::try_from(i).unwrap_or(u32::MAX)));
+                    hidden
+                        .and_then(|h| self.named_of.get(&h).copied())
+                        .map(|n| Ty::certain(Type::Static(n)))
+                        .unwrap_or_else(Ty::any)
                 }
                 Some(SelfTarget::Prelude(p)) => self.prelude_value(p),
                 None => Ty::any(),
@@ -248,8 +287,12 @@ impl Analyzer<'_> {
 
     /// `@name`: a plain field read of `self`.
     fn at_expr(&mut self, node: &SyntaxNode) -> Ty {
-        let name = token(node, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
-        let Some(st) = self.self_type() else { return Ty::any() };
+        let name = token(node, AT_NAME)
+            .map(|t| t.text().trim_start_matches('@').to_string())
+            .unwrap_or_default();
+        let Some(st) = self.self_type() else {
+            return Ty::any();
+        };
         match self.types.expand(&st) {
             Type::Named(nid) => match self.types.field(nid, &name) {
                 Some(f) => Ty::uncertain(f.ty),
@@ -304,7 +347,9 @@ impl Analyzer<'_> {
                 TABLE_PAIR => {
                     let key = child(&c, TABLE_KEY).and_then(|k| first_token(&k));
                     let key = match key {
-                        Some(t) if t.kind() == STRING => Some(crate::resolver::decode_plain_string(&t)),
+                        Some(t) if t.kind() == STRING => {
+                            Some(crate::resolver::decode_plain_string(&t))
+                        }
                         Some(t) if t.kind() == NUMBER => None,
                         Some(t) => Some(t.text().to_string()),
                         None => None,
@@ -341,7 +386,12 @@ impl Analyzer<'_> {
     /// `Name { field: value }`: the fields must be declared,
     /// and a value of a definite type must fit the field's type.
     fn struct_literal(&mut self, node: &SyntaxNode) -> Ty {
-        let Some(path) = node.children().find(|c| matches!(c.kind(), NAME_REF | FIELD_EXPR | SELF_EXPR)) else { return Ty::any() };
+        let Some(path) = node
+            .children()
+            .find(|c| matches!(c.kind(), NAME_REF | FIELD_EXPR | SELF_EXPR))
+        else {
+            return Ty::any();
+        };
         let target = self.struct_literal_target(&path);
         let fields: Vec<SyntaxNode> = children(node, FIELD_INIT).collect();
         let nid = match target {
@@ -374,7 +424,11 @@ impl Analyzer<'_> {
                     }
                 }
                 None => {
-                    self.error(k.text_range(), "unknown-field", format!("`{name}` has no field '{key}'"));
+                    self.error(
+                        k.text_range(),
+                        "unknown-field",
+                        format!("`{name}` has no field '{key}'"),
+                    );
                 }
             }
         }
@@ -401,7 +455,9 @@ impl Analyzer<'_> {
                         _ => None,
                     }
                 }
-                Ref::Prelude(p) => self.prelude_type_id(p.name).filter(|n| self.types.is_struct(*n)),
+                Ref::Prelude(p) => self
+                    .prelude_type_id(p.name)
+                    .filter(|n| self.types.is_struct(*n)),
                 _ => None,
             },
             SELF_EXPR => match self.self_expr(path).t {
@@ -423,8 +479,12 @@ impl Analyzer<'_> {
     /// `x.member` whose value is used: `.len` is the length;
     /// a method is auto-called.
     fn field_value(&mut self, node: &SyntaxNode) -> Ty {
-        let Some(recv_node) = expr_child(node) else { return Ty::any() };
-        let name = field_name(node).map(|t| t.text().to_string()).unwrap_or_default();
+        let Some(recv_node) = expr_child(node) else {
+            return Ty::any();
+        };
+        let name = field_name(node)
+            .map(|t| t.text().to_string())
+            .unwrap_or_default();
         let recv = self.expr1(&recv_node);
         self.note_table_read(node, &recv);
         if name == "len" {
@@ -433,7 +493,9 @@ impl Analyzer<'_> {
         self.check_enum_member(&recv_node, &recv, &name, node.text_range());
         let lookup = self.lookup_member(&recv, &name, node.text_range());
         let lookup = self.table_member_of_name(&recv_node, &name, lookup);
-        let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
+        let lookup = self
+            .primitive_library_member(&recv_node, &name)
+            .unwrap_or(lookup);
         // The read of a compound assignment's target (`c.count += 1`):
         // the store refuses a function of `Table` (`table_method_assign`),
         // so the read resolves to nothing and reports nothing.
@@ -451,11 +513,26 @@ impl Analyzer<'_> {
         match lookup {
             Lookup::Field(t, _) => Ty::uncertain(t),
             Lookup::Method(sig, _) => {
-                self.check_call(&sig, &format!("{}.{name}", self.show(&recv.t)), &[], None, node.text_range(), true);
+                self.check_call(
+                    &sig,
+                    &format!("{}.{name}", self.show(&recv.t)),
+                    &[],
+                    None,
+                    node.text_range(),
+                    true,
+                );
                 self.call_result(&sig)
             }
             Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
-                let args = [ArgTy { ty: receiver_ty(&self.types, &recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+                let args = [ArgTy {
+                    ty: receiver_ty(&self.types, &recv, is_table_fn),
+                    range: recv_node.text_range(),
+                    spread: false,
+                    keyed: None,
+                    keyed_spread: false,
+                    fn_kind_name: None,
+                    is_fn_literal: false,
+                }];
                 self.check_call(&sig, &name, &args, None, node.text_range(), false);
                 self.call_result(&sig)
             }
@@ -474,14 +551,20 @@ impl Analyzer<'_> {
                 }
                 Ty::certain(Type::Number)
             }
-            Type::Named(nid) if self.types.is_struct(nid) => match self.types.operator(nid, "len") {
-                Some(sig) => Ty::uncertain(sig.ret.clone()),
-                None => Ty::uncertain(Type::Number),
-            },
+            Type::Named(nid) if self.types.is_struct(nid) => {
+                match self.types.operator(nid, "len") {
+                    Some(sig) => Ty::uncertain(sig.ret.clone()),
+                    None => Ty::uncertain(Type::Number),
+                }
+            }
             Type::Nil | Type::Number | Type::Bool => {
                 if recv.certain {
                     let shown = self.show(&recv.t);
-                    self.error(node.text_range(), "len-of-non-length", format!("a {shown} has no length"));
+                    self.error(
+                        node.text_range(),
+                        "len-of-non-length",
+                        format!("a {shown} has no length"),
+                    );
                 }
                 Ty::uncertain(Type::Number)
             }
@@ -497,7 +580,12 @@ impl Analyzer<'_> {
         // type is certain (the type comes from a declaration, a literal or
         // a declared function's result, as for the declared members below).
         if let Lookup::TableFn(_) = lookup {
-            self.hints.members_declared.insert(node.text_range(), MemberHint::TableFn { key: name.to_string() });
+            self.hints.members_declared.insert(
+                node.text_range(),
+                MemberHint::TableFn {
+                    key: name.to_string(),
+                },
+            );
             return;
         }
         let key = match lookup {
@@ -508,8 +596,21 @@ impl Analyzer<'_> {
         // prelude library: resolved by its
         // declaration, in every mode. It is emitted under its Lua key.
         let declared_type = match self.types.expand(&recv.t) {
-            Type::Static(nid) => matches!(self.types.kind(nid), Some(NamedKind::Module { .. } | NamedKind::LuaClass { .. } | NamedKind::HostType { .. })) && !self.types.is_struct(nid) && self.is_declared_module(nid),
-            Type::Named(nid) => matches!(self.types.kind(nid), Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. })),
+            Type::Static(nid) => {
+                matches!(
+                    self.types.kind(nid),
+                    Some(
+                        NamedKind::Module { .. }
+                            | NamedKind::LuaClass { .. }
+                            | NamedKind::HostType { .. }
+                    )
+                ) && !self.types.is_struct(nid)
+                    && self.is_declared_module(nid)
+            }
+            Type::Named(nid) => matches!(
+                self.types.kind(nid),
+                Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. })
+            ),
             // `T?` and unions of declared types, whose members
             // `lookup_member` found under one key.
             Type::Union(parts) => {
@@ -518,19 +619,43 @@ impl Analyzer<'_> {
             }
             _ => false,
         };
-        let declared_key = if declared_type { Some(key.clone().unwrap_or_else(|| name.to_string())) } else { key.filter(|k| k != name) };
-        let certain_struct = recv.certain && matches!(self.types.expand(&recv.t), Type::Named(nid) if self.types.is_struct(nid));
+        let declared_key = if declared_type {
+            Some(key.clone().unwrap_or_else(|| name.to_string()))
+        } else {
+            key.filter(|k| k != name)
+        };
+        let certain_struct = recv.certain
+            && matches!(self.types.expand(&recv.t), Type::Named(nid) if self.types.is_struct(nid));
         let hint = match lookup {
-            Lookup::Field(..) if declared_key.is_some() => Some(MemberHint::Field { key: declared_key.clone().unwrap_or_default() }),
-            Lookup::Method(..) if declared_key.is_some() => Some(MemberHint::Method { key: declared_key.clone().unwrap_or_default() }),
-            Lookup::Function(..) if declared_key.is_some() => Some(MemberHint::Function { key: declared_key.clone().unwrap_or_default() }),
+            Lookup::Field(..) if declared_key.is_some() => Some(MemberHint::Field {
+                key: declared_key.clone().unwrap_or_default(),
+            }),
+            Lookup::Method(..) if declared_key.is_some() => Some(MemberHint::Method {
+                key: declared_key.clone().unwrap_or_default(),
+            }),
+            Lookup::Function(..) if declared_key.is_some() => Some(MemberHint::Function {
+                key: declared_key.clone().unwrap_or_default(),
+            }),
             Lookup::Field(t, _) if certain_struct && self.opts.static_resolution => {
                 // A field holding a function is data; the
                 // runtime would call it when it is a marked method, so a
                 // field of function type is left to the runtime test.
-                if matches!(self.types.expand(t), Type::Function | Type::Fn(_) | Type::Any) { None } else { Some(MemberHint::Field { key: name.to_string() }) }
+                if matches!(
+                    self.types.expand(t),
+                    Type::Function | Type::Fn(_) | Type::Any
+                ) {
+                    None
+                } else {
+                    Some(MemberHint::Field {
+                        key: name.to_string(),
+                    })
+                }
             }
-            Lookup::Method(..) if certain_struct && self.opts.static_resolution => Some(MemberHint::Method { key: name.to_string() }),
+            Lookup::Method(..) if certain_struct && self.opts.static_resolution => {
+                Some(MemberHint::Method {
+                    key: name.to_string(),
+                })
+            }
             _ => None,
         };
         if let Some(h) = hint {
@@ -571,14 +696,26 @@ impl Analyzer<'_> {
         match &t {
             // A map's other members are its keys, when they are strings.
             Type::Map(k, v) => match self.lookup_table_member(name) {
-                Lookup::Unknown if self.types.assignable(&Type::String, k) => Lookup::Field((**v).clone(), None),
+                Lookup::Unknown if self.types.assignable(&Type::String, k) => {
+                    Lookup::Field((**v).clone(), None)
+                }
                 other => other,
             },
             Type::Table | Type::Array(_) => self.lookup_table_member(name),
-            Type::Any | Type::Unknown | Type::Function | Type::Fn(_) | Type::Userdata | Type::Thread | Type::Range => Lookup::Unknown,
+            Type::Any
+            | Type::Unknown
+            | Type::Function
+            | Type::Fn(_)
+            | Type::Userdata
+            | Type::Thread
+            | Type::Range => Lookup::Unknown,
             Type::Nil => {
                 if recv.certain {
-                    self.error(at, "index-nil", format!("`{name}` is read from a value that is `nil` here"));
+                    self.error(
+                        at,
+                        "index-nil",
+                        format!("`{name}` is read from a value that is `nil` here"),
+                    );
                 }
                 Lookup::Unknown
             }
@@ -598,13 +735,45 @@ impl Analyzer<'_> {
                 None => Lookup::Unknown,
             },
             Type::Worker(exports) => match name {
-                "emit" => Lookup::Method(Rc::new(FnType { params: vec![Param { name: "event".into(), ty: Type::String, optional: false }], rest: Some(Type::Any), keyed: None, ret: Type::Nil, is_method: true, is_async: false, named: false, declared: false }), None),
-                "stop" => Lookup::Method(Rc::new(FnType { params: Vec::new(), rest: None, keyed: None, ret: Type::Nil, is_method: true, is_async: false, named: false, declared: false }), None),
+                "emit" => Lookup::Method(
+                    Rc::new(FnType {
+                        params: vec![Param {
+                            name: "event".into(),
+                            ty: Type::String,
+                            optional: false,
+                        }],
+                        rest: Some(Type::Any),
+                        keyed: None,
+                        ret: Type::Nil,
+                        is_method: true,
+                        is_async: false,
+                        named: false,
+                        declared: false,
+                    }),
+                    None,
+                ),
+                "stop" => Lookup::Method(
+                    Rc::new(FnType {
+                        params: Vec::new(),
+                        rest: None,
+                        keyed: None,
+                        ret: Type::Nil,
+                        is_method: true,
+                        is_async: false,
+                        named: false,
+                        declared: false,
+                    }),
+                    None,
+                ),
                 _ => {
                     if let Some(m) = exports {
                         let known = matches!(self.types.kind(*m), Some(NamedKind::Module { members }) if members.contains_key(name));
                         if !known {
-                            self.error(at, "worker-unknown-fn", format!("the worker file exports no `pub fn {name}`"));
+                            self.error(
+                                at,
+                                "worker-unknown-fn",
+                                format!("the worker file exports no `pub fn {name}`"),
+                            );
                         }
                     }
                     Lookup::WorkerCall
@@ -614,7 +783,11 @@ impl Analyzer<'_> {
                 // `T?`: the member of `T`, under its declared key. The read
                 // fails at runtime when the value is `nil`, which is not
                 // known here (`index-nil` is for a certain `nil`).
-                let non_nil: Vec<Type> = members.iter().filter(|m| **m != Type::Nil).cloned().collect();
+                let non_nil: Vec<Type> = members
+                    .iter()
+                    .filter(|m| **m != Type::Nil)
+                    .cloned()
+                    .collect();
                 if non_nil.len() == 1 && non_nil.len() < members.len() {
                     let t = non_nil.into_iter().next().unwrap_or(Type::Any);
                     return self.lookup_member(&Ty::uncertain(t), name, at);
@@ -629,12 +802,22 @@ impl Analyzer<'_> {
                 for (i, m) in members.iter().enumerate() {
                     match self.lookup_member(&Ty::new(m.clone(), false), name, at) {
                         // The same function of `Table` for every member.
-                        Lookup::TableFn(sig) if i == 0 || table_fn.is_some() => table_fn = Some(sig),
+                        Lookup::TableFn(sig) if i == 0 || table_fn.is_some() => {
+                            table_fn = Some(sig)
+                        }
                         _ if table_fn.is_some() => return Lookup::Unknown,
-                        Lookup::Field(t, None) => found = Some(match found { Some(f) => self.types.union(&f, &t), None => t }),
+                        Lookup::Field(t, None) => {
+                            found = Some(match found {
+                                Some(f) => self.types.union(&f, &t),
+                                None => t,
+                            })
+                        }
                         Lookup::Method(sig, None) | Lookup::LibraryMethod(sig) => {
                             let r = sig.ret.clone();
-                            found = Some(match found { Some(f) => self.types.union(&f, &r), None => r });
+                            found = Some(match found {
+                                Some(f) => self.types.union(&f, &r),
+                                None => r,
+                            });
                         }
                         _ => return Lookup::Unknown,
                     }
@@ -667,7 +850,12 @@ impl Analyzer<'_> {
     /// member under the same Lua key: that member, as it is on the first,
     /// with the union of the fields' types. `None` when they disagree, or
     /// when a part is not a declared type.
-    fn union_declared_member(&mut self, parts: &[Type], name: &str, at: TextRange) -> Option<Lookup> {
+    fn union_declared_member(
+        &mut self,
+        parts: &[Type],
+        name: &str,
+        at: TextRange,
+    ) -> Option<Lookup> {
         if parts.len() < 2 || !parts.iter().all(|p| self.is_declared_instance(p)) {
             return None;
         }
@@ -675,10 +863,23 @@ impl Analyzer<'_> {
         for p in parts {
             let found = self.lookup_member(&Ty::uncertain(p.clone()), name, at);
             agreed = Some(match (agreed, found) {
-                (None, f @ (Lookup::Method(_, Some(_)) | Lookup::Function(_, Some(_)) | Lookup::Field(_, Some(_)))) => f,
-                (Some(Lookup::Method(sig, Some(k))), Lookup::Method(_, Some(k2))) if k == k2 => Lookup::Method(sig, Some(k)),
-                (Some(Lookup::Function(sig, Some(k))), Lookup::Function(_, Some(k2))) if k == k2 => Lookup::Function(sig, Some(k)),
-                (Some(Lookup::Field(t, Some(k))), Lookup::Field(t2, Some(k2))) if k == k2 => Lookup::Field(self.types.union(&t, &t2), Some(k)),
+                (
+                    None,
+                    f @ (Lookup::Method(_, Some(_))
+                    | Lookup::Function(_, Some(_))
+                    | Lookup::Field(_, Some(_))),
+                ) => f,
+                (Some(Lookup::Method(sig, Some(k))), Lookup::Method(_, Some(k2))) if k == k2 => {
+                    Lookup::Method(sig, Some(k))
+                }
+                (Some(Lookup::Function(sig, Some(k))), Lookup::Function(_, Some(k2)))
+                    if k == k2 =>
+                {
+                    Lookup::Function(sig, Some(k))
+                }
+                (Some(Lookup::Field(t, Some(k))), Lookup::Field(t2, Some(k2))) if k == k2 => {
+                    Lookup::Field(self.types.union(&t, &t2), Some(k))
+                }
                 _ => return None,
             });
         }
@@ -701,9 +902,15 @@ impl Analyzer<'_> {
             _ => self.static_named(recv_node),
         };
         let Some(nid) = nid else { return };
-        if self.types.is_enum(nid) && matches!(self.lookup_static_member(nid, name), Lookup::Unknown) {
+        if self.types.is_enum(nid)
+            && matches!(self.lookup_static_member(nid, name), Lookup::Unknown)
+        {
             let owner = self.types.name(nid).to_string();
-            self.error(at, "unknown-variant", format!("the enum `{owner}` has no variant '{name}'"));
+            self.error(
+                at,
+                "unknown-variant",
+                format!("the enum `{owner}` has no variant '{name}'"),
+            );
         }
     }
 
@@ -751,7 +958,9 @@ impl Analyzer<'_> {
                 }
                 Lookup::Unknown
             }
-            Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. }) => self.lookup_instance_member(nid, name),
+            Some(NamedKind::LuaClass { .. } | NamedKind::HostType { .. }) => {
+                self.lookup_instance_member(nid, name)
+            }
             Some(NamedKind::Enum { .. }) => Lookup::Unknown,
             Some(NamedKind::Alias(t)) => {
                 let t = t.clone();
@@ -769,7 +978,11 @@ impl Analyzer<'_> {
         for _ in 0..64 {
             let Some(c) = cur else { break };
             let member = match self.types.kind(c) {
-                Some(NamedKind::HostType { members, .. } | NamedKind::LuaClass { members, .. } | NamedKind::Module { members }) => members.get(name).cloned(),
+                Some(
+                    NamedKind::HostType { members, .. }
+                    | NamedKind::LuaClass { members, .. }
+                    | NamedKind::Module { members },
+                ) => members.get(name).cloned(),
                 _ => None,
             };
             if let Some(m) = member {
@@ -798,22 +1011,50 @@ impl Analyzer<'_> {
                 }
                 match name {
                     "values" => Lookup::Field(Type::Array(Rc::new(Type::Named(nid))), None),
-                    "name" => Lookup::Function(Rc::new(FnType { params: vec![Param { name: "value".into(), ty: Type::Any, optional: false }], rest: None, keyed: None, ret: optional(&self.types, &Type::String), is_method: false, is_async: false, named: false, declared: false }), None),
+                    "name" => Lookup::Function(
+                        Rc::new(FnType {
+                            params: vec![Param {
+                                name: "value".into(),
+                                ty: Type::Any,
+                                optional: false,
+                            }],
+                            rest: None,
+                            keyed: None,
+                            ret: optional(&self.types, &Type::String),
+                            is_method: false,
+                            is_async: false,
+                            named: false,
+                            declared: false,
+                        }),
+                        None,
+                    ),
                     _ => Lookup::Unknown,
                 }
             }
             Some(NamedKind::Module { members }) => match members.get(name) {
-                Some(Member::Function(f)) if f.is_method => Lookup::Method(f.clone(), self.decl_key(nid, name)),
+                Some(Member::Function(f)) if f.is_method => {
+                    Lookup::Method(f.clone(), self.decl_key(nid, name))
+                }
                 Some(Member::Function(f)) => Lookup::Function(f.clone(), self.decl_key(nid, name)),
-                Some(Member::Value(t) | Member::Const(t)) => Lookup::Field(t.clone(), self.decl_key(nid, name)),
+                Some(Member::Value(t) | Member::Const(t)) => {
+                    Lookup::Field(t.clone(), self.decl_key(nid, name))
+                }
                 None => Lookup::Unknown,
             },
-            Some(NamedKind::LuaClass { members, .. } | NamedKind::HostType { members, .. }) => match members.get(name) {
-                Some(Member::Function(f)) if !f.is_method => Lookup::Function(f.clone(), self.decl_key(nid, name)),
-                Some(Member::Function(f)) => Lookup::Field(Type::Fn(f.clone()), self.decl_key(nid, name)),
-                Some(Member::Value(t) | Member::Const(t)) => Lookup::Field(t.clone(), self.decl_key(nid, name)),
-                None => Lookup::Unknown,
-            },
+            Some(NamedKind::LuaClass { members, .. } | NamedKind::HostType { members, .. }) => {
+                match members.get(name) {
+                    Some(Member::Function(f)) if !f.is_method => {
+                        Lookup::Function(f.clone(), self.decl_key(nid, name))
+                    }
+                    Some(Member::Function(f)) => {
+                        Lookup::Field(Type::Fn(f.clone()), self.decl_key(nid, name))
+                    }
+                    Some(Member::Value(t) | Member::Const(t)) => {
+                        Lookup::Field(t.clone(), self.decl_key(nid, name))
+                    }
+                    None => Lookup::Unknown,
+                }
+            }
             _ => Lookup::Unknown,
         }
     }
@@ -831,9 +1072,20 @@ impl Analyzer<'_> {
             "Table" => Type::Table,
             _ => Type::Bool,
         };
-        let mut params = vec![Param { name: "self".into(), ty, optional: false }];
+        let mut params = vec![Param {
+            name: "self".into(),
+            ty,
+            optional: false,
+        }];
         params.extend(sig.params.iter().cloned());
-        Some(Lookup::Function(Rc::new(FnType { params, is_method: false, ..(**sig).clone() }), None))
+        Some(Lookup::Function(
+            Rc::new(FnType {
+                params,
+                is_method: false,
+                ..(**sig).clone()
+            }),
+            None,
+        ))
     }
 
     /// A member of a number, string or boolean: a method defined in this
@@ -847,7 +1099,9 @@ impl Analyzer<'_> {
         if let Some(m) = self.prim_methods.get(key).and_then(|m| m.get(name)) {
             return Lookup::Method(m.clone(), None);
         }
-        let Some(lib) = self.prelude_type_id(key) else { return Lookup::Unknown };
+        let Some(lib) = self.prelude_type_id(key) else {
+            return Lookup::Unknown;
+        };
         match self.types.kind(lib) {
             Some(NamedKind::Module { members }) => match members.get(name) {
                 Some(Member::Function(f)) if f.is_method => Lookup::Method(f.clone(), None),
@@ -875,11 +1129,21 @@ impl Analyzer<'_> {
     /// called with the receiver as its first argument.
     pub(crate) fn lookup_table_member(&mut self, name: &str) -> Lookup {
         if let Some(sig) = self.prim_methods.get("Table").and_then(|m| m.get(name)) {
-            let mut params = vec![Param { name: "self".into(), ty: Type::Table, optional: false }];
+            let mut params = vec![Param {
+                name: "self".into(),
+                ty: Type::Table,
+                optional: false,
+            }];
             params.extend(sig.params.iter().cloned());
-            return Lookup::TableFn(Rc::new(FnType { params, is_method: false, ..(**sig).clone() }));
+            return Lookup::TableFn(Rc::new(FnType {
+                params,
+                is_method: false,
+                ..(**sig).clone()
+            }));
         }
-        let Some(lib) = self.prelude_type_id("Table") else { return Lookup::Unknown };
+        let Some(lib) = self.prelude_type_id("Table") else {
+            return Lookup::Unknown;
+        };
         let f = match self.types.kind(lib) {
             Some(NamedKind::Module { members }) => match members.get(name) {
                 Some(Member::Function(f)) => f.clone(),
@@ -908,7 +1172,9 @@ impl Analyzer<'_> {
             Lookup::TableFn(_) if self.keyed_params.contains(&id) => Lookup::Unknown,
             Lookup::Unknown => {
                 let declared = self.binding_types.get(&id).map(|t| self.types.expand(&t.t));
-                if matches!(declared, Some(Type::Table | Type::Map(..) | Type::Array(_))) && !self.keyed_params.contains(&id) {
+                if matches!(declared, Some(Type::Table | Type::Map(..) | Type::Array(_)))
+                    && !self.keyed_params.contains(&id)
+                {
                     self.lookup_table_member(name)
                 } else {
                     Lookup::Unknown
@@ -955,12 +1221,19 @@ impl Analyzer<'_> {
                 t => others.push(t),
             }
         }
-        if let (NAME_REF, Some(Ref::Binding(id))) = (recv_node.kind(), self.res.reference(recv_node.text_range())) {
+        if let (NAME_REF, Some(Ref::Binding(id))) =
+            (recv_node.kind(), self.res.reference(recv_node.text_range()))
+        {
             if self.keyed_params.contains(id) {
                 return (Vec::new(), Vec::new());
             }
             if tables.is_empty() {
-                if let Some(d) = self.binding_types.get(id).map(|t| self.types.expand(&t.t)).filter(|d| matches!(d, Type::Table | Type::Map(..) | Type::Array(_))) {
+                if let Some(d) = self
+                    .binding_types
+                    .get(id)
+                    .map(|t| self.types.expand(&t.t))
+                    .filter(|d| matches!(d, Type::Table | Type::Map(..) | Type::Array(_)))
+                {
                     return (vec![d], Vec::new());
                 }
             }
@@ -984,12 +1257,25 @@ impl Analyzer<'_> {
     ///   makes, which has a key `n` for Lua code, is a `Table`, not a list.
     ///
     /// On a `Table` or a map, another name is a key, read as one.
-    fn unresolved_table_member(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
+    fn unresolved_table_member(
+        &mut self,
+        recv_node: &SyntaxNode,
+        recv: &Ty,
+        name: &str,
+        at: TextRange,
+    ) {
         let (tables, others) = self.table_parts(recv_node, recv);
-        let Some(table) = tables.first().cloned() else { return };
+        let Some(table) = tables.first().cloned() else {
+            return;
+        };
         if matches!(self.lookup_table_member(name), Lookup::TableFn(_)) {
-            let Some(other) = others.first().cloned() else { return };
-            if others.iter().any(|o| matches!(o, Type::Any | Type::Unknown)) {
+            let Some(other) = others.first().cloned() else {
+                return;
+            };
+            if others
+                .iter()
+                .any(|o| matches!(o, Type::Any | Type::Unknown))
+            {
                 return;
             }
             let (t, o) = (self.show(&table), self.show(&other));
@@ -1012,7 +1298,13 @@ impl Analyzer<'_> {
     /// two directions disagree; the store is refused. A `**opts` table
     /// keeps its keys, and a record its fields (neither resolves to a
     /// function of `Table`).
-    pub(crate) fn table_method_assign(&mut self, recv_node: &SyntaxNode, recv: &Ty, name: &str, at: TextRange) {
+    pub(crate) fn table_method_assign(
+        &mut self,
+        recv_node: &SyntaxNode,
+        recv: &Ty,
+        name: &str,
+        at: TextRange,
+    ) {
         let (tables, others) = self.table_parts(recv_node, recv);
         if tables.is_empty() {
             return;
@@ -1033,9 +1325,12 @@ impl Analyzer<'_> {
     /// says nothing to the reader: a name declared with a type shows that
     /// type, and another receiver is "a list".
     fn table_receiver_text(&self, recv_node: &SyntaxNode, parts: &[Type]) -> String {
-        let empty_list = |t: &Type| matches!(self.types.expand(t), Type::Array(e) if matches!(*e, Type::Never));
+        let empty_list =
+            |t: &Type| matches!(self.types.expand(t), Type::Array(e) if matches!(*e, Type::Never));
         if !parts.is_empty() && parts.iter().all(empty_list) {
-            if let (NAME_REF, Some(Ref::Binding(id))) = (recv_node.kind(), self.res.reference(recv_node.text_range())) {
+            if let (NAME_REF, Some(Ref::Binding(id))) =
+                (recv_node.kind(), self.res.reference(recv_node.text_range()))
+            {
                 if self.binding(*id).is_some_and(|b| b.annotation.is_some()) {
                     if let Some(d) = self.binding_types.get(id) {
                         return format!("a value typed `{}`", self.show(&d.t));
@@ -1044,14 +1339,38 @@ impl Analyzer<'_> {
             }
             return "a list".to_string();
         }
-        format!("a value typed `{}`", self.show(&self.types.union_all(parts)))
+        format!(
+            "a value typed `{}`",
+            self.show(&self.types.union_all(parts))
+        )
     }
 
     fn lookup_task_member(&mut self, result: &Type, name: &str) -> Lookup {
-        let method = |params: Vec<Param>, ret: Type| Lookup::Method(Rc::new(FnType { params, rest: None, keyed: None, ret, is_method: true, is_async: false, named: false, declared: false }), None);
+        let method = |params: Vec<Param>, ret: Type| {
+            Lookup::Method(
+                Rc::new(FnType {
+                    params,
+                    rest: None,
+                    keyed: None,
+                    ret,
+                    is_method: true,
+                    is_async: false,
+                    named: false,
+                    declared: false,
+                }),
+                None,
+            )
+        };
         match name {
             "await" => method(Vec::new(), result.clone()),
-            "on_done" | "on_error" => method(vec![Param { name: "callback".into(), ty: Type::Function, optional: false }], Type::Task(Rc::new(result.clone()))),
+            "on_done" | "on_error" => method(
+                vec![Param {
+                    name: "callback".into(),
+                    ty: Type::Function,
+                    optional: false,
+                }],
+                Type::Task(Rc::new(result.clone())),
+            ),
             _ => Lookup::Unknown,
         }
     }
@@ -1059,7 +1378,9 @@ impl Analyzer<'_> {
     /// `x[k]`.
     fn index_expr(&mut self, node: &SyntaxNode) -> Ty {
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let (Some(o), Some(k)) = (parts.first(), parts.get(1)) else { return Ty::any() };
+        let (Some(o), Some(k)) = (parts.first(), parts.get(1)) else {
+            return Ty::any();
+        };
         let recv = self.expr1(o);
         let key = self.expr1(k);
         self.note_table_read(node, &recv);
@@ -1069,7 +1390,13 @@ impl Analyzer<'_> {
     /// Records a read whose receiver is certain to be a Lua table
     /// ([`crate::Hints::table_reads`]).
     fn note_table_read(&mut self, node: &SyntaxNode, recv: &Ty) {
-        if recv.certain && self.opts.static_resolution && matches!(self.types.expand(&recv.t), Type::Table | Type::Array(_) | Type::Map(..) | Type::Record(_)) {
+        if recv.certain
+            && self.opts.static_resolution
+            && matches!(
+                self.types.expand(&recv.t),
+                Type::Table | Type::Array(_) | Type::Map(..) | Type::Record(_)
+            )
+        {
             self.hints.table_reads.insert(node.text_range());
         }
     }
@@ -1084,12 +1411,20 @@ impl Analyzer<'_> {
             Type::Array(e) => Ty::uncertain((*e).clone()),
             Type::Map(_, v) => Ty::uncertain((*v).clone()),
             Type::Nil if recv.certain => {
-                self.error(node.text_range(), "index-nil", "indexing a value that is `nil` here");
+                self.error(
+                    node.text_range(),
+                    "index-nil",
+                    "indexing a value that is `nil` here",
+                );
                 Ty::any()
             }
             Type::Number | Type::Bool if recv.certain && key.t != Type::String => {
                 let shown = self.show(&recv.t);
-                self.error(node.text_range(), "index-primitive", format!("a {shown} cannot be indexed"));
+                self.error(
+                    node.text_range(),
+                    "index-primitive",
+                    format!("a {shown} cannot be indexed"),
+                );
                 Ty::any()
             }
             // Each member, as uncertain, so that none is reported for what
@@ -1109,20 +1444,32 @@ impl Analyzer<'_> {
 
     /// `f!`, `x.m!`: the value itself.
     fn bang(&mut self, node: &SyntaxNode) -> Ty {
-        let Some(inner) = expr_child(node) else { return Ty::any() };
+        let Some(inner) = expr_child(node) else {
+            return Ty::any();
+        };
         match inner.kind() {
             NAME_REF => {
                 if let Some(Ref::Binding(id)) = self.res.reference(inner.text_range()) {
-                    if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Variable) {
-                        let name = self.binding(*id).map(|b| b.name.clone()).unwrap_or_default();
+                    if self
+                        .binding(*id)
+                        .is_some_and(|b| b.kind == BindingKind::Variable)
+                    {
+                        let name = self
+                            .binding(*id)
+                            .map(|b| b.name.clone())
+                            .unwrap_or_default();
                         self.lint(node.text_range(), "redundant-bang", format!("`{name}` is a variable, which is never called automatically; the `!` does nothing"));
                     }
                 }
                 self.name_raw(&inner)
             }
             FIELD_EXPR => {
-                let Some(recv_node) = expr_child(&inner) else { return Ty::any() };
-                let name = field_name(&inner).map(|t| t.text().to_string()).unwrap_or_default();
+                let Some(recv_node) = expr_child(&inner) else {
+                    return Ty::any();
+                };
+                let name = field_name(&inner)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 let recv = self.expr1(&recv_node);
                 self.note_table_read(&inner, &recv);
                 self.check_enum_member(&recv_node, &recv, &name, inner.text_range());
@@ -1136,28 +1483,50 @@ impl Analyzer<'_> {
                 // the arguments without `self`; on a string, number or
                 // boolean it is the library's function, which takes the
                 // receiver first.
-                let primitive = matches!(self.types.expand(&recv.t), Type::Number | Type::String | Type::Bool);
+                let primitive = matches!(
+                    self.types.expand(&recv.t),
+                    Type::Number | Type::String | Type::Bool
+                );
                 match lookup {
                     Lookup::Field(t, _) => Ty::uncertain(t),
-                    Lookup::Method(sig, _) if !primitive => Ty::uncertain(Type::Fn(Rc::new(FnType { is_method: false, ..(*sig).clone() }))),
-                    Lookup::Method(sig, _) | Lookup::Function(sig, _) | Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => Ty::uncertain(Type::Fn(sig)),
+                    Lookup::Method(sig, _) if !primitive => {
+                        Ty::uncertain(Type::Fn(Rc::new(FnType {
+                            is_method: false,
+                            ..(*sig).clone()
+                        })))
+                    }
+                    Lookup::Method(sig, _)
+                    | Lookup::Function(sig, _)
+                    | Lookup::LibraryMethod(sig)
+                    | Lookup::TableFn(sig) => Ty::uncertain(Type::Fn(sig)),
                     _ => Ty::any(),
                 }
             }
             // `@m!` is `self.m!`: a method of the struct comes bound, so it
             // takes the arguments without `self`.
             AT_EXPR => {
-                let name = token(&inner, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+                let name = token(&inner, AT_NAME)
+                    .map(|t| t.text().trim_start_matches('@').to_string())
+                    .unwrap_or_default();
                 let method = match self.self_type().map(|t| self.types.expand(&t)) {
-                    Some(Type::Named(nid)) if self.types.is_struct(nid) && self.types.field(nid, &name).is_none() => self.types.method(nid, &name),
+                    Some(Type::Named(nid))
+                        if self.types.is_struct(nid) && self.types.field(nid, &name).is_none() =>
+                    {
+                        self.types.method(nid, &name)
+                    }
                     _ => None,
                 };
                 match method {
                     Some(sig) => {
                         if self.opts.static_resolution {
-                            self.hints.members.insert(inner.text_range(), MemberHint::Method { key: name });
+                            self.hints
+                                .members
+                                .insert(inner.text_range(), MemberHint::Method { key: name });
                         }
-                        Ty::uncertain(Type::Fn(Rc::new(FnType { is_method: false, ..(*sig).clone() })))
+                        Ty::uncertain(Type::Fn(Rc::new(FnType {
+                            is_method: false,
+                            ..(*sig).clone()
+                        })))
                     }
                     None => self.at_expr(&inner),
                 }
@@ -1173,7 +1542,9 @@ impl Analyzer<'_> {
         match node.kind() {
             METHOD_CALL => self.method_call(node, Vec::new()),
             _ => {
-                let Some(callee) = expr_child(node) else { return Ty::any() };
+                let Some(callee) = expr_child(node) else {
+                    return Ty::any();
+                };
                 let list = child(node, ARG_LIST).or_else(|| child(node, COMMAND_ARGS));
                 let block = child(node, TRAILING_BLOCK);
                 self.call_target(&callee, Vec::new(), list.as_ref(), block.as_ref())
@@ -1190,27 +1561,61 @@ impl Analyzer<'_> {
                 SPREAD_ARG => {
                     if let Some(e) = expr_child(&c) {
                         let ty = self.expr1(&e);
-                        out.push(ArgTy { ty, range: c.text_range(), spread: true, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false });
+                        out.push(ArgTy {
+                            ty,
+                            range: c.text_range(),
+                            spread: true,
+                            keyed: None,
+                            keyed_spread: false,
+                            fn_kind_name: None,
+                            is_fn_literal: false,
+                        });
                     }
                 }
                 KEYED_ARG => {
-                    let key = first_token(&c).map(|t| t.text().to_string()).unwrap_or_default();
+                    let key = first_token(&c)
+                        .map(|t| t.text().to_string())
+                        .unwrap_or_default();
                     if let Some(e) = expr_child(&c) {
                         self.autocall_argument(&e);
                         let ty = self.expr1(&e);
-                        out.push(ArgTy { ty, range: c.text_range(), spread: false, keyed: Some(key), keyed_spread: false, fn_kind_name: None, is_fn_literal: false });
+                        out.push(ArgTy {
+                            ty,
+                            range: c.text_range(),
+                            spread: false,
+                            keyed: Some(key),
+                            keyed_spread: false,
+                            fn_kind_name: None,
+                            is_fn_literal: false,
+                        });
                     }
                 }
                 KEYED_SPREAD_ARG => {
                     if let Some(e) = expr_child(&c) {
                         let ty = self.expr1(&e);
-                        out.push(ArgTy { ty, range: c.text_range(), spread: false, keyed: None, keyed_spread: true, fn_kind_name: None, is_fn_literal: false });
+                        out.push(ArgTy {
+                            ty,
+                            range: c.text_range(),
+                            spread: false,
+                            keyed: None,
+                            keyed_spread: true,
+                            fn_kind_name: None,
+                            is_fn_literal: false,
+                        });
                     }
                 }
                 k if is_expr(k) => {
                     let fn_kind_name = self.autocall_argument(&c);
                     let ty = self.expr(&c);
-                    out.push(ArgTy { ty, range: c.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name, is_fn_literal: matches!(c.kind(), FN_EXPR | LAMBDA_EXPR) });
+                    out.push(ArgTy {
+                        ty,
+                        range: c.text_range(),
+                        spread: false,
+                        keyed: None,
+                        keyed_spread: false,
+                        fn_kind_name,
+                        is_fn_literal: matches!(c.kind(), FN_EXPR | LAMBDA_EXPR),
+                    });
                 }
                 _ => {}
             }
@@ -1234,11 +1639,15 @@ impl Analyzer<'_> {
         }
         let (name, sig) = match self.res.reference(arg.text_range())? {
             Ref::Binding(id) => {
-                let b = self.binding(*id).filter(|b| b.kind == BindingKind::Function)?;
+                let b = self
+                    .binding(*id)
+                    .filter(|b| b.kind == BindingKind::Function)?;
                 let name = b.name.clone();
-                let sig = self.binding_fn_type(*id).or_else(|| match self.binding_types.get(id).map(|t| self.types.expand(&t.t)) {
-                    Some(Type::Fn(f)) => Some(f),
-                    _ => None,
+                let sig = self.binding_fn_type(*id).or_else(|| {
+                    match self.binding_types.get(id).map(|t| self.types.expand(&t.t)) {
+                        Some(Type::Fn(f)) => Some(f),
+                        _ => None,
+                    }
                 });
                 (name, sig)
             }
@@ -1252,9 +1661,18 @@ impl Analyzer<'_> {
             }
             _ => return None,
         };
-        let required = sig.as_ref().and_then(|f| f.params.iter().find(|p| !p.optional && (matches!(p.ty, Type::Any | Type::Unknown) || !self.types.may_be_nil(&p.ty))));
+        let required = sig.as_ref().and_then(|f| {
+            f.params.iter().find(|p| {
+                !p.optional
+                    && (matches!(p.ty, Type::Any | Type::Unknown) || !self.types.may_be_nil(&p.ty))
+            })
+        });
         if let Some(p) = required {
-            let param = if p.name.is_empty() { String::new() } else { format!(" '{}'", p.name) };
+            let param = if p.name.is_empty() {
+                String::new()
+            } else {
+                format!(" '{}'", p.name)
+            };
             self.lint(
                 arg.text_range(),
                 "autocall-argument",
@@ -1266,7 +1684,13 @@ impl Analyzer<'_> {
 
     /// A call of `callee` with the piped values `pre`, the written
     /// arguments and the trailing block.
-    pub(crate) fn call_target(&mut self, callee: &SyntaxNode, pre: Vec<ArgTy>, list: Option<&SyntaxNode>, block: Option<&SyntaxNode>) -> Ty {
+    pub(crate) fn call_target(
+        &mut self,
+        callee: &SyntaxNode,
+        pre: Vec<ArgTy>,
+        list: Option<&SyntaxNode>,
+        block: Option<&SyntaxNode>,
+    ) -> Ty {
         let mut args = pre;
         args.extend(self.args_of(list));
         let block_ty = block.map(|b| (self.block_fn(b), b.text_range()));
@@ -1276,13 +1700,21 @@ impl Analyzer<'_> {
             NAME_REF => {
                 let name = name_text(callee).unwrap_or_default();
                 let f = self.name_raw(callee);
-                let f = if safe_call { Ty::new(self.types.non_nil(&f.t), f.certain) } else { f };
+                let f = if safe_call {
+                    Ty::new(self.types.non_nil(&f.t), f.certain)
+                } else {
+                    f
+                };
                 let checked = self.checked_fn_name(callee);
                 self.call_value(&f, &name, &args, block_ty, callee.text_range(), checked)
             }
             FIELD_EXPR if field_name(callee).is_some_and(|t| t.text() != "len") => {
-                let Some(recv_node) = expr_child(callee) else { return Ty::any() };
-                let name = field_name(callee).map(|t| t.text().to_string()).unwrap_or_default();
+                let Some(recv_node) = expr_child(callee) else {
+                    return Ty::any();
+                };
+                let name = field_name(callee)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 if let Some(handle) = self.worker_new(&recv_node, &name, &args, callee) {
                     return handle;
                 }
@@ -1290,7 +1722,9 @@ impl Analyzer<'_> {
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
                 let lookup = self.table_member_of_name(&recv_node, &name, lookup);
-                let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
+                let lookup = self
+                    .primitive_library_member(&recv_node, &name)
+                    .unwrap_or(lookup);
                 self.record_member_hint(callee, &recv, &lookup, &name);
                 let desc = format!("{}.{name}", self.show(&recv.t));
                 let is_table_fn = matches!(lookup, Lookup::TableFn(_));
@@ -1300,12 +1734,22 @@ impl Analyzer<'_> {
                         self.call_result(&sig)
                     }
                     Lookup::LibraryMethod(sig) | Lookup::TableFn(sig) => {
-                        let mut all = vec![ArgTy { ty: receiver_ty(&self.types, &recv, is_table_fn), range: recv_node.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+                        let mut all = vec![ArgTy {
+                            ty: receiver_ty(&self.types, &recv, is_table_fn),
+                            range: recv_node.text_range(),
+                            spread: false,
+                            keyed: None,
+                            keyed_spread: false,
+                            fn_kind_name: None,
+                            is_fn_literal: false,
+                        }];
                         all.extend(args);
                         self.check_call(&sig, &desc, &all, block_ty, callee.text_range(), false);
                         self.call_result(&sig)
                     }
-                    Lookup::Unknown if matches!(self.types.expand(&recv.t), Type::Any | Type::Unknown) => {
+                    Lookup::Unknown
+                        if matches!(self.types.expand(&recv.t), Type::Any | Type::Unknown) =>
+                    {
                         self.untyped_table_method(&name, callee.text_range());
                         Ty::any()
                     }
@@ -1330,20 +1774,37 @@ impl Analyzer<'_> {
                     }
                 }
             }
-            METHOD_CALL if child(callee, ARG_LIST).is_none() && child(callee, TRAILING_BLOCK).is_none() => self.method_call(callee, args),
+            METHOD_CALL
+                if child(callee, ARG_LIST).is_none() && child(callee, TRAILING_BLOCK).is_none() =>
+            {
+                self.method_call(callee, args)
+            }
             LUA_PATH => {
                 self.lua_path(callee);
                 Ty::any()
             }
             AT_EXPR => {
                 let f = self.at_expr(callee);
-                let f = if safe_call { Ty::new(self.types.non_nil(&f.t), f.certain) } else { f };
-                let name = token(callee, AT_NAME).map(|t| t.text().to_string()).unwrap_or_default();
+                let f = if safe_call {
+                    Ty::new(self.types.non_nil(&f.t), f.certain)
+                } else {
+                    f
+                };
+                let name = token(callee, AT_NAME)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 self.call_value(&f, &name, &args, block_ty, callee.text_range(), false)
             }
             _ => {
                 let f = self.expr1(callee);
-                self.call_value(&f, "the callee", &args, block_ty, callee.text_range(), false)
+                self.call_value(
+                    &f,
+                    "the callee",
+                    &args,
+                    block_ty,
+                    callee.text_range(),
+                    false,
+                )
             }
         }
     }
@@ -1352,18 +1813,32 @@ impl Analyzer<'_> {
     /// reads the worker file as `import` does, so that calls through the
     /// handle are checked against its `pub fn`s; a file that exports
     /// `emit` or `stop` is an error. `None` when this is not such a call.
-    fn worker_new(&mut self, recv: &SyntaxNode, name: &str, args: &[ArgTy], callee: &SyntaxNode) -> Option<Ty> {
-        if name != "new" || recv.kind() != NAME_REF || name_text(recv).as_deref() != Some("Worker") {
+    fn worker_new(
+        &mut self,
+        recv: &SyntaxNode,
+        name: &str,
+        args: &[ArgTy],
+        callee: &SyntaxNode,
+    ) -> Option<Ty> {
+        if name != "new" || recv.kind() != NAME_REF || name_text(recv).as_deref() != Some("Worker")
+        {
             return None;
         }
-        if !matches!(self.res.reference(recv.text_range()), Some(Ref::Prelude(p)) if p.name == "Worker") {
+        if !matches!(self.res.reference(recv.text_range()), Some(Ref::Prelude(p)) if p.name == "Worker")
+        {
             return None;
         }
         let path = match args.first() {
             Some(a) if args.len() == 1 && !a.spread && a.keyed.is_none() && !a.keyed_spread => {
                 // The literal, from the argument node.
-                let list = callee.parent().and_then(|c| child(&c, ARG_LIST).or_else(|| child(&c, COMMAND_ARGS)));
-                list.and_then(|l| expr_children(&l).next()).filter(|e| e.kind() == LITERAL).and_then(|e| first_token(&e)).filter(|t| t.kind() == STRING).map(|t| crate::resolver::decode_plain_string(&t))
+                let list = callee
+                    .parent()
+                    .and_then(|c| child(&c, ARG_LIST).or_else(|| child(&c, COMMAND_ARGS)));
+                list.and_then(|l| expr_children(&l).next())
+                    .filter(|e| e.kind() == LITERAL)
+                    .and_then(|e| first_token(&e))
+                    .filter(|t| t.kind() == STRING)
+                    .map(|t| crate::resolver::decode_plain_string(&t))
             }
             _ => None,
         };
@@ -1381,10 +1856,13 @@ impl Analyzer<'_> {
                         if e.name == "emit" || e.name == "stop" {
                             self.error(callee.text_range(), "worker-reserved-export", format!("the worker file '{path}' exports `{}`, which is the name of a handle method; a worker file may not export `emit` or `stop`", e.name));
                         }
-                        members.insert(e.name.clone(), Member::Function(Rc::new(FnType::unknown())));
+                        members
+                            .insert(e.name.clone(), Member::Function(Rc::new(FnType::unknown())));
                     }
                 }
-                let nid = self.types.add(&format!("worker '{path}'"), NamedKind::Module { members });
+                let nid = self
+                    .types
+                    .add(&format!("worker '{path}'"), NamedKind::Module { members });
                 Some(Ty::uncertain(Type::Worker(Some(nid))))
             }
             Err(msg) => {
@@ -1401,7 +1879,15 @@ impl Analyzer<'_> {
     /// [`Self::checked_fn_name`]): only the runtime-checked part of a type
     /// is relied on, and of a signature that is "a
     /// function", which may be a Lua function returning anything.
-    fn call_value(&mut self, f: &Ty, desc: &str, args: &[ArgTy], block: Option<(Ty, TextRange)>, at: TextRange, checked: bool) -> Ty {
+    fn call_value(
+        &mut self,
+        f: &Ty,
+        desc: &str,
+        args: &[ArgTy],
+        block: Option<(Ty, TextRange)>,
+        at: TextRange,
+        checked: bool,
+    ) -> Ty {
         match self.types.expand(&f.t) {
             Type::Fn(sig) => {
                 self.check_call(&sig, desc, args, block, at, false);
@@ -1415,12 +1901,20 @@ impl Analyzer<'_> {
                 None => Ty::any(),
             },
             Type::Nil if f.certain => {
-                self.error(at, "call-nil", format!("{desc} is `nil` here and cannot be called"));
+                self.error(
+                    at,
+                    "call-nil",
+                    format!("{desc} is `nil` here and cannot be called"),
+                );
                 Ty::any()
             }
             Type::Number | Type::String | Type::Bool if f.certain => {
                 let shown = self.show(&f.t);
-                self.error(at, "call-primitive", format!("{desc} is a {shown} and cannot be called"));
+                self.error(
+                    at,
+                    "call-primitive",
+                    format!("{desc} is a {shown} and cannot be called"),
+                );
                 Ty::any()
             }
             _ => Ty::any(),
@@ -1434,7 +1928,11 @@ impl Analyzer<'_> {
     pub(crate) fn checked_fn_name(&self, name: &SyntaxNode) -> bool {
         match self.res.reference(name.text_range()) {
             Some(Ref::Binding(id)) => {
-                self.binding_sigs.contains_key(id) && !self.assigned.contains(id) && self.binding(*id).is_some_and(|b| b.decl != DeclKind::Global)
+                self.binding_sigs.contains_key(id)
+                    && !self.assigned.contains(id)
+                    && self
+                        .binding(*id)
+                        .is_some_and(|b| b.decl != DeclKind::Global)
             }
             _ => false,
         }
@@ -1460,13 +1958,30 @@ impl Analyzer<'_> {
 
     /// Checks the arguments of a call against a signature. `bare`: the call is a bare function-kind name, which
     /// takes no arguments.
-    pub(crate) fn check_call(&mut self, sig: &FnType, desc: &str, args: &[ArgTy], block: Option<(Ty, TextRange)>, at: TextRange, bare: bool) {
+    pub(crate) fn check_call(
+        &mut self,
+        sig: &FnType,
+        desc: &str,
+        args: &[ArgTy],
+        block: Option<(Ty, TextRange)>,
+        at: TextRange,
+        bare: bool,
+    ) {
         let spread = args.iter().any(|a| a.spread);
-        let positional: Vec<&ArgTy> = args.iter().filter(|a| !a.spread && a.keyed.is_none() && !a.keyed_spread).collect();
-        let keyed: Vec<&ArgTy> = args.iter().filter(|a| a.keyed.is_some() || a.keyed_spread).collect();
+        let positional: Vec<&ArgTy> = args
+            .iter()
+            .filter(|a| !a.spread && a.keyed.is_none() && !a.keyed_spread)
+            .collect();
+        let keyed: Vec<&ArgTy> = args
+            .iter()
+            .filter(|a| a.keyed.is_some() || a.keyed_spread)
+            .collect();
         let has_keyed = !keyed.is_empty();
         // The block is the final positional argument.
-        let mut all: Vec<(Ty, TextRange, Option<String>)> = positional.iter().map(|a| (a.ty.clone(), a.range, a.fn_kind_name.clone())).collect();
+        let mut all: Vec<(Ty, TextRange, Option<String>)> = positional
+            .iter()
+            .map(|a| (a.ty.clone(), a.range, a.fn_kind_name.clone()))
+            .collect();
         if let Some((bt, br)) = &block {
             all.push((bt.clone(), *br, None));
         }
@@ -1475,7 +1990,8 @@ impl Analyzer<'_> {
             // rule; a declared Lua function is checked here, and
             // leniently: a parameter that can hold a function (`Function`,
             // a signature, a union with one, `any`) takes the block.
-            let accepts = sig.params.iter().any(|p| self.accepts_function(&p.ty)) || sig.rest.is_some();
+            let accepts =
+                sig.params.iter().any(|p| self.accepts_function(&p.ty)) || sig.rest.is_some();
             if !accepts {
                 self.error(*br, "block-without-function-param", format!("a block can only be passed to a function that declares a `Function` parameter, and {desc} has none"));
             }
@@ -1483,11 +1999,16 @@ impl Analyzer<'_> {
         if !spread {
             for (i, (ty, range, fn_name)) in all.iter().enumerate() {
                 let Some(p) = sig.params.get(i) else { break };
-                let what = if p.name.is_empty() { format!("argument {} of {desc}", i + 1) } else { format!("parameter '{}' of {desc}", p.name) };
+                let what = if p.name.is_empty() {
+                    format!("argument {} of {desc}", i + 1)
+                } else {
+                    format!("parameter '{}' of {desc}", p.name)
+                };
                 if let Some(n) = fn_name {
                     if takes_block(&p.ty) {
                         let at = *range;
-                        self.diags.retain(|d| !(d.range == at && d.code == "autocall-argument"));
+                        self.diags
+                            .retain(|d| !(d.range == at && d.code == "autocall-argument"));
                         self.warn(*range, "fn-kind-argument", format!("`{n}` is a function-kind name, so it is called here and its result is passed; write `{n}!` to pass the function itself"));
                         continue;
                     }
@@ -1498,7 +2019,11 @@ impl Analyzer<'_> {
             // type that excludes `nil` rejects at runtime.
             if !bare {
                 for p in sig.params.iter().skip(all.len()) {
-                    if p.optional || p.ty == Type::Any || self.types.may_be_nil(&p.ty) || !self.types.is_definite(&p.ty) {
+                    if p.optional
+                        || p.ty == Type::Any
+                        || self.types.may_be_nil(&p.ty)
+                        || !self.types.is_definite(&p.ty)
+                    {
                         continue;
                     }
                     let shown = self.show(&p.ty);
@@ -1517,7 +2042,13 @@ impl Analyzer<'_> {
                     let in_params = slot < sig.params.len() || sig.rest.is_some();
                     let range = keyed.first().map(|a| a.range).unwrap_or(at);
                     if in_params {
-                        self.error(range, "keyed-args-rejected", format!("{desc} has no `**opts` parameter, so keyed arguments are refused"));
+                        self.error(
+                            range,
+                            "keyed-args-rejected",
+                            format!(
+                                "{desc} has no `**opts` parameter, so keyed arguments are refused"
+                            ),
+                        );
                     } else {
                         self.warn(range, "keyed-args-dropped", format!("{desc} has no `**opts` parameter; these keyed arguments are beyond its parameters and are dropped"));
                     }
@@ -1531,7 +2062,11 @@ impl Analyzer<'_> {
                                     let what = format!("keyed argument '{k}' of {desc}");
                                     self.check_assignable(&a.ty, ft, a.range, &what);
                                 }
-                                None => self.error(a.range, "unknown-keyed-arg", format!("{desc} takes no keyed argument '{k}'")),
+                                None => self.error(
+                                    a.range,
+                                    "unknown-keyed-arg",
+                                    format!("{desc} takes no keyed argument '{k}'"),
+                                ),
                             }
                         }
                     }
@@ -1553,16 +2088,26 @@ impl Analyzer<'_> {
     /// `x:m(args)`: Lua's method call. On a string receiver
     /// the method is NL's; otherwise nothing is known.
     fn method_call(&mut self, node: &SyntaxNode, pre: Vec<ArgTy>) -> Ty {
-        let Some(recv) = expr_child(node) else { return Ty::any() };
+        let Some(recv) = expr_child(node) else {
+            return Ty::any();
+        };
         let r = self.expr1(&recv);
         let mut args = pre;
-        args.extend(self.args_of(child(node, ARG_LIST).or_else(|| child(node, COMMAND_ARGS)).as_ref()));
+        args.extend(
+            self.args_of(
+                child(node, ARG_LIST)
+                    .or_else(|| child(node, COMMAND_ARGS))
+                    .as_ref(),
+            ),
+        );
         if let Some(b) = child(node, TRAILING_BLOCK) {
             self.block_fn(&b);
         }
         if r.t == Type::String {
             let name = crate::util::method_name_of(node).unwrap_or_default();
-            if let Lookup::LibraryMethod(sig) | Lookup::Method(sig, _) = self.lookup_member(&r, &name, node.text_range()) {
+            if let Lookup::LibraryMethod(sig) | Lookup::Method(sig, _) =
+                self.lookup_member(&r, &name, node.text_range())
+            {
                 return self.call_result(&sig);
             }
         }
@@ -1572,14 +2117,31 @@ impl Analyzer<'_> {
     /// `a |> f(b)`.
     fn pipe(&mut self, node: &SyntaxNode) -> Ty {
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let (Some(lhs), Some(target)) = (parts.first(), parts.get(1)) else { return Ty::any() };
+        let (Some(lhs), Some(target)) = (parts.first(), parts.get(1)) else {
+            return Ty::any();
+        };
         let value = self.expr1(lhs);
-        let pre = vec![ArgTy { ty: value, range: lhs.text_range(), spread: false, keyed: None, keyed_spread: false, fn_kind_name: None, is_fn_literal: false }];
+        let pre = vec![ArgTy {
+            ty: value,
+            range: lhs.text_range(),
+            spread: false,
+            keyed: None,
+            keyed_spread: false,
+            fn_kind_name: None,
+            is_fn_literal: false,
+        }];
         match target.kind() {
             CALL_EXPR => {
-                let Some(callee) = expr_child(target) else { return Ty::any() };
+                let Some(callee) = expr_child(target) else {
+                    return Ty::any();
+                };
                 let block = child(target, TRAILING_BLOCK);
-                self.call_target(&callee, pre, child(target, ARG_LIST).as_ref(), block.as_ref())
+                self.call_target(
+                    &callee,
+                    pre,
+                    child(target, ARG_LIST).as_ref(),
+                    block.as_ref(),
+                )
             }
             METHOD_CALL => self.method_call(target, pre),
             _ => self.call_target(target, pre, None, None),
@@ -1590,8 +2152,16 @@ impl Analyzer<'_> {
     /// unknown.
     fn lua_path(&mut self, node: &SyntaxNode) -> Ty {
         for step in node.children() {
-            for e in step.descendants().filter(|d| is_expr(d.kind()) && d.parent().is_some_and(|p| !is_expr(p.kind()) || p.kind() == LUA_PATH)) {
-                if e.ancestors().skip(1).take_while(|a| a != &step).any(|a| is_expr(a.kind())) {
+            for e in step.descendants().filter(|d| {
+                is_expr(d.kind())
+                    && d.parent()
+                        .is_some_and(|p| !is_expr(p.kind()) || p.kind() == LUA_PATH)
+            }) {
+                if e.ancestors()
+                    .skip(1)
+                    .take_while(|a| a != &step)
+                    .any(|a| is_expr(a.kind()))
+                {
                     continue;
                 }
                 self.expr(&e);
@@ -1607,18 +2177,31 @@ impl Analyzer<'_> {
 
     fn prefix(&mut self, node: &SyntaxNode) -> Ty {
         let op = first_token(node).map(|t| t.kind());
-        let Some(operand) = expr_child(node) else { return Ty::any() };
+        let Some(operand) = expr_child(node) else {
+            return Ty::any();
+        };
         let v = self.expr1(&operand);
         match op {
             Some(BANG | NOT_KW) => Ty::certain(Type::Bool),
             Some(MINUS) => match self.types.expand(&v.t) {
                 Type::Number => Ty::new(Type::Number, v.certain),
-                Type::Named(nid) if self.types.is_struct(nid) => self.types.operator(nid, "-").map(|s| Ty::uncertain(s.ret.clone())).unwrap_or_else(Ty::any),
+                Type::Named(nid) if self.types.is_struct(nid) => self
+                    .types
+                    .operator(nid, "-")
+                    .map(|s| Ty::uncertain(s.ret.clone()))
+                    .unwrap_or_else(Ty::any),
                 // A Lua class or host type with a declared `-`.
-                Type::Named(nid) => self.decl_operator(nid, "-").map(|s| Ty::uncertain(s.ret.clone())).unwrap_or_else(Ty::any),
+                Type::Named(nid) => self
+                    .decl_operator(nid, "-")
+                    .map(|s| Ty::uncertain(s.ret.clone()))
+                    .unwrap_or_else(Ty::any),
                 Type::Nil | Type::Bool if v.certain => {
                     let shown = self.show(&v.t);
-                    self.error(node.text_range(), "bad-operand", format!("unary `-` on a {shown}"));
+                    self.error(
+                        node.text_range(),
+                        "bad-operand",
+                        format!("unary `-` on a {shown}"),
+                    );
                     Ty::any()
                 }
                 _ => Ty::any(),
@@ -1630,7 +2213,11 @@ impl Analyzer<'_> {
                     }
                     Ty::new(Type::Number, v.certain)
                 }
-                Type::Named(nid) if self.types.is_struct(nid) => self.types.operator(nid, "~").map(|s| Ty::uncertain(s.ret.clone())).unwrap_or_else(Ty::any),
+                Type::Named(nid) if self.types.is_struct(nid) => self
+                    .types
+                    .operator(nid, "~")
+                    .map(|s| Ty::uncertain(s.ret.clone()))
+                    .unwrap_or_else(Ty::any),
                 _ => Ty::any(),
             },
             _ => Ty::any(),
@@ -1638,9 +2225,13 @@ impl Analyzer<'_> {
     }
 
     fn binary(&mut self, node: &SyntaxNode) -> Ty {
-        let Some(op) = bin_op(node).map(|t| t.kind()) else { return Ty::any() };
+        let Some(op) = bin_op(node).map(|t| t.kind()) else {
+            return Ty::any();
+        };
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else { return Ty::any() };
+        let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else {
+            return Ty::any();
+        };
         if matches!(op, AND_KW | AMP2 | OR_KW | PIPE2) {
             return self.logical(op, a, b);
         }
@@ -1651,7 +2242,10 @@ impl Analyzer<'_> {
             let saved = self.env.clone();
             let y = self.expr1(b);
             self.env = saved;
-            return Ty::new(self.types.union(&self.types.non_nil(&x.t), &y.t), x.certain && y.certain);
+            return Ty::new(
+                self.types.union(&self.types.non_nil(&x.t), &y.t),
+                x.certain && y.certain,
+            );
         }
         let x = self.expr1(a);
         let y = self.expr1(b);
@@ -1674,10 +2268,11 @@ impl Analyzer<'_> {
         }
         let both = |t: Type| x.t == t && y.t == t;
         match op {
-            LT | LT_EQ | GT | GT_EQ | EQ2 | NEQ | CONCAT | CONCAT_EQ => both(Type::Number) || both(Type::String),
-            SLASH2 | SLASH2_EQ | PIPE | PIPE_EQ | AMP | AMP_EQ | CARET | CARET_EQ | SHL | SHL_EQ | SHR | SHR_EQ | USHR | USHR_EQ | TILDE => {
-                both(Type::Number)
+            LT | LT_EQ | GT | GT_EQ | EQ2 | NEQ | CONCAT | CONCAT_EQ => {
+                both(Type::Number) || both(Type::String)
             }
+            SLASH2 | SLASH2_EQ | PIPE | PIPE_EQ | AMP | AMP_EQ | CARET | CARET_EQ | SHL
+            | SHL_EQ | SHR | SHR_EQ | USHR | USHR_EQ | TILDE => both(Type::Number),
             _ => false,
         }
     }
@@ -1687,8 +2282,36 @@ impl Analyzer<'_> {
     pub(crate) fn binary_op(&mut self, at: TextRange, op: SyntaxKind, x: &Ty, y: &Ty) -> Ty {
         let xt = self.types.expand(&x.t);
         let yt = self.types.expand(&y.t);
-        let arithmetic = matches!(op, PLUS | MINUS | STAR | SLASH | PERCENT | STAR2 | SLASH2 | PLUS_EQ | MINUS_EQ | STAR_EQ | SLASH_EQ | PERCENT_EQ | STAR2_EQ | SLASH2_EQ);
-        let bitwise = matches!(op, PIPE | AMP | CARET | SHL | SHR | USHR | PIPE_EQ | AMP_EQ | CARET_EQ | SHL_EQ | SHR_EQ | USHR_EQ);
+        let arithmetic = matches!(
+            op,
+            PLUS | MINUS
+                | STAR
+                | SLASH
+                | PERCENT
+                | STAR2
+                | SLASH2
+                | PLUS_EQ
+                | MINUS_EQ
+                | STAR_EQ
+                | SLASH_EQ
+                | PERCENT_EQ
+                | STAR2_EQ
+                | SLASH2_EQ
+        );
+        let bitwise = matches!(
+            op,
+            PIPE | AMP
+                | CARET
+                | SHL
+                | SHR
+                | USHR
+                | PIPE_EQ
+                | AMP_EQ
+                | CARET_EQ
+                | SHL_EQ
+                | SHR_EQ
+                | USHR_EQ
+        );
         let compare = matches!(op, LT | LT_EQ | GT | GT_EQ);
         let equality = matches!(op, EQ2 | NEQ);
         let concat = matches!(op, CONCAT | CONCAT_EQ);
@@ -1700,16 +2323,26 @@ impl Analyzer<'_> {
             for (t, c) in [(&xt, x.certain), (&yt, y.certain)] {
                 if c && !self.types.overlaps(t, &Type::Number) {
                     let shown = self.show(t);
-                    self.error(at, "bad-operand", format!("a range takes numbers, got {shown}"));
+                    self.error(
+                        at,
+                        "bad-operand",
+                        format!("a range takes numbers, got {shown}"),
+                    );
                 }
             }
             return Ty::certain(Type::Range);
         }
         // A `nil` operand is an error whatever the operator (no type
         // defines operators for nil).
-        if x.certain && xt == Type::Nil || y.certain && yt == Type::Nil && !matches!(xt, Type::Named(_) | Type::Any) {
+        if x.certain && xt == Type::Nil
+            || y.certain && yt == Type::Nil && !matches!(xt, Type::Named(_) | Type::Any)
+        {
             let op_text = op.fixed_text().unwrap_or("?");
-            self.error(at, "bad-operand", format!("`{op_text}` with a `nil` operand"));
+            self.error(
+                at,
+                "bad-operand",
+                format!("`{op_text}` with a `nil` operand"),
+            );
             return Ty::any();
         }
         match &xt {
@@ -1718,7 +2351,12 @@ impl Analyzer<'_> {
                     if yt == Type::Number {
                         return Ty::new(Type::Number, x.certain && y.certain);
                     }
-                    if y.certain && matches!(yt, Type::String | Type::Bool) && self.prim_methods.get("Number").is_none_or(|m| !m.contains_key(op.fixed_text().unwrap_or("").trim_end_matches('='))) {
+                    if y.certain
+                        && matches!(yt, Type::String | Type::Bool)
+                        && self.prim_methods.get("Number").is_none_or(|m| {
+                            !m.contains_key(op.fixed_text().unwrap_or("").trim_end_matches('='))
+                        })
+                    {
                         let shown = self.show(&yt);
                         let op_text = op.fixed_text().unwrap_or("?");
                         self.error(at, "bad-operand", format!("`Number {op_text} {shown}`: NL does not coerce strings in arithmetic, and `Number` defines no `{op_text}` here"));
@@ -1748,11 +2386,18 @@ impl Analyzer<'_> {
                     return Ty::certain(Type::Bool);
                 }
                 if arithmetic || bitwise {
-                    let name = op.fixed_text().unwrap_or("").trim_end_matches('=').to_string();
+                    let name = op
+                        .fixed_text()
+                        .unwrap_or("")
+                        .trim_end_matches('=')
+                        .to_string();
                     if let Some(sig) = self.prim_methods.get("String").and_then(|m| m.get(&name)) {
                         return Ty::uncertain(sig.ret.clone());
                     }
-                    if x.certain && y.certain && matches!(yt, Type::Number | Type::String | Type::Bool) {
+                    if x.certain
+                        && y.certain
+                        && matches!(yt, Type::Number | Type::String | Type::Bool)
+                    {
                         let op_text = op.fixed_text().unwrap_or("?");
                         self.error(at, "bad-operand", format!("`String {op_text} …`: NL does not coerce strings in arithmetic, and `String` defines no `{op_text}` here"));
                     }
@@ -1797,7 +2442,11 @@ impl Analyzer<'_> {
         self.env = if is_and { then_env } else { else_env };
         let y = self.expr1(b);
         self.env = saved;
-        let t = if is_and { self.types.union(&self.types.falsy(&x.t), &y.t) } else { self.types.union(&self.types.truthy(&x.t), &y.t) };
+        let t = if is_and {
+            self.types.union(&self.types.falsy(&x.t), &y.t)
+        } else {
+            self.types.union(&self.types.truthy(&x.t), &y.t)
+        };
         Ty::new(t, x.certain && y.certain)
     }
 
@@ -1814,16 +2463,25 @@ impl Analyzer<'_> {
 
     /// `x as T`: the result is a `T`.
     fn as_expr(&mut self, node: &SyntaxNode) -> Ty {
-        let Some(e) = expr_child(node) else { return Ty::any() };
+        let Some(e) = expr_child(node) else {
+            return Ty::any();
+        };
         let v = self.expr1(&e);
-        let Some(tn) = type_child(node) else { return Ty::any() };
+        let Some(tn) = type_child(node) else {
+            return Ty::any();
+        };
         let target = self.type_of(&tn);
         if self.opts.static_resolution && v.certain {
             // `rt.as` returns the value itself when it is a `T` already
             // (the first step of a conversion), so that is the one conversion a type
             // decides; a `To`/`From` may be declared in another file.
-            if self.types.is_definite(&v.t) && self.types.is_definite(&target) && self.types.assignable(&v.t, &target) {
-                self.hints.conversions.insert(node.text_range(), AsHint::Identity);
+            if self.types.is_definite(&v.t)
+                && self.types.is_definite(&target)
+                && self.types.assignable(&v.t, &target)
+            {
+                self.hints
+                    .conversions
+                    .insert(node.text_range(), AsHint::Identity);
             }
         }
         if target == Type::Any {
@@ -1865,21 +2523,45 @@ impl Analyzer<'_> {
     /// `spawn f(args)` and `spawn do … end`: a `Task<R>`.
     fn spawn(&mut self, node: &SyntaxNode) -> Ty {
         if has_token(node, DO_KW) {
-            let sig = Rc::new(FnType { params: Vec::new(), rest: None, keyed: None, ret: Type::Any, is_method: false, is_async: false, named: true, declared: false });
+            let sig = Rc::new(FnType {
+                params: Vec::new(),
+                rest: None,
+                keyed: None,
+                ret: Type::Any,
+                is_method: false,
+                is_async: false,
+                named: true,
+                declared: false,
+            });
             self.fn_sigs.insert(node.text_range(), sig.clone());
             self.function_body(node, &sig, None, true, false);
-            let ret = self.inferred_ret.get(&node.text_range()).cloned().unwrap_or(Type::Any);
+            let ret = self
+                .inferred_ret
+                .get(&node.text_range())
+                .cloned()
+                .unwrap_or(Type::Any);
             self.check_spawn_loads_this_file(node);
             return Ty::uncertain(Type::Task(Rc::new(self.types.first(&ret))));
         }
-        let Some(call) = node.children().find(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL)) else { return Ty::any() };
-        let Some(callee) = expr_child(&call) else { return Ty::any() };
+        let Some(call) = node
+            .children()
+            .find(|c| matches!(c.kind(), CALL_EXPR | COMMAND_CALL))
+        else {
+            return Ty::any();
+        };
+        let Some(callee) = expr_child(&call) else {
+            return Ty::any();
+        };
         let list = child(&call, ARG_LIST).or_else(|| child(&call, COMMAND_ARGS));
         // Keyed arguments are a compile error.
         if let Some(l) = &list {
             for a in l.children() {
                 if matches!(a.kind(), KEYED_ARG | KEYED_SPREAD_ARG) {
-                    self.error(a.text_range(), "spawn-keyed", "the arguments of `spawn` are positional: keyed arguments cannot be sent");
+                    self.error(
+                        a.text_range(),
+                        "spawn-keyed",
+                        "the arguments of `spawn` are positional: keyed arguments cannot be sent",
+                    );
                 }
             }
         }
@@ -1909,19 +2591,31 @@ impl Analyzer<'_> {
                 }
             }
             FIELD_EXPR => {
-                let Some(recv_node) = expr_child(&callee) else { return Ty::any() };
-                let name = field_name(&callee).map(|t| t.text().to_string()).unwrap_or_default();
+                let Some(recv_node) = expr_child(&callee) else {
+                    return Ty::any();
+                };
+                let name = field_name(&callee)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 let recv = self.expr1(&recv_node);
                 self.check_enum_member(&recv_node, &recv, &name, callee.text_range());
                 let lookup = self.lookup_member(&recv, &name, callee.text_range());
                 let lookup = self.table_member_of_name(&recv_node, &name, lookup);
-                let lookup = self.primitive_library_member(&recv_node, &name).unwrap_or(lookup);
+                let lookup = self
+                    .primitive_library_member(&recv_node, &name)
+                    .unwrap_or(lookup);
                 match lookup {
                     Lookup::Method(sig, _) | Lookup::Function(sig, _) => {
                         let desc = format!("{}.{name}", self.show(&recv.t));
                         self.check_call(&sig, &desc, &args, None, callee.text_range(), false);
                         if !sig.named {
-                            self.error(callee.text_range(), "spawn-callee", format!("{desc} is not a named function, so a worker cannot look it up"));
+                            self.error(
+                                callee.text_range(),
+                                "spawn-callee",
+                                format!(
+                                    "{desc} is not a named function, so a worker cannot look it up"
+                                ),
+                            );
                         }
                         let r = self.call_result(&sig);
                         Ty::uncertain(match r.t {
@@ -1951,7 +2645,11 @@ impl Analyzer<'_> {
     /// An argument that cannot cross to a worker.
     fn check_sendable(&mut self, a: &ArgTy) {
         if a.is_fn_literal {
-            self.error(a.range, "unsendable", "an anonymous function cannot be sent to a worker: only named functions cross");
+            self.error(
+                a.range,
+                "unsendable",
+                "an anonymous function cannot be sent to a worker: only named functions cross",
+            );
             return;
         }
         if !a.ty.certain {
@@ -1964,7 +2662,11 @@ impl Analyzer<'_> {
             _ => None,
         };
         if let Some(what) = bad {
-            self.error(a.range, "unsendable", format!("{what} cannot be sent to a worker"));
+            self.error(
+                a.range,
+                "unsendable",
+                format!("{what} cannot be sent to a worker"),
+            );
         }
     }
 
@@ -1997,7 +2699,13 @@ impl Analyzer<'_> {
     /// `to` is declared. Returns whether the check is proven: the value is
     /// certain, both types are definite (a type known only by name accepts
     /// anything here but is checked at runtime), and the value fits.
-    pub(crate) fn check_assignable(&mut self, value: &Ty, to: &Type, at: TextRange, what: &str) -> bool {
+    pub(crate) fn check_assignable(
+        &mut self,
+        value: &Ty,
+        to: &Type,
+        at: TextRange,
+        what: &str,
+    ) -> bool {
         if *to == Type::Any {
             return true;
         }
@@ -2012,7 +2720,11 @@ impl Analyzer<'_> {
         if value.t == Type::Unknown {
             self.error(at, "unknown-not-narrowed", format!("{what} expects {want}, got a value of type `unknown`, which must be narrowed with `is` before use"));
         } else {
-            self.error(at, "type-mismatch", format!("{what} expects {want}, got {got}"));
+            self.error(
+                at,
+                "type-mismatch",
+                format!("{what} expects {want}, got {got}"),
+            );
         }
         false
     }

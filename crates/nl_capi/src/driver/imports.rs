@@ -54,7 +54,13 @@ pub(crate) struct DriverImports<'a> {
 }
 
 impl<'a> DriverImports<'a> {
-    pub(crate) fn new(loader: &'a dyn Loader, from: Option<&'a str>, options: &'a CompileOptions, mode: Mode<'a>, decls: &'a Declarations) -> Self {
+    pub(crate) fn new(
+        loader: &'a dyn Loader,
+        from: Option<&'a str>,
+        options: &'a CompileOptions,
+        mode: Mode<'a>,
+        decls: &'a Declarations,
+    ) -> Self {
         DriverImports {
             loader,
             from,
@@ -79,7 +85,9 @@ impl<'a> DriverImports<'a> {
             let parse = nl_syntax::parse(text);
             (!parse.has_errors()).then(|| nl_sema::scan_file(&parse.syntax()))
         });
-        self.scans.borrow_mut().insert(name.to_string(), scanned.clone());
+        self.scans
+            .borrow_mut()
+            .insert(name.to_string(), scanned.clone());
         scanned
     }
 
@@ -101,7 +109,10 @@ impl<'a> DriverImports<'a> {
     }
 
     fn imported(&self, path: &str) -> Result<Imported, String> {
-        let name = self.loader.resolve(self.from, path).ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
+        let name = self
+            .loader
+            .resolve(self.from, path)
+            .ok_or_else(|| format!("cannot find the file '{path}' to import"))?;
         let cached = self.cache.borrow().get(&name).cloned();
         let result = match cached {
             Some(done) => done,
@@ -123,31 +134,66 @@ impl<'a> DriverImports<'a> {
 
     fn load_file(&self, name: &str) -> Result<Imported, String> {
         if Some(name) == self.from {
-            return Err(format!("'{name}' imports itself; an import cycle is an error"));
+            return Err(format!(
+                "'{name}' imports itself; an import cycle is an error"
+            ));
         }
-        if let Mode::Imported { root: Some(root), .. } = self.mode {
+        if let Mode::Imported {
+            root: Some(root), ..
+        } = self.mode
+        {
             if name == root {
                 let this = self.from.unwrap_or("this file");
-                return Err(format!("import cycle: '{root}' imports '{this}', which imports '{root}'"));
+                return Err(format!(
+                    "import cycle: '{root}' imports '{this}', which imports '{root}'"
+                ));
             }
         }
-        let bytes = self.loader.read(name).ok_or_else(|| format!("cannot read '{name}'"))?;
+        let bytes = self
+            .loader
+            .read(name)
+            .ok_or_else(|| format!("cannot read '{name}'"))?;
         if let Mode::Main = self.mode {
             let chunk_name = format!("@{name}");
-            let staged = pipeline::stages(&bytes, &chunk_name, self.options, self.loader, Mode::Imported { root: self.from, decls: self.decls });
-            let errors: Vec<Diagnostic> = staged.output.diagnostics.into_iter().filter(|d| d.severity == Severity::Error).collect();
+            let staged = pipeline::stages(
+                &bytes,
+                &chunk_name,
+                self.options,
+                self.loader,
+                Mode::Imported {
+                    root: self.from,
+                    decls: self.decls,
+                },
+            );
+            let errors: Vec<Diagnostic> = staged
+                .output
+                .diagnostics
+                .into_iter()
+                .filter(|d| d.severity == Severity::Error)
+                .collect();
             if let Some(first) = errors.first() {
                 let more = match errors.len() {
                     1 => String::new(),
                     n => format!(" (and {} more)", n - 1),
                 };
-                let msg = format!("'{name}' does not compile: {}:{}:{}: {}{more}", first.file, first.line, first.column, first.message);
+                let msg = format!(
+                    "'{name}' does not compile: {}:{}:{}: {}{more}",
+                    first.file, first.line, first.column, first.message
+                );
                 self.diagnostics.borrow_mut().extend(errors);
                 return Err(msg);
             }
-            self.scans.borrow_mut().insert(name.to_string(), staged.scan);
-            let exports = staged.exports.ok_or_else(|| format!("'{name}' does not compile"))?;
-            return Ok(Imported { exports, globals: staged.globals, extensions: staged.extensions });
+            self.scans
+                .borrow_mut()
+                .insert(name.to_string(), staged.scan);
+            let exports = staged
+                .exports
+                .ok_or_else(|| format!("'{name}' does not compile"))?;
+            return Ok(Imported {
+                exports,
+                globals: staged.globals,
+                extensions: staged.extensions,
+            });
         }
         // A file imported by an imported file: resolved for its exports,
         // not checked (it is checked when the file importing it is
@@ -158,9 +204,15 @@ impl<'a> DriverImports<'a> {
             return Err(format!("'{name}' has syntax errors"));
         }
         let root = parse.syntax();
-        self.scans.borrow_mut().insert(name.to_string(), Some(nl_sema::scan_file(&root)));
+        self.scans
+            .borrow_mut()
+            .insert(name.to_string(), Some(nl_sema::scan_file(&root)));
         let res = nl_sema::resolve_with(&root, &Unread, self.decls);
-        Ok(Imported { exports: res.exports(), globals: nl_ir::declared_globals(&root), extensions: res.extensions() })
+        Ok(Imported {
+            exports: res.exports(),
+            globals: nl_ir::declared_globals(&root),
+            extensions: res.extensions(),
+        })
     }
 }
 
@@ -194,18 +246,30 @@ impl ImportProvider for DriverImports<'_> {
     }
 
     fn extensions(&self, path: &str) -> Vec<ExtensionInfo> {
-        self.imported(path).map(|i| i.extensions).unwrap_or_default()
+        self.imported(path)
+            .map(|i| i.extensions)
+            .unwrap_or_default()
     }
 
     /// Follows the imports from the file `path` names, through every file
     /// of the chain (a parse of each; nothing is resolved or checked).
     fn primitive_methods(&self, path: &str) -> Vec<nl_sema::PrimMethod> {
-        nl_sema::primitive_methods_through(self.from, path, &|from, p| self.loader.resolve(from, p), &|name| self.scan(name))
+        nl_sema::primitive_methods_through(
+            self.from,
+            path,
+            &|from, p| self.loader.resolve(from, p),
+            &|name| self.scan(name),
+        )
     }
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use std::cell::Cell;
     use std::collections::HashMap;
@@ -221,14 +285,25 @@ mod tests {
 
     impl Mem {
         fn new(files: &[(&str, &str)]) -> Self {
-            Mem { files: files.iter().map(|(n, s)| (n.to_string(), s.to_string())).collect(), reads: Cell::new(0) }
+            Mem {
+                files: files
+                    .iter()
+                    .map(|(n, s)| (n.to_string(), s.to_string()))
+                    .collect(),
+                reads: Cell::new(0),
+            }
         }
     }
 
     impl Loader for Mem {
         fn resolve(&self, from: Option<&str>, path: &str) -> Option<String> {
-            let dir = from.and_then(|f| f.rsplit_once('/')).map(|(d, _)| format!("{d}/")).unwrap_or_default();
-            [format!("{dir}{path}.nl"), format!("{path}.nl")].into_iter().find(|c| self.files.contains_key(c))
+            let dir = from
+                .and_then(|f| f.rsplit_once('/'))
+                .map(|(d, _)| format!("{d}/"))
+                .unwrap_or_default();
+            [format!("{dir}{path}.nl"), format!("{path}.nl")]
+                .into_iter()
+                .find(|c| self.files.contains_key(c))
         }
         fn read(&self, name: &str) -> Option<Vec<u8>> {
             self.reads.set(self.reads.get() + 1);
@@ -238,23 +313,41 @@ mod tests {
 
     fn build(files: &Mem, main: &str) -> CompileOutput {
         let src = files.files[main].clone();
-        compile(src.as_bytes(), &format!("@{main}"), &CompileOptions::default(), files)
+        compile(
+            src.as_bytes(),
+            &format!("@{main}"),
+            &CompileOptions::default(),
+            files,
+        )
     }
 
     fn errors(out: &CompileOutput) -> Vec<(String, u32, String)> {
-        out.diagnostics.iter().filter(|d| d.severity == Severity::Error).map(|d| (d.file.clone(), d.line, d.message.clone())).collect()
+        out.diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .map(|d| (d.file.clone(), d.line, d.message.clone()))
+            .collect()
     }
 
     #[test]
     fn imports_compile_and_keep_kinds() {
         let files = Mem::new(&[
-            ("main.nl", "import { f, Mode, n } from 'lib/a'\nimport from 'lib/a' as A\nprint f\nprint Mode.X\nprint n\nprint A.f()\n"),
-            ("lib/a.nl", "pub fn f\n  1\nend\npub enum Mode\n  X\nend\npub const n = 2\n"),
+            (
+                "main.nl",
+                "import { f, Mode, n } from 'lib/a'\nimport from 'lib/a' as A\nprint f\nprint Mode.X\nprint n\nprint A.f()\n",
+            ),
+            (
+                "lib/a.nl",
+                "pub fn f\n  1\nend\npub enum Mode\n  X\nend\npub const n = 2\n",
+            ),
         ]);
         let out = build(&files, "main.nl");
         assert!(out.chunk.is_some(), "{:?}", out.diagnostics);
         let lua = String::from_utf8(out.chunk.unwrap()).unwrap();
-        assert!(lua.contains(r#"__rt.import_from("main.nl", "lib/a", "f", "Mode", "n")"#), "{lua}");
+        assert!(
+            lua.contains(r#"__rt.import_from("main.nl", "lib/a", "f", "Mode", "n")"#),
+            "{lua}"
+        );
         // `f` is a function: a bare name calls it.
         assert!(lua.contains("print(f())"), "{lua}");
         // lib/a.nl is read once although it is imported twice.
@@ -263,7 +356,10 @@ mod tests {
 
     #[test]
     fn errors_of_an_imported_file_carry_its_name_and_positions() {
-        let files = Mem::new(&[("main.nl", "import { f } from 'bad'\nprint f\n"), ("bad.nl", "pub fn f\n  1\nend\n\nprint nope\n")]);
+        let files = Mem::new(&[
+            ("main.nl", "import { f } from 'bad'\nprint f\n"),
+            ("bad.nl", "pub fn f\n  1\nend\n\nprint nope\n"),
+        ]);
         let out = build(&files, "main.nl");
         assert!(out.chunk.is_none());
         let errs = errors(&out);
@@ -275,10 +371,20 @@ mod tests {
 
     #[test]
     fn missing_files_and_names_are_errors_at_the_import() {
-        let files = Mem::new(&[("main.nl", "import { f } from 'nowhere'\nimport { g } from 'lib'\n"), ("lib.nl", "fn g\n  1\nend\n")]);
+        let files = Mem::new(&[
+            (
+                "main.nl",
+                "import { f } from 'nowhere'\nimport { g } from 'lib'\n",
+            ),
+            ("lib.nl", "fn g\n  1\nend\n"),
+        ]);
         let errs = errors(&build(&files, "main.nl"));
         assert_eq!(errs.len(), 2, "{errs:?}");
-        assert!(errs[0].2.contains("cannot find the file 'nowhere'"), "{}", errs[0].2);
+        assert!(
+            errs[0].2.contains("cannot find the file 'nowhere'"),
+            "{}",
+            errs[0].2
+        );
         assert_eq!(errs[1].1, 2);
         assert!(errs[1].2.contains("not exported"), "{}", errs[1].2);
     }
@@ -293,7 +399,11 @@ mod tests {
         let me = errors(&build(&files, "me.nl"));
         assert!(me.iter().any(|e| e.2.contains("imports itself")), "{me:?}");
         let a = errors(&build(&files, "a.nl"));
-        assert!(a.iter().any(|e| e.0 == "b.nl" && e.2.contains("import cycle")), "{a:?}");
+        assert!(
+            a.iter()
+                .any(|e| e.0 == "b.nl" && e.2.contains("import cycle")),
+            "{a:?}"
+        );
     }
 
     /// The importer sees each export
@@ -303,17 +413,30 @@ mod tests {
     fn exports_are_what_the_exporting_file_resolved() {
         let files = Mem::new(&[
             ("main.nl", "import { f, g } from 'lib'\nprint f\nprint g\n"),
-            ("lib.nl", "pub const f: Function? = fn() 1 end\npub const g = fn() 2 end\n"),
+            (
+                "lib.nl",
+                "pub const f: Function? = fn() 1 end\npub const g = fn() 2 end\n",
+            ),
         ]);
         let out = build(&files, "main.nl");
         let lua = String::from_utf8(out.chunk.clone().unwrap_or_default()).unwrap();
         // `f` is a variable in lib.nl (`Function?`), so it is read;
         // `g` is function-kind, so it is called.
-        assert!(lua.contains("print(f)") && lua.contains("print(g())"), "{lua}");
+        assert!(
+            lua.contains("print(f)") && lua.contains("print(g())"),
+            "{lua}"
+        );
 
-        let files = Mem::new(&[("main.nl", "import { f } from 'dup'\nprint f\n"), ("dup.nl", "pub fn f\n  1\nend\npub const f = 5\n")]);
+        let files = Mem::new(&[
+            ("main.nl", "import { f } from 'dup'\nprint f\n"),
+            ("dup.nl", "pub fn f\n  1\nend\npub const f = 5\n"),
+        ]);
         let errs = errors(&build(&files, "main.nl"));
-        assert!(errs.iter().any(|e| e.0 == "dup.nl" && e.1 == 4 && e.2.contains("exported twice")), "{errs:?}");
+        assert!(
+            errs.iter()
+                .any(|e| e.0 == "dup.nl" && e.1 == 4 && e.2.contains("exported twice")),
+            "{errs:?}"
+        );
     }
 
     /// The exports of a file two imports away come from its resolver too
@@ -323,11 +446,21 @@ mod tests {
     fn exports_of_files_two_imports_away() {
         let files = Mem::new(&[
             ("a.nl", "import { y } from 'b'\nprint y\n"),
-            ("b.nl", "import { plain } from 'c'\npub const y = 1\nplain 1 do\nend\n"),
-            ("c.nl", "import { z } from 'nowhere'\npub fn plain(x)\n  x\nend\n"),
+            (
+                "b.nl",
+                "import { plain } from 'c'\npub const y = 1\nplain 1 do\nend\n",
+            ),
+            (
+                "c.nl",
+                "import { z } from 'nowhere'\npub fn plain(x)\n  x\nend\n",
+            ),
         ]);
         let errs = errors(&build(&files, "a.nl"));
-        assert!(errs.iter().any(|e| e.0 == "b.nl" && e.1 == 3 && e.2.contains("`Function` parameter")), "{errs:?}");
+        assert!(
+            errs.iter()
+                .any(|e| e.0 == "b.nl" && e.1 == 3 && e.2.contains("`Function` parameter")),
+            "{errs:?}"
+        );
     }
 
     /// The declaration files are loaded once, by the main file: a broken
@@ -347,9 +480,17 @@ mod tests {
                 vec![("game.d.nl".to_string(), b"declare fn g(\n".to_vec())]
             }
         }
-        let files = WithDecl(Mem::new(&[("main.nl", "import { f } from 'lib'\nprint f\n"), ("lib.nl", "pub fn f\n  1\nend\n")]));
+        let files = WithDecl(Mem::new(&[
+            ("main.nl", "import { f } from 'lib'\nprint f\n"),
+            ("lib.nl", "pub fn f\n  1\nend\n"),
+        ]));
         let src = files.0.files["main.nl"].clone();
-        let out = compile(src.as_bytes(), "@main.nl", &CompileOptions::default(), &files);
+        let out = compile(
+            src.as_bytes(),
+            "@main.nl",
+            &CompileOptions::default(),
+            &files,
+        );
         assert!(out.chunk.is_none());
         let errs = errors(&out);
         assert_eq!(errs.len(), 1, "{errs:?}");

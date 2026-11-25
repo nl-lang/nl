@@ -60,10 +60,18 @@ impl Parser<'_> {
 
     /// [`Parser::guarded`] for a function that parses an expression: when a
     /// limit skipped the expression, its `ERROR_NODE` stands for it.
-    pub(crate) fn guarded_expr(&mut self, start: usize, f: impl FnOnce(&mut Self) -> Option<Expr>) -> Option<Expr> {
+    pub(crate) fn guarded_expr(
+        &mut self,
+        start: usize,
+        f: impl FnOnce(&mut Self) -> Option<Expr>,
+    ) -> Option<Expr> {
         match self.guarded(f) {
             Ok(r) => r,
-            Err(skipped) => skipped.map(|cm| Expr { cm, shape: Shape::Other, start }),
+            Err(skipped) => skipped.map(|cm| Expr {
+                cm,
+                shape: Shape::Other,
+                start,
+            }),
         }
     }
 
@@ -90,7 +98,9 @@ impl Parser<'_> {
                 Shape::Call
                 | Shape::BlockCall
                 | Shape::Method { args: true }
-                | Shape::LuaPath { last: LuaLast::Call } => {
+                | Shape::LuaPath {
+                    last: LuaLast::Call,
+                } => {
                     self.error(
                         "this call already has its arguments in parentheses; to pass more, put \
                          them inside the parentheses",
@@ -162,7 +172,11 @@ impl Parser<'_> {
                 }
                 BinOp::Concat => {
                     let outer = self.concat_chain(m, &mut links);
-                    lhs = Expr { cm: outer, shape: Shape::Other, start };
+                    lhs = Expr {
+                        cm: outer,
+                        shape: Shape::Other,
+                        start,
+                    };
                     continue;
                 }
                 BinOp::TildeEq => {
@@ -173,7 +187,9 @@ impl Parser<'_> {
                     (BIN_EXPR, Shape::Other)
                 }
                 BinOp::Dot2Lt => {
-                    self.error("NL has no `..<`: a range that leaves out its end is written `a...b`");
+                    self.error(
+                        "NL has no `..<`: a range that leaves out its end is written `a...b`",
+                    );
                     self.bump();
                     self.operand(level + 1, "`..<`");
                     (BIN_EXPR, Shape::Range)
@@ -191,11 +207,19 @@ impl Parser<'_> {
                     let text = self.nth_text(0).to_string();
                     self.bump();
                     self.operand(level + 1, &format!("`{text}`"));
-                    let shape = if matches!(op_kind, DOT2 | DOT3) { Shape::Range } else { Shape::Other };
+                    let shape = if matches!(op_kind, DOT2 | DOT3) {
+                        Shape::Range
+                    } else {
+                        Shape::Other
+                    };
                     (BIN_EXPR, shape)
                 }
             };
-            lhs = Expr { cm: m.complete(self, kind), shape, start };
+            lhs = Expr {
+                cm: m.complete(self, kind),
+                shape,
+                start,
+            };
             self.after_binary(level, op);
         }
         self.chain_done(links);
@@ -215,14 +239,18 @@ impl Parser<'_> {
             return;
         }
         let found = self.describe_cur();
-        self.error(format!("expected an expression after {after}, found {found}"));
+        self.error(format!(
+            "expected an expression after {after}, found {found}"
+        ));
     }
 
     /// Checks what follows a completed binary expression: a second operator
     /// of a non-associative level, or a higher-level operator after a
     /// pipe target.
     fn after_binary(&mut self, level: u8, op: BinOp) {
-        let Some((next, next_op)) = self.binary_op() else { return };
+        let Some((next, next_op)) = self.binary_op() else {
+            return;
+        };
         if non_associative(level) && next == level {
             let msg = if level == 3 {
                 "comparisons cannot be chained (`a < b < c`): write `a < b and b < c`"
@@ -242,7 +270,11 @@ impl Parser<'_> {
 
     /// `concat_expr = add_expr [ "<>" concat_expr ]` (right associative),
     /// as a loop: `m` already precedes the left operand.
-    fn concat_chain(&mut self, m: crate::parser::event::Marker, links: &mut u32) -> crate::parser::event::CompletedMarker {
+    fn concat_chain(
+        &mut self,
+        m: crate::parser::event::Marker,
+        links: &mut u32,
+    ) -> crate::parser::event::CompletedMarker {
         let mut stack = vec![m];
         self.bump();
         loop {
@@ -296,7 +328,11 @@ impl Parser<'_> {
             last = Some(m.complete(self, PREFIX_EXPR));
         }
         self.chain_done(links);
-        last.map(|cm| Expr { cm, shape: Shape::Other, start })
+        last.map(|cm| Expr {
+            cm,
+            shape: Shape::Other,
+            start,
+        })
     }
 
     /// `power_expr = postfix_expr [ "**" unary_expr ]`, right
@@ -334,7 +370,11 @@ impl Parser<'_> {
             last = Some(m.complete(self, BIN_EXPR));
         }
         self.chain_done(links);
-        Some(last.map_or(left, |cm| Expr { cm, shape: Shape::Other, start }))
+        Some(last.map_or(left, |cm| Expr {
+            cm,
+            shape: Shape::Other,
+            start,
+        }))
     }
 
     /// `pipe_target`: a name chain without calls, `x:m` or a
@@ -370,7 +410,10 @@ impl Parser<'_> {
         } else if self.at_method_colon() {
             e = self.method_call(e);
         } else {
-            if !matches!(e.shape, Shape::Name | Shape::At | Shape::Member { lower: true, .. } | Shape::LuaPath { .. }) {
+            if !matches!(
+                e.shape,
+                Shape::Name | Shape::At | Shape::Member { lower: true, .. } | Shape::LuaPath { .. }
+            ) {
                 let range = self.range_from(e.start);
                 self.error_at(
                     range,
@@ -409,7 +452,11 @@ impl Parser<'_> {
             } else {
                 self.nth_text(0).to_string()
             };
-            let pipe = if pipe.chars().count() > 40 { "…".to_string() } else { pipe };
+            let pipe = if pipe.chars().count() > 40 {
+                "…".to_string()
+            } else {
+                pipe
+            };
             self.error(format!(
                 "nothing may follow a pipe target: to apply `{step}` to the result, write \
                  `({pipe}){step}`"
@@ -454,7 +501,9 @@ impl Parser<'_> {
             }
             _ => {
                 let found = self.describe_cur();
-                self.error(format!("expected a type name after `as`, such as `x as String`, found {found}"));
+                self.error(format!(
+                    "expected a type name after `as`, such as `x as String`, found {found}"
+                ));
                 m.abandon(self);
                 return;
             }

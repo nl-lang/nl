@@ -14,7 +14,12 @@
 //! - The flags: `--check`, `--stdout`, in-place rewriting, warnings, and a
 //!   file with a syntax error, which is reported and left alone.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
@@ -53,7 +58,10 @@ fn copy_dir(from: &Path, to: &Path) {
 }
 
 fn nl_files(dir: &Path, out: &mut Vec<PathBuf>) {
-    let mut entries: Vec<PathBuf> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).collect();
+    let mut entries: Vec<PathBuf> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
     entries.sort();
     for path in entries {
         if path.is_dir() {
@@ -68,7 +76,9 @@ fn nl_files(dir: &Path, out: &mut Vec<PathBuf>) {
 type Finished = (Option<i32>, Vec<u8>, Vec<u8>);
 
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, String> {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
     let mut child = cmd.spawn().map_err(|e| format!("cannot start nlc: {e}"))?;
     let mut so = child.stdout.take();
     let mut se = child.stderr.take();
@@ -99,7 +109,11 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<Finished, Str
             Err(e) => return Err(format!("wait failed: {e}")),
         }
     };
-    Ok((status.code(), out_t.join().unwrap_or_default(), err_t.join().unwrap_or_default()))
+    Ok((
+        status.code(),
+        out_t.join().unwrap_or_default(),
+        err_t.join().unwrap_or_default(),
+    ))
 }
 
 /// `nlc <args>` in `dir`, finished: (exit code, stdout, stderr as text).
@@ -111,7 +125,13 @@ fn nlc_in(dir: &Path, args: &[&str]) -> (Option<i32>, Vec<u8>, String) {
 }
 
 fn first_line(bytes: &[u8]) -> String {
-    String::from_utf8_lossy(bytes).lines().find(|l| !l.trim().is_empty()).unwrap_or("").chars().take(200).collect()
+    String::from_utf8_lossy(bytes)
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .chars()
+        .take(200)
+        .collect()
 }
 
 fn excluded(stem: &str) -> bool {
@@ -124,16 +144,40 @@ fn formatted_conformance_programs_run() {
     copy_dir(&repo_root().join("tests/run"), &dir);
     let mut files = Vec::new();
     nl_files(&dir, &mut files);
-    assert!(files.len() >= 158, "expected the conformance corpus, found {} files", files.len());
+    assert!(
+        files.len() >= 158,
+        "expected the conformance corpus, found {} files",
+        files.len()
+    );
 
     // Format every file in place, helpers and rejected programs included.
-    let args: Vec<String> = std::iter::once("fmt".to_string()).chain(files.iter().map(|p| p.display().to_string())).collect();
+    let args: Vec<String> = std::iter::once("fmt".to_string())
+        .chain(files.iter().map(|p| p.display().to_string()))
+        .collect();
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
     let (code, stdout, stderr) = nlc_in(&dir, &refs);
     assert_eq!(code, Some(0), "nlc fmt failed:\n{stderr}");
-    assert!(stdout.is_empty(), "nlc fmt printed: {}", String::from_utf8_lossy(&stdout));
-    let changed = files.iter().filter(|p| std::fs::read(p).unwrap() != std::fs::read(repo_root().join("tests/run").join(p.strip_prefix(&dir).unwrap())).unwrap()).count();
-    assert!(changed > 0, "no conformance program was changed by the formatter");
+    assert!(
+        stdout.is_empty(),
+        "nlc fmt printed: {}",
+        String::from_utf8_lossy(&stdout)
+    );
+    let changed = files
+        .iter()
+        .filter(|p| {
+            std::fs::read(p).unwrap()
+                != std::fs::read(
+                    repo_root()
+                        .join("tests/run")
+                        .join(p.strip_prefix(&dir).unwrap()),
+                )
+                .unwrap()
+        })
+        .count();
+    assert!(
+        changed > 0,
+        "no conformance program was changed by the formatter"
+    );
 
     // Every entry program, as conformance.rs runs it.
     let entries: Vec<&PathBuf> = files
@@ -141,32 +185,52 @@ fn formatted_conformance_programs_run() {
         .filter(|p| p.parent() == Some(dir.as_path()) && p.with_extension("out").exists())
         .filter(|p| !excluded(&p.file_stem().unwrap().to_string_lossy()))
         .collect();
-    assert!(entries.len() >= 100, "only {} entry programs", entries.len());
+    assert!(
+        entries.len() >= 100,
+        "only {} entry programs",
+        entries.len()
+    );
     let next = AtomicUsize::new(0);
     let failures: Mutex<Vec<String>> = Mutex::new(Vec::new());
-    let workers = std::thread::available_parallelism().map_or(4, |n| n.get()).min(8);
+    let workers = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(8);
     std::thread::scope(|s| {
         for _ in 0..workers {
-            s.spawn(|| loop {
-                let i = next.fetch_add(1, Ordering::SeqCst);
-                let Some(path) = entries.get(i) else { break };
-                let rel = path.strip_prefix(&dir).unwrap().display().to_string();
-                let expected = std::fs::read(path.with_extension("out")).unwrap();
-                let mut cmd = Command::new(nlc());
-                cmd.current_dir(&dir).env_remove("NL_PATH").args(["run", "--decl", "decl"]).arg(&rel);
-                let outcome = match run_with_timeout(cmd, Duration::from_secs(60)) {
-                    Err(e) => Some(e),
-                    Ok((Some(0), stdout, _)) if stdout == expected => None,
-                    Ok((code, stdout, stderr)) => Some(format!("exit {code:?}: {} [stdout {}]", first_line(&stderr), first_line(&stdout))),
-                };
-                if let Some(why) = outcome {
-                    failures.lock().unwrap().push(format!("{rel}: {why}"));
+            s.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, Ordering::SeqCst);
+                    let Some(path) = entries.get(i) else { break };
+                    let rel = path.strip_prefix(&dir).unwrap().display().to_string();
+                    let expected = std::fs::read(path.with_extension("out")).unwrap();
+                    let mut cmd = Command::new(nlc());
+                    cmd.current_dir(&dir)
+                        .env_remove("NL_PATH")
+                        .args(["run", "--decl", "decl"])
+                        .arg(&rel);
+                    let outcome = match run_with_timeout(cmd, Duration::from_secs(60)) {
+                        Err(e) => Some(e),
+                        Ok((Some(0), stdout, _)) if stdout == expected => None,
+                        Ok((code, stdout, stderr)) => Some(format!(
+                            "exit {code:?}: {} [stdout {}]",
+                            first_line(&stderr),
+                            first_line(&stdout)
+                        )),
+                    };
+                    if let Some(why) = outcome {
+                        failures.lock().unwrap().push(format!("{rel}: {why}"));
+                    }
                 }
             });
         }
     });
     let failures = failures.into_inner().unwrap();
-    assert!(failures.is_empty(), "{} formatted program(s) failed:\n{}", failures.len(), failures.join("\n"));
+    assert!(
+        failures.is_empty(),
+        "{} formatted program(s) failed:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
 }
 
 #[test]
@@ -183,8 +247,15 @@ fn fix_rewrites_continued_strings_and_keeps_the_output() {
     let (code, _, stderr) = nlc_in(&dir, &["fmt", name]);
     assert_eq!(code, Some(0), "{stderr}");
     let warning = "warning: a \"…\" string continued with a backslash; write a heredoc (nlc fmt --fix rewrites it)";
-    assert_eq!(stderr.lines().filter(|l| l.ends_with(warning)).count(), 4, "{stderr}");
-    assert!(stderr.contains(&format!("{name}:5:13: {warning}")), "{stderr}");
+    assert_eq!(
+        stderr.lines().filter(|l| l.ends_with(warning)).count(),
+        4,
+        "{stderr}"
+    );
+    assert!(
+        stderr.contains(&format!("{name}:5:13: {warning}")),
+        "{stderr}"
+    );
     assert_eq!(std::fs::read_to_string(dir.join(name)).unwrap(), original);
 
     // With --fix: heredocs, no warning, the same output.
@@ -194,8 +265,14 @@ fn fix_rewrites_continued_strings_and_keeps_the_output() {
     let fixed = std::fs::read_to_string(dir.join(name)).unwrap();
     assert!(!fixed.contains("\\\n"), "{fixed}");
     assert_eq!(fixed.matches("\"\"\"").count(), 8, "{fixed}");
-    assert!(fixed.contains("let plain = \"\"\"\naaa\nbbb\nccc\n\"\"\"\n"), "{fixed}");
-    assert!(fixed.contains("let tail = \"\"\"\none\ntwo\n\"\"\".len\n"), "{fixed}");
+    assert!(
+        fixed.contains("let plain = \"\"\"\naaa\nbbb\nccc\n\"\"\"\n"),
+        "{fixed}"
+    );
+    assert!(
+        fixed.contains("let tail = \"\"\"\none\ntwo\n\"\"\".len\n"),
+        "{fixed}"
+    );
     let (code, stdout, stderr) = nlc_in(&dir, &["run", name]);
     assert_eq!(code, Some(0), "{stderr}");
     assert_eq!(stdout, expected);
@@ -209,7 +286,10 @@ fn fix_rewrites_continued_strings_and_keeps_the_output() {
     let (code, _, stderr) = nlc_in(&dir, &["fmt", "--fix", "inner.nl"]);
     assert_eq!(code, Some(0), "{stderr}");
     assert!(stderr.contains("inner.nl:1:14: warning: a \"…\" string continued with a backslash inside an interpolation"), "{stderr}");
-    assert_eq!(std::fs::read_to_string(dir.join("inner.nl")).unwrap(), inner);
+    assert_eq!(
+        std::fs::read_to_string(dir.join("inner.nl")).unwrap(),
+        inner
+    );
 }
 
 #[test]
@@ -235,7 +315,10 @@ fn check_stdout_and_in_place() {
     assert_eq!(String::from_utf8_lossy(&stdout), clean);
     let (code, stdout, _) = nlc_in(&dir, &["fmt", "--stdout", "a.nl", "b.nl"]);
     assert_eq!(code, Some(0));
-    assert_eq!(String::from_utf8_lossy(&stdout), format!("# a.nl\n{clean}# b.nl\n{clean}"));
+    assert_eq!(
+        String::from_utf8_lossy(&stdout),
+        format!("# a.nl\n{clean}# b.nl\n{clean}")
+    );
     assert_eq!(std::fs::read_to_string(dir.join("a.nl")).unwrap(), messy);
 
     // In place: the changed file is rewritten, nothing is printed.
@@ -245,10 +328,17 @@ fn check_stdout_and_in_place() {
     assert_eq!(std::fs::read_to_string(dir.join("a.nl")).unwrap(), clean);
 
     // A declaration file.
-    std::fs::write(dir.join("d.d.nl"), "declare module Foo=:foo\nfn f( a : Number )\nend\n").unwrap();
+    std::fs::write(
+        dir.join("d.d.nl"),
+        "declare module Foo=:foo\nfn f( a : Number )\nend\n",
+    )
+    .unwrap();
     let (code, _, stderr) = nlc_in(&dir, &["fmt", "d.d.nl"]);
     assert_eq!(code, Some(0), "{stderr}");
-    assert_eq!(std::fs::read_to_string(dir.join("d.d.nl")).unwrap(), "declare module Foo = :foo\n  fn f(a: Number)\nend\n");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("d.d.nl")).unwrap(),
+        "declare module Foo = :foo\n  fn f(a: Number)\nend\n"
+    );
 
     // A syntax error: reported as `nlc parse` does, the file left alone, exit 1.
     let broken = "let x = (1\nprint  x\n";
@@ -269,5 +359,8 @@ fn check_stdout_and_in_place() {
     assert_eq!(code, Some(2));
     let (code, _, stderr) = nlc_in(&dir, &["fmt", "missing.nl"]);
     assert_eq!(code, Some(1));
-    assert!(stderr.contains("missing.nl: error: cannot read the file"), "{stderr}");
+    assert!(
+        stderr.contains("missing.nl: error: cannot read the file"),
+        "{stderr}"
+    );
 }

@@ -31,18 +31,35 @@ impl Analyzer<'_> {
     /// Windows path), which is plainly meant as written. `'\\n'` spells the
     /// same backslash and `n` without the lint.
     fn raw_escapes(&mut self, root: &SyntaxNode) {
-        for tok in root.descendants_with_tokens().filter_map(|e| e.into_token()) {
-            if tok.kind() != STRING || nl_syntax::string_form(tok.text()) != Some(nl_syntax::StringForm::Raw) {
+        for tok in root
+            .descendants_with_tokens()
+            .filter_map(|e| e.into_token())
+        {
+            if tok.kind() != STRING
+                || nl_syntax::string_form(tok.text()) != Some(nl_syntax::StringForm::Raw)
+            {
                 continue;
             }
-            let Some(at) = raw_escape_at(tok.text()) else { continue };
+            let Some(at) = raw_escape_at(tok.text()) else {
+                continue;
+            };
             if tok.parent().is_some_and(|lit| self.is_regex_pattern(&lit)) {
                 continue;
             }
             let text = tok.text();
-            let seq = text.get(at..).map_or("", |r| if r.starts_with("\\u{") { r.get(..3).unwrap_or(r) } else { r.get(..2).unwrap_or(r) });
-            let start = tok.text_range().start() + nl_syntax::TextSize::from(u32::try_from(at).unwrap_or(0));
-            let range = TextRange::at(start, nl_syntax::TextSize::from(u32::try_from(seq.len()).unwrap_or(0)));
+            let seq = text.get(at..).map_or("", |r| {
+                if r.starts_with("\\u{") {
+                    r.get(..3).unwrap_or(r)
+                } else {
+                    r.get(..2).unwrap_or(r)
+                }
+            });
+            let start = tok.text_range().start()
+                + nl_syntax::TextSize::from(u32::try_from(at).unwrap_or(0));
+            let range = TextRange::at(
+                start,
+                nl_syntax::TextSize::from(u32::try_from(seq.len()).unwrap_or(0)),
+            );
             let rest = seq.get(1..).unwrap_or("");
             self.lint(
                 range,
@@ -54,11 +71,18 @@ impl Analyzer<'_> {
 
     /// `lit` is the first argument of the prelude's `Regex.new`.
     fn is_regex_pattern(&self, lit: &SyntaxNode) -> bool {
-        let Some(list) = lit.parent().filter(|l| matches!(l.kind(), ARG_LIST | COMMAND_ARGS)) else { return false };
+        let Some(list) = lit
+            .parent()
+            .filter(|l| matches!(l.kind(), ARG_LIST | COMMAND_ARGS))
+        else {
+            return false;
+        };
         if list.children().next().as_ref() != Some(lit) {
             return false;
         }
-        let Some(callee) = list.parent().and_then(|c| expr_child(&c)) else { return false };
+        let Some(callee) = list.parent().and_then(|c| expr_child(&c)) else {
+            return false;
+        };
         if callee.kind() != FIELD_EXPR || !field_name(&callee).is_some_and(|t| t.text() == "new") {
             return false;
         }
@@ -76,16 +100,28 @@ impl Analyzer<'_> {
     /// is the function itself, as `f!` is, and is left alone.
     fn lua_paths_to_own_function(&mut self, root: &SyntaxNode) {
         for path in root.descendants().filter(|n| n.kind() == LUA_PATH) {
-            let Some(first) = crate::resolver::lua_path_root(&path) else { continue };
-            let Some(Ref::Binding(id)) = self.res.reference(first.text_range()) else { continue };
+            let Some(first) = crate::resolver::lua_path_root(&path) else {
+                continue;
+            };
+            let Some(Ref::Binding(id)) = self.res.reference(first.text_range()) else {
+                continue;
+            };
             let id = *id;
-            let has_step = path.children().any(|c| matches!(c.kind(), LUA_FIELD | LUA_INDEX | LUA_CALL | LUA_METHOD));
+            let has_step = path
+                .children()
+                .any(|c| matches!(c.kind(), LUA_FIELD | LUA_INDEX | LUA_CALL | LUA_METHOD));
             // A statement whose value is discarded calls the path.
-            let statement = path.parent().is_some_and(|p| p.kind() == EXPR_STMT && self.res.value_discarded(p.text_range()));
+            let statement = path
+                .parent()
+                .is_some_and(|p| p.kind() == EXPR_STMT && self.res.value_discarded(p.text_range()));
             if !has_step && !statement {
                 continue;
             }
-            if !path.ancestors().skip(1).any(|a| self.is_function_of(&a, id)) {
+            if !path
+                .ancestors()
+                .skip(1)
+                .any(|a| self.is_function_of(&a, id))
+            {
                 continue;
             }
             let name = first.text().to_string();
@@ -111,7 +147,8 @@ impl Analyzer<'_> {
     /// often there for its type alone: neither is reported; a name
     /// starting with `_` is meant to be unused.
     fn unused_bindings(&mut self, root: &SyntaxNode) {
-        let exported: std::collections::HashSet<BindingId> = self.res.export_bindings().map(|(id, _)| id).collect();
+        let exported: std::collections::HashSet<BindingId> =
+            self.res.export_bindings().map(|(id, _)| id).collect();
         let mut referenced: std::collections::HashSet<BindingId> = self.used.clone();
         for n in root.descendants() {
             match n.kind() {
@@ -153,7 +190,13 @@ impl Analyzer<'_> {
             }
             let name = b.name.clone();
             let range = b.range;
-            self.lint(range, "unused-binding", format!("the {what} `{name}` is never used; prefix it with `_` if that is intended"));
+            self.lint(
+                range,
+                "unused-binding",
+                format!(
+                    "the {what} `{name}` is never used; prefix it with `_` if that is intended"
+                ),
+            );
         }
     }
 
@@ -166,11 +209,15 @@ impl Analyzer<'_> {
         for s in statements(&b) {
             let effect = match s.kind() {
                 EXPR_STMT => {
-                    let guarded = modifier(&s).is_some_and(|m| first_token(&m).is_some_and(|t| t.kind() == UNLESS_KW) && expr_child(&m).is_some_and(|e| is_worker_parent(&e)));
+                    let guarded = modifier(&s).is_some_and(|m| {
+                        first_token(&m).is_some_and(|t| t.kind() == UNLESS_KW)
+                            && expr_child(&m).is_some_and(|e| is_worker_parent(&e))
+                    });
                     let handler = expr_child(&s).is_some_and(|e| e.kind() == ON_EXPR);
                     !guarded && !handler
                 }
-                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT | WHILE_STMT | UNTIL_STMT | LOOP_STMT | FOR_STMT => true,
+                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT | WHILE_STMT
+                | UNTIL_STMT | LOOP_STMT | FOR_STMT => true,
                 _ => false,
             };
             if effect {
@@ -185,7 +232,8 @@ impl Analyzer<'_> {
 fn is_worker_parent(e: &SyntaxNode) -> bool {
     e.kind() == FIELD_EXPR
         && field_name(e).is_some_and(|t| t.text() == "parent")
-        && expr_child(e).is_some_and(|r| r.kind() == NAME_REF && name_text(&r).as_deref() == Some("Worker"))
+        && expr_child(e)
+            .is_some_and(|r| r.kind() == NAME_REF && name_text(&r).as_deref() == Some("Worker"))
 }
 
 /// The byte offset in a raw literal's text of the first backslash sequence
@@ -207,7 +255,10 @@ fn raw_escape_at(text: &str) -> Option<usize> {
             Some(b'n' | b't' | b'r' | b'0' | b'"') => {
                 found = found.or(Some(i));
             }
-            Some(b'x') if b.get(i + 2).is_some_and(u8::is_ascii_hexdigit) && b.get(i + 3).is_some_and(u8::is_ascii_hexdigit) => {
+            Some(b'x')
+                if b.get(i + 2).is_some_and(u8::is_ascii_hexdigit)
+                    && b.get(i + 3).is_some_and(u8::is_ascii_hexdigit) =>
+            {
                 found = found.or(Some(i));
             }
             Some(b'u') if b.get(i + 2) == Some(&b'{') => {

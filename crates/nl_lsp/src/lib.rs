@@ -31,7 +31,15 @@
 //! deep input, so `main` runs [`run`] on a thread with [`STACK_SIZE`] of
 //! stack, as the compile pipeline does.
 
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing
+    )
+)]
 
 pub mod analysis;
 pub mod completion;
@@ -55,8 +63,10 @@ use lsp_server::{Connection, ErrorCode, Message, Notification, Request, Response
 use lsp_types::notification::Notification as _;
 use lsp_types::request::Request as _;
 use lsp_types::{
-    CompletionOptions, CompletionResponse, Diagnostic, DiagnosticSeverity, GotoDefinitionResponse, HoverProviderCapability, InitializeParams, NumberOrString, OneOf, Position, PublishDiagnosticsParams,
-    Range, SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Uri,
+    CompletionOptions, CompletionResponse, Diagnostic, DiagnosticSeverity, GotoDefinitionResponse,
+    HoverProviderCapability, InitializeParams, NumberOrString, OneOf, Position,
+    PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Uri,
 };
 
 use crate::analysis::Doc;
@@ -70,15 +80,22 @@ pub const STACK_SIZE: usize = 256 << 20;
 /// The server's capabilities, as announced to the client.
 pub fn capabilities() -> ServerCapabilities {
     ServerCapabilities {
-        text_document_sync: Some(TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
-            open_close: Some(true),
-            change: Some(TextDocumentSyncKind::FULL),
-            save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions { include_text: Some(false) })),
-            ..TextDocumentSyncOptions::default()
-        })),
+        text_document_sync: Some(TextDocumentSyncCapability::Options(
+            TextDocumentSyncOptions {
+                open_close: Some(true),
+                change: Some(TextDocumentSyncKind::FULL),
+                save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
+                    include_text: Some(false),
+                })),
+                ..TextDocumentSyncOptions::default()
+            },
+        )),
         hover_provider: Some(HoverProviderCapability::Simple(true)),
         definition_provider: Some(OneOf::Left(true)),
-        completion_provider: Some(CompletionOptions { trigger_characters: Some(vec![".".to_string(), ":".to_string()]), ..CompletionOptions::default() }),
+        completion_provider: Some(CompletionOptions {
+            trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
+            ..CompletionOptions::default()
+        }),
         ..ServerCapabilities::default()
     }
 }
@@ -143,7 +160,14 @@ impl Server {
                 files.add_decl(PathBuf::from(p));
             }
         }
-        Server { conn, files, docs: HashMap::new(), foreign: BTreeMap::new(), contributed: HashMap::new(), last_foreign: HashMap::new() }
+        Server {
+            conn,
+            files,
+            docs: HashMap::new(),
+            foreign: BTreeMap::new(),
+            contributed: HashMap::new(),
+            last_foreign: HashMap::new(),
+        }
     }
 
     fn main_loop(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -176,7 +200,11 @@ impl Server {
             Err(panic) => {
                 let what = panic_message(&panic);
                 eprintln!("nl-lsp: internal error in {method}: {what}");
-                Response::new_err(id, ErrorCode::InternalError as i32, format!("nl-lsp: internal error in {method}: {what}"))
+                Response::new_err(
+                    id,
+                    ErrorCode::InternalError as i32,
+                    format!("nl-lsp: internal error in {method}: {what}"),
+                )
             }
         }
     }
@@ -187,30 +215,57 @@ impl Server {
             HoverRequest::METHOD => {
                 let p: lsp_types::HoverParams = parse(req.params)?;
                 let pos = p.text_document_position_params;
-                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else { return Ok(serde_json::Value::Null) };
+                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else {
+                    return Ok(serde_json::Value::Null);
+                };
                 to_value(hover::hover(&self.files, &doc, offset))
             }
             GotoDefinition::METHOD => {
                 let p: lsp_types::GotoDefinitionParams = parse(req.params)?;
                 let pos = p.text_document_position_params;
-                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else { return Ok(serde_json::Value::Null) };
-                to_value(definition::definition(&self.files, &doc, offset).map(GotoDefinitionResponse::Scalar))
+                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else {
+                    return Ok(serde_json::Value::Null);
+                };
+                to_value(
+                    definition::definition(&self.files, &doc, offset)
+                        .map(GotoDefinitionResponse::Scalar),
+                )
             }
             Completion::METHOD => {
                 let p: lsp_types::CompletionParams = parse(req.params)?;
                 let pos = p.text_document_position;
-                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else { return Ok(serde_json::Value::Null) };
-                to_value(Some(CompletionResponse::Array(completion::complete(&self.files, &doc, offset))))
+                let Some((doc, offset)) = self.at(&pos.text_document.uri, pos.position)? else {
+                    return Ok(serde_json::Value::Null);
+                };
+                to_value(Some(CompletionResponse::Array(completion::complete(
+                    &self.files,
+                    &doc,
+                    offset,
+                ))))
             }
-            other => Err((ErrorCode::MethodNotFound, format!("nl-lsp does not handle {other}"))),
+            other => Err((
+                ErrorCode::MethodNotFound,
+                format!("nl-lsp does not handle {other}"),
+            )),
         }
     }
 
     /// The analysis of the document at `uri` and the byte offset of
     /// `position` in it; `None` when the document is not open.
-    fn at(&mut self, uri: &Uri, position: Position) -> Result<Option<(Rc<Doc>, nl_syntax::TextSize)>, RequestError> {
-        let Some(doc) = self.doc(uri.as_str()) else { return Ok(None) };
-        let offset = doc.lines.offset(&doc.text, position).ok_or_else(|| (ErrorCode::InvalidParams, "position outside the document".to_string()))?;
+    fn at(
+        &mut self,
+        uri: &Uri,
+        position: Position,
+    ) -> Result<Option<(Rc<Doc>, nl_syntax::TextSize)>, RequestError> {
+        let Some(doc) = self.doc(uri.as_str()) else {
+            return Ok(None);
+        };
+        let offset = doc.lines.offset(&doc.text, position).ok_or_else(|| {
+            (
+                ErrorCode::InvalidParams,
+                "position outside the document".to_string(),
+            )
+        })?;
         Ok(Some((doc, offset)))
     }
 
@@ -220,7 +275,12 @@ impl Server {
             return Some(d.clone());
         }
         let open = self.files.doc(uri)?;
-        let doc = Rc::new(analysis::analyze(&self.files, uri, open.path.as_deref(), &open.text));
+        let doc = Rc::new(analysis::analyze(
+            &self.files,
+            uri,
+            open.path.as_deref(),
+            &open.text,
+        ));
         self.docs.insert(uri.to_string(), doc.clone());
         Some(doc)
     }
@@ -228,15 +288,24 @@ impl Server {
     fn handle_notification(&mut self, n: Notification) {
         let method = n.method.clone();
         if let Err(panic) = catch_unwind(AssertUnwindSafe(|| self.notified(n))) {
-            eprintln!("nl-lsp: internal error in {method}: {}", panic_message(&panic));
+            eprintln!(
+                "nl-lsp: internal error in {method}: {}",
+                panic_message(&panic)
+            );
         }
     }
 
     fn notified(&mut self, n: Notification) {
-        use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument};
+        use lsp_types::notification::{
+            DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
+        };
         match n.method.as_str() {
             DidOpenTextDocument::METHOD => {
-                let Ok(p) = serde_json::from_value::<lsp_types::DidOpenTextDocumentParams>(n.params) else { return };
+                let Ok(p) =
+                    serde_json::from_value::<lsp_types::DidOpenTextDocumentParams>(n.params)
+                else {
+                    return;
+                };
                 let uri = p.text_document.uri;
                 let path = uri_to_path(&uri);
                 self.files.open(uri.as_str(), path, p.text_document.text);
@@ -249,17 +318,27 @@ impl Server {
                 self.publish_all();
             }
             DidChangeTextDocument::METHOD => {
-                let Ok(p) = serde_json::from_value::<lsp_types::DidChangeTextDocumentParams>(n.params) else { return };
+                let Ok(p) =
+                    serde_json::from_value::<lsp_types::DidChangeTextDocumentParams>(n.params)
+                else {
+                    return;
+                };
                 let uri = p.text_document.uri;
                 // Full synchronization: the last change is the whole text.
-                let Some(change) = p.content_changes.into_iter().last() else { return };
+                let Some(change) = p.content_changes.into_iter().last() else {
+                    return;
+                };
                 let path = uri_to_path(&uri);
                 self.files.open(uri.as_str(), path, change.text);
                 self.publish_all();
             }
             DidSaveTextDocument::METHOD => self.publish_all(),
             DidCloseTextDocument::METHOD => {
-                let Ok(p) = serde_json::from_value::<lsp_types::DidCloseTextDocumentParams>(n.params) else { return };
+                let Ok(p) =
+                    serde_json::from_value::<lsp_types::DidCloseTextDocumentParams>(n.params)
+                else {
+                    return;
+                };
                 let uri = p.text_document.uri;
                 self.files.close(uri.as_str());
                 self.send_diagnostics(uri.as_str(), Vec::new());
@@ -288,9 +367,13 @@ impl Server {
     /// contribution to them, and every file whose contributions changed
     /// is published again.
     fn publish(&mut self, uri: &str) {
-        let Some(open) = self.files.doc(uri) else { return };
+        let Some(open) = self.files.doc(uri) else {
+            return;
+        };
         let (path, text) = (open.path.clone(), open.text.clone());
-        let compiled = catch_unwind(AssertUnwindSafe(|| diagnostics::compile(&self.files, uri, path.as_deref(), &text)));
+        let compiled = catch_unwind(AssertUnwindSafe(|| {
+            diagnostics::compile(&self.files, uri, path.as_deref(), &text)
+        }));
         let mut by_file = match compiled {
             Ok(by_file) => by_file,
             Err(panic) => {
@@ -306,7 +389,10 @@ impl Server {
             if self.files.is_open(&file) {
                 continue;
             }
-            self.foreign.entry(file.clone()).or_default().insert(uri.to_string(), diags);
+            self.foreign
+                .entry(file.clone())
+                .or_default()
+                .insert(uri.to_string(), diags);
             now.insert(file);
         }
         let mut touched = self.withdraw(uri, &now);
@@ -338,9 +424,17 @@ impl Server {
     /// differs from what was last published there.
     fn republish(&mut self, files: &BTreeSet<String>) {
         for file in files {
-            let all: Vec<Diagnostic> = self.foreign.get(file).map(|owners| owners.values().flatten().cloned().collect()).unwrap_or_default();
+            let all: Vec<Diagnostic> = self
+                .foreign
+                .get(file)
+                .map(|owners| owners.values().flatten().cloned().collect())
+                .unwrap_or_default();
             let all = diagnostics::dedup(all);
-            if self.last_foreign.get(file).map_or(all.is_empty(), |last| *last == all) {
+            if self
+                .last_foreign
+                .get(file)
+                .map_or(all.is_empty(), |last| *last == all)
+            {
                 continue;
             }
             self.send_diagnostics(file, all.clone());
@@ -354,8 +448,15 @@ impl Server {
 
     fn send_diagnostics(&self, uri: &str, diagnostics: Vec<Diagnostic>) {
         let Ok(uri) = Uri::from_str(uri) else { return };
-        let params = PublishDiagnosticsParams { uri, diagnostics, version: None };
-        let n = Notification::new(lsp_types::notification::PublishDiagnostics::METHOD.to_string(), params);
+        let params = PublishDiagnosticsParams {
+            uri,
+            diagnostics,
+            version: None,
+        };
+        let n = Notification::new(
+            lsp_types::notification::PublishDiagnostics::METHOD.to_string(),
+            params,
+        );
         let _ = self.conn.sender.send(Message::Notification(n));
     }
 }
@@ -373,15 +474,28 @@ fn internal_error(what: &str) -> Diagnostic {
 }
 
 fn parse<T: serde::de::DeserializeOwned>(v: serde_json::Value) -> Result<T, RequestError> {
-    serde_json::from_value(v).map_err(|e| (ErrorCode::InvalidParams, format!("invalid parameters: {e}")))
+    serde_json::from_value(v)
+        .map_err(|e| (ErrorCode::InvalidParams, format!("invalid parameters: {e}")))
 }
 
 fn to_value<T: serde::Serialize>(v: T) -> Result<serde_json::Value, RequestError> {
-    serde_json::to_value(v).map_err(|e| (ErrorCode::InternalError, format!("cannot encode the result: {e}")))
+    serde_json::to_value(v).map_err(|e| {
+        (
+            ErrorCode::InternalError,
+            format!("cannot encode the result: {e}"),
+        )
+    })
 }
 
 fn string_list(opts: &serde_json::Value, key: &str) -> Vec<String> {
-    opts.get(key).and_then(|v| v.as_array()).map(|a| a.iter().filter_map(|s| s.as_str().map(str::to_owned)).collect()).unwrap_or_default()
+    opts.get(key)
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|s| s.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {

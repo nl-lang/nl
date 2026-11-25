@@ -113,12 +113,20 @@ impl Parser<'_> {
         match self.nth(1) {
             L_BRACK => self.index_with(e, true),
             L_PAREN => {
-                if matches!(e.shape, Shape::Method { args: false } | Shape::LuaPath { last: LuaLast::Method }) {
+                if matches!(
+                    e.shape,
+                    Shape::Method { args: false }
+                        | Shape::LuaPath {
+                            last: LuaLast::Method
+                        }
+                ) {
                     self.error(METHOD_SAFE_CALL);
                 }
                 self.call_with(e, true)
             }
-            COLON if self.nth_touches(2) && is_lua_name(self.nth(2)) => self.method_call_with(e, true),
+            COLON if self.nth_touches(2) && is_lua_name(self.nth(2)) => {
+                self.method_call_with(e, true)
+            }
             _ => {
                 let m = e.cm.precede(self);
                 self.bump();
@@ -126,8 +134,15 @@ impl Parser<'_> {
                 let lower = is_lower_word(k) || k == ONAME;
                 self.member_name("?.");
                 // A nil-safe member never starts a struct literal.
-                let shape = Shape::Member { lower, cap_path: false };
-                Expr { cm: m.complete(self, FIELD_EXPR), shape, start: e.start }
+                let shape = Shape::Member {
+                    lower,
+                    cap_path: false,
+                };
+                Expr {
+                    cm: m.complete(self, FIELD_EXPR),
+                    shape,
+                    start: e.start,
+                }
             }
         }
     }
@@ -147,7 +162,11 @@ impl Parser<'_> {
             self.trailing_block();
             shape = Shape::BlockCall;
         }
-        Expr { cm: m.complete(self, CALL_EXPR), shape, start: e.start }
+        Expr {
+            cm: m.complete(self, CALL_EXPR),
+            shape,
+            start: e.start,
+        }
     }
 
     /// The error for an argument list after `f!`, the `!` expression
@@ -246,7 +265,9 @@ impl Parser<'_> {
             self.error_at(
                 range,
                 match state {
-                    ArgState::Spread => "a spread argument `*list` must be the last positional argument",
+                    ArgState::Spread => {
+                        "a spread argument `*list` must be the last positional argument"
+                    }
                     _ => "positional arguments come before the keyed arguments `key: value`",
                 },
             );
@@ -287,7 +308,11 @@ impl Parser<'_> {
             }
             p.close_bracket(R_BRACK, "[");
         });
-        Expr { cm: m.complete(self, INDEX_EXPR), shape: Shape::Index, start: e.start }
+        Expr {
+            cm: m.complete(self, INDEX_EXPR),
+            shape: Shape::Index,
+            start: e.start,
+        }
     }
 
     /// `"." word_any`: any word, keywords included; `.len` is
@@ -298,8 +323,15 @@ impl Parser<'_> {
         let k = self.cur();
         let (lower, cap) = (is_lower_word(k) || k == ONAME, k == CNAME);
         self.member_name(".");
-        let shape = Shape::Member { lower, cap_path: cap && e.shape.is_cap_path() };
-        Expr { cm: m.complete(self, FIELD_EXPR), shape, start: e.start }
+        let shape = Shape::Member {
+            lower,
+            cap_path: cap && e.shape.is_cap_path(),
+        };
+        Expr {
+            cm: m.complete(self, FIELD_EXPR),
+            shape,
+            start: e.start,
+        }
     }
 
     /// The word after `.` or `?.` (`op`).
@@ -315,7 +347,9 @@ impl Parser<'_> {
             self.err_bump("a member name is a word: `x.1` is not allowed; to index, write `x[1]`");
         } else {
             let found = self.describe_cur();
-            self.error(format!("expected a member name after `{op}`, found {found}"));
+            self.error(format!(
+                "expected a member name after `{op}`, found {found}"
+            ));
         }
     }
 
@@ -341,7 +375,11 @@ impl Parser<'_> {
             self.trailing_block();
             args = true;
         }
-        Expr { cm: m.complete(self, METHOD_CALL), shape: Shape::Method { args }, start: e.start }
+        Expr {
+            cm: m.complete(self, METHOD_CALL),
+            shape: Shape::Method { args },
+            start: e.start,
+        }
     }
 
     /// Postfix `!`.
@@ -360,18 +398,28 @@ impl Parser<'_> {
                     "a Lua path is never called automatically, so it takes no `!`"
                 }
                 Shape::Bang => "`!` is written once",
-                _ => "`!` can only follow a name, `@name` or a member `x.name`: it names a function without calling it",
+                _ => {
+                    "`!` can only follow a name, `@name` or a member `x.name`: it names a function without calling it"
+                }
             };
             self.error(msg);
             // Recover as if the `!` were not there, so that what follows is
             // read as it would be without it (one error).
             let m = e.cm.precede(self);
             self.bump();
-            return Expr { cm: m.complete(self, BANG_EXPR), shape: e.shape, start: e.start };
+            return Expr {
+                cm: m.complete(self, BANG_EXPR),
+                shape: e.shape,
+                start: e.start,
+            };
         }
         let m = e.cm.precede(self);
         self.bump();
-        Expr { cm: m.complete(self, BANG_EXPR), shape: Shape::Bang, start: e.start }
+        Expr {
+            cm: m.complete(self, BANG_EXPR),
+            shape: Shape::Bang,
+            start: e.start,
+        }
     }
 
     /// `struct_lit_body` after a capitalized name path.
@@ -382,7 +430,11 @@ impl Parser<'_> {
             p.comma_list(R_CURLY, |p| p.field_init());
             p.close_bracket(R_CURLY, "{");
         });
-        Expr { cm: m.complete(self, STRUCT_LIT), shape: Shape::Other, start: e.start }
+        Expr {
+            cm: m.complete(self, STRUCT_LIT),
+            shape: Shape::Other,
+            start: e.start,
+        }
     }
 
     /// `field_init = field_name ":" expr`.
@@ -393,7 +445,9 @@ impl Parser<'_> {
             let text = self.nth_text(0).to_string();
             let m = self.start();
             self.bump_word();
-            self.err_bump(format!("a field in a struct literal is followed by `:`, not `=`: write `{text}: …`"));
+            self.err_bump(format!(
+                "a field in a struct literal is followed by `:`, not `=`: write `{text}: …`"
+            ));
             if self.expr().is_none() {
                 self.error("expected the field's value");
             }
@@ -460,10 +514,16 @@ impl Parser<'_> {
         if e.shape.is_callee() {
             let m = e.cm.precede(self);
             self.trailing_block();
-            return Expr { cm: m.complete(self, CALL_EXPR), shape: Shape::BlockCall, start: e.start };
+            return Expr {
+                cm: m.complete(self, CALL_EXPR),
+                shape: Shape::BlockCall,
+                start: e.start,
+            };
         }
         let msg = match e.shape {
-            Shape::Bang => "`f!` is the function itself: nothing that calls may follow it, not even a block",
+            Shape::Bang => {
+                "`f!` is the function itself: nothing that calls may follow it, not even a block"
+            }
             Shape::BlockCall => "this call already has a block",
             _ => {
                 "a `do … end` block passed to a call follows the call or the function name on the \
@@ -594,7 +654,11 @@ impl Parser<'_> {
         if self.at_trailing_do() {
             self.trailing_block();
         }
-        Expr { cm: m.complete(self, COMMAND_CALL), shape: Shape::Command, start: callee.start }
+        Expr {
+            cm: m.complete(self, COMMAND_CALL),
+            shape: Shape::Command,
+            start: callee.start,
+        }
     }
 
     /// `command_args = command_arg { "," command_arg }` as a `COMMAND_ARGS`

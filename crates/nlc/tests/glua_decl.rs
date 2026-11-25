@@ -8,7 +8,12 @@
 //! still check clean, and the server program reports each call the
 //! client realm lacks.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -26,11 +31,21 @@ fn check(file: &Path) -> (i32, Vec<(u32, String)>) {
 
 fn check_with(file: &Path, options: &[&str]) -> (i32, Vec<(u32, String)>) {
     let root = repo_root();
-    let out = Command::new(env!("CARGO_BIN_EXE_nlc")).current_dir(&root).env_remove("NL_PATH").arg("check").args(options).arg(file).output().expect("cannot start nlc");
+    let out = Command::new(env!("CARGO_BIN_EXE_nlc"))
+        .current_dir(&root)
+        .env_remove("NL_PATH")
+        .arg("check")
+        .args(options)
+        .arg(file)
+        .output()
+        .expect("cannot start nlc");
     let text = String::from_utf8_lossy(&out.stderr);
     let diags = text
         .lines()
-        .filter(|l| !l.split_once(" |").is_some_and(|(gutter, _)| gutter.trim().chars().all(|c| c.is_ascii_digit())))
+        .filter(|l| {
+            !l.split_once(" |")
+                .is_some_and(|(gutter, _)| gutter.trim().chars().all(|c| c.is_ascii_digit()))
+        })
         .filter_map(|l| {
             // `file:line:col: severity: message [code]`
             let line = l.split(':').nth(1)?.parse().ok()?;
@@ -44,9 +59,17 @@ fn check_with(file: &Path, options: &[&str]) -> (i32, Vec<(u32, String)>) {
 #[test]
 fn gmod_programs_check_against_the_declarations() {
     let dir = repo_root().join("tests/glua");
-    let mut programs: Vec<PathBuf> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().path()).filter(|p| p.extension().is_some_and(|e| e == "nl")).collect();
+    let mut programs: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().is_some_and(|e| e == "nl"))
+        .collect();
     programs.sort();
-    assert!(programs.len() >= 5, "expected the programs of {}", dir.display());
+    assert!(
+        programs.len() >= 5,
+        "expected the programs of {}",
+        dir.display()
+    );
     let mut failures = Vec::new();
     for path in &programs {
         let name = path.file_name().unwrap().to_string_lossy().to_string();
@@ -54,13 +77,26 @@ fn gmod_programs_check_against_the_declarations() {
         let (status, diags) = check(path);
         eprintln!("{name}: {:?}", start.elapsed());
         let want: Vec<(u32, String)> = if name == "errors.nl" {
-            [(5, "type-mismatch"), (6, "type-mismatch"), (7, "type-mismatch"), (8, "type-mismatch"), (11, "type-mismatch"), (12, "missing-argument"), (13, "type-mismatch")].iter().map(|(l, c)| (*l, c.to_string())).collect()
+            [
+                (5, "type-mismatch"),
+                (6, "type-mismatch"),
+                (7, "type-mismatch"),
+                (8, "type-mismatch"),
+                (11, "type-mismatch"),
+                (12, "missing-argument"),
+                (13, "type-mismatch"),
+            ]
+            .iter()
+            .map(|(l, c)| (*l, c.to_string()))
+            .collect()
         } else {
             Vec::new()
         };
         let want_status = if want.is_empty() { 0 } else { 1 };
         if diags != want || status != want_status {
-            failures.push(format!("{name}: exit {status}, {diags:?}; expected exit {want_status}, {want:?}"));
+            failures.push(format!(
+                "{name}: exit {status}, {diags:?}; expected exit {want_status}, {want:?}"
+            ));
         }
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
@@ -75,12 +111,18 @@ fn gmod_programs_in_the_client_realm() {
         ("cl_hud.nl", Vec::new()),
         ("sh_entities.nl", Vec::new()),
         ("sv_net.nl", Vec::new()),
-        ("sv_spawn.nl", vec![realm(7), realm(9), realm(11), realm(13), realm(14)]),
+        (
+            "sv_spawn.nl",
+            vec![realm(7), realm(9), realm(11), realm(13), realm(14)],
+        ),
     ];
     let mut failures = Vec::new();
     for (name, want) in cases {
         // Both ways: gmod's declarations built in, and given again.
-        for options in [&["--profile=gmod-client"][..], &["--profile=gmod-client", "--decl", "decl/glua.d.nl"][..]] {
+        for options in [
+            &["--profile=gmod-client"][..],
+            &["--profile=gmod-client", "--decl", "decl/glua.d.nl"][..],
+        ] {
             let (status, diags) = check_with(&dir.join(name), options);
             let want_status = if want.is_empty() { 0 } else { 1 };
             if diags != want || status != want_status {

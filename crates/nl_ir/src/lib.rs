@@ -65,9 +65,20 @@
 //!   names are resolved; where something is still missing it reports an
 //!   internal diagnostic instead of panicking.
 
-#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing
+    )
+)]
 
 pub mod ir;
 pub mod lower;
 
-pub use lower::{LUA_LIBRARY_FIELDS, Localize, LowerDiagnostic, LowerOptions, LowerOutput, STD_LIBRARIES, declared_globals, directive, lower};
+pub use lower::{
+    LUA_LIBRARY_FIELDS, Localize, LowerDiagnostic, LowerOptions, LowerOutput, STD_LIBRARIES,
+    declared_globals, directive, lower,
+};

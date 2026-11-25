@@ -45,8 +45,11 @@ impl Lowerer<'_> {
     /// `let` and `const`.
     pub(crate) fn lower_let(&mut self, node: &SyntaxNode) {
         let pats: Vec<SyntaxNode> = pattern_children(node).collect();
-        let value_nodes: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
-        let simple: Option<Vec<(SyntaxNode, Option<SyntaxNode>)>> = pats.iter().map(simple_binding).collect();
+        let value_nodes: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
+        let simple: Option<Vec<(SyntaxNode, Option<SyntaxNode>)>> =
+            pats.iter().map(simple_binding).collect();
         match simple {
             Some(names) => self.let_simple(&names, &value_nodes),
             None => self.let_patterns(&pats, &value_nodes),
@@ -61,16 +64,30 @@ impl Lowerer<'_> {
                 self.pattern_bindings(p, &mut ids);
             }
             for id in ids {
-                let name = self.res.binding(id).map(|b| b.name.clone()).unwrap_or_default();
+                let name = self
+                    .res
+                    .binding(id)
+                    .map(|b| b.name.clone())
+                    .unwrap_or_default();
                 let l = self.local_of(id);
-                self.emit(StmtKind::Assign { targets: vec![Place::Index(module.clone(), Expr::str(&name))], values: vec![Expr::Local(l)] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Index(module.clone(), Expr::str(&name))],
+                    values: vec![Expr::Local(l)],
+                });
             }
         }
     }
 
     /// `let a, b: T = values` with plain names.
-    fn let_simple(&mut self, names: &[(SyntaxNode, Option<SyntaxNode>)], value_nodes: &[SyntaxNode]) {
-        let ids: Vec<_> = names.iter().filter_map(|(n, _)| self.res.declaration(n.text_range())).collect();
+    fn let_simple(
+        &mut self,
+        names: &[(SyntaxNode, Option<SyntaxNode>)],
+        value_nodes: &[SyntaxNode],
+    ) {
+        let ids: Vec<_> = names
+            .iter()
+            .filter_map(|(n, _)| self.res.declaration(n.text_range()))
+            .collect();
         if ids.len() != names.len() {
             if let Some((n, _)) = names.first() {
                 self.internal(n, "undeclared let");
@@ -83,8 +100,18 @@ impl Lowerer<'_> {
         if predeclared {
             // The temporaries of the values end with the statement.
             let assign = (!values.is_empty() || value_nodes.is_empty()).then(|| {
-                let values = if values.is_empty() { vec![Expr::Nil] } else { values };
-                Stmt { line: self.line, kind: StmtKind::Assign { targets: locals.iter().map(|l| Place::Local(*l)).collect(), values } }
+                let values = if values.is_empty() {
+                    vec![Expr::Nil]
+                } else {
+                    values
+                };
+                Stmt {
+                    line: self.line,
+                    kind: StmtKind::Assign {
+                        targets: locals.iter().map(|l| Place::Local(*l)).collect(),
+                        values,
+                    },
+                }
             });
             if stmts.is_empty() {
                 self.stmts.extend(assign);
@@ -94,11 +121,23 @@ impl Lowerer<'_> {
                 self.emit(StmtKind::Do(Block::new(body)));
             }
         } else if stmts.is_empty() {
-            self.emit(StmtKind::Local { locals: locals.clone(), values });
+            self.emit(StmtKind::Local {
+                locals: locals.clone(),
+                values,
+            });
         } else {
-            self.emit(StmtKind::Local { locals: locals.clone(), values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals: locals.clone(),
+                values: Vec::new(),
+            });
             let mut body = stmts;
-            body.push(Stmt { line: self.line, kind: StmtKind::Assign { targets: locals.iter().map(|l| Place::Local(*l)).collect(), values } });
+            body.push(Stmt {
+                line: self.line,
+                kind: StmtKind::Assign {
+                    targets: locals.iter().map(|l| Place::Local(*l)).collect(),
+                    values,
+                },
+            });
             self.emit(StmtKind::Do(Block::new(body)));
         }
         for id in &ids {
@@ -129,10 +168,16 @@ impl Lowerer<'_> {
         for p in pats {
             self.pattern_bindings(p, &mut ids);
         }
-        let fresh: Vec<_> = ids.into_iter().filter(|id| !self.is_predeclared(*id)).collect();
+        let fresh: Vec<_> = ids
+            .into_iter()
+            .filter(|id| !self.is_predeclared(*id))
+            .collect();
         if !fresh.is_empty() {
             let locals = fresh.iter().map(|id| self.local_of(*id)).collect();
-            self.emit(StmtKind::Local { locals, values: Vec::new() });
+            self.emit(StmtKind::Local {
+                locals,
+                values: Vec::new(),
+            });
             for id in fresh {
                 self.mark_predeclared(id);
             }
@@ -140,7 +185,10 @@ impl Lowerer<'_> {
         let body = self.sub_block(|l| {
             let values = l.value_list(value_nodes);
             let temps: Vec<LocalId> = pats.iter().map(|_| l.new_local("value")).collect();
-            l.emit(StmtKind::Local { locals: temps.clone(), values });
+            l.emit(StmtKind::Local {
+                locals: temps.clone(),
+                values,
+            });
             for (p, t) in pats.iter().zip(temps) {
                 l.bind_must(p, Expr::Local(t), "");
             }
@@ -150,32 +198,61 @@ impl Lowerer<'_> {
 
     /// `global Name [: T] [= value]`: a Lua global.
     pub(crate) fn lower_global(&mut self, node: &SyntaxNode) {
-        let Some(value) = expr_child(node) else { return };
-        let name = child(node, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
+        let Some(value) = expr_child(node) else {
+            return;
+        };
+        let name = child(node, NAME)
+            .and_then(|n| name_text(&n))
+            .unwrap_or_default();
         let v = self.expr1(&value);
         match type_child(node) {
             Some(t) if self.opts.checks => {
                 let tmp = self.temp_of(v, "value");
                 self.emit_check(tmp.clone(), &t, &format!("global '{name}'"));
-                self.emit(StmtKind::Assign { targets: vec![Place::Global(name)], values: vec![tmp] });
+                self.emit(StmtKind::Assign {
+                    targets: vec![Place::Global(name)],
+                    values: vec![tmp],
+                });
             }
-            _ => self.emit(StmtKind::Assign { targets: vec![Place::Global(name)], values: vec![v] }),
+            _ => self.emit(StmtKind::Assign {
+                targets: vec![Place::Global(name)],
+                values: vec![v],
+            }),
         }
     }
 
     /// Lowers an assignment target. Subexpressions are evaluated now and
     /// pushed on `vals` so later operands can be ordered after them.
     pub(crate) fn target(&mut self, node: &SyntaxNode) -> Target {
-        let none = |place| Target { place, check: None, function_kind: None, site: None };
+        let none = |place| Target {
+            place,
+            check: None,
+            function_kind: None,
+            site: None,
+        };
         match node.kind() {
             NAME_REF => {
                 let r = self.res.reference(node.text_range()).cloned();
                 match r {
                     Some(Ref::Binding(id)) => {
-                        let Some(b) = self.res.binding(id).cloned() else { return none(Place::Global(String::new())) };
-                        let place = if b.decl == DeclKind::Global { Place::Global(b.name.clone()) } else { Place::Local(self.local_of(id)) };
-                        let function_kind = b.params.is_some_and(|p| p.anonymous).then(|| b.name.clone());
-                        Target { place, check: b.annotation.map(|a| (a, b.name.clone())), function_kind, site: Some(node.text_range()) }
+                        let Some(b) = self.res.binding(id).cloned() else {
+                            return none(Place::Global(String::new()));
+                        };
+                        let place = if b.decl == DeclKind::Global {
+                            Place::Global(b.name.clone())
+                        } else {
+                            Place::Local(self.local_of(id))
+                        };
+                        let function_kind = b
+                            .params
+                            .is_some_and(|p| p.anonymous)
+                            .then(|| b.name.clone());
+                        Target {
+                            place,
+                            check: b.annotation.map(|a| (a, b.name.clone())),
+                            function_kind,
+                            site: Some(node.text_range()),
+                        }
                     }
                     Some(Ref::Declared(_)) => {
                         // A declared `let`: its Lua path.
@@ -183,7 +260,10 @@ impl Lowerer<'_> {
                             Expr::Global(g) => none(Place::Global(g)),
                             Expr::Index(o, k) => none(Place::Index(*o, *k)),
                             _ => {
-                                self.internal(node, "assignment to a declared value that is not a place");
+                                self.internal(
+                                    node,
+                                    "assignment to a declared value that is not a place",
+                                );
                                 none(Place::Global(String::new()))
                             }
                         }
@@ -198,7 +278,9 @@ impl Lowerer<'_> {
                 // A declared member's Lua key.
                 let name = match self.opts.hints.member(node.text_range()) {
                     Some(h) => h.key().to_string(),
-                    None => field_name(node).map(|t| t.text().to_string()).unwrap_or_default(),
+                    None => field_name(node)
+                        .map(|t| t.text().to_string())
+                        .unwrap_or_default(),
                 };
                 let o = match expr_child(node) {
                     Some(r) => self.expr1(&r),
@@ -209,7 +291,10 @@ impl Lowerer<'_> {
             INDEX_EXPR => {
                 let parts: Vec<SyntaxNode> = expr_children(node).collect();
                 let mut it = self.operands(&parts).into_iter().map(single);
-                let (o, k) = (it.next().unwrap_or(Expr::Nil), it.next().unwrap_or(Expr::Nil));
+                let (o, k) = (
+                    it.next().unwrap_or(Expr::Nil),
+                    it.next().unwrap_or(Expr::Nil),
+                );
                 none(Place::Index(o, k))
             }
             AT_EXPR => match self.at_expr(node) {
@@ -242,7 +327,12 @@ impl Lowerer<'_> {
             let v = self.temp_of(value, "value");
             let what = format!("variable '{name}' (initialized with `fn`)");
             let t = Expr::index(Expr::Intrinsic("T"), Expr::str("Function"));
-            self.emit_check_value(v.clone(), t, Some(super::types::Inline::LuaType("function")), &what);
+            self.emit_check_value(
+                v.clone(),
+                t,
+                Some(super::types::Inline::LuaType("function")),
+                &what,
+            );
             return v;
         }
         value
@@ -253,14 +343,20 @@ impl Lowerer<'_> {
     /// was evaluated (left to right, the target first and
     /// once).
     fn stable_place(&mut self, place: Place, fix: Fix<'_>) -> Place {
-        let Place::Index(o, k) = place else { return place };
+        let Place::Index(o, k) = place else {
+            return place;
+        };
         let part = |l: &mut Self, e: Expr, hint: &str| -> Expr {
             match (&fix, e) {
                 (_, e) if e.is_constant() => e,
                 (Fix::All, e) => Expr::Local(l.fresh_temp(e, hint)),
                 (Fix::Reused, e @ Expr::Local(_)) => l.pin(e, &Expr::Vararg),
                 (Fix::Reused, e) => Expr::Local(l.fresh_temp(e, hint)),
-                (Fix::Before(later), e @ Expr::Local(_)) if later.iter().any(super::may_run_code) => l.pin(e, &Expr::Vararg),
+                (Fix::Before(later), e @ Expr::Local(_))
+                    if later.iter().any(super::may_run_code) =>
+                {
+                    l.pin(e, &Expr::Vararg)
+                }
                 (Fix::Before(_), e) => e,
             }
         };
@@ -283,12 +379,24 @@ impl Lowerer<'_> {
         }
         let t = self.target(tnode);
         let (stmts, v) = self.capture(|l| l.expr1(vnode));
-        let fix = if stmts.is_empty() { Fix::Before(std::slice::from_ref(&v)) } else { Fix::All };
+        let fix = if stmts.is_empty() {
+            Fix::Before(std::slice::from_ref(&v))
+        } else {
+            Fix::All
+        };
         let place = self.stable_place(t.place, fix);
         self.stmts.extend(stmts);
-        let t = Target { place, check: t.check, function_kind: t.function_kind, site: t.site };
+        let t = Target {
+            place,
+            check: t.check,
+            function_kind: t.function_kind,
+            site: t.site,
+        };
         let v = self.checked(&t, v);
-        self.emit(StmtKind::Assign { targets: vec![t.place], values: vec![v] });
+        self.emit(StmtKind::Assign {
+            targets: vec![t.place],
+            values: vec![v],
+        });
     }
 
     /// `a, b = values`.
@@ -298,7 +406,9 @@ impl Lowerer<'_> {
             return;
         };
         let tnodes: Vec<SyntaxNode> = expr_children(&list).collect();
-        let vnodes: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+        let vnodes: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
         // Targets left to right, then the values; what is evaluated after a
         // target decides how its parts are fixed (`stable_place`).
         let mut lowered = Vec::new();
@@ -323,29 +433,52 @@ impl Lowerer<'_> {
         let mut targets = Vec::new();
         for ((tstmts, tg), (stmts_after, exprs_after)) in lowered.into_iter().zip(after) {
             self.stmts.extend(tstmts);
-            let fix = if stmts_after { Fix::All } else { Fix::Before(&exprs_after) };
+            let fix = if stmts_after {
+                Fix::All
+            } else {
+                Fix::Before(&exprs_after)
+            };
             let place = self.stable_place(tg.place, fix);
-            targets.push(Target { place, check: tg.check, function_kind: tg.function_kind, site: tg.site });
+            targets.push(Target {
+                place,
+                check: tg.check,
+                function_kind: tg.function_kind,
+                site: tg.site,
+            });
         }
         self.stmts.extend(vstmts);
-        let any_check = self.opts.checks && targets.iter().any(|t| t.check.is_some() || t.function_kind.is_some());
+        let any_check = self.opts.checks
+            && targets
+                .iter()
+                .any(|t| t.check.is_some() || t.function_kind.is_some());
         if !any_check {
-            self.emit(StmtKind::Assign { targets: targets.into_iter().map(|t| t.place).collect(), values });
+            self.emit(StmtKind::Assign {
+                targets: targets.into_iter().map(|t| t.place).collect(),
+                values,
+            });
             return;
         }
         let temps: Vec<LocalId> = targets.iter().map(|_| self.new_local("value")).collect();
-        self.emit(StmtKind::Local { locals: temps.clone(), values });
+        self.emit(StmtKind::Local {
+            locals: temps.clone(),
+            values,
+        });
         let mut vals = Vec::new();
         for (t, tmp) in targets.iter().zip(&temps) {
             vals.push(self.checked(t, Expr::Local(*tmp)));
         }
-        self.emit(StmtKind::Assign { targets: targets.into_iter().map(|t| t.place).collect(), values: vals });
+        self.emit(StmtKind::Assign {
+            targets: targets.into_iter().map(|t| t.place).collect(),
+            values: vals,
+        });
     }
 
     /// `target op= value`: the target is evaluated once.
     pub(crate) fn lower_compound(&mut self, node: &SyntaxNode) {
         let parts: Vec<SyntaxNode> = expr_children(node).collect();
-        let op = tokens(node).find(|t| t.kind().is_compound_assign()).map(|t| t.kind());
+        let op = tokens(node)
+            .find(|t| t.kind().is_compound_assign())
+            .map(|t| t.kind());
         let (Some(tnode), Some(vnode), Some(op)) = (parts.first(), parts.get(1), op) else {
             self.internal(node, "compound assignment");
             return;
@@ -363,7 +496,12 @@ impl Lowerer<'_> {
             Place::Global(g) => Expr::Global(g.clone()),
             Place::Index(o, k) => Expr::index(o.clone(), k.clone()),
         };
-        let t = Target { place, check: t.check, function_kind: t.function_kind, site: t.site };
+        let t = Target {
+            place,
+            check: t.check,
+            function_kind: t.function_kind,
+            site: t.site,
+        };
         if matches!(op, PIPE2_EQ | AMP2_EQ | QUESTION2_EQ) {
             // `a ||= b` assigns when `a` is falsy, `a &&= b` when truthy,
             // `a ??= b` when `nil`.
@@ -375,16 +513,30 @@ impl Lowerer<'_> {
             let body = self.sub_block(|l| {
                 let v = l.expr1(vnode);
                 let v = l.checked(&t, v);
-                l.emit(StmtKind::Assign { targets: vec![t.place.clone()], values: vec![v] });
+                l.emit(StmtKind::Assign {
+                    targets: vec![t.place.clone()],
+                    values: vec![v],
+                });
             });
-            self.emit(StmtKind::If { cond, then: body, otherwise: None });
+            self.emit(StmtKind::If {
+                cond,
+                then: body,
+                otherwise: None,
+            });
             return;
         }
         let (stmts, v) = self.capture(|l| l.expr1(vnode));
-        let current = if stmts.is_empty() { self.pin(current, &v) } else { self.temp_of(current, "old") };
+        let current = if stmts.is_empty() {
+            self.pin(current, &v)
+        } else {
+            self.temp_of(current, "old")
+        };
         self.stmts.extend(stmts);
         let new = self.binary_op(node, op, current, v);
         let new = self.checked(&t, new);
-        self.emit(StmtKind::Assign { targets: vec![t.place], values: vec![new] });
+        self.emit(StmtKind::Assign {
+            targets: vec![t.place],
+            values: vec![new],
+        });
     }
 }

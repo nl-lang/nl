@@ -74,22 +74,37 @@ impl Regex {
     /// Compiles `pattern`. `size_limit` caps the heap of the compiled
     /// pattern in bytes (0 means [`DEFAULT_SIZE_LIMIT`]).
     pub fn new(pattern: &str, size_limit: usize) -> Result<Regex, Error> {
-        let limit = if size_limit == 0 { DEFAULT_SIZE_LIMIT } else { size_limit };
-        let config = meta::Config::new().nfa_size_limit(Some(limit)).utf8_empty(true);
-        let inner = meta::Regex::builder().configure(config).build(pattern).map_err(|e| {
-            if e.size_limit().is_some() {
-                Error::TooBig(format!("the pattern compiles to more than {limit} bytes"))
-            } else if let Some(syntax) = e.syntax_error() {
-                // The parser's message spans several lines (the pattern,
-                // carets and the reason), as the regex crate shows it.
-                Error::Syntax(syntax.to_string())
-            } else {
-                Error::Syntax(e.to_string())
-            }
-        })?;
+        let limit = if size_limit == 0 {
+            DEFAULT_SIZE_LIMIT
+        } else {
+            size_limit
+        };
+        let config = meta::Config::new()
+            .nfa_size_limit(Some(limit))
+            .utf8_empty(true);
+        let inner = meta::Regex::builder()
+            .configure(config)
+            .build(pattern)
+            .map_err(|e| {
+                if e.size_limit().is_some() {
+                    Error::TooBig(format!("the pattern compiles to more than {limit} bytes"))
+                } else if let Some(syntax) = e.syntax_error() {
+                    // The parser's message spans several lines (the pattern,
+                    // carets and the reason), as the regex crate shows it.
+                    Error::Syntax(syntax.to_string())
+                } else {
+                    Error::Syntax(e.to_string())
+                }
+            })?;
         let info = inner.group_info();
-        let names = (0..info.group_len(PatternID::ZERO)).map(|i| info.to_name(PatternID::ZERO, i).map(str::to_owned)).collect();
-        Ok(Regex { inner, pattern: pattern.to_owned(), names })
+        let names = (0..info.group_len(PatternID::ZERO))
+            .map(|i| info.to_name(PatternID::ZERO, i).map(str::to_owned))
+            .collect();
+        Ok(Regex {
+            inner,
+            pattern: pattern.to_owned(),
+            names,
+        })
     }
 
     /// The pattern as given.
@@ -101,7 +116,13 @@ impl Regex {
     /// lazy DFA grows its cache while matching, up to its own cap, which is
     /// not included.
     pub fn memory_usage(&self) -> usize {
-        self.inner.memory_usage() + self.pattern.len() + self.names.iter().map(|n| n.as_ref().map_or(0, String::len) + 8).sum::<usize>()
+        self.inner.memory_usage()
+            + self.pattern.len()
+            + self
+                .names
+                .iter()
+                .map(|n| n.as_ref().map_or(0, String::len) + 8)
+                .sum::<usize>()
     }
 
     /// The number of capture groups, group 0 (the whole match) included.
@@ -145,7 +166,9 @@ impl Regex {
             return false;
         }
         for (i, pair) in spans.chunks_mut(2).enumerate() {
-            let (s, e) = caps.get_group(i).map_or((NO_SPAN, NO_SPAN), |sp| (sp.start, sp.end));
+            let (s, e) = caps
+                .get_group(i)
+                .map_or((NO_SPAN, NO_SPAN), |sp| (sp.start, sp.end));
             if let Some(slot) = pair.first_mut() {
                 *slot = s;
             }
@@ -158,7 +181,12 @@ impl Regex {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 mod tests {
     use super::*;
     use std::time::{Duration, Instant};
@@ -224,8 +252,14 @@ mod tests {
         assert!(e.message().contains("unclosed group"), "{e}");
         let e = Regex::new(r"\w{100}", 2000).unwrap_err();
         assert!(matches!(e, Error::TooBig(_)), "{e}");
-        assert!(Regex::new("(?<=a)b", 0).is_err(), "lookaround is not supported");
-        assert!(Regex::new(r"(a)\1", 0).is_err(), "backreferences are not supported");
+        assert!(
+            Regex::new("(?<=a)b", 0).is_err(),
+            "lookaround is not supported"
+        );
+        assert!(
+            Regex::new(r"(a)\1", 0).is_err(),
+            "backreferences are not supported"
+        );
     }
 
     #[test]
@@ -237,6 +271,10 @@ mod tests {
         assert!(!re.is_match(subject.as_bytes()));
         let mut spans = [0usize; 4];
         assert!(!re.captures_at(subject.as_bytes(), 0, &mut spans));
-        assert!(t.elapsed() < Duration::from_secs(5), "took {:?}", t.elapsed());
+        assert!(
+            t.elapsed() < Duration::from_secs(5),
+            "took {:?}",
+            t.elapsed()
+        );
     }
 }

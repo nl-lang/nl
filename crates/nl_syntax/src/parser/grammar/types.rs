@@ -22,7 +22,9 @@ impl Parser<'_> {
     pub(crate) fn type_ref(&mut self, after: &str, what: &str) {
         let start = self.pos();
         let first = self.cur();
-        let Some(t) = self.type_expected(after) else { return };
+        let Some(t) = self.type_expected(after) else {
+            return;
+        };
         if first != CNAME || t.kind(self) != Some(NAMED_TYPE) {
             let range = self.range_from(start);
             self.error_at(
@@ -38,7 +40,8 @@ impl Parser<'_> {
     /// `type = union_type`. Returns `None` (consuming nothing) when no
     /// type starts here.
     pub(crate) fn type_(&mut self) -> Option<CompletedMarker> {
-        self.guarded(|p| p.union_type()).unwrap_or_else(|skipped| skipped)
+        self.guarded(|p| p.union_type())
+            .unwrap_or_else(|skipped| skipped)
     }
 
     /// `union_type = prefix_type { "|" prefix_type }`. A `|` may end or start
@@ -107,7 +110,11 @@ impl Parser<'_> {
     fn primary_type(&mut self) -> Option<CompletedMarker> {
         let k = self.cur();
         match k {
-            CNAME if self.nth_text(0) == "Function" && self.nth_at(1, L_PAREN) && self.nth_touches(1) => {
+            CNAME
+                if self.nth_text(0) == "Function"
+                    && self.nth_at(1, L_PAREN)
+                    && self.nth_touches(1) =>
+            {
                 Some(self.fn_type())
             }
             CNAME => {
@@ -144,7 +151,11 @@ impl Parser<'_> {
                 self.bump();
                 Some(m.complete(self, NAMED_TYPE))
             }
-            L_CURLY => Some(if self.nth_at(1, L_BRACK) { self.map_type() } else { self.record_type() }),
+            L_CURLY => Some(if self.nth_at(1, L_BRACK) {
+                self.map_type()
+            } else {
+                self.record_type()
+            }),
             L_BRACK => {
                 let m = self.start();
                 self.in_bracket(R_BRACK, |p| {
@@ -200,7 +211,9 @@ impl Parser<'_> {
             }
             if !p.bump_split_gt() {
                 let found = p.describe_cur();
-                p.error(format!("expected `>` to close the type arguments, found {found}"));
+                p.error(format!(
+                    "expected `>` to close the type arguments, found {found}"
+                ));
             }
         });
         m.complete(self, TYPE_ARGS);
@@ -297,7 +310,9 @@ impl Parser<'_> {
         match k {
             ONAME => {
                 let text = self.nth_text(0).to_string();
-                self.error(format!("a field name in this style is written as a string: `\"{text}\": Type`"));
+                self.error(format!(
+                    "a field name in this style is written as a string: `\"{text}\": Type`"
+                ));
                 self.bump();
             }
             STR_BEGIN => {

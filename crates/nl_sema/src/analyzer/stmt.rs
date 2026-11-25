@@ -68,7 +68,11 @@ impl Analyzer<'_> {
         }
         self.expr1(&cond);
         let (then_env, else_env) = self.condition_envs(&cond);
-        let (run_env, skip_env) = if negated { (else_env, then_env) } else { (then_env, else_env) };
+        let (run_env, skip_env) = if negated {
+            (else_env, then_env)
+        } else {
+            (then_env, else_env)
+        };
         let saved = std::mem::replace(&mut self.env, run_env);
         let was = self.diverges;
         self.diverges = false;
@@ -82,7 +86,11 @@ impl Analyzer<'_> {
         let after = std::mem::replace(&mut self.env, saved);
         let diverged = self.diverges;
         self.diverges = was;
-        self.env = if diverged { skip_env } else { self.merge_envs(&[after, skip_env]) };
+        self.env = if diverged {
+            skip_env
+        } else {
+            self.merge_envs(&[after, skip_env])
+        };
         if value_used && !looping && !diverged {
             return Ty::new(optional(&self.types, &v.t), v.certain);
         }
@@ -159,7 +167,9 @@ impl Analyzer<'_> {
             let types: Vec<Type> = expr_children(&list).map(|e| self.expr1(&e).t).collect();
             return Ty::uncertain(Type::Tuple(types.into()));
         }
-        let Some(e) = expr_child(s) else { return Ty::certain(Type::Nil) };
+        let Some(e) = expr_child(s) else {
+            return Ty::certain(Type::Nil);
+        };
         let discarded = self.res.value_discarded(s.text_range()) || !value_used;
         if discarded {
             let t = self.discard_expr(&e);
@@ -190,7 +200,9 @@ impl Analyzer<'_> {
                     _ => Ty::any(),
                 }
             }
-            FIELD_EXPR if field_name(e).is_some_and(|t| t.text() != "len") => self.call_target(e, Vec::new(), None, None),
+            FIELD_EXPR if field_name(e).is_some_and(|t| t.text() != "len") => {
+                self.call_target(e, Vec::new(), None, None)
+            }
             PAREN_EXPR => match expr_child(e) {
                 Some(inner) => self.discard_expr(&inner),
                 None => Ty::any(),
@@ -211,19 +223,52 @@ impl Analyzer<'_> {
 
     /// `let`/`const patterns = values`.
     fn let_decl(&mut self, node: &SyntaxNode, decl: DeclKind) {
-        let values: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+        let values: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
         let pats: Vec<SyntaxNode> = pattern_children(node).collect();
         let has_values = child(node, EXPR_LIST).is_some();
         let value_types = self.value_list(&values, pats.len());
         if has_values && pats.len() > 1 {
-            let last_multi = values.last().is_some_and(|v| matches!(v.kind(), CALL_EXPR | COMMAND_CALL | METHOD_CALL | PIPE_EXPR | LUA_PATH | SPAWN_EXPR | PAREN_EXPR | FIELD_EXPR | NAME_REF | AT_EXPR | BANG_EXPR | IF_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR | UNLESS_EXPR));
+            let last_multi = values.last().is_some_and(|v| {
+                matches!(
+                    v.kind(),
+                    CALL_EXPR
+                        | COMMAND_CALL
+                        | METHOD_CALL
+                        | PIPE_EXPR
+                        | LUA_PATH
+                        | SPAWN_EXPR
+                        | PAREN_EXPR
+                        | FIELD_EXPR
+                        | NAME_REF
+                        | AT_EXPR
+                        | BANG_EXPR
+                        | IF_EXPR
+                        | CASE_EXPR
+                        | COND_EXPR
+                        | TRY_EXPR
+                        | UNLESS_EXPR
+                )
+            });
             if values.len() > pats.len() || (values.len() < pats.len() && !last_multi) {
-                let what = if decl == DeclKind::Let { "let" } else { "const" };
+                let what = if decl == DeclKind::Let {
+                    "let"
+                } else {
+                    "const"
+                };
                 self.warn(node.text_range(), "value-count", format!("this `{what}` declares {} names but is given {} values; the missing ones are `nil`", pats.len(), values.len()));
             }
         }
         for (i, pat) in pats.iter().enumerate() {
-            let value = if has_values { value_types.get(i).cloned().unwrap_or_else(|| Ty::certain(Type::Nil)) } else { Ty::uncertain(Type::Nil) };
+            let value = if has_values {
+                value_types
+                    .get(i)
+                    .cloned()
+                    .unwrap_or_else(|| Ty::certain(Type::Nil))
+            } else {
+                Ty::uncertain(Type::Nil)
+            };
             self.bind_let(pat, &value, has_values);
         }
     }
@@ -254,10 +299,15 @@ impl Analyzer<'_> {
     fn bind_let(&mut self, pat: &SyntaxNode, value: &Ty, has_value: bool) {
         match pat.kind() {
             BIND_PAT => {
-                let Some(id) = child(pat, NAME).and_then(|n| self.res.declaration(n.text_range())) else { return };
+                let Some(id) = child(pat, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                else {
+                    return;
+                };
                 if self.binding_sigs.contains_key(&id) {
                     // `let f = fn … end`: function-kind, typed `Function`.
-                    let sig = self.binding_fn_type(id).unwrap_or_else(|| Rc::new(FnType::unknown()));
+                    let sig = self
+                        .binding_fn_type(id)
+                        .unwrap_or_else(|| Rc::new(FnType::unknown()));
                     self.declare_type(id, Ty::certain(Type::Fn(sig)));
                     return;
                 }
@@ -273,20 +323,33 @@ impl Analyzer<'_> {
                 }
             }
             TYPED_PAT => {
-                let ty = type_child(pat).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+                let ty = type_child(pat)
+                    .map(|t| self.type_of(&t))
+                    .unwrap_or(Type::Any);
                 let inner = pattern_children(pat).next();
                 match inner {
                     Some(i) if i.kind() == BIND_PAT => {
-                        let Some(id) = child(&i, NAME).and_then(|n| self.res.declaration(n.text_range())) else { return };
+                        let Some(id) =
+                            child(&i, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                        else {
+                            return;
+                        };
                         let name = self.binding(id).map(|b| b.name.clone()).unwrap_or_default();
                         if self.binding_sigs.contains_key(&id) {
-                            let sig = self.binding_fn_type(id).unwrap_or_else(|| Rc::new(FnType::unknown()));
+                            let sig = self
+                                .binding_fn_type(id)
+                                .unwrap_or_else(|| Rc::new(FnType::unknown()));
                             self.declare_type(id, Ty::certain(Type::Fn(sig)));
                         } else {
                             self.declare_type(id, Ty::certain(ty.clone()));
                         }
                         if has_value {
-                            let proven = self.check_assignable(value, &ty, pat.text_range(), &format!("variable '{name}'"));
+                            let proven = self.check_assignable(
+                                value,
+                                &ty,
+                                pat.text_range(),
+                                &format!("variable '{name}'"),
+                            );
                             if proven && self.opts.static_resolution {
                                 if let Some(t) = type_child(pat) {
                                     self.hints.proven.insert(t.text_range());
@@ -294,7 +357,10 @@ impl Analyzer<'_> {
                             }
                             // Along the flow the variable holds the value,
                             // unless the annotation opts out of checking.
-                            if self.flow_narrows(&ty) && self.types.assignable(&value.t, &ty) && value.t != Type::Any {
+                            if self.flow_narrows(&ty)
+                                && self.types.assignable(&value.t, &ty)
+                                && value.t != Type::Any
+                            {
                                 let flow = self.stored_flow(&value.t, &ty);
                                 self.set_flow(id, flow);
                             }
@@ -315,7 +381,9 @@ impl Analyzer<'_> {
 
     fn global_decl(&mut self, node: &SyntaxNode) {
         let value = expr_child(node).map(|e| self.expr1(&e));
-        let Some(id) = child(node, NAME).and_then(|n| self.res.declaration(n.text_range())) else { return };
+        let Some(id) = child(node, NAME).and_then(|n| self.res.declaration(n.text_range())) else {
+            return;
+        };
         match type_child(node) {
             Some(t) => {
                 let ty = self.type_of(&t);
@@ -346,22 +414,32 @@ impl Analyzer<'_> {
             Some(owner) => self.method_owner_type(node, &owner),
             None => {
                 let id = child(node, NAME).and_then(|n| self.res.declaration(n.text_range()));
-                id.and_then(|id| self.module_of_binding.get(&id).copied()).map(Type::Static)
+                id.and_then(|id| self.module_of_binding.get(&id).copied())
+                    .map(Type::Static)
             }
         };
         self.function_body(node, &sig, self_ty, false, false);
     }
 
     fn struct_decl(&mut self, node: &SyntaxNode) {
-        let nid = child(node, NAME).and_then(|n| self.res.declaration(n.text_range())).and_then(|id| self.named_of.get(&id).copied());
+        let nid = child(node, NAME)
+            .and_then(|n| self.res.declaration(n.text_range()))
+            .and_then(|id| self.named_of.get(&id).copied());
         for f in children(node, FIELD_DECL) {
             let Some(e) = expr_child(&f) else { continue };
             let v = self.expr1(&e);
-            let name = child(&f, NAME).and_then(|n| name_text(&n)).unwrap_or_default();
+            let name = child(&f, NAME)
+                .and_then(|n| name_text(&n))
+                .unwrap_or_default();
             if let Some(nid) = nid {
                 if let Some(field) = self.types.field(nid, &name) {
                     let owner = self.types.name(nid).to_string();
-                    self.check_assignable(&v, &field.ty, e.text_range(), &format!("the default of field '{name}' of {owner}"));
+                    self.check_assignable(
+                        &v,
+                        &field.ty,
+                        e.text_range(),
+                        &format!("the default of field '{name}' of {owner}"),
+                    );
                 }
             }
         }
@@ -383,12 +461,33 @@ impl Analyzer<'_> {
 
     /// The body of a function-like node: parameters, then the block; the
     /// return types are collected and the inferred one recorded.
-    pub(crate) fn function_body(&mut self, node: &SyntaxNode, sig: &Rc<FnType>, self_ty: Option<Type>, spawn_block: bool, handler: bool) {
-        let declared_ret = child(node, RETURN_TYPE).and_then(|r| type_child(&r)).map(|t| self.type_of_with_self(&t, self_ty.clone()));
+    pub(crate) fn function_body(
+        &mut self,
+        node: &SyntaxNode,
+        sig: &Rc<FnType>,
+        self_ty: Option<Type>,
+        spawn_block: bool,
+        handler: bool,
+    ) {
+        let declared_ret = child(node, RETURN_TYPE)
+            .and_then(|r| type_child(&r))
+            .map(|t| self.type_of_with_self(&t, self_ty.clone()));
         let nil_ret = declared_ret.as_ref().is_some_and(|t| *t == Type::Nil);
         let method_self = self.res.method_self(node.text_range());
-        let own_self = if method_self.is_some() { self_ty.clone() } else { None };
-        self.fns.push(FnCtx { node: Some(node.text_range()), declared_ret: declared_ret.clone(), nil_ret, returns: Vec::new(), self_type: own_self, spawn_block, loop_depth: 0 });
+        let own_self = if method_self.is_some() {
+            self_ty.clone()
+        } else {
+            None
+        };
+        self.fns.push(FnCtx {
+            node: Some(node.text_range()),
+            declared_ret: declared_ret.clone(),
+            nil_ret,
+            returns: Vec::new(),
+            self_type: own_self,
+            spawn_block,
+            loop_depth: 0,
+        });
         let saved_env = self.env.clone();
         let saved_div = self.diverges;
         self.diverges = false;
@@ -409,16 +508,25 @@ impl Analyzer<'_> {
                         let param = sig.params.get(i).cloned();
                         i += 1;
                         let default = expr_child(&p).map(|d| self.expr1(&d));
-                        let Some(pat) = pattern_children(&p).next() else { continue };
+                        let Some(pat) = pattern_children(&p).next() else {
+                            continue;
+                        };
                         let declared = param.map(|p| p.ty).unwrap_or(Type::Any);
                         if let Some(d) = &default {
                             if declared != Type::Any {
-                                self.check_assignable(d, &declared, p.text_range(), "the default of this parameter");
+                                self.check_assignable(
+                                    d,
+                                    &declared,
+                                    p.text_range(),
+                                    "the default of this parameter",
+                                );
                             }
                         }
                         let value = if declared == Type::Any {
                             match &default {
-                                Some(d) if !self.assigned_anywhere(&pat) => Ty::uncertain(self.types.union(&d.t, &Type::Any)),
+                                Some(d) if !self.assigned_anywhere(&pat) => {
+                                    Ty::uncertain(self.types.union(&d.t, &Type::Any))
+                                }
                                 _ => Ty::any(),
                             }
                         } else {
@@ -427,7 +535,9 @@ impl Analyzer<'_> {
                         self.bind_param(&pat, &value);
                     }
                     REST_PARAM => {
-                        if let Some(id) = child(&p, NAME).and_then(|n| self.res.declaration(n.text_range())) {
+                        if let Some(id) =
+                            child(&p, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                        {
                             let t = match &sig.rest {
                                 Some(t) if *t != Type::Any => Ty::certain(t.clone()),
                                 _ => Ty::certain(Type::Array(Rc::new(Type::Any))),
@@ -436,7 +546,9 @@ impl Analyzer<'_> {
                         }
                     }
                     KEYED_PARAM => {
-                        if let Some(id) = child(&p, NAME).and_then(|n| self.res.declaration(n.text_range())) {
+                        if let Some(id) =
+                            child(&p, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                        {
                             let t = match &sig.keyed {
                                 Some(Some(t)) if *t != Type::Any => Ty::certain(t.clone()),
                                 _ => Ty::certain(Type::Table),
@@ -460,7 +572,16 @@ impl Analyzer<'_> {
             let t = tail.clone();
             let last = block(node).and_then(|b| statements(&b).last());
             let site = last.as_ref().map(|s| s.text_range());
-            let single = last.as_ref().and_then(|s| if s.kind() == EXPR_STMT { expr_child(s) } else { None }).is_some_and(|e| self.single_valued(&e) || self.checked_call(&e));
+            let single = last
+                .as_ref()
+                .and_then(|s| {
+                    if s.kind() == EXPR_STMT {
+                        expr_child(s)
+                    } else {
+                        None
+                    }
+                })
+                .is_some_and(|e| self.single_valued(&e) || self.checked_call(&e));
             self.record_return(&t, site, true, single);
         }
         let ctx = self.fns.pop();
@@ -487,7 +608,9 @@ impl Analyzer<'_> {
     /// True when a parameter's name is assigned in the body.
     fn assigned_anywhere(&self, pat: &SyntaxNode) -> bool {
         match pat.kind() {
-            BIND_PAT => child(pat, NAME).and_then(|n| self.res.declaration(n.text_range())).is_some_and(|id| self.assigned.contains(&id)),
+            BIND_PAT => child(pat, NAME)
+                .and_then(|n| self.res.declaration(n.text_range()))
+                .is_some_and(|id| self.assigned.contains(&id)),
             _ => true,
         }
     }
@@ -496,12 +619,21 @@ impl Analyzer<'_> {
     fn bind_param(&mut self, pat: &SyntaxNode, value: &Ty) {
         match pat.kind() {
             BIND_PAT => {
-                let Some(id) = child(pat, NAME).and_then(|n| self.res.declaration(n.text_range())) else { return };
-                let t = if self.assigned.contains(&id) && value.t == Type::Any { Ty::any() } else { value.clone() };
+                let Some(id) = child(pat, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                else {
+                    return;
+                };
+                let t = if self.assigned.contains(&id) && value.t == Type::Any {
+                    Ty::any()
+                } else {
+                    value.clone()
+                };
                 self.declare_type(id, t);
             }
             TYPED_PAT => {
-                let ty = type_child(pat).map(|t| self.type_of(&t)).unwrap_or(Type::Any);
+                let ty = type_child(pat)
+                    .map(|t| self.type_of(&t))
+                    .unwrap_or(Type::Any);
                 if let Some(inner) = pattern_children(pat).next() {
                     let v = Ty::certain(ty);
                     if inner.kind() == BIND_PAT {
@@ -522,8 +654,13 @@ impl Analyzer<'_> {
     /// count), and not a name that may be called.
     fn single_valued(&self, e: &SyntaxNode) -> bool {
         match e.kind() {
-            LITERAL | INTERP_STRING | PAREN_EXPR | TABLE_EXPR | LIST_EXPR | STRUCT_LIT | FN_EXPR | LAMBDA_EXPR | PREFIX_EXPR | BIN_EXPR | IS_EXPR | AS_EXPR | SELF_EXPR => true,
-            NAME_REF => matches!(self.res.reference(e.text_range()), Some(Ref::Binding(id)) if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Variable)),
+            LITERAL | INTERP_STRING | PAREN_EXPR | TABLE_EXPR | LIST_EXPR | STRUCT_LIT
+            | FN_EXPR | LAMBDA_EXPR | PREFIX_EXPR | BIN_EXPR | IS_EXPR | AS_EXPR | SELF_EXPR => {
+                true
+            }
+            NAME_REF => {
+                matches!(self.res.reference(e.text_range()), Some(Ref::Binding(id)) if self.binding(*id).is_some_and(|b| b.kind == BindingKind::Variable))
+            }
             _ => false,
         }
     }
@@ -542,15 +679,27 @@ impl Analyzer<'_> {
         if !matches!(e.kind(), CALL_EXPR | COMMAND_CALL) {
             return false;
         }
-        let Some(callee) = expr_child(e) else { return false };
-        if callee.kind() != NAME_REF || is_safe_receiver(&callee) || !self.checked_fn_name(&callee) {
+        let Some(callee) = expr_child(e) else {
+            return false;
+        };
+        if callee.kind() != NAME_REF || is_safe_receiver(&callee) || !self.checked_fn_name(&callee)
+        {
             return false;
         }
-        let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else { return false };
-        let Some((_, sig)) = self.binding_sigs.get(id) else { return false };
-        let Some(Some(want)) = self.fns.last().map(|f| f.declared_ret.clone()) else { return false };
+        let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) else {
+            return false;
+        };
+        let Some((_, sig)) = self.binding_sigs.get(id) else {
+            return false;
+        };
+        let Some(Some(want)) = self.fns.last().map(|f| f.declared_ret.clone()) else {
+            return false;
+        };
         let got = &sig.ret;
-        if sig.is_async || matches!(got, Type::Any | Type::Tuple(_)) || matches!(want, Type::Tuple(_)) {
+        if sig.is_async
+            || matches!(got, Type::Any | Type::Tuple(_))
+            || matches!(want, Type::Tuple(_))
+        {
             return false;
         }
         *got == want || (self.types.assignable(got, &want) && self.shallow_check(&want, 0))
@@ -566,7 +715,15 @@ impl Analyzer<'_> {
             return false;
         }
         match self.types.expand(t) {
-            Type::Nil | Type::Number | Type::String | Type::Bool | Type::Table | Type::Array(_) | Type::Map(..) | Type::Function | Type::Fn(_) => true,
+            Type::Nil
+            | Type::Number
+            | Type::String
+            | Type::Bool
+            | Type::Table
+            | Type::Array(_)
+            | Type::Map(..)
+            | Type::Function
+            | Type::Fn(_) => true,
             Type::Named(nid) => self.types.is_struct(nid) || self.types.is_enum(nid),
             Type::Union(m) => m.iter().all(|x| self.shallow_check(x, depth + 1)),
             _ => false,
@@ -599,18 +756,33 @@ impl Analyzer<'_> {
                 if !fits && v != Type::Never {
                     let got = self.show(&value.t);
                     let want = self.show(&ret);
-                    let where_ = if tail { "the tail value" } else { "the returned value" };
+                    let where_ = if tail {
+                        "the tail value"
+                    } else {
+                        "the returned value"
+                    };
                     if let Some(s) = site {
                         self.warn(s, "return-type", format!("this function is declared to return {want}, but {where_} here is {got}; the runtime check will raise TypeError"));
                     }
-                } else if fits && single && value.certain && self.types.is_definite(&value.t) && self.types.is_definite(&ret) && !matches!(ret, Type::Tuple(_)) && self.opts.static_resolution {
+                } else if fits
+                    && single
+                    && value.certain
+                    && self.types.is_definite(&value.t)
+                    && self.types.is_definite(&ret)
+                    && !matches!(ret, Type::Tuple(_))
+                    && self.opts.static_resolution
+                {
                     if let Some(s) = site {
                         self.hints.proven.insert(s);
                     }
                 }
             }
             // `: nil`: a `return v` is checked at runtime.
-            Some(_) if !tail && self.types.first(&value.t) != Type::Nil && self.types.is_definite(&value.t) => {
+            Some(_)
+                if !tail
+                    && self.types.first(&value.t) != Type::Nil
+                    && self.types.is_definite(&value.t) =>
+            {
                 if let Some(s) = site {
                     self.warn(s, "return-type", "this function is declared `: nil` and returns a value; the runtime check will raise TypeError");
                 }
@@ -622,7 +794,9 @@ impl Analyzer<'_> {
     }
 
     fn return_stmt(&mut self, node: &SyntaxNode) {
-        let values: Vec<SyntaxNode> = child(node, EXPR_LIST).map(|l| expr_children(&l).collect()).unwrap_or_default();
+        let values: Vec<SyntaxNode> = child(node, EXPR_LIST)
+            .map(|l| expr_children(&l).collect())
+            .unwrap_or_default();
         let value = match values.len() {
             0 => Ty::certain(Type::Nil),
             1 => values.first().map(|v| self.expr(v)).unwrap_or_else(Ty::any),
@@ -649,7 +823,10 @@ impl Analyzer<'_> {
             // Reported by the resolver.
             return;
         }
-        let single = values.len() == 1 && values.first().is_some_and(|v| self.single_valued(v) || self.checked_call(v));
+        let single = values.len() == 1
+            && values
+                .first()
+                .is_some_and(|v| self.single_valued(v) || self.checked_call(v));
         self.record_return(&value, Some(node.text_range()), false, single);
         self.diverges = true;
     }
@@ -666,14 +843,27 @@ impl Analyzer<'_> {
             None => expr_children(node).skip(1).collect(),
         };
         if node.kind() == COMPOUND_ASSIGN_STMT {
-            let op = tokens(node).find(|t| t.kind().is_compound_assign()).map(|t| t.kind());
-            let (Some(target), Some(value)) = (targets.first(), values.first()) else { return };
+            let op = tokens(node)
+                .find(|t| t.kind().is_compound_assign())
+                .map(|t| t.kind());
+            let (Some(target), Some(value)) = (targets.first(), values.first()) else {
+                return;
+            };
             let current = self.target_type(target);
             let v = self.expr1(value);
             let result = match op {
-                Some(PIPE2_EQ) => Ty::new(self.types.union(&self.types.truthy(&current.t), &v.t), current.certain && v.certain),
-                Some(AMP2_EQ) => Ty::new(self.types.union(&self.types.falsy(&current.t), &v.t), current.certain && v.certain),
-                Some(QUESTION2_EQ) => Ty::new(self.types.union(&self.types.non_nil(&current.t), &v.t), current.certain && v.certain),
+                Some(PIPE2_EQ) => Ty::new(
+                    self.types.union(&self.types.truthy(&current.t), &v.t),
+                    current.certain && v.certain,
+                ),
+                Some(AMP2_EQ) => Ty::new(
+                    self.types.union(&self.types.falsy(&current.t), &v.t),
+                    current.certain && v.certain,
+                ),
+                Some(QUESTION2_EQ) => Ty::new(
+                    self.types.union(&self.types.non_nil(&current.t), &v.t),
+                    current.certain && v.certain,
+                ),
                 Some(op) => {
                     let r = self.binary_op(node.text_range(), op, &current, &v);
                     if self.opts.static_resolution && self.direct_op(op, &current, &v) {
@@ -688,13 +878,44 @@ impl Analyzer<'_> {
         }
         let vals = self.value_list(&values, targets.len());
         if targets.len() > 1 {
-            let last_multi = values.last().is_some_and(|v| matches!(v.kind(), CALL_EXPR | COMMAND_CALL | METHOD_CALL | PIPE_EXPR | LUA_PATH | SPAWN_EXPR | PAREN_EXPR | FIELD_EXPR | NAME_REF | AT_EXPR | BANG_EXPR | IF_EXPR | CASE_EXPR | COND_EXPR | TRY_EXPR | UNLESS_EXPR));
+            let last_multi = values.last().is_some_and(|v| {
+                matches!(
+                    v.kind(),
+                    CALL_EXPR
+                        | COMMAND_CALL
+                        | METHOD_CALL
+                        | PIPE_EXPR
+                        | LUA_PATH
+                        | SPAWN_EXPR
+                        | PAREN_EXPR
+                        | FIELD_EXPR
+                        | NAME_REF
+                        | AT_EXPR
+                        | BANG_EXPR
+                        | IF_EXPR
+                        | CASE_EXPR
+                        | COND_EXPR
+                        | TRY_EXPR
+                        | UNLESS_EXPR
+                )
+            });
             if values.len() > targets.len() || (values.len() < targets.len() && !last_multi) {
-                self.warn(node.text_range(), "value-count", format!("this assignment has {} targets but {} values; the missing ones are `nil`", targets.len(), values.len()));
+                self.warn(
+                    node.text_range(),
+                    "value-count",
+                    format!(
+                        "this assignment has {} targets but {} values; the missing ones are `nil`",
+                        targets.len(),
+                        values.len()
+                    ),
+                );
             }
         }
         for (i, t) in targets.iter().enumerate() {
-            let v = vals.get(i).cloned().unwrap_or_else(|| Ty::certain(Type::Nil));
+            let v = vals
+                .get(i)
+                .cloned()
+                .unwrap_or_else(|| Ty::certain(Type::Nil));
             self.store(t, &v);
         }
     }
@@ -715,7 +936,10 @@ impl Analyzer<'_> {
     /// of `Table`; a list has no string keys, where a `Table` has any
     /// (`t.foo = 1`).
     fn stored_flow(&self, value: &Type, declared: &Type) -> Type {
-        if matches!(self.types.expand(value), Type::Record(_) | Type::Array(_) | Type::Map(..)) {
+        if matches!(
+            self.types.expand(value),
+            Type::Record(_) | Type::Array(_) | Type::Map(..)
+        ) {
             let d = self.types.non_nil(declared);
             if matches!(self.types.expand(&d), Type::Map(..) | Type::Table) {
                 return d;
@@ -746,23 +970,55 @@ impl Analyzer<'_> {
     fn store(&mut self, target: &SyntaxNode, value: &Ty) {
         match target.kind() {
             NAME_REF => {
-                let Some(Ref::Binding(id)) = self.res.reference(target.text_range()).cloned() else {
-                    if let Some(Ref::Declared(did)) = self.res.reference(target.text_range()).cloned() {
-                        if self.decls.get(did).is_some_and(|i| i.kind == crate::decl::DeclItemKind::Const) {
-                            let name = self.decls.get(did).map(|i| i.name.clone()).unwrap_or_default();
+                let Some(Ref::Binding(id)) = self.res.reference(target.text_range()).cloned()
+                else {
+                    if let Some(Ref::Declared(did)) =
+                        self.res.reference(target.text_range()).cloned()
+                    {
+                        if self
+                            .decls
+                            .get(did)
+                            .is_some_and(|i| i.kind == crate::decl::DeclItemKind::Const)
+                        {
+                            let name = self
+                                .decls
+                                .get(did)
+                                .map(|i| i.name.clone())
+                                .unwrap_or_default();
                             self.error(target.text_range(), "assign-declared-const", format!("`{name}` is declared `const` in a declaration file and cannot be assigned"));
-                        } else if let Some(t) = self.decls.get(did).map(|i| i.name.clone()).and_then(|n| self.decl_value_type(&n)) {
-                            let name = self.decls.get(did).map(|i| i.name.clone()).unwrap_or_default();
-                            self.check_assignable(value, &t, target.text_range(), &format!("declared variable '{name}'"));
+                        } else if let Some(t) = self
+                            .decls
+                            .get(did)
+                            .map(|i| i.name.clone())
+                            .and_then(|n| self.decl_value_type(&n))
+                        {
+                            let name = self
+                                .decls
+                                .get(did)
+                                .map(|i| i.name.clone())
+                                .unwrap_or_default();
+                            self.check_assignable(
+                                value,
+                                &t,
+                                target.text_range(),
+                                &format!("declared variable '{name}'"),
+                            );
                         }
                     }
                     return;
                 };
                 let name = self.binding(id).map(|b| b.name.clone()).unwrap_or_default();
                 let b = self.binding(id).cloned();
-                if self.binding_sigs.contains_key(&id) && b.as_ref().is_some_and(|b| b.annotation.is_none()) {
+                if self.binding_sigs.contains_key(&id)
+                    && b.as_ref().is_some_and(|b| b.annotation.is_none())
+                {
                     // A `let` initialized with `fn` counts as `Function`.
-                    let proven = self.check_assignable(value, &Type::Function, target.text_range(), &format!("variable '{name}' (initialized with `fn`)"));
+                    let proven = self.check_assignable(
+                        value,
+                        &Type::Function,
+                        target.text_range(),
+                        &format!("variable '{name}' (initialized with `fn`)"),
+                    );
                     if proven && self.opts.static_resolution {
                         self.hints.proven.insert(target.text_range());
                     }
@@ -778,7 +1034,10 @@ impl Analyzer<'_> {
                     if proven && self.opts.static_resolution {
                         self.hints.proven.insert(target.text_range());
                     }
-                    if self.flow_narrows(&ty) && self.types.assignable(&value.t, &ty) && value.t != Type::Any {
+                    if self.flow_narrows(&ty)
+                        && self.types.assignable(&value.t, &ty)
+                        && value.t != Type::Any
+                    {
                         let flow = self.stored_flow(&value.t, &ty);
                         self.set_flow(id, flow);
                     } else {
@@ -789,14 +1048,20 @@ impl Analyzer<'_> {
                 self.set_flow(id, value.t.clone());
             }
             FIELD_EXPR => {
-                let Some(recv_node) = expr_child(target) else { return };
-                let name = field_name(target).map(|t| t.text().to_string()).unwrap_or_default();
+                let Some(recv_node) = expr_child(target) else {
+                    return;
+                };
+                let name = field_name(target)
+                    .map(|t| t.text().to_string())
+                    .unwrap_or_default();
                 let recv = self.expr1(&recv_node);
                 self.table_method_assign(&recv_node, &recv, &name, target.text_range());
                 self.store_field(&recv, &name, target, value);
             }
             AT_EXPR => {
-                let name = token(target, AT_NAME).map(|t| t.text().trim_start_matches('@').to_string()).unwrap_or_default();
+                let name = token(target, AT_NAME)
+                    .map(|t| t.text().trim_start_matches('@').to_string())
+                    .unwrap_or_default();
                 if let Some(st) = self.self_type() {
                     self.store_field(&Ty::certain(st), &name, target, value);
                 }
@@ -818,20 +1083,47 @@ impl Analyzer<'_> {
     /// warning.
     fn store_field(&mut self, recv: &Ty, name: &str, target: &SyntaxNode, value: &Ty) {
         match self.types.expand(&recv.t) {
-            Type::Nil if recv.certain => self.error(target.text_range(), "index-nil", format!("`{name}` is stored in a value that is `nil` here")),
+            Type::Nil if recv.certain => self.error(
+                target.text_range(),
+                "index-nil",
+                format!("`{name}` is stored in a value that is `nil` here"),
+            ),
             Type::Named(nid) => {
                 if let Some(f) = self.types.field(nid, name) {
-                    if recv.certain && self.opts.static_resolution && self.types.is_struct(nid) && !matches!(self.types.expand(&f.ty), Type::Function | Type::Fn(_) | Type::Any) {
-                        self.hints.members.insert(target.text_range(), MemberHint::Field { key: name.to_string() });
+                    if recv.certain
+                        && self.opts.static_resolution
+                        && self.types.is_struct(nid)
+                        && !matches!(
+                            self.types.expand(&f.ty),
+                            Type::Function | Type::Fn(_) | Type::Any
+                        )
+                    {
+                        self.hints.members.insert(
+                            target.text_range(),
+                            MemberHint::Field {
+                                key: name.to_string(),
+                            },
+                        );
                     }
-                    if f.ty != Type::Any && !self.types.assignable(&value.t, &f.ty) && self.types.is_definite(&value.t) {
+                    if f.ty != Type::Any
+                        && !self.types.assignable(&value.t, &f.ty)
+                        && self.types.is_definite(&value.t)
+                    {
                         let owner = self.types.name(nid).to_string();
                         let got = self.show(&value.t);
                         let want = self.show(&f.ty);
-                        self.warn(target.text_range(), "field-type", format!("field '{name}' of {owner} is declared {want}; this stores {got}"));
+                        self.warn(
+                            target.text_range(),
+                            "field-type",
+                            format!(
+                                "field '{name}' of {owner} is declared {want}; this stores {got}"
+                            ),
+                        );
                     }
                 } else if let Some(key) = self.decl_key(nid, name) {
-                    self.hints.members_declared.insert(target.text_range(), MemberHint::Field { key });
+                    self.hints
+                        .members_declared
+                        .insert(target.text_range(), MemberHint::Field { key });
                     // For tools: records which declared type the member
                     // is looked up on.
                     self.lookup_member(recv, name, target.text_range());
@@ -845,11 +1137,17 @@ impl Analyzer<'_> {
             }
             Type::Static(nid) => {
                 if let Some(key) = self.decl_key(nid, name) {
-                    self.hints.members_declared.insert(target.text_range(), MemberHint::Field { key });
+                    self.hints
+                        .members_declared
+                        .insert(target.text_range(), MemberHint::Field { key });
                 }
                 let is_const = matches!(self.types.kind(nid), Some(NamedKind::Module { members }) if matches!(members.get(name), Some(Member::Const(_))));
                 if is_const {
-                    self.error(target.text_range(), "assign-declared-const", format!("`{name}` is a `const` member and cannot be assigned"));
+                    self.error(
+                        target.text_range(),
+                        "assign-declared-const",
+                        format!("`{name}` is a `const` member and cannot be assigned"),
+                    );
                 }
             }
             _ => {}
@@ -906,7 +1204,11 @@ impl Analyzer<'_> {
             NAME_REF => {
                 if let Some(id) = self.local_binding(cond) {
                     let t = self.flow_in(env, id);
-                    let n = if truth { self.types.truthy(&t) } else { self.types.falsy(&t) };
+                    let n = if truth {
+                        self.types.truthy(&t)
+                    } else {
+                        self.types.falsy(&t)
+                    };
                     env.insert(id, n);
                 }
             }
@@ -916,14 +1218,20 @@ impl Analyzer<'_> {
                 if let Some(id) = self.local_binding(&e) {
                     let test = self.type_of(&tn);
                     let t = self.flow_in(env, id);
-                    let n = if truth { self.types.narrow(&t, &test) } else { self.types.exclude(&t, &test) };
+                    let n = if truth {
+                        self.types.narrow(&t, &test)
+                    } else {
+                        self.types.exclude(&t, &test)
+                    };
                     env.insert(id, n);
                 }
             }
             BIN_EXPR => {
                 let op = bin_op(cond).map(|t| t.kind());
                 let parts: Vec<SyntaxNode> = expr_children(cond).collect();
-                let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else { return };
+                let (Some(a), Some(b)) = (parts.first(), parts.get(1)) else {
+                    return;
+                };
                 match op {
                     Some(AND_KW | AMP2) => {
                         if truth {
@@ -954,11 +1262,21 @@ impl Analyzer<'_> {
                     }
                     Some(EQ2 | NEQ) => {
                         let eq = op == Some(EQ2);
-                        let name = if is_nil_literal(b) { a } else if is_nil_literal(a) { b } else { return };
+                        let name = if is_nil_literal(b) {
+                            a
+                        } else if is_nil_literal(a) {
+                            b
+                        } else {
+                            return;
+                        };
                         if let Some(id) = self.local_binding(name) {
                             let t = self.flow_in(env, id);
                             let is_nil = truth == eq;
-                            let n = if is_nil { self.types.narrow(&t, &Type::Nil) } else { self.types.exclude(&t, &Type::Nil) };
+                            let n = if is_nil {
+                                self.types.narrow(&t, &Type::Nil)
+                            } else {
+                                self.types.exclude(&t, &Type::Nil)
+                            };
                             env.insert(id, n);
                         }
                     }
@@ -983,7 +1301,17 @@ impl Analyzer<'_> {
         match self.res.reference(e.text_range())? {
             Ref::Binding(id) => {
                 let b = self.binding(*id)?;
-                if matches!(b.decl, DeclKind::Global | DeclKind::Fn | DeclKind::Struct | DeclKind::Enum | DeclKind::Interface | DeclKind::TypeAlias | DeclKind::Module | DeclKind::Import) {
+                if matches!(
+                    b.decl,
+                    DeclKind::Global
+                        | DeclKind::Fn
+                        | DeclKind::Struct
+                        | DeclKind::Enum
+                        | DeclKind::Interface
+                        | DeclKind::TypeAlias
+                        | DeclKind::Module
+                        | DeclKind::Import
+                ) {
                     return None;
                 }
                 Some(*id)
@@ -995,7 +1323,8 @@ impl Analyzer<'_> {
                     crate::decl::DeclItemKind::Let => !self.assigned_decls.contains(id),
                     _ => false,
                 };
-                (narrows && self.decls.binding_kind(*id) == BindingKind::Variable).then(|| Self::declared_flow_id(*id))
+                (narrows && self.decls.binding_kind(*id) == BindingKind::Variable)
+                    .then(|| Self::declared_flow_id(*id))
             }
             _ => None,
         }
@@ -1008,7 +1337,10 @@ impl Analyzer<'_> {
         if let Some(d) = self.declared_of_flow_id(id) {
             return self.declared_value(d).t;
         }
-        self.binding_types.get(&id).map(|t| t.t.clone()).unwrap_or(Type::Any)
+        self.binding_types
+            .get(&id)
+            .map(|t| t.t.clone())
+            .unwrap_or(Type::Any)
     }
 
     /// The union of several envs: a binding narrowed in all of them keeps
@@ -1047,10 +1379,16 @@ impl Analyzer<'_> {
         let saved = self.env.clone();
         let mut rest_env = saved.clone();
         // The first clause is the node itself.
-        let mut clauses: Vec<(Option<SyntaxNode>, Option<SyntaxNode>)> = vec![(child(node, LET_CONDITION).or_else(|| expr_child(node)), block(node))];
+        let mut clauses: Vec<(Option<SyntaxNode>, Option<SyntaxNode>)> = vec![(
+            child(node, LET_CONDITION).or_else(|| expr_child(node)),
+            block(node),
+        )];
         for c in node.children() {
             match c.kind() {
-                ELSEIF_CLAUSE => clauses.push((child(&c, LET_CONDITION).or_else(|| expr_child(&c)), block(&c))),
+                ELSEIF_CLAUSE => clauses.push((
+                    child(&c, LET_CONDITION).or_else(|| expr_child(&c)),
+                    block(&c),
+                )),
                 ELSE_CLAUSE => {
                     has_else = true;
                     clauses.push((None, block(&c)));
@@ -1063,7 +1401,9 @@ impl Analyzer<'_> {
             self.env = rest_env.clone();
             let (then_env, else_env) = match &cond {
                 Some(c) if c.kind() == LET_CONDITION => {
-                    let value = expr_child(c).map(|e| self.expr1(&e)).unwrap_or_else(Ty::any);
+                    let value = expr_child(c)
+                        .map(|e| self.expr1(&e))
+                        .unwrap_or_else(Ty::any);
                     let mut then_env = self.env.clone();
                     let else_env = self.env.clone();
                     std::mem::swap(&mut self.env, &mut then_env);
@@ -1129,7 +1469,9 @@ impl Analyzer<'_> {
                     };
                     self.env = then_env;
                     self.diverges = false;
-                    let v = block(&c).map(|b| self.scoped_block(&b, value_used)).unwrap_or_else(|| Ty::certain(Type::Nil));
+                    let v = block(&c)
+                        .map(|b| self.scoped_block(&b, value_used))
+                        .unwrap_or_else(|| Ty::certain(Type::Nil));
                     if !self.diverges {
                         envs.push(self.env.clone());
                         values.push(v.t);
@@ -1140,7 +1482,9 @@ impl Analyzer<'_> {
                     has_else = true;
                     self.env = rest_env.clone();
                     self.diverges = false;
-                    let v = block(&c).map(|b| self.scoped_block(&b, value_used)).unwrap_or_else(|| Ty::certain(Type::Nil));
+                    let v = block(&c)
+                        .map(|b| self.scoped_block(&b, value_used))
+                        .unwrap_or_else(|| Ty::certain(Type::Nil));
                     if !self.diverges {
                         envs.push(self.env.clone());
                         values.push(v.t);
@@ -1154,7 +1498,11 @@ impl Analyzer<'_> {
             envs.push(rest_env);
             values.push(Type::Nil);
         }
-        self.env = if envs.is_empty() { saved } else { self.merge_envs(&envs) };
+        self.env = if envs.is_empty() {
+            saved
+        } else {
+            self.merge_envs(&envs)
+        };
         if envs.is_empty() {
             self.diverges = true;
             return Ty::certain(Type::Never);
@@ -1179,7 +1527,10 @@ impl Analyzer<'_> {
         }
         // Inside a catch the body may have stopped anywhere: the flow
         // types from before the try hold, not those the body set.
-        let exception = self.prelude_type_id("Exception").map(Type::Named).unwrap_or(Type::Any);
+        let exception = self
+            .prelude_type_id("Exception")
+            .map(Type::Named)
+            .unwrap_or(Type::Any);
         let mut covered: Vec<Type> = Vec::new();
         for c in node.children() {
             match c.kind() {
@@ -1191,16 +1542,23 @@ impl Analyzer<'_> {
                         None => exception.clone(),
                     };
                     // Unreachable: everything it catches is caught before.
-                    if covered.iter().any(|earlier| self.types.assignable(&ty, earlier)) {
+                    if covered
+                        .iter()
+                        .any(|earlier| self.types.assignable(&ty, earlier))
+                    {
                         let at = token(&c, CATCH_KW).map_or(c.text_range(), |t| t.text_range());
                         let shown = self.show(&ty);
                         self.warn(at, "unreachable-catch", format!("this `catch` is unreachable: an earlier clause already catches every {shown}"));
                     }
                     covered.push(ty.clone());
-                    if let Some(id) = child(&c, NAME).and_then(|n| self.res.declaration(n.text_range())) {
+                    if let Some(id) =
+                        child(&c, NAME).and_then(|n| self.res.declaration(n.text_range()))
+                    {
                         self.declare_type(id, Ty::certain(ty));
                     }
-                    let v = block(&c).map(|b| self.scoped_block(&b, value_used)).unwrap_or_else(|| Ty::certain(Type::Nil));
+                    let v = block(&c)
+                        .map(|b| self.scoped_block(&b, value_used))
+                        .unwrap_or_else(|| Ty::certain(Type::Nil));
                     if !self.diverges {
                         values.push(v.t);
                         envs.push(self.env.clone());
@@ -1233,10 +1591,12 @@ impl Analyzer<'_> {
     pub(crate) fn widen_assigned_in(&mut self, body: &SyntaxNode) {
         for n in body.descendants() {
             let targets: Vec<SyntaxNode> = match n.kind() {
-                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT => match child(&n, TARGET_LIST) {
-                    Some(list) => expr_children(&list).collect(),
-                    None => expr_children(&n).take(1).collect(),
-                },
+                ASSIGN_STMT | COMPOUND_ASSIGN_STMT | MULTI_ASSIGN_STMT => {
+                    match child(&n, TARGET_LIST) {
+                        Some(list) => expr_children(&list).collect(),
+                        None => expr_children(&n).take(1).collect(),
+                    }
+                }
                 _ => continue,
             };
             for t in targets {
@@ -1286,7 +1646,11 @@ impl Analyzer<'_> {
             match el {
                 rowan::NodeOrToken::Token(t) if t.kind() == IN_KW => seen_in = true,
                 rowan::NodeOrToken::Node(n) if !seen_in && is_pattern(n.kind()) => pats.push(n),
-                rowan::NodeOrToken::Node(n) if seen_in && iterable.is_none() && is_expr(n.kind()) => iterable = Some(n),
+                rowan::NodeOrToken::Node(n)
+                    if seen_in && iterable.is_none() && is_expr(n.kind()) =>
+                {
+                    iterable = Some(n)
+                }
                 _ => {}
             }
         }
@@ -1296,7 +1660,11 @@ impl Analyzer<'_> {
             let st = self.expr1(&step);
             if st.certain && !matches!(self.types.expand(&st.t), Type::Number | Type::Any) {
                 let shown = self.show(&st.t);
-                self.error(step.text_range(), "bad-step", format!("`step` takes a number other than zero, got {shown}"));
+                self.error(
+                    step.text_range(),
+                    "bad-step",
+                    format!("`step` takes a number other than zero, got {shown}"),
+                );
             }
         }
         let n = pats.len();
@@ -1320,19 +1688,33 @@ impl Analyzer<'_> {
                 }
             }
             Type::Record(fields) => {
-                let vt = self.types.union_all(&fields.iter().map(|(_, t)| t.clone()).collect::<Vec<_>>());
-                if n <= 1 { vec![Ty::uncertain(vt)] } else { vec![Ty::uncertain(Type::String), Ty::uncertain(vt)] }
+                let vt = self
+                    .types
+                    .union_all(&fields.iter().map(|(_, t)| t.clone()).collect::<Vec<_>>());
+                if n <= 1 {
+                    vec![Ty::uncertain(vt)]
+                } else {
+                    vec![Ty::uncertain(Type::String), Ty::uncertain(vt)]
+                }
             }
             Type::Nil | Type::Number | Type::Bool if it.certain => {
                 let shown = self.show(&it_t);
-                self.error(iterable.text_range(), "not-iterable", format!("cannot iterate over a {shown}"));
+                self.error(
+                    iterable.text_range(),
+                    "not-iterable",
+                    format!("cannot iterate over a {shown}"),
+                );
                 Vec::new()
             }
             _ => Vec::new(),
         };
         if self.opts.static_resolution && it.certain {
             let hint = match &it_t {
-                Type::Array(_) | Type::Map(..) | Type::Record(_) | Type::Table => Some(if n <= 1 { LoopHint::Array } else { LoopHint::Map }),
+                Type::Array(_) | Type::Map(..) | Type::Record(_) | Type::Table => Some(if n <= 1 {
+                    LoopHint::Array
+                } else {
+                    LoopHint::Map
+                }),
                 Type::Fn(_) | Type::Function => Some(LoopHint::Function),
                 _ => None,
             };
