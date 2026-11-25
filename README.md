@@ -397,7 +397,7 @@ cargo run --release -p nl_fuzz -- --seed 1 --count 1000 --mutate
 |---|---|
 | macOS, arm64 | Developed and tested here |
 | Linux, x64 and arm64 | Targeted; the CI workflow runs the full suite there |
-| Windows | The worker threads have a Windows code path, but it has not been built yet |
+| Windows x64 | Cross-built with clang for MSVC's ABI (the fork, the compiler library, `tests/vm/conform/nlrun.c`); the conformance programs pass under Wine, the worker ones included |
 
 The VM targets 64-bit builds (GC64), both with the JIT and interpreter-only,
 for platforms that forbid JIT compilation.

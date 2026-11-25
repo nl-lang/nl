@@ -26,30 +26,58 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <dirent.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
+#endif
+#else
+#include <dirent.h>
+#endif
 
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "nl.h"
 
-typedef struct Sleep {
+typedef struct Wakeup {
   double at;
   long seq;
   nl_Callback wake;
   void *arg;
-} Sleep;
+} Wakeup;
 
-static Sleep sleeps[1024];
+static Wakeup sleeps[1024];
 static int nsleeps;
 static long seq;
 
 static double now(void)
 {
+#ifdef _WIN32
+  LARGE_INTEGER count, frequency;
+  QueryPerformanceCounter(&count);
+  QueryPerformanceFrequency(&frequency);
+  return (double)count.QuadPart / (double)frequency.QuadPart;
+#else
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec + ts.tv_nsec / 1e9;
+#endif
+}
+
+/* Waits seconds (> 0). */
+static void wait_for(double seconds)
+{
+#ifdef _WIN32
+  Sleep((DWORD)(seconds * 1000.0 + 0.5));
+#else
+  struct timespec ts;
+  ts.tv_sec = (time_t)seconds;
+  ts.tv_nsec = (long)((seconds - (double)ts.tv_sec) * 1e9);
+  nanosleep(&ts, NULL);
+#endif
 }
 
 static void timer(void *data, lua_State *L, double seconds, nl_Callback wake, void *arg)
@@ -79,15 +107,11 @@ static int fire_timer(lua_State *L)
       best = i;
   if (best < 0) return 0;
   {
-    Sleep s = sleeps[best];
+    Wakeup s = sleeps[best];
     sleeps[best] = sleeps[--nsleeps];
     t = s.at - now();
-    if (t > 0) {
-      struct timespec ts;
-      ts.tv_sec = (time_t)t;
-      ts.tv_nsec = (long)((t - (double)ts.tv_sec) * 1e9);
-      nanosleep(&ts, NULL);
-    }
+    if (t > 0)
+      wait_for(t);
     s.wake(L, s.arg);
   }
   return 1;
@@ -117,8 +141,10 @@ static int name_cmp(const void *a, const void *b)
 static int add_decl(lua_State *L, const char *path)
 {
   struct stat st;
+#ifndef _WIN32
   DIR *d;
   struct dirent *e;
+#endif
   char *names[256];
   int n = 0, i;
   if (stat(path, &st) != 0) {
@@ -129,6 +155,22 @@ static int add_decl(lua_State *L, const char *path)
     nl_adddecl(L, path);
     return 1;
   }
+#ifdef _WIN32
+  {
+    WIN32_FIND_DATAA fd;
+    char pattern[1024];
+    HANDLE h;
+    snprintf(pattern, sizeof(pattern), "%s/*.d.nl", path);
+    if ((h = FindFirstFileA(pattern, &fd)) != INVALID_HANDLE_VALUE) {
+      do {
+        size_t len = strlen(fd.cFileName);
+        names[n] = malloc(strlen(path) + len + 2);
+        sprintf(names[n++], "%s/%s", path, fd.cFileName);
+      } while (n < (int)(sizeof(names) / sizeof(names[0])) && FindNextFileA(h, &fd));
+      FindClose(h);
+    }
+  }
+#else
   if (!(d = opendir(path))) {
     fprintf(stderr, "nlrun: --decl %s: cannot read the directory\n", path);
     return 0;
@@ -141,6 +183,7 @@ static int add_decl(lua_State *L, const char *path)
     }
   }
   closedir(d);
+#endif
   qsort(names, n, sizeof(names[0]), name_cmp);
   for (i = 0; i < n; i++) {
     nl_adddecl(L, names[i]);
