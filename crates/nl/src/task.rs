@@ -93,10 +93,10 @@ impl Task {
 
 impl FromLua for Task {
     fn from_lua(value: Value, lua: &Lua) -> Result<Self> {
-        if let Value::Table(t) = &value {
-            if raw::taskstate(lua, t)?.0 >= 0 {
-                return Ok(Task(t.clone()));
-            }
+        if let Value::Table(t) = &value
+            && raw::taskstate(lua, t)?.0 >= 0
+        {
+            return Ok(Task(t.clone()));
         }
         Err(Error::FromLuaConversionError {
             from: value.type_name(),

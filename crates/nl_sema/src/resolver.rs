@@ -893,23 +893,21 @@ impl<'a> Resolver<'a> {
             // `{key: Mod.Type}` binds `key` like `{key: Type}`; an enum
             // variant only compares.
             let q = child(&value, QUAL_NAME).filter(|_| value.kind() == QUALIFIED_PAT);
-            if let Some(q) = q {
-                if !self.res.variants.contains(&q.text_range()) {
-                    if let Some(key) =
-                        name_token(field).filter(|k| k.kind().is_name() || k.kind().is_keyword())
-                    {
-                        let text = key.text().to_string();
-                        self.declare(
-                            &text,
-                            key.text_range(),
-                            BindingKind::Variable,
-                            decl,
-                            mutable,
-                            None,
-                            None,
-                        );
-                    }
-                }
+            if let Some(q) = q
+                && !self.res.variants.contains(&q.text_range())
+                && let Some(key) =
+                    name_token(field).filter(|k| k.kind().is_name() || k.kind().is_keyword())
+            {
+                let text = key.text().to_string();
+                self.declare(
+                    &text,
+                    key.text_range(),
+                    BindingKind::Variable,
+                    decl,
+                    mutable,
+                    None,
+                    None,
+                );
             }
         } else if let Some(ty) = type_child(field) {
             // `{key: Type}` binds `key` and requires the type. It is
@@ -948,24 +946,24 @@ impl<'a> Resolver<'a> {
             // Methods of `interface I for T`: Self was pushed by the impl.
             self.walk_function(node, FnKind::Method, true);
         } else {
-            if let Some(name) = child(node, NAME) {
-                if !self.res.decls.contains_key(&name.text_range()) {
-                    let text = name_text(&name).unwrap_or_default();
-                    let params = Some(FnParams {
-                        has_function_param: has_function_param(node),
-                        anonymous: false,
-                        call_only: 0,
-                    });
-                    self.declare(
-                        &text,
-                        name.text_range(),
-                        BindingKind::Function,
-                        DeclKind::Fn,
-                        false,
-                        None,
-                        params,
-                    );
-                }
+            if let Some(name) = child(node, NAME)
+                && !self.res.decls.contains_key(&name.text_range())
+            {
+                let text = name_text(&name).unwrap_or_default();
+                let params = Some(FnParams {
+                    has_function_param: has_function_param(node),
+                    anonymous: false,
+                    call_only: 0,
+                });
+                self.declare(
+                    &text,
+                    name.text_range(),
+                    BindingKind::Function,
+                    DeclKind::Fn,
+                    false,
+                    None,
+                    params,
+                );
             }
             let module_method = self
                 .modules
@@ -1011,27 +1009,29 @@ impl<'a> Resolver<'a> {
                         ),
                     );
                 }
-                if path.is_empty() && self.res.declared_as(id) == Some(DeclKind::Module) {
-                    if let Some(word) = child(node, NAME).and_then(|n| name_text(&n)) {
-                        let params = FnParams {
-                            has_function_param: has_function_param(node),
-                            anonymous: false,
-                            call_only: 0,
-                        };
-                        self.module_members
-                            .entry(id)
-                            .or_default()
-                            .insert(word, params);
-                    }
+                if path.is_empty()
+                    && self.res.declared_as(id) == Some(DeclKind::Module)
+                    && let Some(word) = child(node, NAME).and_then(|n| name_text(&n))
+                {
+                    let params = FnParams {
+                        has_function_param: has_function_param(node),
+                        anonymous: false,
+                        call_only: 0,
+                    };
+                    self.module_members
+                        .entry(id)
+                        .or_default()
+                        .insert(word, params);
                 }
-                if path.is_empty() && self.binding(id).is_some_and(|b| b.decl == DeclKind::Struct) {
-                    if let Some(n) = child(node, NAME) {
-                        self.struct_methods.push((
-                            id,
-                            name_text(&n).unwrap_or_default(),
-                            n.text_range(),
-                        ));
-                    }
+                if path.is_empty()
+                    && self.binding(id).is_some_and(|b| b.decl == DeclKind::Struct)
+                    && let Some(n) = child(node, NAME)
+                {
+                    self.struct_methods.push((
+                        id,
+                        name_text(&n).unwrap_or_default(),
+                        n.text_range(),
+                    ));
                 }
                 self.res.method_owner.insert(
                     node.text_range(),
@@ -1260,10 +1260,10 @@ impl<'a> Resolver<'a> {
         if let Some(pl) = &params {
             self.walk_params(pl);
         }
-        if let Some(rt) = child(node, RETURN_TYPE) {
-            if let Some(t) = type_child(&rt) {
-                self.resolve_type(&t);
-            }
+        if let Some(rt) = child(node, RETURN_TYPE)
+            && let Some(t) = type_child(&rt)
+        {
+            self.resolve_type(&t);
         }
         if let Some(b) = block(node) {
             self.walk_block(&b);
@@ -1353,16 +1353,16 @@ impl<'a> Resolver<'a> {
     }
 
     fn walk_on(&mut self, node: &SyntaxNode) {
-        if !has_token(node, AS_KW) {
-            if let Some(q) = child(node, QUAL_NAME) {
-                let event = qual_text(&q);
-                if !self.unnamed_handlers.insert(event.clone()) {
-                    self.error(
+        if !has_token(node, AS_KW)
+            && let Some(q) = child(node, QUAL_NAME)
+        {
+            let event = qual_text(&q);
+            if !self.unnamed_handlers.insert(event.clone()) {
+                self.error(
                         trimmed_range(node),
                         "second-unnamed-handler",
                         format!("a second unnamed `on {event}` in one file would replace the first; name one with `as`"),
                     );
-                }
             }
         }
         self.walk_function(node, FnKind::Handler, false);
@@ -1429,14 +1429,14 @@ impl<'a> Resolver<'a> {
         }
         self.self_targets.push(id.map(SelfTarget::Binding));
         let mut parent = None;
-        if let Some(p) = child(node, STRUCT_PARENT) {
-            if let Some(t) = type_child(&p) {
-                self.resolve_type(&t);
-                if let Some(q) = child(&t, QUAL_NAME) {
-                    if let Some(Ref::Binding(pid)) = self.res.type_refs.get(&q.text_range()) {
-                        parent = self.through_aliases(*pid);
-                    }
-                }
+        if let Some(p) = child(node, STRUCT_PARENT)
+            && let Some(t) = type_child(&p)
+        {
+            self.resolve_type(&t);
+            if let Some(q) = child(&t, QUAL_NAME)
+                && let Some(Ref::Binding(pid)) = self.res.type_refs.get(&q.text_range())
+            {
+                parent = self.through_aliases(*pid);
             }
         }
         let inherited = self.inherited_fields(parent);
@@ -2149,28 +2149,27 @@ impl<'a> Resolver<'a> {
                 self.walk_children(target);
                 // `Enum.Variant = v`: a variant is a constant of its enum,
                 // as in Rust and TypeScript.
-                if let Some(base) = expr_child(target).filter(|b| b.kind() == NAME_REF) {
-                    if let Some(Ref::Binding(id)) = self.res.refs.get(&base.text_range()).cloned() {
-                        if self.res.declared_as(id) == Some(DeclKind::Enum) {
-                            let name = name_text(&base).unwrap_or_default();
-                            let member = field_name(target)
-                                .map(|t| t.text().to_string())
-                                .unwrap_or_default();
-                            // The variants of an imported enum are not known.
-                            let not_variant = self
-                                .enum_variants
-                                .get(&id)
-                                .is_some_and(|vs| !vs.contains(&member));
-                            if not_variant {
-                                self.error(
-                                    trimmed_range(target),
-                                    "assign-variant",
-                                    format!("`{member}` is not a variant of the enum `{name}`"),
-                                );
-                            } else {
-                                self.error(trimmed_range(target), "assign-variant", format!("`{name}.{member}` is a variant of the enum `{name}`; variants are constants and cannot be assigned"));
-                            }
-                        }
+                if let Some(base) = expr_child(target).filter(|b| b.kind() == NAME_REF)
+                    && let Some(Ref::Binding(id)) = self.res.refs.get(&base.text_range()).cloned()
+                    && self.res.declared_as(id) == Some(DeclKind::Enum)
+                {
+                    let name = name_text(&base).unwrap_or_default();
+                    let member = field_name(target)
+                        .map(|t| t.text().to_string())
+                        .unwrap_or_default();
+                    // The variants of an imported enum are not known.
+                    let not_variant = self
+                        .enum_variants
+                        .get(&id)
+                        .is_some_and(|vs| !vs.contains(&member));
+                    if not_variant {
+                        self.error(
+                            trimmed_range(target),
+                            "assign-variant",
+                            format!("`{member}` is not a variant of the enum `{name}`"),
+                        );
+                    } else {
+                        self.error(trimmed_range(target), "assign-variant", format!("`{name}.{member}` is a variant of the enum `{name}`; variants are constants and cannot be assigned"));
                     }
                 }
             }
@@ -2347,10 +2346,11 @@ impl<'a> Resolver<'a> {
     }
 
     fn walk_bang(&mut self, node: &SyntaxNode) {
-        if let Some(inner) = expr_child(node) {
-            if inner.kind() == FIELD_EXPR && field_name(&inner).is_some_and(|t| t.text() == "len") {
-                self.error(trimmed_range(node), "len-bang", "`x.len!` is an error: `len` is the length, not looked up in the value, so there is no function to take");
-            }
+        if let Some(inner) = expr_child(node)
+            && inner.kind() == FIELD_EXPR
+            && field_name(&inner).is_some_and(|t| t.text() == "len")
+        {
+            self.error(trimmed_range(node), "len-bang", "`x.len!` is an error: `len` is the length, not looked up in the value, so there is no function to take");
         }
         self.walk_children(node);
     }
@@ -2358,17 +2358,16 @@ impl<'a> Resolver<'a> {
     fn walk_call(&mut self, node: &SyntaxNode) {
         self.walk_children(node);
         let callee = expr_child(node);
-        if let Some(c) = &callee {
-            if node.kind() != METHOD_CALL
-                && c.kind() == FIELD_EXPR
-                && field_name(c).is_some_and(|t| t.text() == "len")
-            {
-                self.error(
-                    trimmed_range(c),
-                    "len-call",
-                    "`len` is the length, not a callable member",
-                );
-            }
+        if let Some(c) = &callee
+            && node.kind() != METHOD_CALL
+            && c.kind() == FIELD_EXPR
+            && field_name(c).is_some_and(|t| t.text() == "len")
+        {
+            self.error(
+                trimmed_range(c),
+                "len-call",
+                "`len` is the length, not a callable member",
+            );
         }
         let Some(tb) = child(node, TRAILING_BLOCK) else {
             return;
@@ -2380,13 +2379,12 @@ impl<'a> Resolver<'a> {
         let block_range = token(&tb, DO_KW).map_or_else(|| tb.text_range(), |t| t.text_range());
         match c.kind() {
             NAME_REF => {
-                if let Some(Ref::Binding(id)) = self.res.refs.get(&c.text_range()).cloned() {
-                    if let Some(b) = self.binding(id) {
-                        if b.params.is_some_and(|p| !p.has_function_param) {
-                            let name = b.name.clone();
-                            self.error(block_range, "block-without-function-param", format!("a block can only be passed to a function that has a `Function` parameter, and `{name}` has none"));
-                        }
-                    }
+                if let Some(Ref::Binding(id)) = self.res.refs.get(&c.text_range()).cloned()
+                    && let Some(b) = self.binding(id)
+                    && b.params.is_some_and(|p| !p.has_function_param)
+                {
+                    let name = b.name.clone();
+                    self.error(block_range, "block-without-function-param", format!("a block can only be passed to a function that has a `Function` parameter, and `{name}` has none"));
                 }
             }
             LUA_PATH => {
@@ -2398,10 +2396,10 @@ impl<'a> Resolver<'a> {
             FIELD_EXPR => {
                 let recv = expr_child(&c).filter(|r| r.kind() == NAME_REF);
                 let member = field_name(&c).map(|t| t.text().to_string());
-                if let (Some(recv), Some(member)) = (recv, member) {
-                    if let Some(Ref::Binding(id)) = self.res.refs.get(&recv.text_range()).cloned() {
-                        self.pending_blocks.push((block_range, id, member));
-                    }
+                if let (Some(recv), Some(member)) = (recv, member)
+                    && let Some(Ref::Binding(id)) = self.res.refs.get(&recv.text_range()).cloned()
+                {
+                    self.pending_blocks.push((block_range, id, member));
                 }
             }
             _ => {}

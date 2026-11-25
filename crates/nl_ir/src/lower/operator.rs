@@ -42,10 +42,11 @@ impl Lowerer<'_> {
             return self.internal(node, "prefix operator");
         };
         // `-5` is a constant.
-        if op == Some(MINUS) && operand.kind() == LITERAL {
-            if let Some(t) = first_token(&operand).filter(|t| t.kind() == NUMBER) {
-                return Expr::Number(-nl_syntax::number_value(t.text()).unwrap_or(0.0));
-            }
+        if op == Some(MINUS)
+            && operand.kind() == LITERAL
+            && let Some(t) = first_token(&operand).filter(|t| t.kind() == NUMBER)
+        {
+            return Expr::Number(-nl_syntax::number_value(t.text()).unwrap_or(0.0));
         }
         let v = self.expr1(&operand);
         match op {

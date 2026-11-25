@@ -41,15 +41,11 @@ fn is_start(b: u8) -> bool {
 
 /// The length of the leading run of ASCII bytes, found 8 bytes at a time.
 fn ascii_prefix(bytes: &[u8]) -> usize {
-    let mut n = 0;
-    let mut chunks = bytes.chunks_exact(8);
-    for chunk in &mut chunks {
-        let word = chunk.iter().fold(0u64, |acc, &b| (acc << 8) | u64::from(b));
-        if word & 0x8080_8080_8080_8080 != 0 {
-            break;
-        }
-        n += 8;
-    }
+    let (chunks, _) = bytes.as_chunks::<8>();
+    let n = 8 * chunks
+        .iter()
+        .take_while(|chunk| u64::from_ne_bytes(**chunk) & 0x8080_8080_8080_8080 == 0)
+        .count();
     n + bytes
         .get(n..)
         .unwrap_or(&[])

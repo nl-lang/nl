@@ -175,20 +175,26 @@ impl Analyzer<'_> {
                 if let Some(sig) = self.binding_fn_type(id) {
                     return Ty::certain(Type::Fn(sig));
                 }
-                if let Some(b) = self.binding(id) {
-                    if b.decl == DeclKind::Global {
-                        let name = b.name.clone();
-                        self.lint(node.text_range(), "global-use", format!("`{name}` is a global; globals are shared with every Lua script and mod"));
-                    }
+                if let Some(b) = self.binding(id)
+                    && b.decl == DeclKind::Global
+                {
+                    let name = b.name.clone();
+                    self.lint(
+                        node.text_range(),
+                        "global-use",
+                        format!(
+                            "`{name}` is a global; globals are shared with every Lua script and mod"
+                        ),
+                    );
                 }
                 let t = self.type_of_binding(id);
-                if self.current_fn_is_spawn_block() {
-                    if let Some(b) = self.binding(id) {
-                        if b.file_level && matches!(b.decl, DeclKind::Let | DeclKind::Global) {
-                            let name = b.name.clone();
-                            self.warn(node.text_range(), "spawn-file-variable", format!("`{name}` is a file-level variable: inside a `spawn do` block it is the worker's own variable, not this state's"));
-                        }
-                    }
+                if self.current_fn_is_spawn_block()
+                    && let Some(b) = self.binding(id)
+                    && b.file_level
+                    && matches!(b.decl, DeclKind::Let | DeclKind::Global)
+                {
+                    let name = b.name.clone();
+                    self.warn(node.text_range(), "spawn-file-variable", format!("`{name}` is a file-level variable: inside a `spawn do` block it is the worker's own variable, not this state's"));
                 }
                 t
             }
@@ -205,41 +211,40 @@ impl Analyzer<'_> {
 
     /// A name whose value is used: a function-kind name is called.
     fn name_value(&mut self, node: &SyntaxNode) -> Ty {
-        if let Some(Ref::Binding(id)) = self.res.reference(node.text_range()) {
-            if self
+        if let Some(Ref::Binding(id)) = self.res.reference(node.text_range())
+            && self
                 .binding(*id)
                 .is_some_and(|b| b.kind == BindingKind::Function)
-            {
-                self.used.insert(*id);
-                let sig = self
-                    .binding_fn_type(*id)
-                    .unwrap_or_else(|| Rc::new(FnType::unknown()));
-                self.check_call(
-                    &sig,
-                    &self
-                        .binding(*id)
-                        .map(|b| b.name.clone())
-                        .unwrap_or_default(),
-                    &[],
-                    None,
-                    node.text_range(),
-                    true,
-                );
-                return self.call_of(&sig, self.checked_fn_name(node));
-            }
+        {
+            self.used.insert(*id);
+            let sig = self
+                .binding_fn_type(*id)
+                .unwrap_or_else(|| Rc::new(FnType::unknown()));
+            self.check_call(
+                &sig,
+                &self
+                    .binding(*id)
+                    .map(|b| b.name.clone())
+                    .unwrap_or_default(),
+                &[],
+                None,
+                node.text_range(),
+                true,
+            );
+            return self.call_of(&sig, self.checked_fn_name(node));
         }
-        if let Some(Ref::Declared(id)) = self.res.reference(node.text_range()).cloned() {
-            if self.decls.binding_kind(id) == BindingKind::Function {
-                let v = self.declared_value(id);
-                if let Type::Fn(sig) = &v.t {
-                    let name = self
-                        .decls
-                        .get(id)
-                        .map(|i| i.name.clone())
-                        .unwrap_or_default();
-                    self.check_call(sig, &name, &[], None, node.text_range(), true);
-                    return self.call_result(sig);
-                }
+        if let Some(Ref::Declared(id)) = self.res.reference(node.text_range()).cloned()
+            && self.decls.binding_kind(id) == BindingKind::Function
+        {
+            let v = self.declared_value(id);
+            if let Type::Fn(sig) = &v.t {
+                let name = self
+                    .decls
+                    .get(id)
+                    .map(|i| i.name.clone())
+                    .unwrap_or_default();
+                self.check_call(sig, &name, &[], None, node.text_range(), true);
+                return self.call_result(sig);
             }
         }
         self.name_raw(node)
@@ -1227,15 +1232,14 @@ impl Analyzer<'_> {
             if self.keyed_params.contains(id) {
                 return (Vec::new(), Vec::new());
             }
-            if tables.is_empty() {
-                if let Some(d) = self
+            if tables.is_empty()
+                && let Some(d) = self
                     .binding_types
                     .get(id)
                     .map(|t| self.types.expand(&t.t))
                     .filter(|d| matches!(d, Type::Table | Type::Map(..) | Type::Array(_)))
-                {
-                    return (vec![d], Vec::new());
-                }
+            {
+                return (vec![d], Vec::new());
             }
         }
         (tables, others)
@@ -1330,12 +1334,10 @@ impl Analyzer<'_> {
         if !parts.is_empty() && parts.iter().all(empty_list) {
             if let (NAME_REF, Some(Ref::Binding(id))) =
                 (recv_node.kind(), self.res.reference(recv_node.text_range()))
+                && self.binding(*id).is_some_and(|b| b.annotation.is_some())
+                && let Some(d) = self.binding_types.get(id)
             {
-                if self.binding(*id).is_some_and(|b| b.annotation.is_some()) {
-                    if let Some(d) = self.binding_types.get(id) {
-                        return format!("a value typed `{}`", self.show(&d.t));
-                    }
-                }
+                return format!("a value typed `{}`", self.show(&d.t));
             }
             return "a list".to_string();
         }
@@ -1449,17 +1451,16 @@ impl Analyzer<'_> {
         };
         match inner.kind() {
             NAME_REF => {
-                if let Some(Ref::Binding(id)) = self.res.reference(inner.text_range()) {
-                    if self
+                if let Some(Ref::Binding(id)) = self.res.reference(inner.text_range())
+                    && self
                         .binding(*id)
                         .is_some_and(|b| b.kind == BindingKind::Variable)
-                    {
-                        let name = self
-                            .binding(*id)
-                            .map(|b| b.name.clone())
-                            .unwrap_or_default();
-                        self.lint(node.text_range(), "redundant-bang", format!("`{name}` is a variable, which is never called automatically; the `!` does nothing"));
-                    }
+                {
+                    let name = self
+                        .binding(*id)
+                        .map(|b| b.name.clone())
+                        .unwrap_or_default();
+                    self.lint(node.text_range(), "redundant-bang", format!("`{name}` is a variable, which is never called automatically; the `!` does nothing"));
                 }
                 self.name_raw(&inner)
             }
@@ -2004,14 +2005,14 @@ impl Analyzer<'_> {
                 } else {
                     format!("parameter '{}' of {desc}", p.name)
                 };
-                if let Some(n) = fn_name {
-                    if takes_block(&p.ty) {
-                        let at = *range;
-                        self.diags
-                            .retain(|d| !(d.range == at && d.code == "autocall-argument"));
-                        self.warn(*range, "fn-kind-argument", format!("`{n}` is a function-kind name, so it is called here and its result is passed; write `{n}!` to pass the function itself"));
-                        continue;
-                    }
+                if let Some(n) = fn_name
+                    && takes_block(&p.ty)
+                {
+                    let at = *range;
+                    self.diags
+                        .retain(|d| !(d.range == at && d.code == "autocall-argument"));
+                    self.warn(*range, "fn-kind-argument", format!("`{n}` is a function-kind name, so it is called here and its result is passed; write `{n}!` to pass the function itself"));
+                    continue;
                 }
                 self.check_assignable(ty, &p.ty, *range, &what);
             }
@@ -2573,10 +2574,10 @@ impl Analyzer<'_> {
             NAME_REF => {
                 let f = self.name_raw(&callee);
                 let name = name_text(&callee).unwrap_or_default();
-                if let Some(Ref::Binding(id)) = self.res.reference(callee.text_range()) {
-                    if self.binding(*id).is_some_and(|b| b.named) {
-                        self.check_spawn_loads_this_file(node);
-                    }
+                if let Some(Ref::Binding(id)) = self.res.reference(callee.text_range())
+                    && self.binding(*id).is_some_and(|b| b.named)
+                {
+                    self.check_spawn_loads_this_file(node);
                 }
                 match self.types.expand(&f.t) {
                     Type::Fn(sig) => {

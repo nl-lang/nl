@@ -264,11 +264,11 @@ fn cmd(args: &[String], usage: &str, command: &str) -> ExitCode {
         Some(o) => part_paths(Path::new(o), out.parts.len()),
         None => Vec::new(),
     };
-    if let (Some(map_path), Some(map)) = (&a.map, &out.sourcemap) {
-        if let Err(e) = std::fs::write(map_path, map.to_json()) {
-            eprintln!("{map_path}: error: cannot write the file: {e}");
-            return ExitCode::FAILURE;
-        }
+    if let (Some(map_path), Some(map)) = (&a.map, &out.sourcemap)
+        && let Err(e) = std::fs::write(map_path, map.to_json())
+    {
+        eprintln!("{map_path}: error: cannot write the file: {e}");
+        return ExitCode::FAILURE;
     }
     let Some(output) = &a.output else {
         if out.parts.len() > 1 {

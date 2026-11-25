@@ -348,12 +348,12 @@ impl<'a> Lowerer<'a> {
     /// type (the first segment of a `QUAL_NAME`).
     fn collect_decl_names(&mut self, root: &SyntaxNode) {
         for q in root.descendants().filter(|n| n.kind() == QUAL_NAME) {
-            if let Some(nl_sema::Ref::Declared(id)) = self.res.type_ref(q.text_range()) {
-                if let Some(first) = qual_segments(&q).first() {
-                    self.decl_names
-                        .entry(*id)
-                        .or_insert_with(|| first.text().to_string());
-                }
+            if let Some(nl_sema::Ref::Declared(id)) = self.res.type_ref(q.text_range())
+                && let Some(first) = qual_segments(&q).first()
+            {
+                self.decl_names
+                    .entry(*id)
+                    .or_insert_with(|| first.text().to_string());
             }
         }
     }
@@ -1096,19 +1096,18 @@ impl<'a> Lowerer<'a> {
                 }
             }
             FN_DECL | STRUCT_DECL | ENUM_DECL | INTERFACE_DECL => {
-                if child(stmt, QUAL_NAME).is_none() {
-                    if let Some(n) = child(stmt, NAME) {
-                        if let Some(id) = self.res.declaration(n.text_range()) {
-                            out.push(id);
-                        }
-                    }
+                if child(stmt, QUAL_NAME).is_none()
+                    && let Some(n) = child(stmt, NAME)
+                    && let Some(id) = self.res.declaration(n.text_range())
+                {
+                    out.push(id);
                 }
             }
             MODULE_DECL => {
-                if let Some((id, reopen)) = self.res.module(stmt.text_range()) {
-                    if !reopen {
-                        out.push(id);
-                    }
+                if let Some((id, reopen)) = self.res.module(stmt.text_range())
+                    && !reopen
+                {
+                    out.push(id);
                 }
             }
             IMPORT_DECL => {
@@ -1138,10 +1137,10 @@ impl<'a> Lowerer<'a> {
                 }
                 _ => continue,
             };
-            if let Some(id) = self.res.declaration(range) {
-                if !out.contains(&id) {
-                    out.push(id);
-                }
+            if let Some(id) = self.res.declaration(range)
+                && !out.contains(&id)
+            {
+                out.push(id);
             }
         }
     }
@@ -1195,22 +1194,18 @@ impl<'a> Lowerer<'a> {
         let tail = if is_loop { Tail::Discard } else { tail };
         // `x if SERVER`: left out where realm constants say it never
         // runs, and run without a test where they say it always does.
-        if !is_loop {
-            if let Some(v) = self.decided(m) {
-                if v != matches!(word, Some(UNLESS_KW)) {
-                    let body = self.sub_block(|l| {
-                        let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));
-                        l.stmts.extend(stmts);
-                    });
-                    self.emit(StmtKind::Do(body));
-                }
-                return;
+        if !is_loop && let Some(v) = self.decided(m) {
+            if v != matches!(word, Some(UNLESS_KW)) {
+                let body = self.sub_block(|l| {
+                    let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));
+                    l.stmts.extend(stmts);
+                });
+                self.emit(StmtKind::Do(body));
             }
+            return;
         }
-        if is_loop {
-            if let Some(f) = self.fns.last_mut() {
-                f.loops.push(LoopState::default());
-            }
+        if is_loop && let Some(f) = self.fns.last_mut() {
+            f.loops.push(LoopState::default());
         }
         let body = self.sub_block(|l| {
             let (stmts, ()) = l.capture(|l| l.simple_stmt(node, tail));

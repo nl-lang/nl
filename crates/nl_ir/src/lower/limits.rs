@@ -152,15 +152,14 @@ fn drop_localized(chunk: &mut Chunk, kept: &mut Vec<(LocalId, Expr)>, drop: &Has
         .collect();
     kept.retain(|(l, _)| !drop.contains(l));
     let stmts = &mut chunk.main.body.stmts;
-    if let Some(at) = stmts.iter().position(|s| matches!(&s.kind, StmtKind::Local { locals, .. } if locals.iter().any(|l| drop.contains(l)))) {
-        if let Some(Stmt { kind: StmtKind::Local { locals, values: init }, .. }) = stmts.get_mut(at) {
+    if let Some(at) = stmts.iter().position(|s| matches!(&s.kind, StmtKind::Local { locals, .. } if locals.iter().any(|l| drop.contains(l))))
+        && let Some(Stmt { kind: StmtKind::Local { locals, values: init }, .. }) = stmts.get_mut(at) {
             let pairs: Vec<(LocalId, Expr)> = std::mem::take(locals).into_iter().zip(std::mem::take(init)).filter(|(l, _)| !drop.contains(l)).collect();
             (*locals, *init) = pairs.into_iter().unzip();
             if locals.is_empty() {
                 stmts.remove(at);
             }
         }
-    }
     let field = |l: &LocalId| values.get(l).cloned();
     rewrite_block(&mut chunk.main.body, &field, false);
 }

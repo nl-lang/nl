@@ -428,12 +428,11 @@ impl Lowerer<'_> {
             self.pattern(&p, sub.clone(), mode, &field);
             // `{key: Mod.Type}` also binds the key, unless the dotted name is
             // an enum variant (the resolver decides).
-            if let Some(q) = child(&p, QUAL_NAME).filter(|_| p.kind() == QUALIFIED_PAT) {
-                if !self.res.is_enum_variant(q.text_range())
-                    && self.res.declaration(key_tok.text_range()).is_some()
-                {
-                    self.bind_name(key_tok.text_range(), sub, mode, f);
-                }
+            if let Some(q) = child(&p, QUAL_NAME).filter(|_| p.kind() == QUALIFIED_PAT)
+                && !self.res.is_enum_variant(q.text_range())
+                && self.res.declaration(key_tok.text_range()).is_some()
+            {
+                self.bind_name(key_tok.text_range(), sub, mode, f);
             }
         } else if let Some(t) = type_child(f) {
             if t.kind() == NAMED_TYPE && has_token(&t, NIL_KW) {

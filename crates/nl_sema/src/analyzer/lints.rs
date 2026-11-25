@@ -158,10 +158,10 @@ impl Analyzer<'_> {
                     }
                 }
                 LUA_PATH => {
-                    if let Some(tok) = crate::resolver::lua_path_root(&n) {
-                        if let Some(Ref::Binding(id)) = self.res.reference(tok.text_range()) {
-                            referenced.insert(*id);
-                        }
+                    if let Some(tok) = crate::resolver::lua_path_root(&n)
+                        && let Some(Ref::Binding(id)) = self.res.reference(tok.text_range())
+                    {
+                        referenced.insert(*id);
                     }
                 }
                 QUAL_NAME => {

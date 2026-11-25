@@ -330,10 +330,10 @@ impl Gen {
     }
 
     fn struct_lit_or_var(&mut self, ctx: &Ctx, i: usize) -> Option<(Ex, usize)> {
-        if self.rng.chance(60) {
-            if let Some(v) = self.pick_var(Ty::Struct(i), false) {
-                return Some((Ex::new(v.name, Ty::Struct(i), 0.0).atom(), i));
-            }
+        if self.rng.chance(60)
+            && let Some(v) = self.pick_var(Ty::Struct(i), false)
+        {
+            return Some((Ex::new(v.name, Ty::Struct(i), 0.0).atom(), i));
         }
         self.struct_lit(ctx, i, 0)
     }

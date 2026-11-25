@@ -183,13 +183,13 @@ fn verify_proto(p: &Proto, parent: Option<&Proto>, level: u8) -> Result<(), Veri
                 ),
             );
         }
-        if let VarName::Internal(code) = v.name {
-            if !(1..=6).contains(&code) {
-                return fail(
-                    None,
-                    format!("variable {i} has the internal name code {code}"),
-                );
-            }
+        if let VarName::Internal(code) = v.name
+            && !(1..=6).contains(&code)
+        {
+            return fail(
+                None,
+                format!("variable {i} has the internal name code {code}"),
+            );
         }
         last_start = v.startpc;
     }

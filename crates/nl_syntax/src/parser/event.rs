@@ -53,14 +53,13 @@ impl Marker {
     /// Drops the node; its children become children of the enclosing node.
     pub(crate) fn abandon(self, p: &mut Parser<'_>) {
         let idx = self.pos as usize;
-        if idx + 1 == p.events.len() {
-            if let Some(Event::Start {
+        if idx + 1 == p.events.len()
+            && let Some(Event::Start {
                 kind: None,
                 forward_parent: None,
             }) = p.events.last()
-            {
-                p.events.pop();
-            }
+        {
+            p.events.pop();
         }
     }
 }

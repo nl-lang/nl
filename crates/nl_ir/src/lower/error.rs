@@ -188,10 +188,10 @@ impl Lowerer<'_> {
                         None => Expr::Bool(true),
                     };
                     let clause = l.sub_block(|l| {
-                        if let Some(name) = child(c, NAME) {
-                            if let Some(id) = l.res.declaration(name.text_range()) {
-                                l.define(id, Some(Expr::Local(e)));
-                            }
+                        if let Some(name) = child(c, NAME)
+                            && let Some(id) = l.res.declaration(name.text_range())
+                        {
+                            l.define(id, Some(Expr::Local(e)));
                         }
                         l.region_block(block(c), value_used, all_values);
                     });
@@ -297,12 +297,10 @@ impl Lowerer<'_> {
         });
         if let Expr::Function(mut c) = catch {
             // No clause matched: the error goes on, raised again.
-            if let (Some(&e), Some(last)) = (c.params.first(), c.body.stmts.last_mut()) {
-                if matches!(&last.kind, StmtKind::Return(v) if matches!(v.as_slice(), [Expr::Str(s)] if s.as_slice() == b"u"))
-                {
-                    last.kind =
-                        StmtKind::Expr(Expr::intrinsic_call("rethrow", vec![Expr::Local(e)]));
-                }
+            if let (Some(&e), Some(last)) = (c.params.first(), c.body.stmts.last_mut())
+                && matches!(&last.kind, StmtKind::Return(v) if matches!(v.as_slice(), [Expr::Str(s)] if s.as_slice() == b"u"))
+            {
+                last.kind = StmtKind::Expr(Expr::intrinsic_call("rethrow", vec![Expr::Local(e)]));
             }
             let then = self.sub_block(|l| {
                 let call = Self::protected_call(Expr::Function(c), vec![Expr::Local(code)]);

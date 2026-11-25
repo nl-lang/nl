@@ -141,13 +141,12 @@ impl<'a> DriverImports<'a> {
         if let Mode::Imported {
             root: Some(root), ..
         } = self.mode
+            && name == root
         {
-            if name == root {
-                let this = self.from.unwrap_or("this file");
-                return Err(format!(
-                    "import cycle: '{root}' imports '{this}', which imports '{root}'"
-                ));
-            }
+            let this = self.from.unwrap_or("this file");
+            return Err(format!(
+                "import cycle: '{root}' imports '{this}', which imports '{root}'"
+            ));
         }
         let bytes = self
             .loader

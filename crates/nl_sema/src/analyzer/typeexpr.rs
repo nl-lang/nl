@@ -402,16 +402,13 @@ impl Analyzer<'_> {
             type_params: Vec::new(),
         };
         // A host type's parent.
-        if node.kind() == DECL_TYPE {
-            if let Some(parent) = child(node, STRUCT_PARENT).and_then(|p| type_child(&p)) {
-                if let Type::Named(p) = self.decl_type_of(&parent, &ctx) {
-                    if let Some(n) = self.types.get_mut(nid) {
-                        if let NamedKind::HostType { parent, .. } = &mut n.kind {
-                            *parent = Some(p);
-                        }
-                    }
-                }
-            }
+        if node.kind() == DECL_TYPE
+            && let Some(parent) = child(node, STRUCT_PARENT).and_then(|p| type_child(&p))
+            && let Type::Named(p) = self.decl_type_of(&parent, &ctx)
+            && let Some(n) = self.types.get_mut(nid)
+            && let NamedKind::HostType { parent, .. } = &mut n.kind
+        {
+            *parent = Some(p);
         }
         if node.kind() == DECL_FN {
             // A top-level `declare fn`.
@@ -497,12 +494,11 @@ impl Analyzer<'_> {
                 _ => {}
             }
         }
-        if !fields.is_empty() {
-            if let Some(n) = self.types.get_mut(nid) {
-                if let NamedKind::LuaClass { fields: fs, .. } = &mut n.kind {
-                    *fs = fields;
-                }
-            }
+        if !fields.is_empty()
+            && let Some(n) = self.types.get_mut(nid)
+            && let NamedKind::LuaClass { fields: fs, .. } = &mut n.kind
+        {
+            *fs = fields;
         }
     }
 

@@ -105,10 +105,10 @@ fn narrow(n: f64) -> Option<i32> {
 fn proto(out: &mut Vec<u8>, p: &Proto, strip: bool) {
     // Children first, in the order of the GC constants.
     for k in &p.kgc {
-        if let KGc::Child(i) = k {
-            if let Some(c) = p.children.get(*i) {
-                proto(out, c, strip);
-            }
+        if let KGc::Child(i) = k
+            && let Some(c) = p.children.get(*i)
+        {
+            proto(out, c, strip);
         }
     }
     let mut d = vec![

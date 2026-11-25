@@ -236,10 +236,10 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
             NamedKind::Module { members }
             | NamedKind::HostType { members, .. }
             | NamedKind::LuaClass { members, .. } => {
-                if let NamedKind::LuaClass { fields, .. } = types.kind(c)? {
-                    if let Some(f) = fields.iter().find(|f| f.name == name) {
-                        return Some(format!("{full}: {}", types.show(&f.ty)));
-                    }
+                if let NamedKind::LuaClass { fields, .. } = types.kind(c)?
+                    && let Some(f) = fields.iter().find(|f| f.name == name)
+                {
+                    return Some(format!("{full}: {}", types.show(&f.ty)));
                 }
                 match members.get(name) {
                     Some(Member::Function(f)) => return Some(render_fn(types, &full, f)),
@@ -258,10 +258,10 @@ pub fn member_header(info: &TypeInfo, owner: NamedId, name: &str) -> Option<Stri
 }
 
 fn prelude(doc: &Doc, p: &Prelude) -> Option<(String, Option<String>)> {
-    if let Some(id) = doc.decls.lookup(p.name) {
-        if let Some(d) = declared(doc, id) {
-            return Some(d);
-        }
+    if let Some(id) = doc.decls.lookup(p.name)
+        && let Some(d) = declared(doc, id)
+    {
+        return Some(d);
     }
     let what = match p.class {
         nl_sema::PreludeClass::Value => "prelude value",

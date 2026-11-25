@@ -189,22 +189,20 @@ impl Lowerer<'_> {
                     }
                     REST_PARAM => {
                         vararg = true;
-                        if let Some(name) = child(&p, NAME) {
-                            if let Some(id) = self.res.declaration(name.text_range()) {
-                                let l = self.local_of(id);
-                                rest =
-                                    Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
-                                rest_id = Some(id);
-                            }
+                        if let Some(name) = child(&p, NAME)
+                            && let Some(id) = self.res.declaration(name.text_range())
+                        {
+                            let l = self.local_of(id);
+                            rest = Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
+                            rest_id = Some(id);
                         }
                     }
                     KEYED_PARAM => {
-                        if let Some(name) = child(&p, NAME) {
-                            if let Some(id) = self.res.declaration(name.text_range()) {
-                                let l = self.local_of(id);
-                                keyed =
-                                    Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
-                            }
+                        if let Some(name) = child(&p, NAME)
+                            && let Some(id) = self.res.declaration(name.text_range())
+                        {
+                            let l = self.local_of(id);
+                            keyed = Some((l, type_child(&p), name_text(&name).unwrap_or_default()));
                         }
                     }
                     _ => {}

@@ -217,10 +217,10 @@ impl Lowerer<'_> {
                 consider(*id);
             }
             if let rowan::NodeOrToken::Node(n) = &el {
-                if n.kind() == QUAL_NAME {
-                    if let Some(Ref::Binding(id)) = self.res.type_ref(range) {
-                        consider(*id);
-                    }
+                if n.kind() == QUAL_NAME
+                    && let Some(Ref::Binding(id)) = self.res.type_ref(range)
+                {
+                    consider(*id);
                 }
                 if let Some(id) = self.res.self_target(range).and_then(SelfTarget::binding) {
                     consider(id);

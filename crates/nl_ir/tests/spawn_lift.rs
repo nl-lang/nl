@@ -87,15 +87,15 @@ fn is_spawn_name(e: Option<&Expr>) -> bool {
 fn walk(e: &Expr, c: &mut Count) {
     match e {
         Expr::Call(f, args) => {
-            if matches!(f.as_ref(), Expr::Intrinsic("spawn")) {
-                if let Some(Expr::Table(info)) = args.first() {
-                    let named =
-                        matches!(info.get(1), Some(TableEntry::Item(n)) if is_spawn_name(Some(n)));
-                    if named {
-                        c.spawns += 1;
-                        if matches!(args.get(1), Some(Expr::Function(_))) {
-                            c.inline += 1;
-                        }
+            if matches!(f.as_ref(), Expr::Intrinsic("spawn"))
+                && let Some(Expr::Table(info)) = args.first()
+            {
+                let named =
+                    matches!(info.get(1), Some(TableEntry::Item(n)) if is_spawn_name(Some(n)));
+                if named {
+                    c.spawns += 1;
+                    if matches!(args.get(1), Some(Expr::Function(_))) {
+                        c.inline += 1;
                     }
                 }
             }

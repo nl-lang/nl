@@ -113,25 +113,25 @@ impl Lowerer<'_> {
             self.internal(node, "operator name");
             return;
         };
-        if let Arity::Exactly(n) = kind.arity {
-            if rest || plain != n {
-                let wanted = match n {
-                    0 => "no parameters".to_string(),
-                    1 => "one parameter".to_string(),
-                    n => format!("{n} parameters"),
-                };
-                let also = if kind.symbol == "-" {
-                    " (`-` takes one for subtraction, none for negation)"
-                } else {
-                    ""
-                };
-                self.error(
-                    node,
-                    "operator-arity",
-                    format!("the operator `{}` takes {wanted}{also}", kind.symbol),
-                );
-                return;
-            }
+        if let Arity::Exactly(n) = kind.arity
+            && (rest || plain != n)
+        {
+            let wanted = match n {
+                0 => "no parameters".to_string(),
+                1 => "one parameter".to_string(),
+                n => format!("{n} parameters"),
+            };
+            let also = if kind.symbol == "-" {
+                " (`-` takes one for subtraction, none for negation)"
+            } else {
+                ""
+            };
+            self.error(
+                node,
+                "operator-arity",
+                format!("the operator `{}` takes {wanted}{also}", kind.symbol),
+            );
+            return;
         }
         let Some(owner) = self.res.method_owner(node.text_range()).cloned() else {
             self.internal(node, "operator owner");
@@ -140,16 +140,15 @@ impl Lowerer<'_> {
         let owner_text = child(node, QUAL_NAME)
             .map(|q| qual_text(&q))
             .unwrap_or_default();
-        if let MethodOwner::Binding { id, path } = &owner {
-            if path.is_empty()
-                && self
-                    .res
-                    .binding(*id)
-                    .is_some_and(|b| b.decl == DeclKind::Module)
-            {
-                self.error(node, "operator-owner", format!("`{owner_text}` is a module; operators are defined on structs, `Number`, `String` and `Bool`"));
-                return;
-            }
+        if let MethodOwner::Binding { id, path } = &owner
+            && path.is_empty()
+            && self
+                .res
+                .binding(*id)
+                .is_some_and(|b| b.decl == DeclKind::Module)
+        {
+            self.error(node, "operator-owner", format!("`{owner_text}` is a module; operators are defined on structs, `Number`, `String` and `Bool`"));
+            return;
         }
         if matches!(owner, MethodOwner::Declared(_)) {
             // The resolver refuses it.

@@ -92,17 +92,17 @@ impl Gen {
 
     /// A variable or a field of `self` of the type.
     fn var_ex(&mut self, ctx: &Ctx, ty: Ty) -> Option<Ex> {
-        if let Some(i) = ctx.method_of {
-            if self.rng.chance(40) {
-                let fields: Vec<Field> = self
-                    .all_fields(i)
-                    .into_iter()
-                    .filter(|f| f.ty == ty)
-                    .collect();
-                if !fields.is_empty() {
-                    let f = self.rng.pick_ref(&fields)?;
-                    return Some(Ex::new(format!("@{}", f.name), ty, f.bound).atom());
-                }
+        if let Some(i) = ctx.method_of
+            && self.rng.chance(40)
+        {
+            let fields: Vec<Field> = self
+                .all_fields(i)
+                .into_iter()
+                .filter(|f| f.ty == ty)
+                .collect();
+            if !fields.is_empty() {
+                let f = self.rng.pick_ref(&fields)?;
+                return Some(Ex::new(format!("@{}", f.name), ty, f.bound).atom());
             }
         }
         let v = self.pick_var(ty, false)?;
@@ -332,7 +332,7 @@ impl Gen {
                     // gives what `or` gives. Chosen by the key,
                     // so that the random stream, and with it every other
                     // part of a seed's program, stays as it was.
-                    if k.len() % 2 == 0 {
+                    if k.len().is_multiple_of(2) {
                         Ex::new(format!("({}?.{k} ?? 0)", m.operand()), Ty::Int, m.elem).atom()
                     } else {
                         Ex::new(format!("({}.{k} or 0)", m.operand()), Ty::Int, m.elem).atom()
@@ -379,10 +379,10 @@ impl Gen {
     }
 
     fn int_atom(&mut self, ctx: &Ctx) -> Ex {
-        if self.rng.chance(55) {
-            if let Some(v) = self.var_ex(ctx, Ty::Int) {
-                return v;
-            }
+        if self.rng.chance(55)
+            && let Some(v) = self.var_ex(ctx, Ty::Int)
+        {
+            return v;
         }
         if self.rng.chance(8) {
             // A numeric enum value, or the number of variants.
@@ -393,12 +393,12 @@ impl Gen {
                         .is_some_and(|e| e.variants.iter().all(|v| matches!(v.1, EnumVal::Num(_))))
                 })
                 .collect();
-            if let Some(&i) = numeric.get(self.rng.below(numeric.len())) {
-                if let Some(e) = self.enums.get(i) {
-                    let v = self.rng.below(e.variants.len());
-                    if let Some((name, EnumVal::Num(_))) = e.variants.get(v) {
-                        return Ex::new(format!("{}.{name}", e.name), Ty::Int, 40.0).atom();
-                    }
+            if let Some(&i) = numeric.get(self.rng.below(numeric.len()))
+                && let Some(e) = self.enums.get(i)
+            {
+                let v = self.rng.below(e.variants.len());
+                if let Some((name, EnumVal::Num(_))) = e.variants.get(v) {
+                    return Ex::new(format!("{}.{name}", e.name), Ty::Int, 40.0).atom();
                 }
             }
             if let Some(e) = self.enums.get(self.rng.below(self.enums.len())) {
@@ -415,10 +415,10 @@ impl Gen {
 
     pub(super) fn num(&mut self, ctx: &Ctx, d: u32) -> Ex {
         if d == 0 || self.rng.chance(20) {
-            if self.rng.chance(40) {
-                if let Some(v) = self.var_ex(ctx, Ty::Num) {
-                    return v;
-                }
+            if self.rng.chance(40)
+                && let Some(v) = self.var_ex(ctx, Ty::Num)
+            {
+                return v;
             }
             return if self.rng.chance(60) {
                 self.num_lit()
@@ -544,10 +544,10 @@ impl Gen {
 
     fn str_raw(&mut self, ctx: &Ctx, d: u32) -> Ex {
         if d == 0 || self.rng.chance(25) {
-            if self.rng.chance(50) {
-                if let Some(v) = self.var_ex(ctx, Ty::Str) {
-                    return v;
-                }
+            if self.rng.chance(50)
+                && let Some(v) = self.var_ex(ctx, Ty::Str)
+            {
+                return v;
             }
             return self.str_lit();
         }
@@ -768,10 +768,10 @@ impl Gen {
 
     pub(super) fn bool_(&mut self, ctx: &Ctx, d: u32) -> Ex {
         if d == 0 || self.rng.chance(20) {
-            if self.rng.chance(40) {
-                if let Some(v) = self.var_ex(ctx, Ty::Bool) {
-                    return v;
-                }
+            if self.rng.chance(40)
+                && let Some(v) = self.var_ex(ctx, Ty::Bool)
+            {
+                return v;
             }
             if self.rng.chance(30) {
                 return Ex::new(self.rng.pick(&["true", "false"]), Ty::Bool, 1.0).atom();
@@ -943,10 +943,10 @@ impl Gen {
     // ---- lists and maps ----
 
     pub(super) fn int_list(&mut self, ctx: &Ctx, d: u32) -> Ex {
-        if self.rng.chance(45) {
-            if let Some(v) = self.var_ex(ctx, Ty::IntList) {
-                return v;
-            }
+        if self.rng.chance(45)
+            && let Some(v) = self.var_ex(ctx, Ty::IntList)
+        {
+            return v;
         }
         match self.rng.weighted(&[50, 10, 10, 10]) {
             0 | 1 if d == 0 => self.int_list_lit(ctx, 0),
@@ -1002,10 +1002,10 @@ impl Gen {
     }
 
     pub(super) fn str_list(&mut self, ctx: &Ctx, d: u32) -> Ex {
-        if self.rng.chance(40) {
-            if let Some(v) = self.var_ex(ctx, Ty::StrList) {
-                return v;
-            }
+        if self.rng.chance(40)
+            && let Some(v) = self.var_ex(ctx, Ty::StrList)
+        {
+            return v;
         }
         let dd = d.saturating_sub(1);
         match self.rng.below(5) {
@@ -1053,10 +1053,10 @@ impl Gen {
     }
 
     pub(super) fn map_(&mut self, ctx: &Ctx, d: u32) -> Ex {
-        if self.rng.chance(55) {
-            if let Some(v) = self.var_ex(ctx, Ty::Map) {
-                return v;
-            }
+        if self.rng.chance(55)
+            && let Some(v) = self.var_ex(ctx, Ty::Map)
+        {
+            return v;
         }
         self.map_lit(ctx, d.saturating_sub(1))
     }
@@ -1099,15 +1099,15 @@ impl Gen {
             return None;
         }
         let i = self.rng.below(self.structs.len());
-        if self.rng.chance(60) {
-            if let Some(v) = self.pick_var(Ty::Struct(i), false) {
-                return Some((Ex::new(v.name, Ty::Struct(i), 0.0).atom(), i));
-            }
+        if self.rng.chance(60)
+            && let Some(v) = self.pick_var(Ty::Struct(i), false)
+        {
+            return Some((Ex::new(v.name, Ty::Struct(i), 0.0).atom(), i));
         }
-        if self.rng.chance(15) {
-            if let Some(m) = self.made_struct(ctx) {
-                return Some(m);
-            }
+        if self.rng.chance(15)
+            && let Some(m) = self.made_struct(ctx)
+        {
+            return Some(m);
         }
         if self.structs.get(i).is_some_and(|s| s.plus) && d > 0 && self.rng.chance(20) {
             let (a, _) = self.struct_lit(ctx, i, d - 1)?;
@@ -1186,10 +1186,10 @@ impl Gen {
             };
             return Some(Ex::new(code, Ty::Int, m.ret.unwrap_or(1000.0)).atom());
         }
-        if choice == 2 {
-            if let Some(b) = len {
-                return Some(Ex::new(format!("{}.len", s.operand()), Ty::Int, b).atom());
-            }
+        if choice == 2
+            && let Some(b) = len
+        {
+            return Some(Ex::new(format!("{}.len", s.operand()), Ty::Int, b).atom());
         }
         let f = self.rng.pick_ref(&fields)?;
         Some(Ex::new(format!("{}.{}", s.operand(), f.name), Ty::Int, f.bound).atom())
@@ -1200,10 +1200,10 @@ impl Gen {
             .filter(|&i| self.inherits_to_string(i))
             .collect();
         let &i = cands.get(self.rng.below(cands.len()))?;
-        if self.rng.chance(50) {
-            if let Some(v) = self.pick_var(Ty::Struct(i), false) {
-                return Some(Ex::new(v.name, Ty::Struct(i), 0.0).atom());
-            }
+        if self.rng.chance(50)
+            && let Some(v) = self.pick_var(Ty::Struct(i), false)
+        {
+            return Some(Ex::new(v.name, Ty::Struct(i), 0.0).atom());
         }
         self.struct_lit(ctx, i, 0).map(|(e, _)| e)
     }
@@ -1233,10 +1233,10 @@ impl Gen {
             return None;
         }
         let i = self.rng.below(self.enums.len());
-        if self.rng.chance(50) {
-            if let Some(v) = self.pick_var(Ty::Enum(i), false) {
-                return Some((Ex::new(v.name, Ty::Enum(i), 0.0).atom(), i));
-            }
+        if self.rng.chance(50)
+            && let Some(v) = self.pick_var(Ty::Enum(i), false)
+        {
+            return Some((Ex::new(v.name, Ty::Enum(i), 0.0).atom(), i));
         }
         let e = self.enums.get(i)?;
         let (vn, _) = e.variants.get(self.rng.below(e.variants.len()))?;
@@ -1293,10 +1293,11 @@ impl Gen {
         let mut args: Vec<String> = Vec::new();
         let mut omit_from = f.params.len();
         // Trailing parameters with defaults may be left out.
-        if let Some(last) = f.params.last() {
-            if last.default.is_some() && self.rng.chance(50) {
-                omit_from -= 1;
-            }
+        if let Some(last) = f.params.last()
+            && last.default.is_some()
+            && self.rng.chance(50)
+        {
+            omit_from -= 1;
         }
         for p in f.params.iter().take(omit_from) {
             let a = self.arg_for(ctx, p, f.typed);
@@ -1427,10 +1428,11 @@ impl Gen {
     /// A value for the end of a function or a branch: sometimes a block
     /// expression spanning lines.
     pub(super) fn tail_expr(&mut self, ctx: &Ctx, ty: Ty) -> Ex {
-        if ctx.depth < 3 && self.rng.chance(20) {
-            if let Some(e) = self.rich(ctx, ty) {
-                return e;
-            }
+        if ctx.depth < 3
+            && self.rng.chance(20)
+            && let Some(e) = self.rich(ctx, ty)
+        {
+            return e;
         }
         self.expr(ctx, ty, 2)
     }

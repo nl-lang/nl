@@ -350,10 +350,11 @@ impl Analyzer<'_> {
                                 pat.text_range(),
                                 &format!("variable '{name}'"),
                             );
-                            if proven && self.opts.static_resolution {
-                                if let Some(t) = type_child(pat) {
-                                    self.hints.proven.insert(t.text_range());
-                                }
+                            if proven
+                                && self.opts.static_resolution
+                                && let Some(t) = type_child(pat)
+                            {
+                                self.hints.proven.insert(t.text_range());
                             }
                             // Along the flow the variable holds the value,
                             // unless the annotation opts out of checking.
@@ -431,16 +432,16 @@ impl Analyzer<'_> {
             let name = child(&f, NAME)
                 .and_then(|n| name_text(&n))
                 .unwrap_or_default();
-            if let Some(nid) = nid {
-                if let Some(field) = self.types.field(nid, &name) {
-                    let owner = self.types.name(nid).to_string();
-                    self.check_assignable(
-                        &v,
-                        &field.ty,
-                        e.text_range(),
-                        &format!("the default of field '{name}' of {owner}"),
-                    );
-                }
+            if let Some(nid) = nid
+                && let Some(field) = self.types.field(nid, &name)
+            {
+                let owner = self.types.name(nid).to_string();
+                self.check_assignable(
+                    &v,
+                    &field.ty,
+                    e.text_range(),
+                    &format!("the default of field '{name}' of {owner}"),
+                );
             }
         }
     }
@@ -512,15 +513,15 @@ impl Analyzer<'_> {
                             continue;
                         };
                         let declared = param.map(|p| p.ty).unwrap_or(Type::Any);
-                        if let Some(d) = &default {
-                            if declared != Type::Any {
-                                self.check_assignable(
-                                    d,
-                                    &declared,
-                                    p.text_range(),
-                                    "the default of this parameter",
-                                );
-                            }
+                        if let Some(d) = &default
+                            && declared != Type::Any
+                        {
+                            self.check_assignable(
+                                d,
+                                &declared,
+                                p.text_range(),
+                                "the default of this parameter",
+                            );
                         }
                         let value = if declared == Type::Any {
                             match &default {
@@ -771,10 +772,9 @@ impl Analyzer<'_> {
                     && self.types.is_definite(&ret)
                     && !matches!(ret, Type::Tuple(_))
                     && self.opts.static_resolution
+                    && let Some(s) = site
                 {
-                    if let Some(s) = site {
-                        self.hints.proven.insert(s);
-                    }
+                    self.hints.proven.insert(s);
                 }
             }
             // `: nil`: a `return v` is checked at runtime.
@@ -1600,10 +1600,10 @@ impl Analyzer<'_> {
                 _ => continue,
             };
             for t in targets {
-                if t.kind() == NAME_REF {
-                    if let Some(Ref::Binding(id)) = self.res.reference(t.text_range()) {
-                        self.env.remove(id);
-                    }
+                if t.kind() == NAME_REF
+                    && let Some(Ref::Binding(id)) = self.res.reference(t.text_range())
+                {
+                    self.env.remove(id);
                 }
             }
         }

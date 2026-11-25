@@ -492,10 +492,11 @@ impl<'a> Formatter<'a> {
     fn comment_indent(&self, t: &SyntaxToken) -> usize {
         let line = self.line_of(t);
         // Aligned under the comment of the line before: stays aligned.
-        if let Some((src_col, new_col, last_line)) = self.last_comment {
-            if last_line + 1 == line && src_col == self.col_of(t) {
-                return new_col;
-            }
+        if let Some((src_col, new_col, last_line)) = self.last_comment
+            && last_line + 1 == line
+            && src_col == self.col_of(t)
+        {
+            return new_col;
         }
         let Some(parent) = t.parent() else { return 0 };
         let at = t.text_range().start();

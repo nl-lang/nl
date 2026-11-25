@@ -160,10 +160,10 @@ impl Lowerer<'_> {
                 if qual_segments(&q).len() != 1 {
                     return;
                 }
-                if let Some(Ref::Binding(id)) = self.res.type_ref(q.text_range()) {
-                    if self.aliases.contains_key(id) {
-                        out.push(*id);
-                    }
+                if let Some(Ref::Binding(id)) = self.res.type_ref(q.text_range())
+                    && self.aliases.contains_key(id)
+                {
+                    out.push(*id);
                 }
             }
             _ => {

@@ -295,10 +295,10 @@ pub fn declared_globals(root: &SyntaxNode) -> Vec<String> {
             MODULE_DECL => child(&g, QUAL_NAME).map(|q| qual_text(&q)),
             _ => child(&g, NAME).and_then(|n| name_text(&n)),
         };
-        if let Some(name) = name {
-            if !out.contains(&name) {
-                out.push(name);
-            }
+        if let Some(name) = name
+            && !out.contains(&name)
+        {
+            out.push(name);
         }
     }
     out

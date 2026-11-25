@@ -439,15 +439,15 @@ impl Parser<'_> {
                 self.error("expected the step after `step`");
             }
             s.complete(self, FOR_STEP);
-            if let Some(iter) = iter {
-                if iter.shape != Shape::Range {
-                    let range = self.range_from(iter.start);
-                    self.error_at(
-                        range,
-                        "`step` needs a range written in the header, such as `for i in 1..10 \
+            if let Some(iter) = iter
+                && iter.shape != Shape::Range
+            {
+                let range = self.range_from(iter.start);
+                self.error_at(
+                    range,
+                    "`step` needs a range written in the header, such as `for i in 1..10 \
                          step 2`",
-                    );
-                }
+                );
             }
         }
         self.header_end("for");

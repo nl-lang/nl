@@ -182,10 +182,10 @@ impl Lowerer<'_> {
         let mut call_only = call_only;
         let mut pos = 0u32;
         let mark = |vals: &mut [Expr], call_only: u64, pos: u32| {
-            if call_only.checked_shr(pos).is_some_and(|m| m & 1 != 0) {
-                if let Some(Expr::Function(f)) = vals.last_mut() {
-                    f.transient = true;
-                }
+            if call_only.checked_shr(pos).is_some_and(|m| m & 1 != 0)
+                && let Some(Expr::Function(f)) = vals.last_mut()
+            {
+                f.transient = true;
             }
         };
         for a in args {

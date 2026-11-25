@@ -592,10 +592,10 @@ fn cache_dir() -> PathBuf {
     if let Some(d) = std::env::var_os("XDG_CACHE_HOME").filter(|d| !d.is_empty()) {
         return PathBuf::from(d);
     }
-    if cfg!(windows) {
-        if let Some(d) = std::env::var_os("LOCALAPPDATA").filter(|d| !d.is_empty()) {
-            return PathBuf::from(d);
-        }
+    if cfg!(windows)
+        && let Some(d) = std::env::var_os("LOCALAPPDATA").filter(|d| !d.is_empty())
+    {
+        return PathBuf::from(d);
     }
     if let Some(home) = std::env::var_os("HOME").filter(|d| !d.is_empty()) {
         let home = PathBuf::from(home);

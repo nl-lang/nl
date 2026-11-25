@@ -141,11 +141,9 @@ pub fn cmd_fmt(args: &[String], usage: &str) -> ExitCode {
                 let _ = writeln!(out, "{path}: not formatted");
                 failed = true;
             }
-        } else if changed {
-            if let Err(e) = std::fs::write(path, formatted.text.as_bytes()) {
-                eprintln!("{path}: error: cannot write the file: {e}");
-                failed = true;
-            }
+        } else if changed && let Err(e) = std::fs::write(path, formatted.text.as_bytes()) {
+            eprintln!("{path}: error: cannot write the file: {e}");
+            failed = true;
         }
     }
     let _ = out.flush();

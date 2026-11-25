@@ -97,10 +97,10 @@ impl Files {
     }
 
     pub fn close(&mut self, uri: &str) {
-        if let Some(d) = self.open.remove(uri) {
-            if let Some(p) = d.path {
-                self.by_path.remove(&p);
-            }
+        if let Some(d) = self.open.remove(uri)
+            && let Some(p) = d.path
+        {
+            self.by_path.remove(&p);
         }
     }
 

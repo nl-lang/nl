@@ -204,16 +204,13 @@ impl Analyzer<'_> {
         if let Some(inner) = pattern_children(field).next() {
             let narrowed = self.bind_pattern(&inner, &value, must);
             // `{key: Mod.Type}` binds the key too.
-            if inner.kind() == QUALIFIED_PAT {
-                if let Some(q) = child(&inner, QUAL_NAME) {
-                    if !self.res.is_enum_variant(q.text_range()) {
-                        if let Some(id) =
-                            name_token(field).and_then(|k| self.res.declaration(k.text_range()))
-                        {
-                            self.declare_type(id, Ty::certain(narrowed));
-                        }
-                    }
-                }
+            if inner.kind() == QUALIFIED_PAT
+                && let Some(q) = child(&inner, QUAL_NAME)
+                && !self.res.is_enum_variant(q.text_range())
+                && let Some(id) =
+                    name_token(field).and_then(|k| self.res.declaration(k.text_range()))
+            {
+                self.declare_type(id, Ty::certain(narrowed));
             }
         } else if let Some(ty) = type_child(field) {
             // `{key: Type}` binds `key` and requires the type.
@@ -362,10 +359,10 @@ impl Analyzer<'_> {
                         .collect();
                     for item in &items {
                         let (m, cover, excludes) = self.when_item(item, &subject_ty, &remaining);
-                        if guard.is_none() {
-                            if let Some(cv) = cover {
-                                covered.push(cv);
-                            }
+                        if guard.is_none()
+                            && let Some(cv) = cover
+                        {
+                            covered.push(cv);
                         }
                         match excludes {
                             Some(e) => excluded.push(e),
@@ -404,12 +401,12 @@ impl Analyzer<'_> {
                             self.set_flow(id, narrowed);
                         }
                     }
-                    if let Some(g) = &guard {
-                        if let Some(e) = expr_child(g) {
-                            self.expr1(&e);
-                            let (t, _) = self.condition_envs(&e);
-                            self.env = t;
-                        }
+                    if let Some(g) = &guard
+                        && let Some(e) = expr_child(g)
+                    {
+                        self.expr1(&e);
+                        let (t, _) = self.condition_envs(&e);
+                        self.env = t;
                     }
                     self.diverges = false;
                     let v = block(&c)
@@ -427,10 +424,11 @@ impl Analyzer<'_> {
                 ELSE_CLAUSE => {
                     has_else = true;
                     self.env = saved.clone();
-                    if let Some(id) = subject_binding {
-                        if self.types.is_definite(&remaining) && remaining != Type::Never {
-                            self.set_flow(id, remaining.clone());
-                        }
+                    if let Some(id) = subject_binding
+                        && self.types.is_definite(&remaining)
+                        && remaining != Type::Never
+                    {
+                        self.set_flow(id, remaining.clone());
                     }
                     self.diverges = false;
                     let v = block(&c)

@@ -144,10 +144,10 @@ impl Server {
             }
         }
         #[allow(deprecated)]
-        if let Some(root) = init.root_uri.as_ref().and_then(uri_to_path) {
-            if !files.roots().contains(&root) {
-                files.add_root(root);
-            }
+        if let Some(root) = init.root_uri.as_ref().and_then(uri_to_path)
+            && !files.roots().contains(&root)
+        {
+            files.add_root(root);
         }
         // `initializationOptions`: `searchPath` (directories of the
         // import search path) and `declarations` (files or directories of

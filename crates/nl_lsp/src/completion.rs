@@ -38,10 +38,11 @@ pub fn complete(files: &Files, doc: &Doc, offset: TextSize) -> Vec<CompletionIte
     // After `.` or `:` (a method call, `x:m()`): the members of the
     // receiver. A `.` or `:` that is not a member access (a Lua path, a
     // type annotation) falls back to the names in scope.
-    if start > 0 && matches!(bytes.get(start - 1), Some(b'.' | b':')) {
-        if let Some(items) = member_completion(files, doc, start, cursor) {
-            return items;
-        }
+    if start > 0
+        && matches!(bytes.get(start - 1), Some(b'.' | b':'))
+        && let Some(items) = member_completion(files, doc, start, cursor)
+    {
+        return items;
     }
     scope_completion(doc, offset)
 }

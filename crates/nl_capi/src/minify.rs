@@ -89,10 +89,10 @@ pub fn minify_bytes(src: &[u8], options: MinifyOptions) -> Result<Vec<u8>, Strin
                 }
             }
             _ => {
-                if let Some(p) = prev {
-                    if needs_space(p, t) {
-                        out.push(b' ');
-                    }
+                if let Some(p) = prev
+                    && needs_space(p, t)
+                {
+                    out.push(b' ');
                 }
                 if options.escape_gmod_macro
                     && t.kind == Kind::Quoted

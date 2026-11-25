@@ -852,10 +852,10 @@ impl<'a> Parser<'a> {
             header_do: None,
         });
         for bit in 0..6 {
-            if closers & (1 << bit) != 0 {
-                if let Some(n) = self.open_closers.get_mut(bit) {
-                    *n += 1;
-                }
+            if closers & (1 << bit) != 0
+                && let Some(n) = self.open_closers.get_mut(bit)
+            {
+                *n += 1;
             }
         }
         self.ctx.push(Ctx {
@@ -865,10 +865,10 @@ impl<'a> Parser<'a> {
         let r = f(self);
         self.ctx.pop();
         for bit in 0..6 {
-            if closers & (1 << bit) != 0 {
-                if let Some(n) = self.open_closers.get_mut(bit) {
-                    *n = n.saturating_sub(1);
-                }
+            if closers & (1 << bit) != 0
+                && let Some(n) = self.open_closers.get_mut(bit)
+            {
+                *n = n.saturating_sub(1);
             }
         }
         self.constructs.pop();

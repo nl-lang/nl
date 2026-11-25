@@ -301,12 +301,11 @@ fn regression_cases() {
             ) {
                 failures.push(format!("{name}: {why}"));
             }
-            if !checked_only {
-                if let Some(why) =
+            if !checked_only
+                && let Some(why) =
                     check_run(&nlc, &dir, &rel, &expected, true, backend.as_deref(), &decl)
-                {
-                    failures.push(format!("{name}: {why}"));
-                }
+            {
+                failures.push(format!("{name}: {why}"));
             }
         }
     }

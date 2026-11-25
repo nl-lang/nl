@@ -445,10 +445,10 @@ fn main() {
                     let i = next.fetch_add(1, Ordering::SeqCst);
                     let Some(case) = selected.get(i) else { break };
                     let o = run_case(&nlc, &dir, case, timeout);
-                    if let Ok(mut r) = results.lock() {
-                        if let Some(slot) = r.get_mut(i) {
-                            *slot = Some(o);
-                        }
+                    if let Ok(mut r) = results.lock()
+                        && let Some(slot) = r.get_mut(i)
+                    {
+                        *slot = Some(o);
                     }
                 }
             });

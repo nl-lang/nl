@@ -965,10 +965,10 @@ impl Gen {
         // not leave the `try`: the last clause then catches everything.
         if !last_catches_all {
             if ctx.raise_ok {
-                if !ctx.caught {
-                    if let Some(f) = self.frames.last_mut() {
-                        f.raises = true;
-                    }
+                if !ctx.caught
+                    && let Some(f) = self.frames.last_mut()
+                {
+                    f.raises = true;
                 }
             } else {
                 let e = self.fresh("err");
@@ -1003,10 +1003,10 @@ impl Gen {
         if !ctx.raise_ok {
             return None;
         }
-        if !ctx.caught {
-            if let Some(f) = self.frames.last_mut() {
-                f.raises = true;
-            }
+        if !ctx.caught
+            && let Some(f) = self.frames.last_mut()
+        {
+            f.raises = true;
         }
         let value = if !self.errors.is_empty() && self.rng.chance(55) {
             let t = self.rng.pick(&self.errors.clone());
@@ -1044,10 +1044,10 @@ impl Gen {
         if !ctx.raise_ok {
             return None;
         }
-        if !ctx.caught {
-            if let Some(f) = self.frames.last_mut() {
-                f.raises = true;
-            }
+        if !ctx.caught
+            && let Some(f) = self.frames.last_mut()
+        {
+            f.raises = true;
         }
         let a = self.fresh("pa");
         let b = self.fresh("pb");

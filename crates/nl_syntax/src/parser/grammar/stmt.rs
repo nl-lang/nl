@@ -157,10 +157,10 @@ impl Parser<'_> {
     fn statement_inner(&mut self) {
         // A statement on a new line is never the operand of a character the
         // lexer rejected at the end of the line before (`Tok::after_error`).
-        if self.nl() {
-            if let Some(t) = self.toks.get_mut(self.pos) {
-                t.after_error = false;
-            }
+        if self.nl()
+            && let Some(t) = self.toks.get_mut(self.pos)
+        {
+            t.after_error = false;
         }
         match self.cur() {
             LET_KW | CONST_KW | GLOBAL_KW | STRUCT_KW | INTERFACE_KW | ENUM_KW | TYPE_KW

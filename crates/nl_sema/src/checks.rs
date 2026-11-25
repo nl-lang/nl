@@ -39,14 +39,12 @@ pub(crate) fn check_param_list(r: &mut Resolver<'_>, list: &SyntaxNode) {
         }
     }
     let any = annotated.iter().any(|(t, _)| *t);
-    if any {
-        if let Some((_, range)) = annotated.iter().find(|(t, _)| !*t) {
-            r.error(
-                *range,
-                "partial-annotations",
-                "if any parameter is annotated, all must be",
-            );
-        }
+    if any && let Some((_, range)) = annotated.iter().find(|(t, _)| !*t) {
+        r.error(
+            *range,
+            "partial-annotations",
+            "if any parameter is annotated, all must be",
+        );
     }
 }
 

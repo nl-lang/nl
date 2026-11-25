@@ -115,10 +115,9 @@ impl Lowerer<'_> {
                     .first()
                     .filter(|s| available >= 1 && !is_safe_step(s))
                     .and_then(field_step_name)
+                    && self.localize.has_path(&global, &name)
                 {
-                    if self.localize.has_path(&global, &name) {
-                        return (self.localized_path(&global, Some(&name)), 1);
-                    }
+                    return (self.localized_path(&global, Some(&name)), 1);
                 }
                 if self.localize.has_root(&global) {
                     return (self.localized_path(&global, None), 0);

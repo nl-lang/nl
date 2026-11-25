@@ -499,10 +499,10 @@ impl Gen<'_> {
     }
 
     fn free_if_temp(&mut self, e: &Exp) {
-        if let Kind::NonReloc(r) = e.k {
-            if r >= self.fs().nactvar {
-                self.fs().freereg -= 1;
-            }
+        if let Kind::NonReloc(r) = e.k
+            && r >= self.fs().nactvar
+        {
+            self.fs().freereg -= 1;
         }
     }
 
@@ -684,11 +684,12 @@ impl Gen<'_> {
     pub(crate) fn binop(&mut self, op: BinOp, e1: &mut Exp, e2: &mut Exp) -> R<()> {
         match op {
             BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod | BinOp::Pow => {
-                if e1.is_numk_nojump() && e2.is_numk_nojump() {
-                    if let Some(r) = fold_arith(op, e1.num(), e2.num()) {
-                        e1.k = Kind::Num(r);
-                        return Ok(());
-                    }
+                if e1.is_numk_nojump()
+                    && e2.is_numk_nojump()
+                    && let Some(r) = fold_arith(op, e1.num(), e2.num())
+                {
+                    e1.k = Kind::Num(r);
+                    return Ok(());
                 }
                 self.arith(op, e1, e2)
             }
@@ -779,13 +780,12 @@ impl Gen<'_> {
                 Op::NOT
             }
             UnOp::Neg => {
-                if !e.has_jump() {
-                    if let Kind::Num(n) = e.k {
-                        if n != 0.0 {
-                            e.k = Kind::Num(-n);
-                            return Ok(());
-                        }
-                    }
+                if !e.has_jump()
+                    && let Kind::Num(n) = e.k
+                    && n != 0.0
+                {
+                    e.k = Kind::Num(-n);
+                    return Ok(());
                 }
                 self.toanyreg(e)?;
                 Op::UNM
@@ -816,16 +816,16 @@ impl Gen<'_> {
             Expr::Global(g) => Ok(Exp::new(Kind::Global(g.as_bytes().to_vec()))),
             Expr::Index(o, k) => self.index_expr(o, k),
             Expr::Call(f, args) => {
-                if self.level >= 1 {
-                    if let Some(op) = match f.as_ref() {
+                if self.level >= 1
+                    && let Some(op) = match f.as_ref() {
                         Expr::Intrinsic(name) => bit_intrinsic(name),
                         _ => None,
-                    } {
-                        match args.as_slice() {
-                            [a] if op == Op::BNOT => return self.bnot(a),
-                            [a, b] if op != Op::BNOT => return self.bitop(op, a, b),
-                            _ => {}
-                        }
+                    }
+                {
+                    match args.as_slice() {
+                        [a] if op == Op::BNOT => return self.bnot(a),
+                        [a, b] if op != Op::BNOT => return self.bitop(op, a, b),
+                        _ => {}
                     }
                 }
                 self.call(f, &args.iter().collect::<Vec<_>>())
@@ -870,11 +870,11 @@ impl Gen<'_> {
                 Ok(v)
             }
             Expr::Intrinsic(name) => {
-                if self.level >= 1 {
-                    if let Some(idx) = crate::intrinsics::index(name) {
-                        let pc = self.emit_ad(Op::KINTR, 0, idx)?;
-                        return Ok(Exp::new(Kind::Reloc(pc)));
-                    }
+                if self.level >= 1
+                    && let Some(idx) = crate::intrinsics::index(name)
+                {
+                    let pc = self.emit_ad(Op::KINTR, 0, idx)?;
+                    return Ok(Exp::new(Kind::Reloc(pc)));
                 }
                 let mut t = self.var_lookup(VarId::Rt)?;
                 self.toanyreg(&mut t)?;
@@ -975,11 +975,9 @@ impl Gen<'_> {
             let last = i + 1 == n;
             self.want_multi = last;
             let mut e = self.expr(a)?;
-            if last {
-                if let Kind::Call(pc, abase) = e.k {
-                    self.patch_ins(pc, |ins| bc::set_b(ins, 0));
-                    return Ok(Some(abase));
-                }
+            if last && let Kind::Call(pc, abase) = e.k {
+                self.patch_ins(pc, |ins| bc::set_b(ins, 0));
+                return Ok(Some(abase));
             }
             self.tonextreg(&mut e)?;
         }
@@ -1260,12 +1258,11 @@ impl Gen<'_> {
                 self.patch_ins(pc, |i| bc::set_d(i, d));
             }
             Some(idx) => {
-                if needarr {
-                    if let Some(t) = self.ktable_mut(idx) {
-                        if t.array.len() < narr as usize {
-                            t.array.resize(narr as usize, KTabValue::Nil);
-                        }
-                    }
+                if needarr
+                    && let Some(t) = self.ktable_mut(idx)
+                    && t.array.len() < narr as usize
+                {
+                    t.array.resize(narr as usize, KTabValue::Nil);
                 }
             }
         }
@@ -1316,17 +1313,19 @@ fn kvalue(e: &Exp) -> KTabValue {
 /// key below `asize` goes to the array part, anything else to the hash
 /// part, replacing an equal key.
 fn ktable_set(t: &mut KTable, key: KTabValue, value: KTabValue, asize: u32) {
-    if let KTabValue::Num(n) = key {
-        if n.fract() == 0.0 && n >= 0.0 && n < f64::from(asize) {
-            let i = n as usize;
-            if t.array.len() <= i {
-                t.array.resize(i + 1, KTabValue::Nil);
-            }
-            if let Some(slot) = t.array.get_mut(i) {
-                *slot = value;
-            }
-            return;
+    if let KTabValue::Num(n) = key
+        && n.fract() == 0.0
+        && n >= 0.0
+        && n < f64::from(asize)
+    {
+        let i = n as usize;
+        if t.array.len() <= i {
+            t.array.resize(i + 1, KTabValue::Nil);
         }
+        if let Some(slot) = t.array.get_mut(i) {
+            *slot = value;
+        }
+        return;
     }
     if let Some(entry) = t.hash.iter_mut().find(|(k, _)| *k == key) {
         entry.1 = value;

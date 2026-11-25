@@ -108,17 +108,16 @@ pub(crate) fn build_tree(lexed: &Lexed<'_>, mut events: Vec<Event>) -> GreenNode
                 while let Some(distance) = fp {
                     idx = idx.saturating_add(distance as usize);
                     fp = None;
-                    if let Some(parent) = events.get_mut(idx) {
-                        if let Event::Start {
+                    if let Some(parent) = events.get_mut(idx)
+                        && let Event::Start {
                             kind,
                             forward_parent,
                         } = std::mem::replace(parent, TOMBSTONE)
-                        {
-                            if let Some(kind) = kind {
-                                kinds.push(kind);
-                            }
-                            fp = forward_parent;
+                    {
+                        if let Some(kind) = kind {
+                            kinds.push(kind);
                         }
+                        fp = forward_parent;
                     }
                 }
                 // Parents first.

@@ -462,14 +462,14 @@ fn check_name(
             ) {
                 return;
             }
-            if let Some(realm) = doc_realm(&item.node) {
-                if !realm.on_client() {
-                    out.push(error(
-                        node,
-                        CODE_REALM,
-                        realm.message(&format!("`{}`", item.name)),
-                    ));
-                }
+            if let Some(realm) = doc_realm(&item.node)
+                && !realm.on_client()
+            {
+                out.push(error(
+                    node,
+                    CODE_REALM,
+                    realm.message(&format!("`{}`", item.name)),
+                ));
             }
         }
         _ => {}
@@ -538,10 +538,10 @@ fn check_lua_path(
         }
     }
     if global == "require" {
-        if let Some(call) = path.children().next().filter(|s| s.kind() == LUA_CALL) {
-            if let Some(args) = child(&call, ARG_LIST) {
-                check_require_args(path, &args, out);
-            }
+        if let Some(call) = path.children().next().filter(|s| s.kind() == LUA_CALL)
+            && let Some(args) = child(&call, ARG_LIST)
+        {
+            check_require_args(path, &args, out);
         }
         return;
     }
@@ -563,11 +563,11 @@ fn check_lua_path(
             key.push('.');
             key.push_str(f);
         }
-        if let Some(realm) = index.get(&key) {
-            if !realm.on_client() {
-                out.push(error(path, CODE_REALM, realm.message(&format!("`:{key}`"))));
-                return;
-            }
+        if let Some(realm) = index.get(&key)
+            && !realm.on_client()
+        {
+            out.push(error(path, CODE_REALM, realm.message(&format!("`:{key}`"))));
+            return;
         }
     }
 }

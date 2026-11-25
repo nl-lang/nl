@@ -1073,18 +1073,17 @@ impl<'a> Analyzer<'a> {
                 has_default: expr_child(&f).is_some(),
             });
         }
-        if let Some(n) = self.types.get_mut(nid) {
-            if let NamedKind::Struct {
+        if let Some(n) = self.types.get_mut(nid)
+            && let NamedKind::Struct {
                 parent: p,
                 fields: fs,
                 type_params: tps,
                 ..
             } = &mut n.kind
-            {
-                *p = parent;
-                *fs = fields;
-                *tps = type_params;
-            }
+        {
+            *p = parent;
+            *fs = fields;
+            *tps = type_params;
         }
     }
 
@@ -1123,10 +1122,10 @@ impl<'a> Analyzer<'a> {
             };
             variants.push((vname, ty));
         }
-        if let Some(n) = self.types.get_mut(nid) {
-            if let NamedKind::Enum { variants: vs } = &mut n.kind {
-                *vs = variants;
-            }
+        if let Some(n) = self.types.get_mut(nid)
+            && let NamedKind::Enum { variants: vs } = &mut n.kind
+        {
+            *vs = variants;
         }
         // An enum of a module body is a member of the module: `M.Inner.X`.
         let module = node
@@ -1195,17 +1194,16 @@ impl<'a> Analyzer<'a> {
                 _ => {}
             }
         }
-        if let Some(n) = self.types.get_mut(nid) {
-            if let NamedKind::Interface {
+        if let Some(n) = self.types.get_mut(nid)
+            && let NamedKind::Interface {
                 methods: ms,
                 fields: fs,
                 type_params: tps,
             } = &mut n.kind
-            {
-                *ms = methods;
-                *fs = fields;
-                *tps = type_params;
-            }
+        {
+            *ms = methods;
+            *fs = fields;
+            *tps = type_params;
         }
     }
 
@@ -1424,10 +1422,10 @@ impl<'a> Analyzer<'a> {
                     self.add_member(nid, &name, Member::Function(sig));
                 }
                 (Some(Type::Named(nid)), None, Some(op)) => {
-                    if let Some(n) = self.types.get_mut(nid) {
-                        if let NamedKind::Struct { operators, .. } = &mut n.kind {
-                            operators.insert(op, sig);
-                        }
+                    if let Some(n) = self.types.get_mut(nid)
+                        && let NamedKind::Struct { operators, .. } = &mut n.kind
+                    {
+                        operators.insert(op, sig);
                     }
                 }
                 (Some(Type::Static(nid)), Some(name), _) => {
@@ -1593,24 +1591,23 @@ impl<'a> Analyzer<'a> {
                     self.record_member_decl(nid, &name, range);
                     self.add_member(nid, &name, Member::Function(sig));
                 }
-                if let Some(n) = self.types.get_mut(nid) {
-                    if let NamedKind::Struct {
+                if let Some(n) = self.types.get_mut(nid)
+                    && let NamedKind::Struct {
                         interfaces,
                         to,
                         from,
                         ..
                     } = &mut n.kind
+                {
+                    if let Some(i) = iface_id
+                        && !interfaces.contains(&i)
                     {
-                        if let Some(i) = iface_id {
-                            if !interfaces.contains(&i) {
-                                interfaces.push(i);
-                            }
-                        }
-                        match (iface_name.as_str(), arg) {
-                            ("To", Some(t)) => to.push(t),
-                            ("From", Some(t)) => from.push(t),
-                            _ => {}
-                        }
+                        interfaces.push(i);
+                    }
+                    match (iface_name.as_str(), arg) {
+                        ("To", Some(t)) => to.push(t),
+                        ("From", Some(t)) => from.push(t),
+                        _ => {}
                     }
                 }
             }

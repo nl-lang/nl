@@ -330,10 +330,9 @@ impl TypeTable {
             let Some(c) = cur else { break };
             if let Some(NamedKind::Struct { fields, .. } | NamedKind::LuaClass { fields, .. }) =
                 self.kind(c)
+                && let Some(f) = fields.iter().find(|f| f.name == name)
             {
-                if let Some(f) = fields.iter().find(|f| f.name == name) {
-                    return Some(f.clone());
-                }
+                return Some(f.clone());
             }
             cur = self.parent(c);
         }
@@ -373,10 +372,10 @@ impl TypeTable {
         let mut cur = Some(id);
         for _ in 0..64 {
             let Some(c) = cur else { break };
-            if let Some(NamedKind::Struct { operators, .. }) = self.kind(c) {
-                if let Some(m) = operators.get(op) {
-                    return Some(m.clone());
-                }
+            if let Some(NamedKind::Struct { operators, .. }) = self.kind(c)
+                && let Some(m) = operators.get(op)
+            {
+                return Some(m.clone());
             }
             cur = self.parent(c);
         }
@@ -389,10 +388,10 @@ impl TypeTable {
         let mut cur = Some(id);
         for _ in 0..64 {
             let Some(c) = cur else { break };
-            if let Some(NamedKind::Struct { interfaces, .. }) = self.kind(c) {
-                if interfaces.contains(&iface) {
-                    return true;
-                }
+            if let Some(NamedKind::Struct { interfaces, .. }) = self.kind(c)
+                && interfaces.contains(&iface)
+            {
+                return true;
             }
             cur = self.parent(c);
         }
@@ -601,18 +600,20 @@ impl TypeTable {
             // Two different structs never overlap unless related; a struct
             // and an interface may (an implementation may be declared
             // elsewhere), as any other two tables.
-            if let (Named(x), Named(y)) = (a, b) {
-                if self.is_struct(*x) && self.is_struct(*y) {
-                    return self.descends(*x, *y) || self.descends(*y, *x);
-                }
+            if let (Named(x), Named(y)) = (a, b)
+                && self.is_struct(*x)
+                && self.is_struct(*y)
+            {
+                return self.descends(*x, *y) || self.descends(*y, *x);
             }
             return true;
         }
         let primitive = |t: &Type| matches!(t, Number | String | Bool);
-        if let (Named(x), p) | (p, Named(x)) = (a, b) {
-            if self.is_interface(*x) && primitive(p) {
-                return true;
-            }
+        if let (Named(x), p) | (p, Named(x)) = (a, b)
+            && self.is_interface(*x)
+            && primitive(p)
+        {
+            return true;
         }
         false
     }
@@ -950,15 +951,16 @@ impl fmt::Display for Shown<'_> {
                 Ok(())
             }
             Type::Union(m) => {
-                if m.len() == 2 && m.contains(&Type::Nil) {
-                    if let Some(other) = m.iter().find(|x| **x != Type::Nil) {
-                        let inner = sub(other);
-                        return if matches!(other, Type::Union(_) | Type::And(_) | Type::Fn(_)) {
-                            write!(f, "({inner})?")
-                        } else {
-                            write!(f, "{inner}?")
-                        };
-                    }
+                if m.len() == 2
+                    && m.contains(&Type::Nil)
+                    && let Some(other) = m.iter().find(|x| **x != Type::Nil)
+                {
+                    let inner = sub(other);
+                    return if matches!(other, Type::Union(_) | Type::And(_) | Type::Fn(_)) {
+                        write!(f, "({inner})?")
+                    } else {
+                        write!(f, "{inner}?")
+                    };
                 }
                 for (i, x) in m.iter().enumerate() {
                     if i > 0 {

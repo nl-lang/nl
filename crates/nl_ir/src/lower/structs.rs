@@ -102,15 +102,15 @@ impl Lowerer<'_> {
             };
             let mut entry = vec![TableEntry::Pair(Expr::str("name"), Expr::str(&fname))];
             let mut checked = None;
-            if let Some(t) = type_child(&f) {
-                if self.opts.checks {
-                    // Type values need no statements, so the value can be
-                    // computed here and placed in the thunk.
-                    if let Some(v) = self.type_value(&t) {
-                        let ty = self.thunk(|_| v);
-                        entry.push(TableEntry::Pair(Expr::str("type"), ty));
-                        checked = Some(t);
-                    }
+            if let Some(t) = type_child(&f)
+                && self.opts.checks
+            {
+                // Type values need no statements, so the value can be
+                // computed here and placed in the thunk.
+                if let Some(v) = self.type_value(&t) {
+                    let ty = self.thunk(|_| v);
+                    entry.push(TableEntry::Pair(Expr::str("type"), ty));
+                    checked = Some(t);
                 }
             }
             let mut default = None;
@@ -432,10 +432,10 @@ impl Lowerer<'_> {
         else {
             return self.internal(node, "struct literal");
         };
-        if let Some((id, layout)) = self.inline_literal_target(&path) {
-            if let Some(e) = self.inline_struct_literal(node, id, &layout) {
-                return e;
-            }
+        if let Some((id, layout)) = self.inline_literal_target(&path)
+            && let Some(e) = self.inline_struct_literal(node, id, &layout)
+        {
+            return e;
         }
         let target = match self.alias_literal_target(&path) {
             Some(Ok(v)) => v,

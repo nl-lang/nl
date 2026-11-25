@@ -237,20 +237,19 @@ impl Lowerer<'_> {
     /// A `NAME_REF` whose value is used: a function-kind name is called.
     fn name_value(&mut self, node: &SyntaxNode) -> Expr {
         let r = self.res.reference(node.text_range()).cloned();
-        if let Some(Ref::Binding(id)) = &r {
-            if self
+        if let Some(Ref::Binding(id)) = &r
+            && self
                 .res
                 .binding(*id)
                 .is_some_and(|b| b.kind == BindingKind::Function)
-            {
-                return self.call_name(node, Vec::new());
-            }
+        {
+            return self.call_name(node, Vec::new());
         }
         // A `declare fn` is function-kind too.
-        if let Some(Ref::Declared(id)) = &r {
-            if self.res.declared_binding_kind(*id) == Some(BindingKind::Function) {
-                return self.call_name(node, Vec::new());
-            }
+        if let Some(Ref::Declared(id)) = &r
+            && self.res.declared_binding_kind(*id) == Some(BindingKind::Function)
+        {
+            return self.call_name(node, Vec::new());
         }
         self.ref_value(node, r)
     }

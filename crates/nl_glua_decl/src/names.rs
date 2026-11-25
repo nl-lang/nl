@@ -85,22 +85,22 @@ pub fn words(name: &str) -> Vec<String> {
             continue;
         }
         // A whole word from the list.
-        if c.is_ascii_uppercase() {
-            if let Some(w) = WORDS.iter().find(|w| {
+        if c.is_ascii_uppercase()
+            && let Some(w) = WORDS.iter().find(|w| {
                 name.get(byte_index(&chars, i)..).is_some_and(|rest| {
                     rest.starts_with(**w)
                         && !rest
                             .get(w.len()..)
                             .is_some_and(|r| r.starts_with(|c: char| c.is_ascii_lowercase()))
                 })
-            }) {
-                if !cur.is_empty() {
-                    out.push(std::mem::take(&mut cur));
-                }
-                cur.push_str(w);
-                i += w.len();
-                continue;
+            })
+        {
+            if !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
             }
+            cur.push_str(w);
+            i += w.len();
+            continue;
         }
         let prev = if i > 0 {
             chars.get(i - 1).copied()

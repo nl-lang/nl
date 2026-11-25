@@ -588,10 +588,11 @@ impl Gen {
     /// A block runs inside the call it is passed to: what it raises
     /// arrives here.
     fn block_raises(&mut self, ctx: &Ctx, block: &Frame) {
-        if block.raises && !ctx.caught {
-            if let Some(f) = self.frames.last_mut() {
-                f.raises = true;
-            }
+        if block.raises
+            && !ctx.caught
+            && let Some(f) = self.frames.last_mut()
+        {
+            f.raises = true;
         }
         let assigns = block.assigns.clone();
         if let Some(f) = self.frames.last_mut() {
@@ -655,17 +656,17 @@ impl Gen {
         body.push(PRELUDE.trim_end().to_string());
         let items = 12 + self.rng.below(24);
         for _ in 0..items {
-            if self.rng.chance(30) {
-                if let Some(f) = self.fn_decl(&ctx) {
-                    body.push(f);
-                    // Call what was just declared, so that its body runs.
-                    if self.rng.chance(60) {
-                        if let Some(s) = self.call_latest(&ctx) {
-                            body.push(s);
-                        }
-                    }
-                    continue;
+            if self.rng.chance(30)
+                && let Some(f) = self.fn_decl(&ctx)
+            {
+                body.push(f);
+                // Call what was just declared, so that its body runs.
+                if self.rng.chance(60)
+                    && let Some(s) = self.call_latest(&ctx)
+                {
+                    body.push(s);
                 }
+                continue;
             }
             body.push(self.stmt(&ctx));
         }

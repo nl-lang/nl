@@ -230,12 +230,11 @@ pub(crate) fn failure(lua: &Lua, status: std::ffi::c_int, v: Value) -> Error {
 /// The exception a Lua value stands for, for the unhandled hook and a
 /// failed task: the instance itself, or a `LuaError` with its text.
 pub(crate) fn exception_of(lua: &Lua, v: Value) -> Exception {
-    if let Value::Table(t) = &v {
-        if is_exception(lua, &v) {
-            if let Ok(e) = Exception::from_table(lua, t.clone()) {
-                return e;
-            }
-        }
+    if let Value::Table(t) = &v
+        && is_exception(lua, &v)
+        && let Ok(e) = Exception::from_table(lua, t.clone())
+    {
+        return e;
     }
     let text = match &v {
         Value::String(s) => s.to_string_lossy(),

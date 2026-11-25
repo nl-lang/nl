@@ -399,10 +399,10 @@ pub fn bundle(entries: &[&str], options: &BundleOptions<'_>, loader: &dyn Loader
         };
         chunks.insert(name, c);
         for path in literal_includes(&source_text) {
-            if let Some(target) = loader.resolve(None, &path) {
-                if !chunks.contains_key(&target) {
-                    queue.push_back(target);
-                }
+            if let Some(target) = loader.resolve(None, &path)
+                && !chunks.contains_key(&target)
+            {
+                queue.push_back(target);
             }
         }
         for (from, path, target) in recording.resolved.borrow_mut().drain(..) {
@@ -618,23 +618,23 @@ pub fn check_output(
     check: Option<Check<'_>>,
 ) -> Vec<Diagnostic> {
     let mut out = Vec::new();
-    if let Some(check) = check {
-        if let Err(message) = check(&format!("@{name}"), chunk) {
-            // `name:12: function at line 3 has more than 200 local variables`
-            let (line, text) = match message
-                .strip_prefix(&format!("{name}:"))
-                .and_then(|rest| rest.split_once(": "))
-            {
-                Some((l, text)) => (l.parse().unwrap_or(1), text.to_owned()),
-                None => (1, message.clone()),
-            };
-            out.push(diagnostic(
-                name,
-                line,
-                "lua-limit",
-                format!("the Lua this file compiles to does not load on LuaJIT: {text}"),
-            ));
-        }
+    if let Some(check) = check
+        && let Err(message) = check(&format!("@{name}"), chunk)
+    {
+        // `name:12: function at line 3 has more than 200 local variables`
+        let (line, text) = match message
+            .strip_prefix(&format!("{name}:"))
+            .and_then(|rest| rest.split_once(": "))
+        {
+            Some((l, text)) => (l.parse().unwrap_or(1), text.to_owned()),
+            None => (1, message.clone()),
+        };
+        out.push(diagnostic(
+            name,
+            line,
+            "lua-limit",
+            format!("the Lua this file compiles to does not load on LuaJIT: {text}"),
+        ));
     }
     if chunk.contains(GMOD_MACRO) {
         let line = source

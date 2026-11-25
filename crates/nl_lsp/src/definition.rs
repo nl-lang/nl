@@ -25,10 +25,10 @@ pub fn locate(files: &Files, doc: &Doc, sym: &Symbol) -> Option<Location> {
     match sym {
         Symbol::Binding(id) => {
             let b = doc.res.binding(*id)?;
-            if b.decl == DeclKind::Import {
-                if let Some(loc) = import_target(files, doc, *id) {
-                    return Some(loc);
-                }
+            if b.decl == DeclKind::Import
+                && let Some(loc) = import_target(files, doc, *id)
+            {
+                return Some(loc);
             }
             Some(Location::new(
                 doc.uri()?,

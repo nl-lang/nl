@@ -335,14 +335,14 @@ pub fn first_error(stderr: &[u8]) -> String {
         rest = r;
     }
     // `path.nl:line:col: message`: keep the message.
-    if let Some(i) = rest.find(".nl:") {
-        if rest.get(..i).is_some_and(|p| !p.contains(' ')) {
-            rest = rest
-                .get(i + 4..)
-                .unwrap_or("")
-                .trim_start_matches(|c: char| c.is_ascii_digit() || c == ':')
-                .trim();
-        }
+    if let Some(i) = rest.find(".nl:")
+        && rest.get(..i).is_some_and(|p| !p.contains(' '))
+    {
+        rest = rest
+            .get(i + 4..)
+            .unwrap_or("")
+            .trim_start_matches(|c: char| c.is_ascii_digit() || c == ':')
+            .trim();
     }
     rest.chars().take(160).collect()
 }
